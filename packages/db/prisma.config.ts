@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 import { defineConfig, env } from 'prisma/config';
 
 /**
@@ -8,6 +10,9 @@ import { defineConfig, env } from 'prisma/config';
  * (docs/04 section 2), so it could not create a table or a policy even if it
  * tried — which is the point. `DATABASE_ADMIN_URL` is the owner; `DATABASE_URL`
  * is the RLS-enforcing role every request uses at runtime.
+ *
+ * Prisma 7 no longer loads `.env` automatically, hence the explicit import
+ * above. The process still refuses to start on a missing variable.
  */
 export default defineConfig({
   schema: 'prisma/schema.prisma',

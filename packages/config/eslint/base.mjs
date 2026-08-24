@@ -52,8 +52,10 @@ export const base = tseslint.config(
       'no-restricted-syntax': [
         'error',
         {
+          // Excludes comparison against an empty string: that is a validity
+          // check on the value, not a branch on which school it is.
           selector:
-            'BinaryExpression[operator=/^(===|!==|==|!=)$/][left.name=/^(schoolId|tenantId)$/][right.type="Literal"]',
+            'BinaryExpression[operator=/^(===|!==|==|!=)$/][left.name=/^(schoolId|tenantId)$/][right.type="Literal"][right.value!=""]',
           message:
             'R1: no school-specific branching. A school-specific requirement is configuration, a feature flag, or it is not built. See CLAUDE.md.',
         },
