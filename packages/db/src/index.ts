@@ -1,1 +1,1 @@
-export const PACKAGE_NAME = '@ilm/db';
+export * from './tenant-models';

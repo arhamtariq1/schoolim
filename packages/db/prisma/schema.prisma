@@ -1,0 +1,344 @@
+// Schema v0 — Phase 0 foundation: tenancy, identity, audit. No features.
+//
+// Rules that apply to every model below, so they are not repeated (CLAUDE.md):
+//   1. Every tenant-scoped table carries `school_id uuid NOT NULL`.
+//   2. Every tenant-scoped table has RLS enabled AND forced, with the
+//      `tenant_isolation` policy. Applied in the migration, checked by
+//      `tooling/scripts/check-rls.mjs` in CI.
+//   3. Every index on a tenant table leads with `school_id`.
+//   4. Every tenant model is registered in TENANT_MODELS.
+//
+// Money is `numeric(14,2)` here and integer paisa in code (ADR-0007). No money
+// appears in this migration; the rule is stated so it is not re-litigated.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Platform — outside tenancy. No `school_id`, no tenant RLS policy.
+// Reachable only by the platform role; the application role has no grant.
+// ---------------------------------------------------------------------------
+
+enum PlatformRole {
+  SUPER_ADMIN
+  SUPPORT
+  BILLING
+
+  @@map("platform_role")
+}
+
+/// Platform staff. A separate table from `users` with its own login route and
+/// cookie, so a tenant JWT can never satisfy a platform guard (docs/04 s6).
+model PlatformUser {
+  id           String       @id @default(uuid(7)) @db.Uuid
+  email        String       @unique
+  name         String
+  passwordHash String       @map("password_hash")
+  /// TOTP secret. 2FA is mandatory here: this account reaches every school.
+  mfaSecret    String?      @map("mfa_secret")
+  mfaEnabledAt DateTime?    @map("mfa_enabled_at") @db.Timestamptz(6)
+  role         PlatformRole
+  /// Bumped to invalidate every issued token for this account at once.
+  tokenVersion Int          @default(0) @map("token_version")
+  lastLoginAt  DateTime?    @map("last_login_at") @db.Timestamptz(6)
+  isActive     Boolean      @default(true) @map("is_active")
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("platform_users")
+}
+
+enum SchoolStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  /// Read-only. Dunning never deletes a school's data (docs/19 s4).
+  SUSPENDED
+  CHURNED
+
+  @@map("school_status")
+}
+
+enum BillingMode {
+  PER_CAMPUS
+  CONSOLIDATED
+
+  @@map("billing_mode")
+}
+
+/// Reserved by the first migration, unused until Phase 9. See ADR-0008.
+/// Present now because adding a parent above `schools` later is a far more
+/// disruptive migration than carrying a nullable foreign key from the start.
+model SchoolGroup {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  name        String
+  slug        String       @unique
+  legalName   String?      @map("legal_name")
+  logoUrl     String?      @map("logo_url")
+  billingMode BillingMode  @default(PER_CAMPUS) @map("billing_mode")
+  status      SchoolStatus @default(TRIAL)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  schools School[]
+
+  @@map("school_groups")
+}
+
+/// One row is one campus. A standalone school has `schoolGroupId` null.
+/// This is the tenant root: `school_id` on every other table points here.
+model School {
+  id            String       @id @default(uuid(7)) @db.Uuid
+  schoolGroupId String?      @map("school_group_id") @db.Uuid
+  name          String
+  /// Resolves the tenant from the subdomain. Never a school picker at login,
+  /// which would leak the tenant list (docs/09 s2).
+  slug          String       @unique
+  legalName     String?      @map("legal_name")
+  logoUrl       String?      @map("logo_url")
+  primaryColor  String?      @map("primary_color")
+  timezone      String       @default("Asia/Karachi")
+  locale        String       @default("en")
+  currency      String       @default("PKR")
+  country       String       @default("PK")
+  city          String?
+  address       String?
+  phone         String?
+  email         String?
+  status        SchoolStatus @default(TRIAL)
+  onboardedAt   DateTime?    @map("onboarded_at") @db.Timestamptz(6)
+  trialEndsAt   DateTime?    @map("trial_ends_at") @db.Timestamptz(6)
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  schoolGroup     SchoolGroup?    @relation(fields: [schoolGroupId], references: [id], onDelete: Restrict)
+  domains         SchoolDomain[]
+  users           User[]
+  userRoles       UserRole[]
+  sessions        Session[]
+  invitations     Invitation[]
+  passwordResets  PasswordReset[]
+
+  @@index([schoolGroupId])
+  @@index([status])
+  @@map("schools")
+}
+
+/// Custom domains, in addition to the `{slug}` subdomain. The TenantGuard
+/// matches the request host against these, and a host that disagrees with the
+/// JWT tenant claim is a 401 (docs/04 s2).
+model SchoolDomain {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  schoolId   String    @map("school_id") @db.Uuid
+  domain     String    @unique
+  isPrimary  Boolean   @default(false) @map("is_primary")
+  verifiedAt DateTime? @map("verified_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+  @@map("school_domains")
+}
+
+// ---------------------------------------------------------------------------
+// Identity — tenant-scoped. RLS enabled and forced on every table below.
+// ---------------------------------------------------------------------------
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  DISABLED
+
+  @@map("user_status")
+}
+
+/// Mirrors SCHOOL_ROLES in @ilm/contracts. A test asserts the two lists are
+/// identical, so drift between the database and the permission matrix is a
+/// failing build rather than a production surprise.
+enum SchoolRole {
+  OWNER
+  PRINCIPAL
+  ADMIN
+  ACCOUNTANT
+  RECEPTION
+  TEACHER
+  COORDINATOR
+  STUDENT
+  PARENT
+
+  @@map("school_role")
+}
+
+/// A person at one school. Someone who is both a parent and a teacher at the
+/// same school is ONE user with two `user_roles` rows. Someone at two schools
+/// is two users — that is what keeps `school_id` on this table and makes tenant
+/// isolation total (docs/07 s2).
+model User {
+  id                 String     @id @default(uuid(7)) @db.Uuid
+  schoolId           String     @map("school_id") @db.Uuid
+  /// Reserved for Phase 9: one login across the campuses of a school group.
+  /// Unused until then. ADR-0008.
+  identityId         String?    @map("identity_id") @db.Uuid
+  email              String
+  phone              String?
+  name               String
+  passwordHash       String?    @map("password_hash")
+  avatarUrl          String?    @map("avatar_url")
+  status             UserStatus @default(INVITED)
+  mustChangePassword Boolean    @default(false) @map("must_change_password")
+  tokenVersion       Int        @default(0) @map("token_version")
+  locale             String?
+  lastLoginAt        DateTime?  @map("last_login_at") @db.Timestamptz(6)
+  /// Consecutive failures, for lockout. Reset on a successful login.
+  failedLoginCount   Int        @default(0) @map("failed_login_count")
+  lockedUntil        DateTime?  @map("locked_until") @db.Timestamptz(6)
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt          DateTime?  @map("deleted_at") @db.Timestamptz(6)
+
+  school         School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  roles          UserRole[]
+  sessions       Session[]
+  passwordResets PasswordReset[]
+  invitesSent    Invitation[]    @relation("InvitedBy")
+
+  /// Email is unique per school, not globally: the same person may hold an
+  /// account at two schools with the same address.
+  @@unique([schoolId, email])
+  @@index([schoolId, status])
+  @@index([schoolId, email])
+  @@index([schoolId, phone])
+  @@map("users")
+}
+
+/// Roles are additive. `scope` carries the data a scoped grant is limited to,
+/// for example `{ "sectionIds": [...] }` for a teacher — scope is data compiled
+/// into a query clause, never a code branch (docs/08 s5).
+model UserRole {
+  id        String     @id @default(uuid(7)) @db.Uuid
+  schoolId  String     @map("school_id") @db.Uuid
+  userId    String     @map("user_id") @db.Uuid
+  role      SchoolRole
+  scope     Json       @default("{}")
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, userId, role])
+  @@index([schoolId, userId])
+  @@map("user_roles")
+}
+
+/// One refresh-token family per login. Rotation replaces the row's hash;
+/// replaying a consumed token revokes the entire family (docs/11 s8).
+model Session {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  schoolId         String    @map("school_id") @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  /// Shared by every token issued from one login, so reuse detection can
+  /// revoke the whole chain rather than a single token.
+  familyId         String    @map("family_id") @db.Uuid
+  /// The token itself is never stored — only a hash, like a password.
+  refreshTokenHash String    @unique @map("refresh_token_hash")
+  ip               String?
+  userAgent        String?   @map("user_agent")
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(6)
+  lastUsedAt       DateTime? @map("last_used_at") @db.Timestamptz(6)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(6)
+  revokedReason    String?   @map("revoked_reason")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, userId])
+  @@index([schoolId, familyId])
+  @@index([schoolId, expiresAt])
+  @@map("sessions")
+}
+
+model Invitation {
+  id         String     @id @default(uuid(7)) @db.Uuid
+  schoolId   String     @map("school_id") @db.Uuid
+  email      String
+  role       SchoolRole
+  tokenHash  String     @unique @map("token_hash")
+  invitedBy  String?    @map("invited_by") @db.Uuid
+  expiresAt  DateTime   @map("expires_at") @db.Timestamptz(6)
+  acceptedAt DateTime?  @map("accepted_at") @db.Timestamptz(6)
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school  School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  inviter User?  @relation("InvitedBy", fields: [invitedBy], references: [id], onDelete: SetNull)
+
+  @@index([schoolId, email])
+  @@index([schoolId, expiresAt])
+  @@map("invitations")
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  schoolId  String    @map("school_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, userId])
+  @@map("password_resets")
+}
+
+enum ActorType {
+  USER
+  /// A platform user acting through impersonation. The audit row records both
+  /// the impersonated user and the platform actor (docs/17 s5).
+  PLATFORM
+  SYSTEM
+
+  @@map("actor_type")
+}
+
+/// Append-only. The application role holds no UPDATE or DELETE grant on this
+/// table (docs/12 R8), which is what makes an impersonation record impossible
+/// to quietly remove.
+///
+/// Partitioned by month on `at`. PostgreSQL requires the partition key in the
+/// primary key, which is why the key is composite. Partitioning is applied in
+/// the first migration because retrofitting it onto a live table is a migration
+/// nobody wants to write (docs/07 s8, docs/17 s4).
+model AuditLog {
+  id          String    @default(uuid(7)) @db.Uuid
+  schoolId    String    @map("school_id") @db.Uuid
+  actorUserId String?   @map("actor_user_id") @db.Uuid
+  actorType   ActorType @default(USER) @map("actor_type")
+  /// Set when a platform user is impersonating. Never null for an impersonated
+  /// session, so "who really did this" is always answerable.
+  actorPlatformUserId String? @map("actor_platform_user_id") @db.Uuid
+  action      String
+  entityType  String    @map("entity_type")
+  entityId    String?   @map("entity_id")
+  before      Json?
+  after       Json?
+  ip          String?
+  userAgent   String?   @map("user_agent")
+  requestId   String?   @map("request_id")
+  at          DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@id([id, at])
+  @@index([schoolId, entityType, entityId, at(sort: Desc)])
+  @@index([schoolId, actorUserId, at(sort: Desc)])
+  @@index([schoolId, at(sort: Desc)])
+  @@map("audit_logs")
+}
