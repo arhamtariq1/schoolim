@@ -1,0 +1,126 @@
+/* ---------------------------------------------------------------------------
+ * @ilm design tokens. Tailwind v4, CSS-first.
+ *
+ * Rule (docs/16-ui-principles.md section 6): components use SEMANTIC tokens only
+ * - bg-background, text-foreground, bg-muted, text-danger. Never a raw hex,
+ * never a Tailwind palette colour.
+ *
+ * Per-school branding is a RUNTIME swap of --brand-* on <html>, which is why
+ * every brand colour below is a variable and not a literal. No rebuild, no
+ * per-tenant CSS bundle.
+ * ------------------------------------------------------------------------- */
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* --- Typography: four sizes in app chrome. See docs/16 section 5. -------- */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-urdu: 'Noto Nastaliq Urdu', serif;
+
+  /* --- Radius ------------------------------------------------------------- */
+  --radius-md: 0.375rem;
+  --radius-card: 0.75rem;
+
+  /* --- Brand ramp. Overridden at runtime from schools.primary_color. ------ */
+  --color-brand-50: oklch(0.971 0.021 158);
+  --color-brand-100: oklch(0.94 0.045 158);
+  --color-brand-200: oklch(0.888 0.08 158);
+  --color-brand-300: oklch(0.816 0.116 158);
+  --color-brand-400: oklch(0.73 0.14 158);
+  --color-brand-500: oklch(0.648 0.146 158);
+  --color-brand-600: oklch(0.558 0.13 158);
+  --color-brand-700: oklch(0.46 0.108 158);
+  --color-brand-800: oklch(0.382 0.087 158);
+  --color-brand-900: oklch(0.323 0.072 158);
+  --color-brand-950: oklch(0.21 0.048 158);
+
+  /* --- Semantic tokens: the ONLY thing components may reference. ---------- */
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-card: var(--card);
+  --color-card-foreground: var(--fg);
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--fg);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-fg);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-fg);
+  --color-secondary: var(--muted);
+  --color-secondary-foreground: var(--fg);
+  --color-accent: var(--muted);
+  --color-accent-foreground: var(--fg);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --color-destructive: var(--danger);
+  --color-destructive-foreground: oklch(0.985 0 0);
+}
+
+:root {
+  --bg: oklch(1 0 0);
+  --fg: oklch(0.21 0.006 285);
+  --card: oklch(1 0 0);
+  --muted: oklch(0.967 0.001 286);
+  --muted-fg: oklch(0.552 0.014 285);
+  --border: oklch(0.92 0.004 286);
+  --ring: var(--color-brand-500);
+  --primary: var(--color-brand-600);
+  --primary-fg: oklch(0.985 0 0);
+
+  --success: oklch(0.55 0.14 150);
+  --warning: oklch(0.68 0.13 75);
+  --danger: oklch(0.55 0.2 27);
+  --info: oklch(0.6 0.13 240);
+}
+
+.dark {
+  --bg: oklch(0.17 0.005 285);
+  --fg: oklch(0.96 0.001 286);
+  --card: oklch(0.21 0.006 285);
+  --muted: oklch(0.27 0.006 286);
+  --muted-fg: oklch(0.712 0.013 286);
+  --border: oklch(1 0 0 / 12%);
+  --ring: var(--color-brand-400);
+  --primary: var(--color-brand-400);
+  --primary-fg: oklch(0.21 0.006 285);
+
+  --success: oklch(0.7 0.15 150);
+  --warning: oklch(0.78 0.14 75);
+  --danger: oklch(0.68 0.19 25);
+  --info: oklch(0.7 0.13 240);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Money, IDs and voucher numbers are always tabular and monospace.
+     docs/16-ui-principles.md section 10. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* docs/16 section 12: respect the user's setting. This is a rule. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

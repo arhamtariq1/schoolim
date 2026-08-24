@@ -1,0 +1,34 @@
+{
+  "name": "ilm",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.23.0",
+  "engines": {
+    "node": ">=22.18.0",
+    "pnpm": ">=10.23.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md,css,yaml,yml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,md,css,yaml,yml}\"",
+    "clean": "turbo run clean && rimraf node_modules",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:reset": "pnpm --filter @ilm/db reset",
+    "db:migrate": "pnpm --filter @ilm/db migrate",
+    "db:seed": "pnpm --filter @ilm/db seed",
+    "check:rls": "node tooling/scripts/check-rls.mjs"
+  },
+  "devDependencies": {
+    "@ilm/config": "workspace:*",
+    "prettier": "^3.9.6",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "rimraf": "^6.1.3",
+    "turbo": "^2.10.11",
+    "typescript": "^5.9.3"
+  }
+}

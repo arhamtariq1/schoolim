@@ -1,0 +1,125 @@
+# 05 — Tech Stack
+
+Versions verified against npm on **2026-08-21**. Pin exact versions in the root lockfile; upgrade
+deliberately at phase boundaries, never mid-phase.
+
+## 1. Foundation
+
+| Concern | Choice | Version | Why this and not the alternative |
+|---|---|---|---|
+| Language | TypeScript | `5.9.x` (see note) | See the TS 7 note below — this is a real decision, not a default |
+| Runtime | Node.js | **`22 LTS`** (pinned in `.nvmrc`) | 22 is Active LTS, is what the dev machine runs, and is supported by Next 16, NestJS 11 and every host. Moving to 24 is a one-line `.nvmrc` change once there is a reason |
+| Package manager | **pnpm** | `10.x` | Strict node_modules prevents phantom dependencies across monorepo packages. npm workspaces hoist and let a package import something it never declared — that is how monorepos rot. |
+| Monorepo | **Turborepo** | `2.10.x` | Requested, and correct. Remote caching, task graph, minimal config. Nx is more powerful and more ceremony than a 2-app repo needs. |
+| Linting | ESLint 9 flat config + `eslint-plugin-boundaries` | latest | `boundaries` is what mechanically enforces the module dependency rule from `03-architecture.md` §3 |
+| Formatting | Prettier + `prettier-plugin-tailwindcss` | latest | Zero style debate |
+| Git hooks | Husky + lint-staged + commitlint | latest | Conventional Commits enforced |
+
+> ### TypeScript version note — decide this in Phase 0
+> `typescript@latest` is now **7.0.2**, the native (Go) compiler. It is dramatically faster, but
+> NestJS depends on legacy decorators plus `emitDecoratorMetadata`, which is the exact area where
+> the native port has historically lagged. **Plan: build `apps/api` on TypeScript 5.9 and evaluate
+> TS 7 for it as an isolated spike in Phase 1.** The Next.js apps and shared packages can adopt
+> TS 7 immediately since they use no decorator metadata. Turborepo makes per-package TS versions
+> workable; do not let this block the start.
+>
+> **Decided in Phase 0 (2026-08-22): TypeScript 5.9 everywhere, for now.** Not because of the
+> decorator concern above but for a harder reason found on install — `typescript-eslint@8.67`
+> declares `peerDependency typescript ">=4.8.4 <6.1.0"` and refuses TS 7. Since
+> `eslint-plugin-boundaries` is what mechanically enforces engineering rule R9, losing the linter
+> is a worse trade than losing compile speed. **Revisit when `typescript-eslint` ships TS 7
+> support** — that, not NestJS, is the gate.
+>
+> Same shape of problem one level up: **ESLint is pinned to 9.x, not 10**, because
+> `eslint-plugin-import@2.32` supports `<= 9`. The alternative is swapping it for the maintained
+> `eslint-plugin-import-x` fork; deferred as a Phase 1 chore, not worth churn in week one.
+
+## 2. Backend — `apps/api`
+
+| Concern | Choice | Version | Reasoning |
+|---|---|---|---|
+| Framework | **NestJS** | `11.2.x` | Requested. DI, guards, interceptors and modules are exactly the primitives this problem needs — tenancy, RBAC and audit become framework concerns instead of copy-paste. |
+| HTTP adapter | **Fastify** (`@nestjs/platform-fastify`) | v11 | ~2× Express throughput, better schema serialisation. Choose it in Phase 0; switching later means auditing every middleware. |
+| ORM | **Prisma** | `7.9.x` | Best-in-class TypeScript inference, and — decisively — client extensions are what make the tenant scoping in `04` possible in one place. Drizzle is leaner and closer to SQL, but you would hand-roll tenant scoping at every call site. Prisma's weakness (complex analytical SQL) is solved with `$queryRaw` for the handful of reporting queries. |
+| Migrations | `prisma migrate` + hand-written SQL for RLS policies | — | RLS/partitioning/triggers live in `prisma/migrations/*/migration.sql` edits. Never `db push` outside local scratch work. |
+| Validation | **zod 4** + `nestjs-zod` | `4.4.x` / `5.5.x` | One schema shared by API and frontend forms. Rejects `class-validator`: its schemas cannot be reused in the browser, which is the whole point of the monorepo. |
+| API docs | `@nestjs/swagger` fed from zod | `11.4.x` | OpenAPI 3.1 published at `/docs` — needed for the future mobile app and school integrations |
+| Auth | Own implementation: `jose` (JWT) + `@node-rs/argon2` | latest | See `04` §4 — portability off Supabase is the deciding factor |
+| Request context | **nestjs-cls** | `6.2.x` | AsyncLocalStorage tenant context |
+| Config | `@nestjs/config` + zod schema | — | Fail-fast on boot |
+| Logging | **pino** + `nestjs-pino` | `10.3.x` | Structured JSON, low overhead, redaction built in |
+| Jobs/queues | **BullMQ** + Redis (Upstash free tier) | `6.1.x` | Phase 4+. Before that, external cron hitting a chunked endpoint. |
+| Scheduling | `@nestjs/schedule` | v11 | Only once the API runs always-on |
+| Rate limiting | `@nestjs/throttler` | v11 | Redis storage once Redis exists |
+| Email | **Resend** behind a `MailPort` interface | — | 3k/mo free; swap to SES later without touching callers |
+| PDF | **`@react-pdf/renderer`** for vouchers/receipts; Playwright/Chromium only if a design demands full CSS | `4.6.x` | React-PDF has no browser binary — critical for serverless and for cheap hosts. Templates are React components, so vouchers get versioned and diffable. |
+| Excel | **ExcelJS** | `4.4.x` | Import and export; streaming for large sheets |
+| Testing | **Vitest** + Supertest + Testcontainers | `4.1.x` | Vitest over Jest: far faster, native ESM/TS. Testcontainers gives every test run a real Postgres with real RLS — mocked DB tests would not catch the bugs that matter here. |
+
+## 3. Frontend — `apps/web` and `apps/admin`
+
+| Concern | Choice | Version | Reasoning |
+|---|---|---|---|
+| Framework | **Next.js** (App Router) | `16.3.x` | Requested. Turbopack default, stable RSC. |
+| React | React | `19.2.x` | Actions, `useOptimistic`, React Compiler |
+| Styling | **Tailwind CSS v4** | `4.3.x` | CSS-first config; design tokens as CSS variables makes per-school branding a runtime variable swap, not a rebuild |
+| Components | **shadcn/ui** on Radix primitives | latest | Copy-in, not a dependency — so it can be forked into `@ilm/ui` and shaped into a real design system. Accessible by construction. Rejects MUI/AntD: fighting their design language costs more than owning the components. |
+| Icons | **lucide-react** — the only icon library | latest | shadcn's native pairing; one 24×24 grid and one stroke weight across the whole product; tree-shaken per icon. Re-exported through `@ilm/ui/icons` so one meaning maps to one icon product-wide. A second icon set is banned — see `16-ui-principles.md` §3 |
+| Server state | **TanStack Query v5** | `5.101.x` | Cache, background refetch, optimistic mutations, infinite lists. The correct engine for staff-facing grids. |
+| Client state | **Zustand** | `5.x` | Only for genuine UI state (sidebar, command palette, bulk selection). Most "state" is server state. |
+| Tables | **TanStack Table v9** | `9.1.x` | Headless. Every list in the product is one `<DataTable>` with column defs — sorting, filtering, pagination, column visibility, row selection, export, saved views, all solved once. |
+| Forms | **React Hook Form** + `@hookform/resolvers` + the shared zod schema | `7.85.x` | Uncontrolled inputs matter on 500-row bulk-entry screens |
+| Charts | **Recharts** (or ECharts if dashboards get dense) | latest | Start with Recharts; revisit at Phase 4 |
+| Dates | **date-fns** v4 + `@date-fns/tz` | `4.4.x` | Tree-shakeable; explicit timezone handling |
+| Command palette | **cmdk** | latest | The Cmd+K layer that replaces the 20-item sidebar |
+| Tables → files | `exceljs` in a worker + server-side PDF | — | Exports are generated server-side so they are permission-checked and audited |
+| i18n | **next-intl** | latest | Wire it in Phase 0 even while English-only. RTL Urdu later is otherwise a rewrite. |
+| Notifications | **sonner** | latest | Toasts |
+| Drag & drop | **dnd-kit** | latest | Timetable builder, fee-plan ordering |
+| E2E | **Playwright** | `1.62.x` | Critical flows per phase; runs in CI on PR |
+| Component tests | Vitest + Testing Library | — | For `@ilm/ui` primitives and complex feature components |
+| Analytics | **PostHog** (self-host later) | — | Product analytics + session replay is how you learn which screens actually confuse staff |
+| Errors | **Sentry** | — | Both apps + API, with `schoolId` and `requestId` as tags |
+
+## 4. Data & infrastructure
+
+| Concern | Phase 0 (free) | Production | Notes |
+|---|---|---|---|
+| Database | Supabase Postgres (free) | Railway/Neon/Hetzner Postgres 17 | Supabase used as *plain Postgres*, nothing else. See `13`. |
+| Object storage | Supabase Storage | Cloudflare R2 | R2 has no egress fees — matters when parents download vouchers |
+| Redis | — | Upstash (free tier) | Phase 4 |
+| Frontend hosting | Vercel | Vercel Pro | **Hobby forbids commercial use** — upgrade before the first paying school |
+| API hosting | See `13` §3 | Railway / Hetzner VPS | NestJS + cron + queues wants an always-on process |
+| CI/CD | GitHub Actions | same | Turborepo remote cache via Vercel |
+| Secrets | Doppler or GitHub Environments | same | |
+
+## 5. Shared packages
+
+| Package | Contents |
+|---|---|
+| `@ilm/contracts` | zod schemas, inferred DTO types, the role/permission matrix, error codes, API route constants. **The single source of truth between API and apps.** |
+| `@ilm/ui` | Design system: tokens, primitives, `DataTable`, `PageHeader`, `EmptyState`, `Money`, `DateDisplay`, form field wrappers |
+| `@ilm/db` | Prisma schema, generated client, seed scripts, tenant extension |
+| `@ilm/utils` | Money (paisa) arithmetic, date/session helpers, formatters, slug/roll-number generators |
+| `@ilm/config` | Shared eslint, prettier, tsconfig, tailwind preset |
+| `@ilm/email` | React Email templates shared by API and previews |
+
+## 6. Deliberate rejections
+
+| Rejected | Why |
+|---|---|
+| tRPC | We need a public versioned REST API for webhooks, mobile and integrations. Shared zod gives the same safety. |
+| GraphQL | N+1 management, auth-per-field complexity, and no consumer that needs it. |
+| Supabase Auth / client SDK in the frontend | Couples the product to Supabase and puts tenant enforcement in the client. RLS-from-the-browser is not compatible with a NestJS-owned RBAC model. |
+| Drizzle | Better SQL ergonomics, but no clean single-point interceptor for tenant scoping. That trade decides it. |
+| class-validator / class-transformer | Cannot share schemas with the browser. |
+| Redux Toolkit | TanStack Query + Zustand covers this with far less code. |
+| Microservices, Kafka, event sourcing | Solutions to problems this product will not have at 100 schools. |
+| Jest | Vitest is faster and the ESM story is cleaner. |
+| MUI / Ant Design | Their design language is the thing you are trying to escape from the old portal. |
+
+## 7. Upgrade policy
+
+- Renovate bot, grouped PRs, auto-merge only for patch versions with green CI.
+- Major upgrades happen at a phase boundary, in a dedicated PR, with the E2E suite as the gate.
+- The lockfile is committed. `pnpm install --frozen-lockfile` in CI. No exceptions.
