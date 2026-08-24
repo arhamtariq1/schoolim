@@ -11,7 +11,6 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 
 import { AppModule } from './app.module';
 import { ENV, loadEnv, type Env } from './config/env';
-import { AllExceptionsFilter } from './shared/errors/all-exceptions.filter';
 
 async function bootstrap(): Promise<void> {
   // Validated before anything else starts. docs/03 section 8: the process
@@ -37,8 +36,6 @@ async function bootstrap(): Promise<void> {
     // here; the strict CSP belongs on the two Next apps (docs/04 section 7).
     contentSecurityPolicy: false,
   });
-
-  app.useGlobalFilters(new AllExceptionsFilter(env.API_URL));
 
   app.enableShutdownHooks();
 

@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ClsModule } from 'nestjs-cls';
 
+import { ENV, type Env } from './config/env';
+import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuditInterceptor } from './shared/audit/audit.interceptor';
 import { AuthGuard } from './shared/auth/auth.guard';
+import { AllExceptionsFilter } from './shared/errors/all-exceptions.filter';
 import { RbacGuard } from './shared/rbac/rbac.guard';
 import { SharedModule } from './shared/shared.module';
 import { TenantGuard } from './shared/tenancy/tenant.guard';
@@ -30,9 +33,18 @@ import { TenantGuard } from './shared/tenancy/tenant.guard';
       middleware: { mount: true },
     }),
     SharedModule,
+    AuthModule,
     HealthModule,
   ],
   providers: [
+    // Registered here rather than only in main.ts, so the same error contract
+    // applies in tests and in any other host that builds this module.
+    {
+      provide: APP_FILTER,
+      useFactory: (env: Env) => new AllExceptionsFilter(env.API_URL),
+      inject: [ENV],
+    },
+
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: TenantGuard },
     { provide: APP_GUARD, useClass: RbacGuard },
