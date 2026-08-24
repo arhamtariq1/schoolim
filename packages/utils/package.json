@@ -2,21 +2,33 @@
   "name": "@ilm/utils",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./money": "./src/money/index.ts",
-    "./time": "./src/time/index.ts",
-    "./types": "./src/types/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./money": {
+      "types": "./dist/money/index.d.ts",
+      "default": "./dist/money/index.js"
+    },
+    "./time": {
+      "types": "./dist/time/index.d.ts",
+      "default": "./dist/time/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/types/index.js"
+    }
   },
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rimraf dist .turbo *.tsbuildinfo"
+    "clean": "rimraf dist .turbo *.tsbuildinfo",
+    "build": "tsc -p tsconfig.build.json"
   },
   "devDependencies": {
     "@ilm/config": "workspace:*",

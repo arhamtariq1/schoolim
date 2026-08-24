@@ -14,6 +14,11 @@
 generator client {
   provider = "prisma-client"
   output   = "../src/generated"
+  // Prisma 7 generates ESM by default and its client uses import.meta.url,
+  // which forces Node to parse the file as ESM. apps/api is CommonJS because
+  // NestJS needs legacy decorators and emitDecoratorMetadata (docs/05), so the
+  // generated client must be CommonJS too.
+  moduleFormat = "cjs"
 }
 
 datasource db {

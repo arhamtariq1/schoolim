@@ -12,7 +12,9 @@
     "./typescript/nextjs": "./typescript/nextjs.json",
     "./typescript/nestjs": "./typescript/nestjs.json",
     "./typescript/library": "./typescript/library.json",
-    "./tailwind/theme.css": "./tailwind/theme.css"
+    "./tailwind/theme.css": "./tailwind/theme.css",
+    "./eslint/boundaries": "./eslint/boundaries.mjs",
+    "./typescript/library-build": "./typescript/library-build.json"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
