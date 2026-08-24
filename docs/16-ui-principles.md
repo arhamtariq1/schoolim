@@ -24,7 +24,7 @@ Before writing a single line of UI, in this order:
    `@ilm/ui`, not into the feature folder.
 
 The one question that settles most arguments: *"Will a second screen need this?"* Yes → `@ilm/ui`.
-No → `apps/web/features/<domain>/components/`.
+No → `apps/portal/features/<domain>/components/`.
 
 ---
 
@@ -135,7 +135,7 @@ export function StatusBadge({ className, tone, size, ...props }: StatusBadgeProp
    `density="compact"`, not `padding={4}`.
 6. **No component reads global state or fetches.** `@ilm/ui` is pure presentation — it may not
    import `@ilm/contracts`, TanStack Query, or anything app-specific. A `<VoucherTable>` lives in
-   `apps/web/features/fees`, a `<DataTable>` lives in `@ilm/ui`.
+   `apps/portal/features/fees`, a `<DataTable>` lives in `@ilm/ui`.
 7. **Server Components by default.** `'use client'` only where interactivity, hooks or browser APIs
    genuinely require it, and as deep in the tree as possible.
 8. **No arbitrary Tailwind values** (`w-[437px]`, `text-[#1a1a1a]`). Use the scale or add a token.

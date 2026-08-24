@@ -47,9 +47,9 @@ Four mechanisms make this possible instead of aspirational:
 ## 3. Architecture in six lines
 
 ```
-apps/web    Next.js 16   School portal, multi-tenant, {slug}.ilm.pk
-apps/admin  Next.js 16   Super admin, yours only, admin.ilm.pk
-apps/api    NestJS 11    The only thing that touches the database
+apps/portal  Next.js 16   School portal, multi-tenant, {slug}.<domain>
+apps/admin   Next.js 16   Super admin, yours only, admin.<domain>
+apps/api     NestJS 11    The only thing that touches the database
 packages/contracts        zod schemas shared by all three — one source of truth for types
 packages/{ui,db,utils}    design system, Prisma, money/date helpers
 PostgreSQL                one database, shared schema, row-level security

@@ -118,7 +118,7 @@ messaging is the one line item that can make a customer unprofitable.
 
 ## Part C — Parent & Student Portal
 
-Not a separate app in v1 — the same `apps/web` with the parent/student role workspaces and a
+Not a separate app in v1 — the same `apps/portal` with the parent/student role workspaces and a
 mobile-first layout. A PWA manifest in Phase 6 gives an installable app icon without app-store work.
 
 **Parent home:**

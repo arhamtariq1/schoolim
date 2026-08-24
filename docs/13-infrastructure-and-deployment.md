@@ -55,7 +55,7 @@ infrastructure decision in the document, and the good news is that it is cheap.
 
 | Component | Where | Notes |
 |---|---|---|
-| `apps/web`, `apps/admin` | **Vercel Hobby** | Perfect fit. Preview deploys per PR. |
+| `apps/portal`, `apps/admin` | **Vercel Hobby** | Perfect fit. Preview deploys per PR. |
 | `apps/api` | **Local + one always-on free host** | See the options table below |
 | Database | **Supabase Free** | Used as plain Postgres only — no Auth, no client SDK, no Realtime |
 | Object storage | **Supabase Storage** | 1 GB free |

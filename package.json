@@ -21,10 +21,17 @@
     "db:reset": "pnpm --filter @ilm/db reset",
     "db:migrate": "pnpm --filter @ilm/db migrate",
     "db:seed": "pnpm --filter @ilm/db seed",
-    "check:rls": "node tooling/scripts/check-rls.mjs"
+    "check:rls": "node tooling/scripts/check-rls.mjs",
+    "db:local": "node tooling/scripts/local-db.mjs start",
+    "db:local:stop": "node tooling/scripts/local-db.mjs stop",
+    "db:local:status": "node tooling/scripts/local-db.mjs status",
+    "db:local:reset": "node tooling/scripts/local-db.mjs reset",
+    "verify:rls-role": "node tooling/scripts/verify-rls-role.mjs"
   },
   "devDependencies": {
     "@ilm/config": "workspace:*",
+    "embedded-postgres": "18.4.0-beta.17",
+    "pg": "^8.23.0",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "rimraf": "^6.1.3",

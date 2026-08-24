@@ -47,7 +47,7 @@ WP0 baseline commit
                                                  └─ WP8 auth
                                                       └─ WP9 guards ◀── gate 2
                                                            └─ WP10 audit
-   WP11 @ilm/ui ──┬─ WP12 apps/web shell ─┐
+   WP11 @ilm/ui ──┬─ WP12 apps/portal shell ─┐
                   └─ WP13 apps/admin shell┴─ WP14 CI ◀── gate 3
                                                └─ WP15 runbooks + deploy ◀── gate 4 = P0 exit
 ```
@@ -133,7 +133,7 @@ Semantic tokens from `packages/config/tailwind/theme.css` · shadcn/ui copied in
 Table primitives, Toast, `<Money>`, `<DateDisplay>`.
 `@ilm/ui` may not import `@ilm/contracts` (`06` §55).
 
-### WP12 — `apps/web` shell
+### WP12 — `apps/portal` shell
 Next.js 16 + React 19. App shell: **sidebar generated from permissions, max 8 items** (`00` §6),
 topbar, ⌘K skeleton, tenant theming by CSS variable. `next-intl` wired from day one even though v1 is
 English-only (`03` §8). Login → an empty dashboard, end to end.

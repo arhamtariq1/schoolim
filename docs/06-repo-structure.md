@@ -33,7 +33,7 @@ ilm/
 ## 2. Package dependency graph
 
 ```
-        apps/web ─┐          ┌─ apps/admin
+        apps/portal ─┐          ┌─ apps/admin
                   ├──────────┤
                   ▼          ▼
               @ilm/ui   @ilm/contracts ◀────── apps/api
@@ -53,7 +53,7 @@ Hard rules:
   contract can stay stable while the schema evolves. Prisma types are mapped to contract types in
   the API's mapper layer, never leaked outward.
 - `@ilm/ui` may not import `@ilm/contracts`. Design-system components are domain-agnostic; a
-  `<VoucherTable>` lives in `apps/web/features/fees`, not in the design system.
+  `<VoucherTable>` lives in `apps/portal/features/fees`, not in the design system.
 
 Enforced by `eslint-plugin-boundaries` and by a `depcheck` step in CI.
 
@@ -99,13 +99,13 @@ of the service.
 **Service rule:** a service method that spans more than one aggregate opens a transaction and passes
 `tx` down. No service calls another module's repository.
 
-## 4. Inside `apps/web`
+## 4. Inside `apps/portal`
 
 Organised **by feature, not by file type**. The failure mode of the old portal was 60 files in
 `components/` with no way to tell what belonged together.
 
 ```
-apps/web/src/
+apps/portal/src/
 ├── app/
 │   ├── (public)/login/page.tsx
 │   ├── (portal)/

@@ -21,3 +21,6 @@ Thumbs.db
 
 # Prisma client is generated at install/build time, never committed.
 packages/db/src/generated/
+
+# Local dev database (portable Postgres fallback when Docker is unavailable)
+.local/

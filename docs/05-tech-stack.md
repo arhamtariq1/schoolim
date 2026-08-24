@@ -56,7 +56,7 @@ deliberately at phase boundaries, never mid-phase.
 | Excel | **ExcelJS** | `4.4.x` | Import and export; streaming for large sheets |
 | Testing | **Vitest** + Supertest + Testcontainers | `4.1.x` | Vitest over Jest: far faster, native ESM/TS. Testcontainers gives every test run a real Postgres with real RLS — mocked DB tests would not catch the bugs that matter here. |
 
-## 3. Frontend — `apps/web` and `apps/admin`
+## 3. Frontend — `apps/portal` and `apps/admin`
 
 | Concern | Choice | Version | Reasoning |
 |---|---|---|---|

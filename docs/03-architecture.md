@@ -4,7 +4,7 @@
 
 ```
                           ┌──────────────────────────────────────┐
-   {slug}.ilm.pk  ──────▶ │  apps/web    (Next.js 16, App Router) │
+   {slug}.ilm.pk  ──────▶ │  apps/portal    (Next.js 16, App Router) │
                           │  School Portal — multi-tenant         │
                           │  8 role workspaces, RSC + client isles│
                           └──────────────┬───────────────────────┘
@@ -96,7 +96,7 @@ Layer order (top may use bottom): `reporting` → `workflow`/`comms` → `fees`/
 ## 4. Request lifecycle — the critical path
 
 ```
-1.  apps/web    fetch("/api/v1/fees/vouchers", { credentials: "include" })
+1.  apps/portal    fetch("/api/v1/fees/vouchers", { credentials: "include" })
                 cookie: ilm_at  (access JWT, 15 min, httpOnly, SameSite=Lax, Secure)
 
 2.  Nest        helmet → cors → requestId middleware
@@ -129,7 +129,7 @@ Layer order (top may use bottom): `reporting` → `workflow`/`comms` → `fees`/
 Steps 4 and 9 are the heart of the product. They get their own dedicated test suite that runs on
 every PR. See `04-multi-tenancy-and-security.md`.
 
-## 5. Frontend architecture (`apps/web`)
+## 5. Frontend architecture (`apps/portal`)
 
 ```
 src/

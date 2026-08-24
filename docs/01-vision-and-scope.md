@@ -20,7 +20,7 @@ prioritisation call in this repository.
 
 One product, two surfaces:
 
-### 2.1 School Portal (`apps/web`)
+### 2.1 School Portal (`apps/portal`)
 Multi-tenant. Every school gets an isolated workspace at `{slug}.domain.com` (or `/s/{slug}` in
 Phase 0). Users inside a school: **Owner, Principal, Admin, Accountant, Reception, Teacher,
 Student, Parent**. Each role gets a *task-oriented workspace*, not a shared 20-item sidebar.
