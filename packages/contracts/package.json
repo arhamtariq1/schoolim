@@ -11,11 +11,17 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "clean": "rimraf dist .turbo *.tsbuildinfo"
+    "clean": "rimraf dist .turbo *.tsbuildinfo",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@ilm/config": "workspace:*",
     "eslint": "^9.39.5",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
   }
 }
