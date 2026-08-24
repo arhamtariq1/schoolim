@@ -27,7 +27,7 @@ const RESERVED_SUBDOMAINS = new Set([
  * `undefined` as "no tenant", never as "any tenant".
  *
  * @param host       the `Host` header, possibly with a port
- * @param appDomain  the apex domain, e.g. `ilm.pk`
+ * @param appDomain  the apex domain, e.g. `example.pk`
  */
 export function schoolSlugFromHost(
   host: string | undefined,
@@ -58,7 +58,7 @@ export function schoolSlugFromHost(
 
   const label = hostname.slice(0, -suffix.length);
 
-  // Only a single label is a tenant. `a.b.ilm.pk` is not `a`, it is nothing —
+  // Only a single label is a tenant. `a.b.example.pk` is not `a`, it is nothing —
   // treating it as a tenant would let a wildcard certificate holder pick any
   // school by prefixing labels.
   if (label === '' || label.includes('.')) {

@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The application role: NOBYPASSRLS. Everything under test runs as this.
+  DATABASE_URL: postgresql://ilm_app:ilm_local_dev@localhost:5432/ilm
+  # The owner: migrations and fixtures only.
+  DATABASE_ADMIN_URL: postgresql://ilm:ilm_local_dev@localhost:5432/ilm
+  JWT_ACCESS_SECRET: ci-only-secret-at-least-32-characters-long
+  APP_DOMAIN: localhost
+  COOKIE_DOMAIN: localhost
+  NODE_ENV: test
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        # Matches docker-compose.yml. The local Docker-free fallback runs 18;
+        # production is the one that must match, and that is 17.
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ilm
+          POSTGRES_PASSWORD: ilm_local_dev
+          POSTGRES_DB: ilm
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ilm -d ilm"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The application role is created by the same SQL the local stack uses,
+      # so CI and a developer's machine cannot drift on the one thing every
+      # isolation guarantee rests on.
+      - name: Create the application role
+        run: psql "$DATABASE_ADMIN_URL" -v ON_ERROR_STOP=1 -f tooling/docker/init/01-app-role.sql
+
+      - name: Prove the application role cannot bypass RLS
+        run: node tooling/scripts/verify-rls-role.mjs
+
+      - run: pnpm turbo run build
+
+      - name: Apply migrations
+        run: pnpm --filter @ilm/db exec prisma migrate deploy
+
+      - run: pnpm turbo run lint typecheck
+
+      # Includes the tenant-isolation suite and the structural RLS gate. These
+      # have no skip-if-no-database path by design: a suite that silently skips
+      # is a green build that proves nothing.
+      - run: pnpm turbo run test
+
+      - name: Check formatting
+        run: pnpm format:check
+
+  # The product name is still undecided (D4). The placeholder must stay
+  # renameable by one find-and-replace, so it may appear only in the npm scope,
+  # the cookie prefix, the database name and container names — never in UI copy,
+  # emails, PDFs or seeded templates, which read a single BRAND constant.
+  brand-containment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: No stray brand references
+        run: |
+          set -euo pipefail
+          if grep -rniE '\bilm\b' \
+               --include='*.ts' --include='*.tsx' \
+               apps packages \
+               | grep -viE '@ilm/|ilm_app|ilm_local_dev|ilm_at|ilm_rt|ilm_csrf|ilm_pat|ilm_prt|/ilm\?|:5433/ilm|localhost:5432/ilm' \
+               | grep -viE 'packages/db/src/generated/|packages/utils/src/product.ts|/dist/' ; then
+            echo
+            echo 'Found a brand reference outside the four permitted places.'
+            echo 'Use BRAND from @ilm/utils. See docs/15 Part C, D4 containment rule.'
+            exit 1
+          fi
+          echo 'No stray brand references.'
+
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

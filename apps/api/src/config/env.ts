@@ -32,8 +32,8 @@ const envSchema = z.object({
   API_URL: z.string().default('http://localhost:4000'),
 
   /**
-   * The apex domain tenant subdomains hang off, e.g. `ilm.pk` for
-   * `beacon.ilm.pk`. Used by the tenant guard to extract the slug from the
+   * The apex domain tenant subdomains hang off, e.g. `example.pk` for
+   * `beacon.example.pk`. Used by the tenant guard to extract the slug from the
    * request host.
    */
   APP_DOMAIN: z.string().default('localhost'),
