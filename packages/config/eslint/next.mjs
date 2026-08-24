@@ -58,11 +58,10 @@ export const next = [
       ],
     },
   },
-  {
-    // @ilm/ui is the one place that may reach lucide-react directly.
-    files: ['**/packages/ui/**'],
-    rules: { 'no-restricted-imports': 'off' },
-  },
+  // Note: @ilm/ui's icons.ts is the one file allowed to import lucide-react
+  // directly. That override lives in packages/ui/eslint.config.mjs, because
+  // flat-config `files` patterns resolve relative to the config file's own
+  // directory and a pattern written here would never match there.
   {
     // Next.js requires default exports in these conventional files.
     files: [
