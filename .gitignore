@@ -33,3 +33,5 @@ packages/*/src/**/*.js.map
 packages/*/src/**/*.d.ts
 packages/*/src/**/*.d.ts.map
 !packages/db/src/generated/**
+.next/
+next-env.d.ts

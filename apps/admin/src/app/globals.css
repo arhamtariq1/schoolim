@@ -1,0 +1,8 @@
+@import '@ilm/config/tailwind/theme.css';
+
+/* Paths are relative to THIS file (src/app/globals.css), so the repo root is
+   four levels up. The design system lives outside this app, and Tailwind only
+   emits utilities for sources it is told to scan — without this line every
+   @ilm/ui class is tree-shaken away and components render unstyled. */
+@source '../../../../packages/ui/src/**/*.{ts,tsx}';
+@source '../**/*.{ts,tsx}';
