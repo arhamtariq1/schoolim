@@ -26,8 +26,7 @@ jobs:
 
     services:
       postgres:
-        # Matches docker-compose.yml. The local Docker-free fallback runs 18;
-        # production is the one that must match, and that is 17.
+        # Matches Supabase and Railway, both of which run PostgreSQL 17.
         image: postgres:17-alpine
         env:
           POSTGRES_USER: ilm
@@ -56,7 +55,7 @@ jobs:
       # so CI and a developer's machine cannot drift on the one thing every
       # isolation guarantee rests on.
       - name: Create the application role
-        run: psql "$DATABASE_ADMIN_URL" -v ON_ERROR_STOP=1 -f tooling/docker/init/01-app-role.sql
+        run: psql "$DATABASE_ADMIN_URL" -v ON_ERROR_STOP=1 -f tooling/sql/01-app-role.sql
 
       - name: Prove the application role cannot bypass RLS
         run: node tooling/scripts/verify-rls-role.mjs

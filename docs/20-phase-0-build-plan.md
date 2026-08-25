@@ -38,15 +38,15 @@ the hosting decision.
 
 ## 1. Where we started
 
-|                                 | State                                                                                |
-| ------------------------------- | ------------------------------------------------------------------------------------ |
-| Workspace                       | ✅ Turborepo + pnpm 10.23, Node 22, `apps/*` `packages/*` `tooling/*` globs          |
-| Shared config                   | ✅ eslint (base/boundaries/nest/next), prettier, 4 tsconfig presets, tailwind theme  |
-| Package skeletons               | ⚠️ `contracts` `db` `ui` `utils` exist but export only `PACKAGE_NAME`                |
-| Local stack                     | ✅ `docker-compose.yml` — Postgres 17, Redis 7, Mailpit · `ilm_app` NOBYPASSRLS role |
-| `apps/`                         | ❌ Does not exist                                                                    |
-| Git                             | ❌ **78 files staged, zero commits**                                                 |
-| `tooling/scripts/check-rls.mjs` | ❌ Referenced by `package.json:check:rls`, not written                               |
+|                                 | State                                                                               |
+| ------------------------------- | ----------------------------------------------------------------------------------- |
+| Workspace                       | ✅ Turborepo + pnpm 10.23, Node 22, `apps/*` `packages/*` `tooling/*` globs         |
+| Shared config                   | ✅ eslint (base/boundaries/nest/next), prettier, 4 tsconfig presets, tailwind theme |
+| Package skeletons               | ⚠️ `contracts` `db` `ui` `utils` exist but export only `PACKAGE_NAME`               |
+| Local stack                     | ✅ project-owned PostgreSQL via `pnpm db` · `ilm_app` NOBYPASSRLS role              |
+| `apps/`                         | ❌ Does not exist                                                                   |
+| Git                             | ❌ **78 files staged, zero commits**                                                |
+| `tooling/scripts/check-rls.mjs` | ❌ Referenced by `package.json:check:rls`, not written                              |
 
 **Net: the scaffolding is real, the product is empty.** That is exactly the right place to start.
 
@@ -94,11 +94,10 @@ Nothing is committed. Every later diff needs something to diff against. **Done w
 
 ### WP1 — Local stack verified
 
-`docker compose up -d`; confirm Postgres 17, Redis, Mailpit. Then the check that matters: **connect
-as `ilm_app` and prove it cannot see a row that RLS forbids.** If the role bootstrap in
-`tooling/docker/init/01-app-role.sql` is wrong, every later isolation test passes for the wrong
-reason. **Done when:** a throwaway table with an RLS policy returns 0 rows to `ilm_app` and N rows
-to `ilm`.
+`pnpm db`; confirm PostgreSQL is listening. Then the check that matters: **connect as `ilm_app` and
+prove it cannot see a row that RLS forbids.** If the role bootstrap in `tooling/sql/01-app-role.sql`
+is wrong, every later isolation test passes for the wrong reason. **Done when:** a throwaway table
+with an RLS policy returns 0 rows to `ilm_app` and N rows to `ilm`.
 
 ### WP2 — `@ilm/utils`
 

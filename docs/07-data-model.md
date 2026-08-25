@@ -1,12 +1,14 @@
 # 07 — Data Model
 
 Conventions used throughout:
+
 - `id uuid PK default gen_random_uuid()` on every table (UUIDv7 once Postgres/Prisma support lands —
   it gives index locality; note it as a Phase 1 spike).
 - `school_id uuid NOT NULL` on every tenant table, first column of every index.
-- `created_at`, `updated_at` `timestamptz NOT NULL`; `created_by`, `updated_by` uuid on mutable records.
-- `deleted_at timestamptz NULL` for soft delete where the record is operational.
-  **Financial records are never soft-deleted** — they are reversed.
+- `created_at`, `updated_at` `timestamptz NOT NULL`; `created_by`, `updated_by` uuid on mutable
+  records.
+- `deleted_at timestamptz NULL` for soft delete where the record is operational. **Financial records
+  are never soft-deleted** — they are reversed.
 - Money: `numeric(14,2)` in Postgres; **integer paisa** in application code.
 
 ---
@@ -91,8 +93,8 @@ holidays           id, school_id, session_id, date, name, type(HOLIDAY|VACATION|
 
 **Design note — sessions are the axis of everything.** In the old portal "session" was probably a
 filter bolted on late. Here, `session_id` is on sections, enrollments, fee assignments, attendance
-and exams from the first migration. Year rollover then becomes a supported operation
-(clone sections → promote students → clone fee plans with increments) rather than a data migration.
+and exams from the first migration. Year rollover then becomes a supported operation (clone sections
+→ promote students → clone fee plans with increments) rather than a data migration.
 
 ---
 
@@ -126,8 +128,8 @@ custom_field_defs id, school_id, entity(STUDENT|STAFF|GUARDIAN), key, label,
                   type(TEXT|NUMBER|DATE|SELECT|BOOLEAN), options jsonb, required, order
 ```
 
-**`custom jsonb` + `custom_field_defs` is the pressure valve.** Every school will ask for a field you
-did not anticipate. Without this, each request becomes a migration and a code branch — the exact
+**`custom jsonb` + `custom_field_defs` is the pressure valve.** Every school will ask for a field
+you did not anticipate. Without this, each request becomes a migration and a code branch — the exact
 mechanism that destroyed the previous portal. With it, the school adds the field itself in Settings.
 
 ---
@@ -211,6 +213,7 @@ fee_waivers        id, school_id, student_id, voucher_id NULL, fee_head_id NULL,
 ```
 
 ### Invariants the database enforces
+
 1. `UNIQUE(school_id, student_id, billing_period_id)` on `fee_vouchers` — **a student cannot be
    billed twice for one period.** This one constraint prevents the single worst class of bug.
 2. `net_payable_minor = gross - discount - waiver + arrears + late_fee` — CHECK constraint.
@@ -344,11 +347,11 @@ CREATE INDEX ON students USING gin ((first_name || ' ' || last_name) gin_trgm_op
 
 ## 13. Seed data for a new school
 
-Onboarding inserts sane defaults so the school is usable in minutes, not days:
-one active academic session · class levels Nursery→Grade 10 · sections A/B ·
-fee heads (Tuition, Admission, Exam, Transport, Security Deposit) · expense categories
-(Salaries, Utilities, Rent, Maintenance, Supplies) · leave types · default roles ·
-default message templates · a `voucher`/`receipt`/`admission` number sequence.
+Onboarding inserts sane defaults so the school is usable in minutes, not days: one active academic
+session · class levels Nursery→Grade 10 · sections A/B · fee heads (Tuition, Admission, Exam,
+Transport, Security Deposit) · expense categories (Salaries, Utilities, Rent, Maintenance, Supplies)
+· leave types · default roles · default message templates · a `voucher`/`receipt`/`admission` number
+sequence.
 
-Non-negotiable: **a school that has just been created must be able to admit a student and generate
-a voucher without configuring anything.** Defaults are a product feature.
+Non-negotiable: **a school that has just been created must be able to admit a student and generate a
+voucher without configuring anything.** Defaults are a product feature.

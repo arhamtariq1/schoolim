@@ -29,7 +29,7 @@ auto-pausing after seven idle days.
 - Real cron, real queues (BullMQ), no cold starts, predictable memory for PDF generation.
 - Connection pooling is straightforward: one process, one pool.
 - Cost: roughly $5/month plus basic server responsibility (updates, monitoring, TLS). Mitigated by
-  Docker + Caddy and a written runbook.
+  a process manager, Caddy for TLS, and a written runbook.
 - Deployment is slightly more involved than a push to Vercel.
 
 ## Alternatives

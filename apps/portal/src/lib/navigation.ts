@@ -1,4 +1,5 @@
 import type { Permission } from '@ilm/contracts';
+import type { Route } from 'next';
 
 /**
  * The sidebar, generated from permissions.
@@ -21,7 +22,7 @@ import type { Permission } from '@ilm/contracts';
  */
 
 export interface NavItem {
-  readonly href: string;
+  readonly href: Route;
   readonly label: string;
   /** The icon's exported name in `@ilm/ui/icons`. */
   readonly icon: string;

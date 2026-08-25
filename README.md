@@ -55,11 +55,9 @@ Requires Node 22 and pnpm 10 (see `.nvmrc`).
 ```bash
 pnpm install
 
-# Start PostgreSQL. Two options — both give the same database, port, roles and
-# passwords, so .env is correct either way.
-pnpm db:up          # Docker Compose (the documented default)
-pnpm db:local       # a project-owned PostgreSQL from node_modules, needing no
-                    # Docker. Leave it running, like `docker compose up`.
+# Start PostgreSQL. Runs from node_modules — no Docker, no install, no admin.
+# Leave it running in its own terminal.
+pnpm db
 
 cp .env.example .env
 
@@ -72,9 +70,10 @@ pnpm --filter @ilm/portal dev                   # portal   :3000
 pnpm --filter @ilm/admin dev                    # platform :3001
 ```
 
-`pnpm db:local` exists because Docker Desktop needs the WSL 2 backend, which is not available on
-every Windows machine. It is a fallback, not a replacement — Docker Compose stays the documented
-default and is what CI uses.
+There is no Docker in this project. `pnpm db` runs a real PostgreSQL from a binary in `node_modules`
+for local development and tests. **Deployed environments point `DATABASE_URL` at Supabase today and
+Railway later** (docs/13 §3) — Supabase is used as plain PostgreSQL only, no Auth and no client SDK,
+which is what makes that move a `pg_dump` rather than a rewrite.
 
 **Tenants resolve from the hostname**, so the portal is reached at `{slug}.localhost:3000`, never at
 `localhost:3000`. A login page that made you pick a school would leak the list of schools.

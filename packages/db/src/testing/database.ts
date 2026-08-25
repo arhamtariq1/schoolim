@@ -20,7 +20,7 @@ function required(name: string): string {
   if (value === undefined || value === '') {
     throw new Error(
       `${name} is not set. The isolation suites require a real PostgreSQL; they must never be skipped. ` +
-        'Start one with `pnpm db:local` (or `pnpm db:up` for Docker) and re-run.',
+        'Start one with `pnpm db` and re-run.',
     );
   }
   return value;

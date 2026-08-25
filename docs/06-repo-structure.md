@@ -20,8 +20,8 @@ ilm/
 │       ├── typescript/
 │       └── tailwind/
 ├── tooling/
-│   ├── scripts/                 db reset, seed-demo-school, generate-openapi, check-rls
-│   └── docker/                  docker-compose for local Postgres + Redis + MailHog
+│   ├── scripts/                 local-db, verify-rls-role, seed-demo-school, generate-openapi
+│   └── sql/                     role bootstrap applied to every environment
 ├── docs/                        ← this planning set. Kept in-repo, updated as decisions change.
 ├── .github/workflows/
 ├── turbo.json
@@ -47,6 +47,7 @@ ilm/
 ```
 
 Hard rules:
+
 - **`@ilm/db` is imported only by `apps/api`.** No Next.js app ever imports Prisma. If it did, the
   Prisma client would be bundled into a frontend and tenant enforcement would be bypassable.
 - **`@ilm/contracts` imports nothing from `@ilm/db`.** It defines shapes independently, so the API
@@ -138,6 +139,7 @@ apps/portal/src/
 ```
 
 ### `features/*/api` pattern
+
 One file per resource, hooks only. This is where the contract meets the UI:
 
 ```ts
@@ -154,7 +156,7 @@ export function useVouchers(filters: VoucherFilters) {
   return useQuery({
     queryKey: voucherKeys.list(filters),
     queryFn: () => api.get('/fees/vouchers', { query: voucherListQuery.parse(filters) }),
-    placeholderData: keepPreviousData,   // no grid flicker when filters change
+    placeholderData: keepPreviousData, // no grid flicker when filters change
   });
 }
 ```
@@ -167,32 +169,33 @@ unreliable.
 ```jsonc
 {
   "tasks": {
-    "build":      { "dependsOn": ["^build"], "outputs": [".next/**", "!.next/cache/**", "dist/**"] },
-    "dev":        { "cache": false, "persistent": true },
-    "lint":       { "dependsOn": ["^build"] },
-    "typecheck":  { "dependsOn": ["^build"] },
-    "test":       { "dependsOn": ["^build"], "outputs": ["coverage/**"] },
-    "test:e2e":   { "dependsOn": ["build"], "cache": false },
-    "db:generate":{ "cache": false },
-    "db:migrate": { "cache": false }
-  }
+    "build": { "dependsOn": ["^build"], "outputs": [".next/**", "!.next/cache/**", "dist/**"] },
+    "dev": { "cache": false, "persistent": true },
+    "lint": { "dependsOn": ["^build"] },
+    "typecheck": { "dependsOn": ["^build"] },
+    "test": { "dependsOn": ["^build"], "outputs": ["coverage/**"] },
+    "test:e2e": { "dependsOn": ["build"], "cache": false },
+    "db:generate": { "cache": false },
+    "db:migrate": { "cache": false },
+  },
 }
 ```
 
 ## 6. Environments
 
-| Env | Branch | DB | URL |
-|---|---|---|---|
-| local | any | Docker Postgres 17 | `localhost:3000/3001/4000` |
-| preview | PR | shared preview DB, per-PR tenant seed | Vercel preview URLs |
-| staging | `develop` | dedicated | `staging.ilm.pk` |
-| production | `main` | dedicated + PITR | `ilm.pk` |
+| Env        | Branch    | DB                                    | URL                                         |
+| ---------- | --------- | ------------------------------------- | ------------------------------------------- |
+| local      | any       | `pnpm db` PostgreSQL                  | `{slug}.localhost:3000` · `:3001` · `:4000` |
+| preview    | PR        | shared preview DB, per-PR tenant seed | Vercel preview URLs                         |
+| staging    | `develop` | dedicated                             | `staging.ilm.pk`                            |
+| production | `main`    | dedicated + PITR                      | `ilm.pk`                                    |
 
 Production deploys are **manually approved**, always. This product moves money.
 
 ## 7. Conventions
 
-- **Files:** `kebab-case.ts`. React components `PascalCase.tsx`. Tests `*.spec.ts` (unit) / `*.e2e-spec.ts`.
+- **Files:** `kebab-case.ts`. React components `PascalCase.tsx`. Tests `*.spec.ts` (unit) /
+  `*.e2e-spec.ts`.
 - **Branches:** `feat/fees-voucher-generation`, `fix/attendance-timezone`, `chore/…`.
 - **Commits:** Conventional Commits with a scope — `feat(fees): idempotent monthly voucher run`.
 - **PRs:** one module or one vertical slice. If the diff touches four modules, it is four PRs.

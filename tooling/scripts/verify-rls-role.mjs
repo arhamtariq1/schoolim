@@ -33,7 +33,9 @@ function toPgUrl(url) {
 const checks = [];
 function check(name, passed, detail) {
   checks.push({ name, passed, detail });
-  console.error(`${passed ? 'PASS' : 'FAIL'}  ${name}${detail === undefined ? '' : ` — ${detail}`}`);
+  console.error(
+    `${passed ? 'PASS' : 'FAIL'}  ${name}${detail === undefined ? '' : ` — ${detail}`}`,
+  );
 }
 
 const owner = new Client({ connectionString: toPgUrl(OWNER_URL) });
@@ -109,9 +111,10 @@ try {
   // --- 4. Raw SQL cannot reach across ---------------------------------------
   // This is the case the Prisma extension could never catch: a hand-written
   // query, or a SQL injection, explicitly asking for another tenant.
-  const crossTenant = await app.query(`SELECT count(*)::int AS n FROM ${TABLE} WHERE school_id = $1`, [
-    schoolB,
-  ]);
+  const crossTenant = await app.query(
+    `SELECT count(*)::int AS n FROM ${TABLE} WHERE school_id = $1`,
+    [schoolB],
+  );
   check(
     'raw SQL naming another tenant returns nothing',
     crossTenant.rows[0]?.n === 0,
@@ -153,10 +156,9 @@ try {
   // --- 6. FORCE matters: the owner is subject to its own policies -----------
   // Without FORCE, a table owner silently bypasses RLS. Migrations run as the
   // owner, so this must be explicit.
-  const forced = await owner.query(
-    `SELECT relforcerowsecurity FROM pg_class WHERE relname = $1`,
-    [TABLE],
-  );
+  const forced = await owner.query(`SELECT relforcerowsecurity FROM pg_class WHERE relname = $1`, [
+    TABLE,
+  ]);
   check('FORCE ROW LEVEL SECURITY is set', forced.rows[0]?.relforcerowsecurity === true);
 
   // --- 7. The app role holds no DDL grant -----------------------------------

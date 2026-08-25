@@ -3,7 +3,7 @@
  *
  * The product name is decision D4 and is still open (docs/15 Part C). The
  * placeholder `ilm` is permitted ONLY in the npm scope, the cookie prefix, the
- * local database name and Docker container names. Every user-visible string —
+ * and the local database name. Every user-visible string —
  * UI copy, emails, PDFs, seeded message templates — reads from here, so
  * renaming the product is one edit rather than a find-and-replace across the
  * repository. CI greps for violations.

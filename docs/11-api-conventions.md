@@ -13,9 +13,9 @@ https://api.ilm.pk/api/v1/{module}/{resource}
 - Version in the path. `v1` stays until a breaking change is genuinely unavoidable.
 - Resources are plural nouns, `kebab-case`: `/fees/fee-plans`, `/fees/generation-runs`.
 - Non-CRUD operations are sub-resources or explicit action endpoints:
-  `POST /fees/vouchers/:id/cancel`, `POST /fees/generation-runs/:id/reverse`.
-  Verbs are allowed when the operation is genuinely not CRUD — do not contort a state change into
-  a `PATCH` that hides what happened.
+  `POST /fees/vouchers/:id/cancel`, `POST /fees/generation-runs/:id/reverse`. Verbs are allowed when
+  the operation is genuinely not CRUD — do not contort a state change into a `PATCH` that hides what
+  happened.
 - Platform routes are namespaced: `/api/v1/platform/*`.
 
 ## 2. The contract package
@@ -25,7 +25,13 @@ https://api.ilm.pk/api/v1/{module}/{resource}
 import { z } from 'zod';
 
 export const voucherStatus = z.enum([
-  'DRAFT','ISSUED','PARTIALLY_PAID','PAID','OVERDUE','CANCELLED','WAIVED',
+  'DRAFT',
+  'ISSUED',
+  'PARTIALLY_PAID',
+  'PAID',
+  'OVERDUE',
+  'CANCELLED',
+  'WAIVED',
 ]);
 
 export const voucherDto = z.object({
@@ -51,8 +57,8 @@ export const voucherListQuery = paginated.extend({
   sectionId: z.uuid().optional(),
   status: voucherStatus.array().optional(),
   q: z.string().trim().min(1).optional(),
-  sort: z.enum(['issueDate','dueDate','balance','student']).default('dueDate'),
-  order: z.enum(['asc','desc']).default('asc'),
+  sort: z.enum(['issueDate', 'dueDate', 'balance', 'student']).default('dueDate'),
+  order: z.enum(['asc', 'desc']).default('asc'),
 });
 ```
 
@@ -84,7 +90,7 @@ Every successful response:
 }
 ```
 
-`meta.aggregates` is why lists carry an envelope: the total outstanding across the *filtered* set is
+`meta.aggregates` is why lists carry an envelope: the total outstanding across the _filtered_ set is
 needed on the same screen as the rows, and a second round-trip for it is both slower and racy.
 
 ---
@@ -109,9 +115,9 @@ needed on the same screen as the rows, and a second round-trip for it is both sl
 - `code` is a stable machine constant declared in `@ilm/contracts/errors.ts`. The frontend switches
   on `code`, never on `title` or `detail`.
 - `detail` is written for the person reading it — a school accountant, not a developer.
-- Status usage: `400` validation · `401` unauthenticated · `403` permission denied ·
-  `404` not found **or hidden by tenant/scope** · `409` state conflict · `422` business rule
-  violation · `429` rate limited · `500` unexpected.
+- Status usage: `400` validation · `401` unauthenticated · `403` permission denied · `404` not found
+  **or hidden by tenant/scope** · `409` state conflict · `422` business rule violation · `429` rate
+  limited · `500` unexpected.
 
 **Cross-tenant access returns `404`, never `403`.** A `403` confirms the record exists.
 
@@ -175,14 +181,14 @@ POST /api/v1/students/bulk/assign-fee-plan
 
 ## 9. Rate limits
 
-| Scope | Limit |
-|---|---|
-| Global per IP | 300 req/min |
-| Per authenticated user | 600 req/min |
-| Auth endpoints | 10/min per IP + per-account exponential backoff |
-| Exports | 10/hour per user |
-| Bulk messaging | per-plan quota |
-| Job endpoints | 1 concurrent run per (school, job) — advisory lock |
+| Scope                  | Limit                                              |
+| ---------------------- | -------------------------------------------------- |
+| Global per IP          | 300 req/min                                        |
+| Per authenticated user | 600 req/min                                        |
+| Auth endpoints         | 10/min per IP + per-account exponential backoff    |
+| Exports                | 10/hour per user                                   |
+| Bulk messaging         | per-plan quota                                     |
+| Job endpoints          | 1 concurrent run per (school, job) — advisory lock |
 
 Responses carry `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset`; `429` includes
 `Retry-After`.
@@ -191,9 +197,9 @@ Responses carry `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset`; `42
 
 ## 10. Webhooks (outbound, v2)
 
-Schools can subscribe to `payment.received`, `voucher.generated`, `student.admitted`.
-Signed with HMAC-SHA256 over the raw body (`X-Ilm-Signature`), timestamped to prevent replay,
-retried with exponential backoff for 24 hours, with a delivery log in the school's settings.
+Schools can subscribe to `payment.received`, `voucher.generated`, `student.admitted`. Signed with
+HMAC-SHA256 over the raw body (`X-Ilm-Signature`), timestamped to prevent replay, retried with
+exponential backoff for 24 hours, with a delivery log in the school's settings.
 
 ## 11. Inbound webhooks (payment providers)
 

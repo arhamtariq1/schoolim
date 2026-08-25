@@ -2,15 +2,11 @@
 /**
  * Project-owned local PostgreSQL.
  *
- * The documented local stack is Docker Compose (`docker-compose.yml`), and that
- * remains the default. This script is the fallback for a machine where Docker
- * cannot run — on Windows without the WSL 2 backend, for instance — and for CI
- * jobs that would rather not pay for a container.
+ * Runs a real PostgreSQL server from a binary in `node_modules`. No Docker, no
+ * system install, no admin rights — `pnpm db` and it is up.
  *
- * It runs a real PostgreSQL server from a binary in `node_modules`, on the same
- * port, with the same database name, roles and passwords as the Compose stack,
- * so `.env.example` is correct either way and nothing downstream has to care
- * which one is running.
+ * This is for local development and tests only. Deployed environments point
+ * DATABASE_URL at Supabase today and Railway later (docs/13 §3).
  *
  * Usage:
  *   node tooling/scripts/local-db.mjs start
@@ -30,12 +26,20 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const dataDir = join(repoRoot, '.local', 'pgdata');
 const pidFile = join(repoRoot, '.local', 'pg.json');
 
-/** Must match docker-compose.yml and .env.example exactly. */
+/**
+ * Must match .env exactly.
+ *
+ * The port is overridable because Windows can leave a stale LISTEN socket
+ * behind after a hard kill, and hard-coding one port makes that unrecoverable
+ * without a reboot.
+ */
+const PORT = Number(process.env.LOCAL_DB_PORT ?? 5433);
+
 const CONFIG = {
   databaseDir: dataDir,
   user: 'ilm',
   password: 'ilm_local_dev',
-  port: 5433,
+  port: PORT,
   persistent: true,
 };
 
@@ -44,7 +48,7 @@ const DATABASE_NAME = 'ilm';
 /**
  * The application role. Deliberately NOBYPASSRLS and holding no DDL grant, so
  * it could not create a table or a policy even if a bug tried (docs/04 s2).
- * Kept byte-identical to tooling/docker/init/01-app-role.sql.
+ * Kept in step with tooling/sql/01-app-role.sql.
  */
 const APP_ROLE_SQL = `
 DO $$
@@ -108,7 +112,7 @@ async function start() {
   console.error('ready — leave this process running; Ctrl-C or `local-db.mjs stop` to shut down');
 
   // The server runs as a child of this process, so this process must stay
-  // alive. Run it in a background terminal, the way `docker compose up` would.
+  // alive. Run it in its own terminal and leave it there.
   const shutdown = () => {
     void pg
       .stop()

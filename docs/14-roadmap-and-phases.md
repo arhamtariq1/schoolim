@@ -24,7 +24,7 @@ _Goal: a vertical slice that proves the architecture. No features._
 
 - [x] Turborepo + pnpm; `apps/{api,portal,admin}`; `packages/{contracts,db,ui,utils,config}`
 - [x] Shared eslint/prettier/tsconfig/tailwind presets; `eslint-plugin-boundaries` configured
-- [x] Docker Compose: Postgres 17, Redis, MailHog
+- [x] Local PostgreSQL via `pnpm db` (no Docker — see `15` Part B)
 - [x] Prisma schema v0: `schools`, `users`, `user_roles`, `sessions`, `audit_logs`
 - [x] **RLS on every table + the migration checklist CI gate**
 - [x] CLS tenant context + `TenantPrisma` + the Prisma tenant extension

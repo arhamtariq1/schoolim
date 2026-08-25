@@ -41,20 +41,20 @@
 
 ## 2. Why this shape
 
-**Why a separate NestJS API instead of Next.js route handlers / server actions only?**
-Because a school portal is not a website. You need long-running batch jobs, scheduled work, webhook
-endpoints from banks, a stable versioned API for a future mobile app, and — most importantly — one
-place where tenant isolation and RBAC are enforced. Spreading that logic across server actions is
-exactly how the previous portal became unmaintainable.
+**Why a separate NestJS API instead of Next.js route handlers / server actions only?** Because a
+school portal is not a website. You need long-running batch jobs, scheduled work, webhook endpoints
+from banks, a stable versioned API for a future mobile app, and — most importantly — one place where
+tenant isolation and RBAC are enforced. Spreading that logic across server actions is exactly how
+the previous portal became unmaintainable.
 
 **Why two Next apps and not one?** Blast radius. `apps/admin` talks to `/api/v1/platform/*`
 endpoints that are unreachable with a tenant session. A privilege-escalation bug in the school
 portal cannot reach super-admin capability, because those routes reject any token whose
 `type !== "platform"`.
 
-**Why a monorepo?** One TypeScript type flows from Prisma schema → zod contract → NestJS DTO →
-React Query hook → form. Renaming a field breaks the build in the right place. For a small team this
-is the single biggest maintainability lever available.
+**Why a monorepo?** One TypeScript type flows from Prisma schema → zod contract → NestJS DTO → React
+Query hook → form. Renaming a field breaks the build in the right place. For a small team this is
+the single biggest maintainability lever available.
 
 **Why not tRPC?** We want a public, documented, versioned REST API — schools will ask for
 integrations, a mobile app is coming, and bank webhooks are REST. We get tRPC-class type safety
@@ -86,12 +86,14 @@ audit/        append-only audit trail (cross-cutting, write-mostly)
 shared/       guards, interceptors, filters, decorators, prisma, cls, config
 ```
 
-**Dependency rule.** A module may depend on `shared/` and on modules *below it in the declared layer
-order*. `fees` may read `people`; `people` must never import `fees`. Cross-module reads go through
+**Dependency rule.** A module may depend on `shared/` and on modules _below it in the declared layer
+order_. `fees` may read `people`; `people` must never import `fees`. Cross-module reads go through
 the other module's exported service, never through its Prisma models directly. Enforced by
 `eslint-plugin-boundaries` in CI, not by good intentions.
 
-Layer order (top may use bottom): `reporting` → `workflow`/`comms` → `fees`/`finance`/`attendance`/`exams` → `admissions` → `people` → `academics` → `tenancy` → `identity` → `shared`.
+Layer order (top may use bottom): `reporting` → `workflow`/`comms` →
+`fees`/`finance`/`attendance`/`exams` → `admissions` → `people` → `academics` → `tenancy` →
+`identity` → `shared`.
 
 ## 4. Request lifecycle — the critical path
 
@@ -162,11 +164,11 @@ src/
 
 ## 6. Multi-tenant routing
 
-| Phase | Scheme | Notes |
-|---|---|---|
-| 0–1 | `app.ilm.pk/s/{slug}/…` | Zero DNS work; middleware puts the slug in a header |
-| 2+ | `{slug}.ilm.pk` | Wildcard DNS + wildcard TLS; middleware rewrites internally to `/s/{slug}` |
-| v2 | Custom domain per school | `portal.theirschool.edu.pk` via CNAME; stored in `school_domains` |
+| Phase | Scheme                   | Notes                                                                      |
+| ----- | ------------------------ | -------------------------------------------------------------------------- |
+| 0–1   | `app.ilm.pk/s/{slug}/…`  | Zero DNS work; middleware puts the slug in a header                        |
+| 2+    | `{slug}.ilm.pk`          | Wildcard DNS + wildcard TLS; middleware rewrites internally to `/s/{slug}` |
+| v2    | Custom domain per school | `portal.theirschool.edu.pk` via CNAME; stored in `school_domains`          |
 
 `middleware.ts` resolves the tenant slug, verifies that the session's `schoolId` matches, and sets
 `x-school-slug` on the upstream request.
@@ -188,15 +190,15 @@ the original result. This is not optional — it is what prevents double-billing
 
 ## 8. Cross-cutting concerns
 
-| Concern | Mechanism |
-|---|---|
-| Tenant context | `nestjs-cls` AsyncLocalStorage, set in `TenantGuard`, read by `TenantPrisma` and the logger |
-| Audit | `AuditInterceptor` on all non-GET routes → append-only `audit_logs`; financial modules also emit domain events |
-| Logging | `pino` structured JSON; every line carries `requestId`, `schoolId`, `userId` |
-| Errors | Domain error classes → `AllExceptionsFilter` → `application/problem+json` |
-| Config | `zod`-validated env at boot; the process refuses to start on an invalid env |
-| Feature flags | `school_features` table + `@RequireFeature()` decorator + `useFeature()` hook |
-| Files | Presigned upload straight to object storage; the API only issues and validates the grant |
-| Time | Stored `timestamptz` in UTC, rendered in the school's timezone (`Asia/Karachi` default). Calendar-only academic dates use `date`. |
-| Money | `numeric(14,2)` in Postgres, **integer minor units (paisa) in application code**. Never a JS float, never `Number` arithmetic on rupees. |
-| i18n | `next-intl` from day one, even while English-only. Retrofitting RTL Urdu later costs 10× more. |
+| Concern        | Mechanism                                                                                                                                |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Tenant context | `nestjs-cls` AsyncLocalStorage, set in `TenantGuard`, read by `TenantPrisma` and the logger                                              |
+| Audit          | `AuditInterceptor` on all non-GET routes → append-only `audit_logs`; financial modules also emit domain events                           |
+| Logging        | `pino` structured JSON; every line carries `requestId`, `schoolId`, `userId`                                                             |
+| Errors         | Domain error classes → `AllExceptionsFilter` → `application/problem+json`                                                                |
+| Config         | `zod`-validated env at boot; the process refuses to start on an invalid env                                                              |
+| Feature flags  | `school_features` table + `@RequireFeature()` decorator + `useFeature()` hook                                                            |
+| Files          | Presigned upload straight to object storage; the API only issues and validates the grant                                                 |
+| Time           | Stored `timestamptz` in UTC, rendered in the school's timezone (`Asia/Karachi` default). Calendar-only academic dates use `date`.        |
+| Money          | `numeric(14,2)` in Postgres, **integer minor units (paisa) in application code**. Never a JS float, never `Number` arithmetic on rupees. |
+| i18n           | `next-intl` from day one, even while English-only. Retrofitting RTL Urdu later costs 10× more.                                           |

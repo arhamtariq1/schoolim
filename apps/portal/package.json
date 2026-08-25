@@ -12,12 +12,16 @@
     "clean": "rimraf .next .turbo *.tsbuildinfo"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
     "@ilm/contracts": "workspace:*",
     "@ilm/ui": "workspace:*",
     "@ilm/utils": "workspace:*",
+    "@tanstack/react-query": "^5.102.3",
     "next": "^16.3.2",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "react-hook-form": "^7.86.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@ilm/config": "workspace:*",

@@ -75,7 +75,7 @@ Decisions the implementation forced. Each is reversible; none is silent.
 | `jose` loaded through a **cached dynamic import**                                        | It is ESM-only; a static import in a CJS file emits `require` and fails at runtime                                                                                                                                   | Same as the ESM item                                  |
 | **`fastify` pinned by a pnpm override**                                                  | Two copies resolved, so plugin type augmentation applied to a different instance than Nest used                                                                                                                      | Removing the override once the dependency tree agrees |
 | `eslint-plugin-boundaries` layer rules replaced with **`no-restricted-imports`**         | Its `dependencies` rule governs imports _between_ elements; our layers are filename suffixes inside one module folder, so it ignored the violation by design. Verified by writing the violation and watching it pass | Restructuring modules into per-layer folders          |
-| **Portable PostgreSQL fallback** (`pnpm db:local`) added alongside Docker Compose        | Docker Desktop cannot start on the dev machine: the WSL 2 kernel is missing and `wsl --update` needs admin plus possibly a BIOS change                                                                               | Docker working                                        |
+| **Docker removed entirely**; local PostgreSQL runs from `node_modules` via `pnpm db`     | Docker Desktop cannot start on the dev machine (WSL 2 kernel missing), and you asked for the simpler path. Deployed environments use Supabase, then Railway, so nothing needs a container                            | Re-adding a compose file                              |
 | Test fixtures use a **neutral example domain**                                           | Baking a placeholder product name into assertions is what the D4 containment rule exists to prevent                                                                                                                  | —                                                     |
 
 **One divergence left open, deliberately.** `docs/12` §1 mandates `exactOptionalPropertyTypes: true`
@@ -102,9 +102,9 @@ These change the work materially. Everything else in these documents can proceed
 
 > **D4 containment rule.** Because the name is deferred but the build is not, the placeholder must
 > stay renameable by one find-and-replace. `ilm` may appear **only** in: the npm scope (`@ilm/*`),
-> the cookie prefix, the local database name, and the Docker container names. It must **never** be
-> hard-coded in UI copy, email templates, PDF templates, or the seeded message templates — those
-> read from a single `BRAND` constant in `@ilm/utils`. Enforced by a CI grep.
+> the cookie prefix and the local database name. It must **never** be hard-coded in UI copy, email
+> templates, PDF templates, or the seeded message templates — those read from a single `BRAND`
+> constant in `@ilm/utils`. Enforced by a CI grep.
 
 ### D1 — API hosting for Phase 0 _(blocks the first deploy, not the build)_
 

@@ -2,10 +2,9 @@
 
 How a school's money actually reaches your bank account, and what the product must do to support it.
 
-`modules/super-admin.md` §2.4 already specifies the *software*: subscription lifecycle
-(trial → active → past due → suspended → churned), dunning, invoices, manual payment recording.
-This document specifies the *business* around it — the part with no code, that nonetheless blocks
-the first rupee.
+`modules/super-admin.md` §2.4 already specifies the _software_: subscription lifecycle (trial →
+active → past due → suspended → churned), dunning, invoices, manual payment recording. This document
+specifies the _business_ around it — the part with no code, that nonetheless blocks the first rupee.
 
 > ⚖️ **Not tax or legal advice.** Rates and thresholds change with every Finance Act and differ by
 > province. Every ⚖️ item needs a Pakistani tax practitioner to confirm — one session, before the
@@ -32,15 +31,15 @@ sellable product sitting idle waiting for a bank account.
 
 ## 2. Entity — the one decision here
 
-| Option | Setup | Reality |
-|---|---|---|
-| **Sole proprietorship** | NTN + a business bank account. Days, not weeks. Cheapest. | **Unlimited personal liability.** You hold children's data and school financial records; a single S1 incident reaches your personal assets. Fine to *start*, not to stay. |
+| Option                            | Setup                                                        | Reality                                                                                                                                                                       |
+| --------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Sole proprietorship**           | NTN + a business bank account. Days, not weeks. Cheapest.    | **Unlimited personal liability.** You hold children's data and school financial records; a single S1 incident reaches your personal assets. Fine to _start_, not to stay.     |
 | **SMC-Private Limited** (SECP) ⚖️ | Single-member company. Weeks. Annual filings and an auditor. | **Limited liability** — the reason to bother. Schools also take a registered company more seriously, and some institutional buyers cannot contract with an individual at all. |
-| Partnership / Pvt Ltd | — | Only if you take a co-founder or investment. |
+| Partnership / Pvt Ltd             | —                                                            | Only if you take a co-founder or investment.                                                                                                                                  |
 
 **Recommendation: sole proprietorship to reach your first two or three paying schools, then SMC-Pvt
 Ltd before you scale.** Registering a company before there is revenue buys compliance overhead and
-no protection you actually need yet. Registering it *after* the tenth school means migrating
+no protection you actually need yet. Registering it _after_ the tenth school means migrating
 contracts and a bank account while operating — do it at the Phase 5 boundary.
 
 **The liability clause in your ToS (`17` §3.1) is doing a lot of work while you are a sole
@@ -53,16 +52,16 @@ template.
 
 Three separate taxes, commonly confused. ⚖️ Confirm all rates and thresholds.
 
-| Tax | Who | What it means |
-|---|---|---|
-| **Income tax** (federal, FBR) | You | On profit. Annual return. Requires an NTN. |
-| **Sales tax on services** (**provincial** — PRA Punjab, SRB Sindh, KPRA, BRA) | You charge the school | Software/SaaS services are taxable services. The rate and any reduced IT-services rate differ by province and change ⚖️. **Registration is provincial**, based on where you operate — and if you sell across provinces this gets genuinely complicated. Ask the practitioner about this specifically. |
-| **Withholding tax on services** (federal, s.153) ⚖️ | The **school deducts it from your payment** | The one that surprises people. See below. |
+| Tax                                                                           | Who                                         | What it means                                                                                                                                                                                                                                                                                         |
+| ----------------------------------------------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Income tax** (federal, FBR)                                                 | You                                         | On profit. Annual return. Requires an NTN.                                                                                                                                                                                                                                                            |
+| **Sales tax on services** (**provincial** — PRA Punjab, SRB Sindh, KPRA, BRA) | You charge the school                       | Software/SaaS services are taxable services. The rate and any reduced IT-services rate differ by province and change ⚖️. **Registration is provincial**, based on where you operate — and if you sell across provinces this gets genuinely complicated. Ask the practitioner about this specifically. |
+| **Withholding tax on services** (federal, s.153) ⚖️                           | The **school deducts it from your payment** | The one that surprises people. See below.                                                                                                                                                                                                                                                             |
 
 ### Withholding tax has a direct engineering consequence
 
-A registered school paying an invoice for services will commonly **deduct withholding tax at source**
-and remit it to FBR on your behalf, giving you a tax certificate. The practical effect:
+A registered school paying an invoice for services will commonly **deduct withholding tax at
+source** and remit it to FBR on your behalf, giving you a tax certificate. The practical effect:
 
 > You invoice PKR 25,000. The school transfers PKR 22,500. **Neither figure is wrong.**
 
@@ -72,17 +71,17 @@ spent months building.
 
 **Therefore `platform_invoices` must model, in minor units:**
 
-| Field | Meaning |
-|---|---|
-| `grossMinor` | What you invoiced |
-| `salesTaxMinor` | Provincial sales tax charged on top |
-| `withholdingMinor` | Deducted by the school at source |
-| `receivedMinor` | What actually landed in your account |
-| `writeOffMinor` | Rounding, bank charges, negotiated shortfall |
+| Field              | Meaning                                      |
+| ------------------ | -------------------------------------------- |
+| `grossMinor`       | What you invoiced                            |
+| `salesTaxMinor`    | Provincial sales tax charged on top          |
+| `withholdingMinor` | Deducted by the school at source             |
+| `receivedMinor`    | What actually landed in your account         |
+| `writeOffMinor`    | Rounding, bank charges, negotiated shortfall |
 
-**Invariant:** `received + withholding + writeOff = gross + salesTax`.
-An invoice settles when that balances — **not** when `received == gross`. A tax certificate is an
-attachable document on the invoice, because you need it at your own year end.
+**Invariant:** `received + withholding + writeOff = gross + salesTax`. An invoice settles when that
+balances — **not** when `received == gross`. A tax certificate is an attachable document on the
+invoice, because you need it at your own year end.
 
 This is the same discipline as the fee engine (`12` R3/R4): integer minor units, append-only,
 reconciliation by invariant rather than by eyeball. Reuse the pattern; do not invent a second one.
@@ -93,18 +92,18 @@ reconciliation by invariant rather than by eyeball. Reuse the pattern; do not in
 
 Design for the market as it is, not as you would like it.
 
-| Method | Likelihood | Handling |
-|---|---|---|
+| Method                   | Likelihood                                           | Handling                                                                                          |
+| ------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | **Bank transfer / IBFT** | **Dominant.** Expect this to be ~all of it at first. | Manual recording in super-admin. Match by reference; expect the reference to be wrong or missing. |
-| **Cheque** | Common with older institutions | Record on deposit, not on receipt. Add a clearing status. |
-| **Cash** | Small schools, uncomfortably often | Receipt required. Keep this out of the product's happy path. |
-| Card / recurring | Rare for B2B here | Not worth building in v1. |
+| **Cheque**               | Common with older institutions                       | Record on deposit, not on receipt. Add a clearing status.                                         |
+| **Cash**                 | Small schools, uncomfortably often                   | Receipt required. Keep this out of the product's happy path.                                      |
+| Card / recurring         | Rare for B2B here                                    | Not worth building in v1.                                                                         |
 
 **Consequences, all cheap now and expensive later:**
 
 1. **Manual payment recording is the primary flow, not the fallback.** `super-admin.md:60` already
    says this — it is correct, and it should stay correct through Phase 8.
-2. **Nothing auto-suspends.** Dunning escalates to a *reminder*, then to a **read-only mode you
+2. **Nothing auto-suspends.** Dunning escalates to a _reminder_, then to a **read-only mode you
    trigger by hand** (`super-admin.md:63`). An automated suspension will eventually fire on a school
    that paid last Thursday and whose transfer you have not yet recorded.
 3. **Annual billing, invoiced before the session starts.** Schools budget by academic session and
@@ -121,17 +120,17 @@ Design for the market as it is, not as you would like it.
 
 Pricing is deferred (D2), but the **cost floor** is not a decision, and you cannot price without it.
 
-| Cost | Nature | Note |
-|---|---|---|
-| Hosting (Vercel Pro, Postgres, Redis, storage) | Fixed, ~$25–60/mo | Amortises across all schools. Effectively free per school. |
-| **WhatsApp / SMS** | **Per message — the only cost that scales with usage** | 500 students × several notices/month, per school. **This is the entire variable cost of the business.** |
-| Sentry, uptime, email | Fixed, small | |
-| **Your support time** | **The real cost** | R9 in `15`. A school that needs 3 hours/month is unprofitable at almost any subscription price. |
+| Cost                                           | Nature                                                 | Note                                                                                                    |
+| ---------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| Hosting (Vercel Pro, Postgres, Redis, storage) | Fixed, ~$25–60/mo                                      | Amortises across all schools. Effectively free per school.                                              |
+| **WhatsApp / SMS**                             | **Per message — the only cost that scales with usage** | 500 students × several notices/month, per school. **This is the entire variable cost of the business.** |
+| Sentry, uptime, email                          | Fixed, small                                           |                                                                                                         |
+| **Your support time**                          | **The real cost**                                      | R9 in `15`. A school that needs 3 hours/month is unprofitable at almost any subscription price.         |
 
 **Two rules that follow directly:**
 
 - **Message quotas per plan, from the day messaging ships (Phase 6).** `message_log.cost_minor`
-  already exists; the quota and the soft/hard cap must ship *with* the feature, never retrofitted.
+  already exists; the quota and the soft/hard cap must ship _with_ the feature, never retrofitted.
   R11 is the risk of getting this wrong.
 - **Track support minutes per school from the first customer.** Not to bill for them — to identify
   the school that is quietly costing you more than it pays, while there is still time to fix the
@@ -162,16 +161,18 @@ impossible.
 
 ## 7. What this adds to the build
 
-| Where | Item | Phase |
-|---|---|---|
-| Business ⚖️ | Entity chosen, NTN, provincial sales-tax registration, business bank account | **Start in P2** |
-| Business ⚖️ | One session with a tax practitioner: sales tax by province, withholding, invoicing format | Before the first invoice |
-| `07` / super-admin | `platform_invoices` with the five money fields and the settlement invariant (§3) | P5 |
-| `07` / super-admin | `school_agreements` versioned acceptance (`17` §3) | P5 |
-| Super-admin | Invoice PDF with NTN + sales-tax number + gapless invoice sequence | P5 |
-| Super-admin | Withholding-tax certificate as an attachable document | P5 |
-| Super-admin | Support-minutes-per-school tracking | P5 |
-| Comms | Per-plan message quotas with soft and hard caps, shipped **with** messaging | P6 |
-| Pricing | **D2 — deferred by decision.** Needed before P5 exit. | P5 |
+| Where              | Item                                                                                      | Phase                    |
+| ------------------ | ----------------------------------------------------------------------------------------- | ------------------------ |
+| Business ⚖️        | Entity chosen, NTN, provincial sales-tax registration, business bank account              | **Start in P2**          |
+| Business ⚖️        | One session with a tax practitioner: sales tax by province, withholding, invoicing format | Before the first invoice |
+| `07` / super-admin | `platform_invoices` with the five money fields and the settlement invariant (§3)          | P5                       |
+| `07` / super-admin | `school_agreements` versioned acceptance (`17` §3)                                        | P5                       |
+| Super-admin        | Invoice PDF with NTN + sales-tax number + gapless invoice sequence                        | P5                       |
+| Super-admin        | Withholding-tax certificate as an attachable document                                     | P5                       |
+| Super-admin        | Support-minutes-per-school tracking                                                       | P5                       |
+| Comms              | Per-plan message quotas with soft and hard caps, shipped **with** messaging               | P6                       |
+| Pricing            | **D2 — deferred by decision.** Needed before P5 exit.                                     | P5                       |
 
-**Sources:** `modules/super-admin.md` §2.4 (subscription lifecycle) · `17-legal-and-compliance.md` §3 (ToS/DPA) · `15-risks-and-open-decisions.md` R9, R11 · ⚖️ FBR and provincial revenue-authority rates to be confirmed with a practitioner at the time of registration.
+**Sources:** `modules/super-admin.md` §2.4 (subscription lifecycle) · `17-legal-and-compliance.md`
+§3 (ToS/DPA) · `15-risks-and-open-decisions.md` R9, R11 · ⚖️ FBR and provincial revenue-authority
+rates to be confirmed with a practitioner at the time of registration.
