@@ -15,11 +15,27 @@
  * Run: node tooling/scripts/verify-rls-role.mjs
  */
 
+import 'dotenv/config';
+
 import { Client } from 'pg';
 
-const OWNER_URL =
-  process.env.DATABASE_ADMIN_URL ?? 'postgresql://ilm:ilm_local_dev@localhost:5433/ilm';
-const APP_URL = process.env.DATABASE_URL ?? 'postgresql://ilm_app:ilm_local_dev@localhost:5433/ilm';
+/**
+ * No fallback URLs, deliberately.
+ *
+ * A default connection string means this gate can quietly run against a
+ * different database than the application uses and still report eleven passes —
+ * which is the one outcome worse than it failing.
+ */
+function required(name) {
+  const value = process.env[name];
+  if (value === undefined || value === '') {
+    throw new Error(`${name} is not set. Copy .env.example to .env, then start a database.`);
+  }
+  return value;
+}
+
+const OWNER_URL = required('DATABASE_ADMIN_URL');
+const APP_URL = required('DATABASE_URL');
 
 const TABLE = 'rls_probe';
 

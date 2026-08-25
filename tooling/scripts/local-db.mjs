@@ -23,7 +23,13 @@ import { fileURLToPath } from 'node:url';
 import EmbeddedPostgres from 'embedded-postgres';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const dataDir = join(repoRoot, '.local', 'pgdata');
+/**
+ * PostgreSQL keys its shared-memory segment by data-directory PATH, so after a
+ * hard kill a fresh directory at the same path still collides with the orphaned
+ * segment ('pre-existing shared memory block is still in use') until reboot.
+ * Overridable so that is recoverable without one.
+ */
+const dataDir = join(repoRoot, '.local', process.env.LOCAL_DB_DIR ?? 'pgdata');
 const pidFile = join(repoRoot, '.local', 'pg.json');
 
 /**
