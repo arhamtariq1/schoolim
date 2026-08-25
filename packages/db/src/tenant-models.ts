@@ -18,6 +18,14 @@ export const TENANT_MODELS = [
   'Invitation',
   'PasswordReset',
   'AuditLog',
+  // Phase 1
+  'AcademicSession',
+  'ClassLevel',
+  'Section',
+  'Student',
+  'Guardian',
+  'StudentGuardian',
+  'Enrollment',
 ] as const;
 
 export type TenantModel = (typeof TENANT_MODELS)[number];

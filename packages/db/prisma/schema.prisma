@@ -123,12 +123,19 @@ model School {
   updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   schoolGroup     SchoolGroup?    @relation(fields: [schoolGroupId], references: [id], onDelete: Restrict)
-  domains         SchoolDomain[]
-  users           User[]
-  userRoles       UserRole[]
-  sessions        Session[]
-  invitations     Invitation[]
-  passwordResets  PasswordReset[]
+  domains          SchoolDomain[]
+  users            User[]
+  userRoles        UserRole[]
+  sessions         Session[]
+  invitations      Invitation[]
+  passwordResets   PasswordReset[]
+  academicSessions AcademicSession[]
+  classLevels      ClassLevel[]
+  schoolSections   Section[]
+  students         Student[]
+  guardians        Guardian[]
+  studentGuardians StudentGuardian[]
+  enrollments      Enrollment[]
 
   @@index([schoolGroupId])
   @@index([status])
@@ -346,4 +353,254 @@ model AuditLog {
   @@index([schoolId, actorUserId, at(sort: Desc)])
   @@index([schoolId, at(sort: Desc)])
   @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Academic structure — Phase 1.
+//
+// **Sessions are the axis of everything** (docs/07 section 3). `sessionId` sits
+// on sections, enrollments, fee assignments, attendance and exams from the
+// first migration that introduces them. That is what makes year rollover a
+// supported operation — clone sections, promote students, clone fee plans —
+// rather than a data migration written under pressure every July.
+// ---------------------------------------------------------------------------
+
+enum SessionStatus {
+  PLANNED
+  ACTIVE
+  CLOSED
+
+  @@map("session_status")
+}
+
+model AcademicSession {
+  id        String        @id @default(uuid(7)) @db.Uuid
+  schoolId  String        @map("school_id") @db.Uuid
+  name      String
+  startDate DateTime      @map("start_date") @db.Date
+  endDate   DateTime      @map("end_date") @db.Date
+  status    SessionStatus @default(PLANNED)
+  /// Exactly one per school, enforced by a partial unique index in the
+  /// migration — Prisma cannot express `WHERE is_current`.
+  isCurrent Boolean       @default(false) @map("is_current")
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school      School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  sections    Section[]
+  enrollments Enrollment[]
+
+  @@unique([schoolId, name])
+  @@index([schoolId, status])
+  @@index([schoolId, isCurrent])
+  @@map("academic_sessions")
+}
+
+/// A grade, independent of any session: "Grade 5" exists across years.
+model ClassLevel {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  schoolId     String   @map("school_id") @db.Uuid
+  name         String
+  /// Sort order, and what promotion increments. Nursery may be 0, Grade 1 is 1.
+  numericOrder Int      @map("numeric_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school      School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  sections    Section[]
+  enrollments Enrollment[]
+
+  @@unique([schoolId, name])
+  @@index([schoolId, numericOrder])
+  @@map("class_levels")
+}
+
+/// A class level within one session: "Grade 5 — A, 2026-2027".
+model Section {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  schoolId     String   @map("school_id") @db.Uuid
+  sessionId    String   @map("session_id") @db.Uuid
+  classLevelId String   @map("class_level_id") @db.Uuid
+  name         String
+  capacity     Int?
+  room         String?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school      School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  session     AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  classLevel  ClassLevel      @relation(fields: [classLevelId], references: [id], onDelete: Restrict)
+  enrollments Enrollment[]
+
+  @@unique([schoolId, sessionId, classLevelId, name])
+  @@index([schoolId, sessionId])
+  @@index([schoolId, classLevelId])
+  @@map("sections")
+}
+
+// ---------------------------------------------------------------------------
+// People — Phase 1.
+// ---------------------------------------------------------------------------
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  LEFT
+  STRUCK_OFF
+
+  @@map("student_status")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+
+  @@map("gender")
+}
+
+/// A person enrolled at the school.
+///
+/// The student is the *person*; which class they are in is an `Enrollment`,
+/// because that changes every year and the history is the point — a transcript
+/// is the enrolment record, not the current row.
+model Student {
+  id               String        @id @default(uuid(7)) @db.Uuid
+  schoolId         String        @map("school_id") @db.Uuid
+  /// From `number_sequences`, gapless per school. Never a count of rows.
+  admissionNo      String        @map("admission_no")
+  firstName        String        @map("first_name")
+  lastName         String        @map("last_name")
+  gender           Gender?
+  dateOfBirth      DateTime?     @map("date_of_birth") @db.Date
+  photoUrl         String?       @map("photo_url")
+  /// Encrypted column-side. Collecting it at all is a per-school setting,
+  /// never a required product field (docs/17 section 2).
+  bFormNo          String?       @map("b_form_no")
+  religion         String?
+  bloodGroup       String?       @map("blood_group")
+  nationality      String?
+  address          String?
+  city             String?
+  emergencyContact String?       @map("emergency_contact")
+  status           StudentStatus @default(ACTIVE)
+  admittedOn       DateTime?     @map("admitted_on") @db.Date
+  leftOn           DateTime?     @map("left_on") @db.Date
+  leavingReason    String?       @map("leaving_reason")
+  /// Set when the student has a portal login of their own.
+  userId           String?       @map("user_id") @db.Uuid
+  /// The pressure valve: a school adds its own fields rather than asking for a
+  /// migration and a code branch (docs/07 section 4).
+  custom           Json          @default("{}")
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime?     @map("deleted_at") @db.Timestamptz(6)
+
+  school      School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  enrollments Enrollment[]
+  guardians   StudentGuardian[]
+
+  @@unique([schoolId, admissionNo])
+  @@index([schoolId, status, lastName])
+  @@index([schoolId, admissionNo])
+  @@map("students")
+}
+
+enum GuardianRelation {
+  FATHER
+  MOTHER
+  GUARDIAN
+
+  @@map("guardian_relation")
+}
+
+/// One guardian, many children — across classes and across years. That is why
+/// this is its own table rather than columns on `students`: the sibling
+/// discount and "one message to the family" both depend on it (docs/07 s4).
+model Guardian {
+  id         String           @id @default(uuid(7)) @db.Uuid
+  schoolId   String           @map("school_id") @db.Uuid
+  name       String
+  relation   GuardianRelation
+  /// Encrypted column-side, like b_form_no.
+  cnic       String?
+  phone      String?
+  whatsapp   String?
+  email      String?
+  occupation String?
+  address    String?
+  userId     String?          @map("user_id") @db.Uuid
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt  DateTime?        @map("deleted_at") @db.Timestamptz(6)
+
+  school   School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  students StudentGuardian[]
+
+  @@index([schoolId, name])
+  @@index([schoolId, phone])
+  @@map("guardians")
+}
+
+model StudentGuardian {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  schoolId   String   @map("school_id") @db.Uuid
+  studentId  String   @map("student_id") @db.Uuid
+  guardianId String   @map("guardian_id") @db.Uuid
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  /// Who the fee voucher is addressed to, which is not always the primary
+  /// contact.
+  isFeePayer Boolean  @default(false) @map("is_fee_payer")
+  canPickup  Boolean  @default(true) @map("can_pickup")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school   School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student  Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardian Guardian @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, studentId, guardianId])
+  @@index([schoolId, studentId])
+  @@index([schoolId, guardianId])
+  @@map("student_guardians")
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  PROMOTED
+  REPEATED
+  TRANSFERRED
+  LEFT
+
+  @@map("enrollment_status")
+}
+
+/// A student in one class, for one session. The row year rollover writes.
+model Enrollment {
+  id           String           @id @default(uuid(7)) @db.Uuid
+  schoolId     String           @map("school_id") @db.Uuid
+  studentId    String           @map("student_id") @db.Uuid
+  sessionId    String           @map("session_id") @db.Uuid
+  classLevelId String           @map("class_level_id") @db.Uuid
+  sectionId    String?          @map("section_id") @db.Uuid
+  rollNo       Int?             @map("roll_no")
+  status       EnrollmentStatus @default(ENROLLED)
+  enrolledOn   DateTime?        @map("enrolled_on") @db.Date
+  endedOn      DateTime?        @map("ended_on") @db.Date
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school     School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student    Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session    AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  classLevel ClassLevel      @relation(fields: [classLevelId], references: [id], onDelete: Restrict)
+  section    Section?        @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
+  /// One enrolment per student per session. This is what stops a student being
+  /// enrolled twice and then billed twice.
+  @@unique([schoolId, sessionId, studentId])
+  @@index([schoolId, sessionId, sectionId])
+  @@index([schoolId, studentId])
+  @@map("enrollments")
 }
