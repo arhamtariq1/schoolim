@@ -220,6 +220,60 @@ describe('audit_logs is partitioned by month', () => {
   });
 });
 
+describe('audit_logs partitions are individually protected', () => {
+  /**
+   * RLS on a partitioned parent does NOT protect a partition queried directly:
+   * PostgreSQL evaluates row security against the relation named in the query.
+   * Privileges, meanwhile, DO propagate from parent to partition — so
+   * `SELECT * FROM audit_logs_2026_08` read every school's rows while the
+   * parent looked perfectly correct in every introspection.
+   *
+   * Found by probing a deployed database. This test exists so it cannot
+   * return, including on partitions created years from now.
+   */
+  it('every partition has RLS enabled and forced', async () => {
+    const { rows } = await owner.query<{ child: string; enabled: boolean; forced: boolean }>(`
+      SELECT c.relname AS child, c.relrowsecurity AS enabled, c.relforcerowsecurity AS forced
+      FROM pg_inherits i
+      JOIN pg_class c ON c.oid = i.inhrelid
+      JOIN pg_class p ON p.oid = i.inhparent
+      WHERE p.relname = 'audit_logs'
+    `);
+
+    expect(rows.length).toBeGreaterThan(0);
+    const unprotected = rows.filter((row) => !row.enabled || !row.forced).map((row) => row.child);
+    expect(unprotected, 'these partitions are readable across tenants').toEqual([]);
+  });
+
+  it('every partition carries the tenant_isolation policy', async () => {
+    const { rows } = await owner.query<{ child: string }>(`
+      SELECT c.relname AS child
+      FROM pg_inherits i
+      JOIN pg_class c ON c.oid = i.inhrelid
+      JOIN pg_class p ON p.oid = i.inhparent
+      WHERE p.relname = 'audit_logs'
+        AND NOT EXISTS (
+          SELECT 1 FROM pg_policies
+          WHERE schemaname = 'public'
+            AND tablename = c.relname
+            AND policyname = 'tenant_isolation'
+        )
+    `);
+    expect(
+      rows.map((row) => row.child),
+      'these partitions have no tenant policy',
+    ).toEqual([]);
+  });
+
+  it('provides a helper so a new partition cannot be created unprotected', async () => {
+    // The monthly maintenance job must call this rather than CREATE TABLE.
+    const { rows } = await owner.query<{ exists: boolean }>(
+      `SELECT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'ensure_audit_partition') AS exists`,
+    );
+    expect(rows[0]?.exists).toBe(true);
+  });
+});
+
 describe('the tenant context function fails closed', () => {
   it('returns NULL when no tenant is set, so policies match nothing', async () => {
     const { rows } = await owner.query<{ school: string | null }>(
