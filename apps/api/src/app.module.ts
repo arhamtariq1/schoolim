@@ -5,6 +5,7 @@ import { ClsModule } from 'nestjs-cls';
 import { ENV, type Env } from './config/env';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
+import { StudentsModule } from './modules/students/students.module';
 import { AuditInterceptor } from './shared/audit/audit.interceptor';
 import { AuthGuard } from './shared/auth/auth.guard';
 import { AllExceptionsFilter } from './shared/errors/all-exceptions.filter';
@@ -35,6 +36,7 @@ import { TenantGuard } from './shared/tenancy/tenant.guard';
     SharedModule,
     AuthModule,
     HealthModule,
+    StudentsModule,
   ],
   providers: [
     // Registered here rather than only in main.ts, so the same error contract

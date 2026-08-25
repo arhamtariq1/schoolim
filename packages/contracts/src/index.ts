@@ -5,4 +5,5 @@ export * from './pagination';
 export * from './permissions';
 export * from './primitives';
 export * from './roles';
+export * from './students';
 export * from './routes';

@@ -26,6 +26,14 @@ export const ROUTES = {
     resetPassword: `${API_PREFIX}/auth/reset-password`,
     acceptInvite: `${API_PREFIX}/auth/accept-invite`,
   },
+  students: {
+    list: `${API_PREFIX}/students`,
+    create: `${API_PREFIX}/students`,
+    detail: (id: string) => `${API_PREFIX}/students/${id}`,
+    update: (id: string) => `${API_PREFIX}/students/${id}`,
+    /** A state change, not a PATCH: it can require a reason and be audited. */
+    changeStatus: (id: string) => `${API_PREFIX}/students/${id}/status`,
+  },
   health: `${API_PREFIX}/health`,
 } as const;
 

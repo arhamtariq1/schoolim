@@ -39,6 +39,7 @@ const MODEL_TO_TABLE: Readonly<Record<string, string>> = {
   Guardian: 'guardians',
   StudentGuardian: 'student_guardians',
   Enrollment: 'enrollments',
+  NumberSequence: 'number_sequences',
 };
 
 const tenantTables = TENANT_MODELS.map((model) => {

@@ -136,6 +136,7 @@ model School {
   guardians        Guardian[]
   studentGuardians StudentGuardian[]
   enrollments      Enrollment[]
+  numberSequences  NumberSequence[]
 
   @@index([schoolGroupId])
   @@index([status])
@@ -603,4 +604,29 @@ model Enrollment {
   @@index([schoolId, sessionId, sectionId])
   @@index([schoolId, studentId])
   @@map("enrollments")
+}
+
+/// Gapless per-school counters for admission numbers, receipt numbers and
+/// voucher numbers.
+///
+/// A number is allocated by incrementing this row inside the same transaction
+/// as the insert that uses it. The alternative — `count(*) + 1` — hands two
+/// receptionists admitting at the same instant the same admission number, and
+/// a school that finds two children sharing one stops trusting the register.
+///
+/// A PostgreSQL sequence would not do: sequences deliberately leak numbers on
+/// rollback, and an audited register may not have holes in it.
+model NumberSequence {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  schoolId  String   @map("school_id") @db.Uuid
+  /// `admission` · `receipt` · `voucher`.
+  kind      String
+  nextValue Int      @default(1) @map("next_value")
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, kind])
+  @@index([schoolId, kind])
+  @@map("number_sequences")
 }

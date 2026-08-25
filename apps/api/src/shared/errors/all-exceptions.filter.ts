@@ -7,6 +7,7 @@ import {
   type ExceptionFilter,
 } from '@nestjs/common';
 import { type FastifyReply, type FastifyRequest } from 'fastify';
+import { ZodError } from 'zod';
 
 import { DomainError } from './domain-error';
 
@@ -48,6 +49,28 @@ export class AllExceptionsFilter implements ExceptionFilter {
   }
 
   private toProblem(exception: unknown, instance: string, requestId: string): ProblemDetails {
+    // A schema rejection is the caller's problem, not ours: 400 with the
+    // offending fields named, so the form can map each message back to its
+    // input rather than showing one generic toast (docs/16 §8). Without this
+    // branch a mistyped filter surfaced as a 500 — which reads as "the server
+    // is broken" when the server is in fact working exactly as designed.
+    if (exception instanceof ZodError) {
+      return this.problem(
+        'VALIDATION_FAILED',
+        400,
+        'Some of the information provided is not valid.',
+        instance,
+        requestId,
+        {
+          errors: exception.issues.map((issue) => ({
+            field: issue.path.map(String).join('.'),
+            code: issue.code.toUpperCase(),
+            message: issue.message,
+          })),
+        },
+      );
+    }
+
     if (exception instanceof DomainError) {
       return this.problem(
         exception.code,
