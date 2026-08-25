@@ -1,24 +1,52 @@
 # 20 — Phase 0 Build Plan
 
-`14` §P0 is the *checklist*. This is the **execution order** — what gets built, in what sequence, with
-what proves each step done. Follow it top to bottom; the dependencies are real.
+`14` §P0 is the _checklist_. This is the **execution order** — what gets built, in what sequence,
+with what proves each step done. Follow it top to bottom; the dependencies are real.
 
 > **Phase 0 ships no features.** Not one screen a school would pay for. It exists to prove the
 > tenancy model and to make every later phase cheap. Resist the urge to add a student list.
 
 ---
 
-## 1. Where we actually are
+## 0. Status — 2026-08-25
 
-| | State |
-|---|---|
-| Workspace | ✅ Turborepo + pnpm 10.23, Node 22, `apps/*` `packages/*` `tooling/*` globs |
-| Shared config | ✅ eslint (base/boundaries/nest/next), prettier, 4 tsconfig presets, tailwind theme |
-| Package skeletons | ⚠️ `contracts` `db` `ui` `utils` exist but export only `PACKAGE_NAME` |
-| Local stack | ✅ `docker-compose.yml` — Postgres 17, Redis 7, Mailpit · `ilm_app` NOBYPASSRLS role |
-| `apps/` | ❌ Does not exist |
-| Git | ❌ **78 files staged, zero commits** |
-| `tooling/scripts/check-rls.mjs` | ❌ Referenced by `package.json:check:rls`, not written |
+| WP                                |     | Proof                                                                            |
+| --------------------------------- | --- | -------------------------------------------------------------------------------- |
+| WP0 Baseline commit               | ✅  | —                                                                                |
+| WP1 Local stack verified          | ✅  | `pnpm verify:rls-role` — 11/11                                                   |
+| WP2 `@ilm/utils`                  | ✅  | 58 tests, incl. a 2,000-case allocation property test                            |
+| WP3 `@ilm/contracts`              | ✅  | 41 tests, incl. segregation-of-duties assertions                                 |
+| WP4 `@ilm/db` schema + RLS + gate | ✅  | 47 tests (11 schema, 36 structural gate)                                         |
+| WP5 Tenant context + extension    | ✅  | covered by WP6                                                                   |
+| **WP6 Isolation suite — gate 1**  | ✅  | **17 tests, every assertion repeated with layer 2 disabled**                     |
+| WP7 `apps/api` skeleton           | ✅  | boots; `/api/v1/health` 200 with a real DB probe                                 |
+| WP8 Auth                          | ✅  | 16 e2e tests                                                                     |
+| **WP9 Guards — gate 2**           | ✅  | **fails closed; tenant mismatch and refresh reuse both proven**                  |
+| WP10 `AuditInterceptor`           | ✅  | wired; before/after images land with the modules that need them                  |
+| WP11 `@ilm/ui`                    | ✅  | 8 component tests                                                                |
+| WP12 `apps/portal` shell          | ◐   | builds and renders; permission-generated nav defined, not yet wired to a session |
+| WP13 `apps/admin` shell           | ◐   | builds and renders; Phase 5 fills it                                             |
+| **WP14 CI — gate 3**              | ◐   | workflow written, **never executed** — no remote yet                             |
+| WP15 Runbooks + deploy — gate 4   | ☐   | blocked on D1 (API host)                                                         |
+
+**27 turbo tasks green · 194 tests.**
+
+Gates 1 and 2 are met. Gate 3 is written but unproven until the first push to a remote; gate 4 needs
+the hosting decision.
+
+---
+
+## 1. Where we started
+
+|                                 | State                                                                                |
+| ------------------------------- | ------------------------------------------------------------------------------------ |
+| Workspace                       | ✅ Turborepo + pnpm 10.23, Node 22, `apps/*` `packages/*` `tooling/*` globs          |
+| Shared config                   | ✅ eslint (base/boundaries/nest/next), prettier, 4 tsconfig presets, tailwind theme  |
+| Package skeletons               | ⚠️ `contracts` `db` `ui` `utils` exist but export only `PACKAGE_NAME`                |
+| Local stack                     | ✅ `docker-compose.yml` — Postgres 17, Redis 7, Mailpit · `ilm_app` NOBYPASSRLS role |
+| `apps/`                         | ❌ Does not exist                                                                    |
+| Git                             | ❌ **78 files staged, zero commits**                                                 |
+| `tooling/scripts/check-rls.mjs` | ❌ Referenced by `package.json:check:rls`, not written                               |
 
 **Net: the scaffolding is real, the product is empty.** That is exactly the right place to start.
 
@@ -26,13 +54,16 @@ what proves each step done. Follow it top to bottom; the dependencies are real.
 
 ## 2. The ordering principle
 
-Three rules decide the sequence, and they override any preference for building something visible early:
+Three rules decide the sequence, and they override any preference for building something visible
+early:
 
 1. **The isolation suite comes before the features it protects.** It is the Phase 0 exit criterion
-   (`14`), so it runs from WP6 onward on every commit — not written at the end to satisfy a checkbox.
+   (`14`), so it runs from WP6 onward on every commit — not written at the end to satisfy a
+   checkbox.
 2. **Bottom-up through the dependency graph.** `utils` → `contracts` → `db` → `api` → `ui` → apps.
-   `eslint-plugin-boundaries` already enforces this; building against the grain means fighting the linter.
-3. **Nothing merges without its CI gate existing.** The RLS gate is written *with* the first RLS
+   `eslint-plugin-boundaries` already enforces this; building against the grain means fighting the
+   linter.
+3. **Nothing merges without its CI gate existing.** The RLS gate is written _with_ the first RLS
    migration (WP4), not after twelve tables exist.
 
 ```
@@ -57,18 +88,22 @@ WP0 baseline commit
 ## 3. The work packages
 
 ### WP0 — Baseline commit
-Nothing is committed. Every later diff needs something to diff against.
-**Done when:** one commit, `chore: scaffold monorepo`, containing the current 78 files plus the new
-`17`/`18`/`19`/`20` docs.
+
+Nothing is committed. Every later diff needs something to diff against. **Done when:** one commit,
+`chore: scaffold monorepo`, containing the current 78 files plus the new `17`/`18`/`19`/`20` docs.
 
 ### WP1 — Local stack verified
-`docker compose up -d`; confirm Postgres 17, Redis, Mailpit. Then the check that matters:
-**connect as `ilm_app` and prove it cannot see a row that RLS forbids.** If the role bootstrap in
-`tooling/docker/init/01-app-role.sql` is wrong, every later isolation test passes for the wrong reason.
-**Done when:** a throwaway table with an RLS policy returns 0 rows to `ilm_app` and N rows to `ilm`.
+
+`docker compose up -d`; confirm Postgres 17, Redis, Mailpit. Then the check that matters: **connect
+as `ilm_app` and prove it cannot see a row that RLS forbids.** If the role bootstrap in
+`tooling/docker/init/01-app-role.sql` is wrong, every later isolation test passes for the wrong
+reason. **Done when:** a throwaway table with an RLS policy returns 0 rows to `ilm_app` and N rows
+to `ilm`.
 
 ### WP2 — `@ilm/utils`
+
 No dependencies; everything imports it.
+
 - **Money** — integer minor units. `toMinor` / `fromMinor` / `formatPKR` / `allocate`. No floats.
   Property-tested: allocation never loses or invents a paisa (`12` R3).
 - **Dates** — `timestamptz` in UTC, render in school timezone, `Asia/Karachi` default. Academic
@@ -77,42 +112,50 @@ No dependencies; everything imports it.
 - Ids, slugs, `Result` type, `assertNever`.
 
 ### WP3 — `@ilm/contracts`
+
 Imports nothing from `@ilm/db` — ever (`06` §52).
+
 - zod base schemas · the pagination/envelope shape · error codes (`11`)
 - **The role → permission matrix** (`08`), typed, exported as the single source both API and UI read
 - API route constants
 
 ### WP4 — `@ilm/db` — schema v0, RLS, and the gate
+
 Prisma 7. Tables: `schools`, `platform_users`, `users`, `roles`, `user_roles`, `refresh_tokens`,
 `audit_logs`.
 
-Every tenant-scoped table, in the same migration (`CLAUDE.md`):
-`school_id NOT NULL` · `ENABLE` + `FORCE ROW LEVEL SECURITY` + `tenant_isolation` policy ·
-a `school_id`-leading index · registration in `TENANT_MODELS`.
+Every tenant-scoped table, in the same migration (`CLAUDE.md`): `school_id NOT NULL` · `ENABLE` +
+`FORCE ROW LEVEL SECURITY` + `tenant_isolation` policy · a `school_id`-leading index · registration
+in `TENANT_MODELS`.
 
 **Write `tooling/scripts/check-rls.mjs` in this WP.** It introspects the database and fails if any
 table has a `school_id` without all four. The gate ships with the first migration, not after the
 twelfth.
+
 > ⚠️ `audit_logs` and attendance are partitioned monthly from the first migration (`07` §8).
 > Retrofitting partitioning onto a live table is a migration you do not want to write.
 
 ### WP5 — Tenant context + `TenantPrisma`
-`nestjs-cls` AsyncLocalStorage · the Prisma client extension injecting `where: { schoolId }` on reads
-and stamping writes · two clients: app role (RLS-enforcing) and admin role (migrations + platform).
-**The extension throws if there is no context.** Failing closed is the whole design (`04` §2).
+
+`nestjs-cls` AsyncLocalStorage · the Prisma client extension injecting `where: { schoolId }` on
+reads and stamping writes · two clients: app role (RLS-enforcing) and admin role (migrations +
+platform). **The extension throws if there is no context.** Failing closed is the whole design (`04`
+§2).
 
 ### WP6 — The isolation suite ◀ **gate 1**
-Vitest + Testcontainers, real Postgres. Seeds School A and School B, then asserts A cannot list, read,
-update or delete a single B row — **and repeats every assertion with the Prisma extension disabled**,
-proving RLS holds alone.
-**Nothing after this point merges with this suite red.**
+
+Vitest + Testcontainers, real Postgres. Seeds School A and School B, then asserts A cannot list,
+read, update or delete a single B row — **and repeats every assertion with the Prisma extension
+disabled**, proving RLS holds alone. **Nothing after this point merges with this suite red.**
 
 ### WP7 — `apps/api` skeleton
+
 NestJS 11 on Fastify, **TypeScript 5.9** (not 7 — `00` §5). zod-validated env that refuses to boot
 when malformed. pino with `requestId`/`schoolId`/`userId` on every line. `/health`.
 `AllExceptionsFilter` → `application/problem+json` (`11`).
 
 ### WP8 — Auth
+
 argon2id · `jose` JWTs, 15-min access in an httpOnly cookie · opaque refresh tokens stored hashed,
 rotated, **with reuse detection** · login, refresh, logout, invite-accept, password reset.
 `platform_users` get a separate table, separate cookie name and separate login route — a tenant JWT
@@ -120,33 +163,40 @@ must never satisfy a platform guard (`04` §6). **2FA on platform accounts is ma
 even though `apps/admin` lands in P5.
 
 ### WP9 — Guards ◀ **gate 2**
+
 `AuthGuard` → `TenantGuard` → `RbacGuard`, in that order. `TenantGuard` checks the JWT claim **and**
 the request host; a mismatch is a 401. Cross-tenant reads return **404, never 403** (`00` §4).
 
 ### WP10 — `AuditInterceptor`
+
 Every non-GET route → append-only `audit_logs` with actor, action, entity, before, after.
 
 ### WP11 — `@ilm/ui`
+
 Read `16-ui-principles.md` in full first — it is binding, and its §14 checklist is part of done.
 Semantic tokens from `packages/config/tailwind/theme.css` · shadcn/ui copied in, not depended on ·
 `lucide-react` re-exported through `@ilm/ui/icons` at four sizes · Button, Input, Select, Dialog,
-Table primitives, Toast, `<Money>`, `<DateDisplay>`.
-`@ilm/ui` may not import `@ilm/contracts` (`06` §55).
+Table primitives, Toast, `<Money>`, `<DateDisplay>`. `@ilm/ui` may not import `@ilm/contracts` (`06`
+§55).
 
 ### WP12 — `apps/portal` shell
+
 Next.js 16 + React 19. App shell: **sidebar generated from permissions, max 8 items** (`00` §6),
-topbar, ⌘K skeleton, tenant theming by CSS variable. `next-intl` wired from day one even though v1 is
-English-only (`03` §8). Login → an empty dashboard, end to end.
+topbar, ⌘K skeleton, tenant theming by CSS variable. `next-intl` wired from day one even though v1
+is English-only (`03` §8). Login → an empty dashboard, end to end.
 
 ### WP13 — `apps/admin` shell
+
 Same shell, platform token type, separate cookie. Login → empty dashboard. No features.
 
 ### WP14 — CI ◀ **gate 3**
-lint · typecheck · test · build · **isolation suite** · `check:rls` · secret scan ·
-**the brand grep** (`ilm` outside the four permitted places fails the build — D4 containment).
-**Under 5 minutes**, or it stops being run.
+
+lint · typecheck · test · build · **isolation suite** · `check:rls` · secret scan · **the brand
+grep** (`ilm` outside the four permitted places fails the build — D4 containment). **Under 5
+minutes**, or it stops being run.
 
 ### WP15 — Runbooks + deploy ◀ **gate 4 = Phase 0 exit**
+
 RB-02 (read-only mode), RB-03 (rollback), RB-06 (credential rotation) written and **rehearsed once**
 (`18` §3). Migrations run as a separate approved step, never automatically on deploy (`13` §4).
 `web` + `admin` on Vercel; `api` on the D1 host; Supabase as plain Postgres.
@@ -155,14 +205,15 @@ RB-02 (read-only mode), RB-03 (rollback), RB-06 (credential rotation) written an
 
 ## 4. The four gates
 
-| Gate | After | Proves |
-|:--:|---|---|
-| **1** | WP6 | School A cannot read one School B row — **with L2 disabled** |
-| **2** | WP9 | A request with no tenant context, or a mismatched host, fails closed |
-| **3** | WP14 | A new tenant table without RLS, an index or registration cannot merge |
-| **4** | WP15 | It runs somewhere other than your laptop, and you can roll it back |
+| Gate  | After | Proves                                                                |
+| :---: | ----- | --------------------------------------------------------------------- |
+| **1** | WP6   | School A cannot read one School B row — **with L2 disabled**          |
+| **2** | WP9   | A request with no tenant context, or a mismatched host, fails closed  |
+| **3** | WP14  | A new tenant table without RLS, an index or registration cannot merge |
+| **4** | WP15  | It runs somewhere other than your laptop, and you can roll it back    |
 
-**Do not pass a gate on "it looks right".** Each is a test that runs in CI or a runbook you executed.
+**Do not pass a gate on "it looks right".** Each is a test that runs in CI or a runbook you
+executed.
 
 ---
 
@@ -175,7 +226,7 @@ RB-02 (read-only mode), RB-03 (rollback), RB-06 (credential rotation) written an
   because nothing is visible. That is correct — it is the phase that decides whether the product
   survives its twentieth school.
 
-## 6. What is deliberately *not* in Phase 0
+## 6. What is deliberately _not_ in Phase 0
 
 Students, fees, attendance, dashboards with real numbers, subscriptions, and every screen in
 `09-page-inventory.md`. Also: BullMQ (P4), Sentry wiring (P0 optional, P5 mandatory), and anything
