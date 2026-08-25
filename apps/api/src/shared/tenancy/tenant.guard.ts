@@ -1,3 +1,4 @@
+import { schoolSlugFromHost } from '@ilm/utils';
 import { CanActivate, Inject, Injectable, type ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { type FastifyRequest } from 'fastify';
@@ -7,7 +8,6 @@ import { IS_PUBLIC } from '../auth/auth.guard';
 import { TenantMismatchError } from '../errors/domain-error';
 import { PrismaService } from '../prisma/prisma.service';
 
-import { schoolSlugFromHost } from './host';
 import { TenantContextService } from './tenant-context.service';
 
 /**
