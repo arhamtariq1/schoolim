@@ -55,7 +55,24 @@ export class TenantGuard implements CanActivate {
       throw new TenantMismatchError();
     }
 
-    const slug = schoolSlugFromHost(request.headers.host, this.env.APP_DOMAIN);
+    // The tenant hint comes from the subdomain for a browser, or from an
+    // explicit header for a server-to-server call — the portal's own server
+    // rendering, where the API lives at `api.<domain>` and the Host header
+    // therefore names no school. (Node's fetch also strips `Host` outright: it
+    // is a forbidden header in the Fetch spec.)
+    //
+    // **Accepting the header is not a weakening.** It is a *hint*, and the
+    // token claim below is the authority: the hint is resolved to a school and
+    // must equal `claims.sid`. Someone holding a token for school A who sends
+    // `x-school-slug: B` resolves to B, fails the comparison, and gets a 401.
+    // The only thing the header can select is the school the caller already
+    // holds a valid token for.
+    const hinted = request.headers['x-school-slug'];
+    const slug =
+      typeof hinted === 'string' && hinted !== ''
+        ? hinted.trim().toLowerCase()
+        : schoolSlugFromHost(request.headers.host, this.env.APP_DOMAIN);
+
     if (slug === undefined) {
       throw new TenantMismatchError();
     }

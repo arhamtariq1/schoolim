@@ -214,6 +214,44 @@ export class AuthService {
     };
   }
 
+  /**
+   * The signed-in user, for rendering the shell.
+   *
+   * Roles and permissions are re-read from the database rather than taken from
+   * the token: a role revoked five minutes ago must stop granting menu items
+   * immediately, and the access token lives for fifteen.
+   */
+  async sessionUser(userId: string): Promise<SessionUser | undefined> {
+    const user = await this.prisma.admin.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        status: true,
+        mustChangePassword: true,
+        roles: { select: { role: true } },
+        school: { select: { id: true, name: true, slug: true, timezone: true, locale: true } },
+      },
+    });
+
+    if (user === null || user.status !== 'ACTIVE') {
+      return undefined;
+    }
+
+    const roles = user.roles.map((held) => held.role) as SchoolRole[];
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      roles,
+      permissions: permissionsFor(roles),
+      mustChangePassword: user.mustChangePassword,
+      school: user.school,
+    };
+  }
+
   async logout(presentedToken: string | undefined, now: Date): Promise<void> {
     if (presentedToken === undefined || presentedToken === '') {
       return;

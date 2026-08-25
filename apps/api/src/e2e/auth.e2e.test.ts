@@ -235,7 +235,17 @@ describe('a session is bound to its school', () => {
       headers: { host: HOST_A, cookie: `${COOKIES.accessToken}=${jar[COOKIES.accessToken] ?? ''}` },
     });
     expect(response.statusCode).toBe(200);
-    expect(response.json<{ data: { schoolId: string } }>().data.schoolId).toBe(SCHOOL_A);
+
+    // The endpoint returns the whole session, not just ids: the shell needs the
+    // name, roles and permission list to render, and a second round trip for
+    // those would leave the navigation flickering on every page.
+    const session = response.json<{
+      data: { school: { id: string }; roles: string[]; permissions: string[] };
+    }>().data;
+
+    expect(session.school.id).toBe(SCHOOL_A);
+    expect(session.roles).toEqual(['OWNER']);
+    expect(session.permissions.length).toBeGreaterThan(0);
   });
 
   it('rejects the same token on another school’s host', async () => {

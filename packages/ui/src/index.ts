@@ -1,4 +1,5 @@
 export * from './components/button';
+export * from './components/data-table';
 export * from './components/date-display';
 export * from './components/field';
 export * from './components/input';

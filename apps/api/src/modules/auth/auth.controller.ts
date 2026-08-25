@@ -95,14 +95,28 @@ export class AuthController {
     return { data: { ok: true } };
   }
 
-  /** Who am I. Requires a valid session, so it is not `@Public`. */
+  /**
+   * Who am I. Requires a valid session, so it is not `@Public`.
+   *
+   * Returns the whole session rather than just ids, because the shell needs the
+   * name, the roles and the permission list to render at all — and a second
+   * round trip for those would leave the navigation flickering on every page.
+   */
   @Get(ROUTES.auth.session)
-  session(@Req() request: FastifyRequest): { data: { userId: string; schoolId: string } } {
+  async session(@Req() request: FastifyRequest): Promise<{ data: SessionUser }> {
     const claims = request.claims;
     if (claims === undefined) {
       throw new BusinessRuleError('AUTH_TOKEN_INVALID', 'Sign in to continue.');
     }
-    return { data: { userId: claims.sub, schoolId: claims.sid } };
+
+    const user = await this.auth.sessionUser(claims.sub);
+    if (user === undefined) {
+      // The token is valid but the account is gone or disabled. Same answer as
+      // no token: sign in again.
+      throw new BusinessRuleError('AUTH_TOKEN_INVALID', 'Your session has ended. Sign in again.');
+    }
+
+    return { data: user };
   }
 
   private setSessionCookies(reply: FastifyReply, result: LoginResult): void {
