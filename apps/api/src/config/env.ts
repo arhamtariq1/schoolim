@@ -25,7 +25,19 @@ const envSchema = z.object({
   JWT_ACCESS_SECRET: z.string().min(32),
   JWT_ACCESS_TTL: z.string().default('15m'),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(30),
-  COOKIE_DOMAIN: z.string().default('localhost'),
+  /**
+   * Deliberately **unset by default**, which makes session cookies host-only.
+   *
+   * Every school gets its own hostname, so a host-only cookie means Beacon's
+   * browser never transmits Demo's session token at all — rather than sending
+   * it and relying on the tenant guard to reject it. Setting this to the apex
+   * domain would share one cookie across every tenant subdomain and turn any
+   * one school's XSS into a foothold against the others.
+   *
+   * Set it only if a deployment genuinely needs a cookie shared across
+   * subdomains. Nothing does today.
+   */
+  COOKIE_DOMAIN: z.string().min(1).optional(),
 
   // --- HTTP -----------------------------------------------------------------
   API_PORT: z.coerce.number().int().min(1).max(65_535).default(4000),

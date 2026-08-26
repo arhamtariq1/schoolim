@@ -35,6 +35,27 @@ export const ROUTES = {
     changeStatus: (id: string) => `${API_PREFIX}/students/${id}/status`,
   },
   health: `${API_PREFIX}/health`,
+
+  /**
+   * The platform console.
+   *
+   * Namespaced under its own prefix so the guard chain can tell the two apart
+   * from the path alone: everything here rejects a tenant token, and nothing
+   * outside it accepts a platform one.
+   */
+  platform: {
+    auth: {
+      login: `${PLATFORM_PREFIX}/auth/login`,
+      logout: `${PLATFORM_PREFIX}/auth/logout`,
+      session: `${PLATFORM_PREFIX}/auth/session`,
+    },
+    schools: {
+      list: `${PLATFORM_PREFIX}/schools`,
+      create: `${PLATFORM_PREFIX}/schools`,
+      slugAvailable: `${PLATFORM_PREFIX}/schools/slug-available`,
+      changeStatus: (id: string) => `${PLATFORM_PREFIX}/schools/${id}/status`,
+    },
+  },
 } as const;
 
 /**

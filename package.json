@@ -22,7 +22,9 @@
     "db:migrate": "pnpm --filter @ilm/db migrate",
     "db:seed": "pnpm --filter @ilm/db seed",
     "verify:rls-role": "node tooling/scripts/verify-rls-role.mjs",
-    "verify:isolation": "node tooling/scripts/verify-isolation.mjs"
+    "verify:isolation": "node tooling/scripts/verify-isolation.mjs",
+    "verify:browser": "node tooling/scripts/verify-browser.mjs",
+    "verify:platform": "node tooling/scripts/verify-platform.mjs"
   },
   "devDependencies": {
     "@ilm/config": "workspace:*",

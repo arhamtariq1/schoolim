@@ -34,10 +34,16 @@ interface JwtPayloadBase {
 export interface AccessTokenClaims extends JwtPayloadBase {
   /** Subject: the user id. */
   sub: string;
-  /** The tenant. Checked against the request host by the tenant guard. */
-  sid: string;
-  /** Roles held, for the permission check. */
-  rol: readonly SchoolRole[];
+  /**
+   * The tenant. Checked against the request host by the tenant guard.
+   *
+   * Absent on a platform token, which belongs to no school. The tenant guard
+   * rejects a non-`tenant` token before it reads this, so the two never meet.
+   */
+  sid?: string;
+  /** Roles held, for the permission check. Absent on a platform token, whose
+   *  role lives in `platform_users` and is re-read on every request. */
+  rol?: readonly SchoolRole[];
   /** Token version, compared against the user's current value. */
   ver: number;
   /**

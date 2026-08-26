@@ -11,6 +11,7 @@ import { type FastifyReply, type FastifyRequest } from 'fastify';
 import { ENV, type Env } from '../../config/env';
 import { Public } from '../../shared/auth/auth.guard';
 import { BusinessRuleError } from '../../shared/errors/domain-error';
+import { resolveTenantSlug } from '../../shared/tenancy/resolve-tenant-slug';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
 
 import { AuthService, type LoginResult } from './auth.service';
@@ -44,7 +45,10 @@ export class AuthController {
     const input: LoginRequest = loginRequestSchema.parse(body);
 
     const result = await this.auth.login(
-      request.headers.host,
+      // The same resolver the tenant guard uses. Sign-in reading the host
+      // directly while the guard read the header is what made a browser's
+      // correct password come back as "not correct".
+      resolveTenantSlug(request, this.env.APP_DOMAIN),
       input.identifier,
       input.password,
       this.clock.now(),
@@ -119,6 +123,19 @@ export class AuthController {
     return { data: user };
   }
 
+  /**
+   * Cookie scope, which is a tenant-isolation decision and not a formality.
+   *
+   * `COOKIE_DOMAIN` is normally unset, so these are **host-only** cookies bound
+   * to the exact school hostname that issued them. A browser holding Demo's
+   * session will not send it to `beacon.<domain>` at all. The alternative —
+   * `Domain=<apex>` — hands one cookie to every tenant subdomain and makes a
+   * single school's XSS everyone's problem.
+   */
+  private cookieScope(): { domain?: string } {
+    return this.env.COOKIE_DOMAIN === undefined ? {} : { domain: this.env.COOKIE_DOMAIN };
+  }
+
   private setSessionCookies(reply: FastifyReply, result: LoginResult): void {
     const secure = this.env.NODE_ENV === 'production';
 
@@ -130,7 +147,7 @@ export class AuthController {
       // needs, and state-changing requests additionally carry a CSRF token.
       sameSite: 'lax',
       path: '/',
-      domain: this.env.COOKIE_DOMAIN,
+      ...this.cookieScope(),
     });
 
     void reply.setCookie(COOKIES.refreshToken, result.refreshToken, {
@@ -140,16 +157,16 @@ export class AuthController {
       // Scoped to the refresh endpoint: an XSS that could read cookies still
       // would not have this one attached to an arbitrary request.
       path: ROUTES.auth.refresh,
-      domain: this.env.COOKIE_DOMAIN,
       expires: result.refreshExpiresAt,
+      ...this.cookieScope(),
     });
   }
 
   private clearSessionCookies(reply: FastifyReply): void {
-    void reply.clearCookie(COOKIES.accessToken, { path: '/', domain: this.env.COOKIE_DOMAIN });
+    void reply.clearCookie(COOKIES.accessToken, { path: '/', ...this.cookieScope() });
     void reply.clearCookie(COOKIES.refreshToken, {
       path: ROUTES.auth.refresh,
-      domain: this.env.COOKIE_DOMAIN,
+      ...this.cookieScope(),
     });
   }
 }

@@ -1,1 +1,3 @@
-import 'dotenv/config';
+import { loadEnv } from '@ilm/db';
+
+loadEnv();

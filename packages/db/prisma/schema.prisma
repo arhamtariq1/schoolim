@@ -56,7 +56,37 @@ model PlatformUser {
   createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  sessions PlatformSession[]
+
   @@map("platform_users")
+}
+
+/// Platform staff sessions. A separate table from `sessions`, not a nullable
+/// `school_id` on that one: `sessions.school_id` is NOT NULL and carries the
+/// tenant_isolation policy, and relaxing it to fit three staff accounts would
+/// put a hole in the mechanism that isolates every school.
+///
+/// Deliberately outside TENANT_MODELS: it has no `school_id` because it belongs
+/// to no school. See TENANT_RLS_EXEMPT_TABLES.
+model PlatformSession {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  platformUserId   String    @map("platform_user_id") @db.Uuid
+  familyId         String    @map("family_id") @db.Uuid
+  /// Hashed, never stored in the clear — same reasoning as `sessions`.
+  refreshTokenHash String    @unique @map("refresh_token_hash")
+  ip               String?
+  userAgent        String?   @map("user_agent")
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(6)
+  lastUsedAt       DateTime? @map("last_used_at") @db.Timestamptz(6)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(6)
+  revokedReason    String?   @map("revoked_reason")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  platformUser PlatformUser @relation(fields: [platformUserId], references: [id], onDelete: Cascade)
+
+  @@index([platformUserId])
+  @@index([expiresAt])
+  @@map("platform_sessions")
 }
 
 enum SchoolStatus {

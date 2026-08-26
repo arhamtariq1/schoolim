@@ -4,9 +4,7 @@
   "compilerOptions": {
     "module": "CommonJS",
     "moduleResolution": "Node10",
-    "lib": [
-      "ES2023"
-    ],
+    "lib": ["ES2023"],
     "noEmit": false,
     "declaration": true,
     "declarationMap": true,

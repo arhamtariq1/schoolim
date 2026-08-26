@@ -1,0 +1,5 @@
+
+# Vendored agent skills. Reformatting them makes every upstream update a
+# conflict, and none of it is our code.
+.claude/skills/
+.agents/skills/

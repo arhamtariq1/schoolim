@@ -23,18 +23,18 @@ Design consequences, all mandatory:
 
 ### 2. Configuration (per school, in Settings)
 
-| Setting | Options |
-|---|---|
-| Mode | `DAILY` (one mark per day) · `PERIOD_WISE` · `TWICE_DAILY` |
-| Statuses enabled | Present, Absent, Late, Leave, Half Day, Excused — school picks which it uses |
-| Marking window | e.g. until 11:00 for the same day; after that requires unlock |
-| Back-dating | Allowed for N days by role; anything older needs `attendance.unlock` |
-| Locking | Auto-lock a date after N days |
-| Absence notification | Notify guardian at HH:MM if absent, on/off, channel |
-| Working days | Which weekdays; combined with `holidays` to compute expected days |
+| Setting              | Options                                                                      |
+| -------------------- | ---------------------------------------------------------------------------- |
+| Mode                 | `DAILY` (one mark per day) · `PERIOD_WISE` · `TWICE_DAILY`                   |
+| Statuses enabled     | Present, Absent, Late, Leave, Half Day, Excused — school picks which it uses |
+| Marking window       | e.g. until 11:00 for the same day; after that requires unlock                |
+| Back-dating          | Allowed for N days by role; anything older needs `attendance.unlock`         |
+| Locking              | Auto-lock a date after N days                                                |
+| Absence notification | Notify guardian at HH:MM if absent, on/off, channel                          |
+| Working days         | Which weekdays; combined with `holidays` to compute expected days            |
 
-Most schools use `DAILY`. Build `DAILY` first and make `PERIOD_WISE` a flag — do not build a
-generic engine for a case one school in twenty needs.
+Most schools use `DAILY`. Build `DAILY` first and make `PERIOD_WISE` a flag — do not build a generic
+engine for a case one school in twenty needs.
 
 ### 3. Marking screen
 
@@ -58,8 +58,8 @@ generic engine for a case one school in twenty needs.
   teacher does not re-enter what the office already knows.
 - Already-submitted days open in an edit state showing who marked it and when.
 
-Teachers reach this from the **Today** screen, where each period shows a green tick or a red
-"not marked" badge. Unmarked periods are the only thing on their home screen that is red.
+Teachers reach this from the **Today** screen, where each period shows a green tick or a red "not
+marked" badge. Unmarked periods are the only thing on their home screen that is red.
 
 ### 4. Staff attendance
 
@@ -76,14 +76,14 @@ build it later.
 
 ### 6. Reports (the part principals actually use)
 
-| Report | Why |
-|---|---|
-| Daily register | Print-ready, per section, for the file |
-| Monthly summary | Student × day grid with P/A/L, percentage, total working days |
-| Class comparison | Attendance % by section, with outliers highlighted — spots the class where marking stopped |
-| Chronic absentee list | Students below a % threshold, or with N consecutive absences → generates parent-contact tasks |
-| Staff attendance summary | With late arrivals, for payroll later |
-| Parent view | Their child's month as a calendar heat map, with the term percentage |
+| Report                   | Why                                                                                           |
+| ------------------------ | --------------------------------------------------------------------------------------------- |
+| Daily register           | Print-ready, per section, for the file                                                        |
+| Monthly summary          | Student × day grid with P/A/L, percentage, total working days                                 |
+| Class comparison         | Attendance % by section, with outliers highlighted — spots the class where marking stopped    |
+| Chronic absentee list    | Students below a % threshold, or with N consecutive absences → generates parent-contact tasks |
+| Staff attendance summary | With late arrivals, for payroll later                                                         |
+| Parent view              | Their child's month as a calendar heat map, with the term percentage                          |
 
 **Automation that earns its keep:** an absence notification to the guardian at a configured time,
 and a weekly digest to the principal listing sections that were not marked. Attendance data decays
@@ -92,14 +92,16 @@ without these.
 ### 7. Volume & performance
 
 500 students × 200 days = 100k rows/school/year; 100 schools = 10M rows/year.
+
 - `attendance_records` is **range-partitioned by month from the first migration**.
-- Reports over long ranges read from a nightly-refreshed `attendance_daily_summary`
-  (school, section, date, present, absent, late, leave) rather than scanning raw rows.
+- Reports over long ranges read from a nightly-refreshed `attendance_daily_summary` (school,
+  section, date, present, absent, late, leave) rather than scanning raw rows.
 - Bulk insert on submit is a single `createMany` with an `ON CONFLICT` upsert.
 
 ### 8. Definition of done for Phase 3
 
-- [ ] A teacher marks a 40-student section in under 30 seconds on a phone (measured with a real device)
+- [ ] A teacher marks a 40-student section in under 30 seconds on a phone (measured with a real
+      device)
 - [ ] Marking works offline and syncs cleanly, including a conflicting edit from another device
 - [ ] Duplicate submission creates no duplicate rows
 - [ ] Monthly report for a 500-student school renders in under 2 seconds
@@ -111,8 +113,8 @@ without these.
 
 ### 1. Structure
 
-`exam_terms` (Mid Term, Final) → `exams` (one per class × subject, with total and passing marks and a
-weight) → `exam_results` (per student).
+`exam_terms` (Mid Term, Final) → `exams` (one per class × subject, with total and passing marks and
+a weight) → `exam_results` (per student).
 
 `grading_schemes` hold bands as JSON so a school can define its own A+/A/B or a GPA scale without a
 code change. Multiple schemes per school; assigned per class level.
@@ -120,21 +122,23 @@ code change. Multiple schemes per school; assigned per class level.
 ### 2. Marks entry
 
 The same ergonomic rules as attendance:
+
 - A spreadsheet-like grid: students down, one mark column, keyboard `Enter`/`Tab` to advance.
 - Paste from Excel supported — teachers already have the marks in Excel; fighting that loses.
 - Live validation: over the total → blocked; absent → checkbox that skips validation.
-- Progress indicator: "32 of 40 entered". Autosave per row; explicit **Submit for review** at the end.
+- Progress indicator: "32 of 40 entered". Autosave per row; explicit **Submit for review** at the
+  end.
 - Locked after submission; a coordinator can unlock with a reason (audited).
 
 ### 3. Results & report cards
 
 - Computation: subject marks → weighted term total → percentage → grade → position in class/section.
-- **Position calculation is a configurable setting** (ties handled as equal rank; some schools do not
-  want positions at all — make it a toggle rather than an argument).
+- **Position calculation is a configurable setting** (ties handled as equal rank; some schools do
+  not want positions at all — make it a toggle rather than an argument).
 - Report card templates as React-PDF components with per-school branding; include attendance
   percentage, remarks, and a subject-wise comparison against the class average.
-- Publishing is an explicit, audited action. Before publishing, results are invisible to students and
-  parents. Accidental early publication is a real incident at every school.
+- Publishing is an explicit, audited action. Before publishing, results are invisible to students
+  and parents. Accidental early publication is a real incident at every school.
 - Bulk generate → single PDF for a section, or individual PDFs pushed to the parent portal.
 
 ### 4. Analytics worth building

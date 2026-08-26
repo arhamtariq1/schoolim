@@ -7,4 +7,4 @@ Timestamp every line. Every S1 and S2 gets a post-incident review within 7 days 
 in `18` §5 — and every review must produce **at least one automated check**: a test, an alert, a CI
 gate, or a database constraint.
 
-*(Empty. Long may it stay that way.)*
+_(Empty. Long may it stay that way.)_

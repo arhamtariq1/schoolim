@@ -5,9 +5,11 @@ import { ClsModule } from 'nestjs-cls';
 import { ENV, type Env } from './config/env';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
+import { PlatformModule } from './modules/platform/platform.module';
 import { StudentsModule } from './modules/students/students.module';
 import { AuditInterceptor } from './shared/audit/audit.interceptor';
 import { AuthGuard } from './shared/auth/auth.guard';
+import { PlatformGuard } from './shared/auth/platform.guard';
 import { AllExceptionsFilter } from './shared/errors/all-exceptions.filter';
 import { RbacGuard } from './shared/rbac/rbac.guard';
 import { SharedModule } from './shared/shared.module';
@@ -18,6 +20,8 @@ import { TenantGuard } from './shared/tenancy/tenant.guard';
  *
  *   AuthGuard   — is this request authenticated at all?
  *   TenantGuard — does the token's tenant agree with the request host?
+ *   PlatformGuard — for console routes only: a live platform account, and the
+ *                   capability it declares. Tenant routes pass straight through.
  *   RbacGuard   — does this role hold the required capability?
  *
  * RBAC reads roles from CLS, which TenantGuard populates. Authentication must
@@ -36,6 +40,7 @@ import { TenantGuard } from './shared/tenancy/tenant.guard';
     SharedModule,
     AuthModule,
     HealthModule,
+    PlatformModule,
     StudentsModule,
   ],
   providers: [
@@ -49,6 +54,7 @@ import { TenantGuard } from './shared/tenancy/tenant.guard';
 
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: TenantGuard },
+    { provide: APP_GUARD, useClass: PlatformGuard },
     { provide: APP_GUARD, useClass: RbacGuard },
 
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },

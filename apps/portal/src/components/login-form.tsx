@@ -45,7 +45,12 @@ export function LoginForm() {
 
     setIsPending(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}${ROUTES.auth.login}`, {
+      // Same-origin, always. The school's own hostname serves the API under
+      // `/api/v1` (see app/api/v1/[...path]/route.ts), which is what keeps the
+      // session cookie first-party. Pointing this at another origin would need
+      // `SameSite=None` and CORS with credentials, so there is no base-URL
+      // setting to get wrong.
+      const response = await fetch(ROUTES.auth.login, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         // The session lives in httpOnly cookies the browser stores for us; the

@@ -1,6 +1,10 @@
-import 'dotenv/config';
-
 import { defineConfig, env } from 'prisma/config';
+
+import { loadEnv } from './src/load-env';
+
+// After the imports, not before: imports are hoisted, so a call placed above
+// them would still run second.
+loadEnv();
 
 /**
  * Prisma 7 moved connection URLs out of `schema.prisma` and into this file.

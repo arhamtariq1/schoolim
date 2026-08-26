@@ -21,19 +21,19 @@ Adding "Bus Route Change Request" is a Settings screen, not a deploy.
 
 ### 2. Built-in types (seeded for every new school, editable)
 
-| Type | Raised by | Approvers | Effect on approval |
-|---|---|---|---|
-| Student leave | Parent / Student | Class teacher → Coordinator | Pre-fills attendance |
-| Staff leave | Staff | Head of dept → Principal | Blocks timetable, marks attendance |
-| Fee discount | Admin / Reception | Principal → Owner | Creates `student_discounts` |
-| Fee waiver | Accountant | Principal | Creates a waiver line on the voucher |
-| Fee refund | Accountant | Principal → Owner | Creates an outgoing transaction |
-| Transfer certificate | Parent / Admin | Accountant (clearance) → Principal | Generates the TC PDF, marks student `LEFT` |
-| Section change | Admin | Coordinator | Ends and recreates the enrollment |
-| Data correction | Any staff | Admin | Applies a field change with before/after in the audit log |
-| Expense approval | Accountant | Principal (over threshold) | Marks the expense `APPROVED` |
+| Type                 | Raised by         | Approvers                          | Effect on approval                                        |
+| -------------------- | ----------------- | ---------------------------------- | --------------------------------------------------------- |
+| Student leave        | Parent / Student  | Class teacher → Coordinator        | Pre-fills attendance                                      |
+| Staff leave          | Staff             | Head of dept → Principal           | Blocks timetable, marks attendance                        |
+| Fee discount         | Admin / Reception | Principal → Owner                  | Creates `student_discounts`                               |
+| Fee waiver           | Accountant        | Principal                          | Creates a waiver line on the voucher                      |
+| Fee refund           | Accountant        | Principal → Owner                  | Creates an outgoing transaction                           |
+| Transfer certificate | Parent / Admin    | Accountant (clearance) → Principal | Generates the TC PDF, marks student `LEFT`                |
+| Section change       | Admin             | Coordinator                        | Ends and recreates the enrollment                         |
+| Data correction      | Any staff         | Admin                              | Applies a field change with before/after in the audit log |
+| Expense approval     | Accountant        | Principal (over threshold)         | Marks the expense `APPROVED`                              |
 
-**Design rule:** approval must *do* something. A request that is approved and then requires someone
+**Design rule:** approval must _do_ something. A request that is approved and then requires someone
 to go and manually make the change is worse than no workflow at all. Each type declares an
 `onApprove` handler that performs the domain action inside the same transaction as the approval.
 
@@ -47,9 +47,9 @@ to go and manually make the change is worse than no workflow at all. Each type d
 
 ### 4. Transfer certificate / clearance (worth calling out)
 
-A leaving student triggers a checklist: fees cleared? library returned? deposit settled? Each item is
-signed off by the responsible role, then the TC PDF generates with a serial number, and the student
-moves to `LEFT`. Schools do this on paper today and lose money on it every year.
+A leaving student triggers a checklist: fees cleared? library returned? deposit settled? Each item
+is signed off by the responsible role, then the TC PDF generates with a serial number, and the
+student moves to `LEFT`. Schools do this on paper today and lose money on it every year.
 
 ---
 
@@ -57,13 +57,13 @@ moves to `LEFT`. Schools do this on paper today and lose money on it every year.
 
 ### 1. Channel strategy for this market
 
-| Channel | Use | Notes |
-|---|---|---|
-| **WhatsApp** | Primary. Vouchers, absence alerts, reminders, notices | Highest read rate in Pakistan by a wide margin. Use the official Cloud API — template messages must be pre-approved by Meta; build the template registry accordingly. |
-| **SMS** | Fallback, OTPs, short alerts | Local aggregator (Telenor/Jazz corporate SMS). Costs per message — meter it. |
-| **Email** | Formal notices, reports, staff, statements | Resend/SES. Cheap, low engagement with parents here. |
-| **In-app** | Everything, always | Free, permanent, and the audit trail. |
-| **Push (PWA)** | v2, once the parent app exists | |
+| Channel        | Use                                                   | Notes                                                                                                                                                                 |
+| -------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **WhatsApp**   | Primary. Vouchers, absence alerts, reminders, notices | Highest read rate in Pakistan by a wide margin. Use the official Cloud API — template messages must be pre-approved by Meta; build the template registry accordingly. |
+| **SMS**        | Fallback, OTPs, short alerts                          | Local aggregator (Telenor/Jazz corporate SMS). Costs per message — meter it.                                                                                          |
+| **Email**      | Formal notices, reports, staff, statements            | Resend/SES. Cheap, low engagement with parents here.                                                                                                                  |
+| **In-app**     | Everything, always                                    | Free, permanent, and the audit trail.                                                                                                                                 |
+| **Push (PWA)** | v2, once the parent app exists                        |                                                                                                                                                                       |
 
 **Architecture:** one `NotificationService` with a `ChannelAdapter` port per channel. Domain code
 calls `notify(event, recipients, data)` and never names a channel. Per-school, per-event channel
@@ -71,8 +71,8 @@ preferences live in settings. Swapping a WhatsApp provider must touch exactly on
 
 ### 2. Templates
 
-- `message_templates` per school, per channel, with variables (`{{student_name}}`,
-  `{{amount}}`, `{{due_date}}`, `{{voucher_url}}`).
+- `message_templates` per school, per channel, with variables (`{{student_name}}`, `{{amount}}`,
+  `{{due_date}}`, `{{voucher_url}}`).
 - Live preview with sample data; variable validation on save.
 - Seeded defaults in English and Urdu so a new school can send on day one.
 - Every send snapshots the rendered body into `message_log` — so "what exactly did you send my
@@ -80,25 +80,25 @@ preferences live in settings. Swapping a WhatsApp provider must touch exactly on
 
 ### 3. Automated notifications (opt-in per school)
 
-| Event | To | Default |
-|---|---|---|
-| Voucher issued | Fee payer | On |
-| Payment received | Fee payer | On (this one prevents the most disputes) |
-| Due date approaching (T-3) | Fee payer | On |
-| Overdue (T+1, T+7, T+15) | Fee payer | Escalating ladder |
-| Marked absent | Guardian | On |
-| Chronic absence threshold | Guardian + Coordinator | On |
-| Leave approved/rejected | Applicant | On |
-| Results published | Parent + Student | On |
-| Fee increment for next session | All fee payers | Off by default |
-| Holiday / event notice | Selected audience | Manual |
+| Event                          | To                     | Default                                  |
+| ------------------------------ | ---------------------- | ---------------------------------------- |
+| Voucher issued                 | Fee payer              | On                                       |
+| Payment received               | Fee payer              | On (this one prevents the most disputes) |
+| Due date approaching (T-3)     | Fee payer              | On                                       |
+| Overdue (T+1, T+7, T+15)       | Fee payer              | Escalating ladder                        |
+| Marked absent                  | Guardian               | On                                       |
+| Chronic absence threshold      | Guardian + Coordinator | On                                       |
+| Leave approved/rejected        | Applicant              | On                                       |
+| Results published              | Parent + Student       | On                                       |
+| Fee increment for next session | All fee payers         | Off by default                           |
+| Holiday / event notice         | Selected audience      | Manual                                   |
 
 ### 4. Bulk messaging
 
 **Screen:** Communication › Send
 
-Audience builder → template → preview → **cost and count estimate** → schedule or send now →
-live delivery report.
+Audience builder → template → preview → **cost and count estimate** → schedule or send now → live
+delivery report.
 
 Audience = any saved view: "all Grade 5 parents", "defaulters over 30 days", "teaching staff",
 "students with attendance below 75%". Reusing saved views here is why the reporting engine is built
@@ -122,6 +122,7 @@ Not a separate app in v1 — the same `apps/portal` with the parent/student role
 mobile-first layout. A PWA manifest in Phase 6 gives an installable app icon without app-store work.
 
 **Parent home:**
+
 - Child switcher when there are several
 - Current voucher card: amount, due date, Download PDF, Pay (when a gateway is live)
 - Payment history with downloadable receipts

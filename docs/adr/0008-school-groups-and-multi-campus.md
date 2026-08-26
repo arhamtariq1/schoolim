@@ -7,8 +7,8 @@
 A meaningful share of the target market is not a single school. Pakistani chains run 2–25 campuses
 under one brand: Model Town / DHA / Gulberg. They ask for two things at once:
 
-1. A **group administrator** who logs in once, sees consolidated numbers across every campus, and can
-   act inside any of them.
+1. A **group administrator** who logs in once, sees consolidated numbers across every campus, and
+   can act inside any of them.
 2. A **campus administrator** who sees only their campus and cannot see the others' fees, staff or
    students.
 
@@ -23,7 +23,7 @@ advertise group/branch role hierarchies with per-branch scoping and group-level 
 and Campusless states its typical customer runs 3–25 campuses on one deployment. Being unable to
 answer "can head office see all four campuses?" loses the largest deals in the market.
 
-The decision is *where the tenant boundary sits*, and it must be made before the first migration
+The decision is _where the tenant boundary sits_, and it must be made before the first migration
 because RLS policy shape is expensive to change on a live database.
 
 ## Decision
@@ -58,9 +58,9 @@ USING (school_id = ANY (string_to_array(
 ```
 
 For a single-campus request the array holds exactly one id, and the planner still reduces it to an
-index lookup on the `school_id`-leading index. This is the load-bearing part of the ADR: retrofitting
-the policy shape across every tenant table on a live production database is the one part of
-multi-campus that cannot be done cheaply later. Writing it this way today costs nothing.
+index lookup on the `school_id`-leading index. This is the load-bearing part of the ADR:
+retrofitting the policy shape across every tenant table on a live production database is the one
+part of multi-campus that cannot be done cheaply later. Writing it this way today costs nothing.
 
 The array is populated by `TenantGuard` from campus memberships **proved by the token**, exactly as
 the single value is today. The trust boundary does not move.
@@ -82,7 +82,8 @@ This is the rule that keeps the whole thing tractable:
   vouchers, receipts and payments therefore never need to know that groups exist.
 - Head office does not own operational data. It owns **templates**. A group-defined fee head or
   grading scale is distributed to a campus as a normal campus-owned row flagged `managed_by_group`,
-  which the campus can use but not edit. Nothing a campus needs to run its day is stored at the group.
+  which the campus can use but not edit. Nothing a campus needs to run its day is stored at the
+  group.
 
 ### 5. Roles
 
@@ -91,7 +92,7 @@ They grant campus roles by implication, and the permission string namespace exte
 `group.{resource}.{action}`. The three-level scope hierarchy — group → campus → section — reuses the
 existing `user_roles.scope` mechanism; only the group level is new.
 
-### 6. What is *not* a campus
+### 6. What is _not_ a campus
 
 A separate campus (and therefore a separate tenant) only when **all four** are true:
 
@@ -141,9 +142,9 @@ until Phase 9.**
 ## Alternatives
 
 - **Group is the tenant, `campus_id` on every table.** Rejected. Campus isolation would fall back to
-  application-level scope, losing the RLS backstop that is the whole reason for
-  `ADR-0002`. Every single-campus customer — the first fifty — would pay for a degenerate
-  one-campus group. A 15-campus group's every query would range over all campuses' rows.
+  application-level scope, losing the RLS backstop that is the whole reason for `ADR-0002`. Every
+  single-campus customer — the first fifty — would pay for a degenerate one-campus group. A
+  15-campus group's every query would range over all campuses' rows.
 - **A database per campus.** Rejected for the reasons in `ADR-0002`; migrations across dozens of
   databases is the failure mode that kills small teams.
 - **Do nothing until a chain actually signs.** Rejected only for items 1 and 2. Item 2 in particular
@@ -154,4 +155,5 @@ until Phase 9.**
 ## Related
 
 `ADR-0002` (shared-schema RLS multi-tenancy) · `docs/04-multi-tenancy-and-security.md` ·
-`docs/07-data-model.md` §1 · `docs/08-rbac-and-roles.md` §2 · `docs/14-roadmap-and-phases.md` Phase 9
+`docs/07-data-model.md` §1 · `docs/08-rbac-and-roles.md` §2 · `docs/14-roadmap-and-phases.md` Phase
+9

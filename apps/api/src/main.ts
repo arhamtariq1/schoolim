@@ -1,10 +1,8 @@
 import 'reflect-metadata';
-// Loads .env before anything reads process.env. Production supplies real
-// environment variables and this is a no-op there.
-import 'dotenv/config';
 
 import fastifyCookie from '@fastify/cookie';
 import fastifyHelmet from '@fastify/helmet';
+import { loadEnv as loadDotenvFromWorkspaceRoot } from '@ilm/db';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -13,6 +11,10 @@ import { AppModule } from './app.module';
 import { ENV, loadEnv, type Env } from './config/env';
 
 async function bootstrap(): Promise<void> {
+  // Reads the workspace-root `.env`, not `apps/api/.env`. Production supplies
+  // real environment variables and this finds nothing to load.
+  loadDotenvFromWorkspaceRoot();
+
   // Validated before anything else starts. docs/03 section 8: the process
   // refuses to start on an invalid environment, because a server that boots
   // misconfigured does damage before anyone notices.

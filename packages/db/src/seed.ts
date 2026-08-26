@@ -1,5 +1,3 @@
-import 'dotenv/config';
-
 import { createHash } from 'node:crypto';
 
 import { systemClock } from '@ilm/utils';
@@ -7,6 +5,11 @@ import { hash } from '@node-rs/argon2';
 
 import { createAdminClient } from './client';
 import { type PrismaClient } from './generated/client';
+import { loadEnv } from './load-env';
+
+// After the imports, not before: imports are hoisted, so a call placed above
+// them would still run second.
+loadEnv();
 
 /**
  * Development seed.
@@ -32,6 +35,9 @@ if (process.env['NODE_ENV'] === 'production') {
  * hence the guard above.
  */
 const PASSWORD = 'demo-password-1234';
+
+/** The one platform-console account. Development only, same guard as above. */
+const PLATFORM_EMAIL = 'platform@ilm.test';
 
 interface SchoolSpec {
   readonly id: string;
@@ -350,6 +356,20 @@ async function main(): Promise<void> {
   const db = createAdminClient({ url: process.env['DATABASE_ADMIN_URL'] ?? '' });
   const passwordHash = await hash(PASSWORD, { memoryCost: 19_456, timeCost: 2, parallelism: 1 });
 
+  // The platform console needs one account or there is no way into it. Guarded
+  // by the same production check as everything else in this file.
+  await db.platformUser.upsert({
+    where: { email: PLATFORM_EMAIL },
+    update: { passwordHash, isActive: true, role: 'SUPER_ADMIN' },
+    create: {
+      email: PLATFORM_EMAIL,
+      name: 'Platform Owner',
+      passwordHash,
+      role: 'SUPER_ADMIN',
+      isActive: true,
+    },
+  });
+
   const lines: string[] = [];
   for (const spec of SCHOOLS) {
     const count = await seedSchool(db, spec, passwordHash);
@@ -367,6 +387,9 @@ Seeded ${String(SCHOOLS.length)} schools.
 ${lines.join('\n')}
 
   Password for all: ${PASSWORD}
+
+Platform console: http://localhost:3001/login
+  ${PLATFORM_EMAIL}  (SUPER_ADMIN)
 
 Sign in at http://<slug>.localhost:${port}/login — the school comes from the
 subdomain, so http://demo.localhost:${port}/login, not http://localhost:${port}.

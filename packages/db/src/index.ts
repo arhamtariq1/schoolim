@@ -1,3 +1,4 @@
+export * from './load-env';
 export * from './client';
 export * from './tenancy/run-in-tenant';
 export * from './tenancy/tenant-context';

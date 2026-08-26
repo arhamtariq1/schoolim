@@ -3,11 +3,13 @@
 **Status:** Accepted · **Date:** 2026-08-21
 
 ## Context
+
 Many schools, each requiring completely isolated data. Expected scale: ~10 schools in year one,
-perhaps 100–300 within three years, each with 100–2,000 students. Operated by a very small team.
-A cross-tenant leak would be an extinction event for the business.
+perhaps 100–300 within three years, each with 100–2,000 students. Operated by a very small team. A
+cross-tenant leak would be an extinction event for the business.
 
 ## Decision
+
 One PostgreSQL database, one schema, a `school_id` column on every tenant table, with **three
 independent enforcement layers**:
 
@@ -21,6 +23,7 @@ independent enforcement layers**:
 database without any product-code change.
 
 ## Consequences
+
 - One migration serves every school. Onboarding a school is an `INSERT`.
 - Cross-tenant analytics and support tooling are trivial.
 - Cost per tenant is near zero, which is what makes a low monthly price viable.
@@ -30,8 +33,10 @@ database without any product-code change.
   transaction-mode connection pooler.
 
 ## Alternatives
-- **Schema per tenant** — rejected. N-schema migrations, connection-pool pressure, schema drift.
-  It looks safer and is operationally far worse; current guidance is explicit that it is rarely
-  right for a new SaaS.
+
+- **Schema per tenant** — rejected. N-schema migrations, connection-pool pressure, schema drift. It
+  looks safer and is operationally far worse; current guidance is explicit that it is rarely right
+  for a new SaaS.
 - **Database per tenant** — rejected for v1. Correct only for hard compliance or contractual
-  isolation requirements, which do not exist here. The `shard_key` escape hatch preserves the option.
+  isolation requirements, which do not exist here. The `shard_key` escape hatch preserves the
+  option.

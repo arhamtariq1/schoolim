@@ -1,1 +1,3 @@
-import 'dotenv/config';
+import { loadEnv } from '../load-env';
+
+loadEnv();

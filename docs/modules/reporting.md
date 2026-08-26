@@ -27,22 +27,22 @@ One component, driven by a column definition and a query hook.
 
 Provides, uniformly, everywhere:
 
-| Capability | Behaviour |
-|---|---|
-| Server-side pagination | Cursor-based for large sets, offset where a page number is needed |
-| Sorting | Multi-column, server-side, persisted in the URL |
-| Filtering | Typed filter descriptors → query params → zod-validated on the API |
-| Search | Debounced, trigram-backed |
-| Column control | Show/hide/reorder/pin, persisted per user per entity |
-| Density | Comfortable / compact toggle — accountants want compact |
-| Row selection | Page-wise and "select all N matching the filter" (the important one) |
-| Bulk actions | Confirmation showing the exact count, progress, per-row result report |
-| Saved views | Name a filter+column set, keep it private or share with the school |
-| Export | XLSX / CSV / PDF of **the current filtered view**, server-generated |
-| URL state | Every filter lives in the URL, so a link is shareable and the back button works |
-| Empty states | Distinct copy for "nothing yet" vs "nothing matches your filters" + a clear action |
-| Loading | Skeleton rows, `keepPreviousData` so the grid never flashes empty on a filter change |
-| Errors | Inline retry, never a blank screen |
+| Capability             | Behaviour                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------ |
+| Server-side pagination | Cursor-based for large sets, offset where a page number is needed                    |
+| Sorting                | Multi-column, server-side, persisted in the URL                                      |
+| Filtering              | Typed filter descriptors → query params → zod-validated on the API                   |
+| Search                 | Debounced, trigram-backed                                                            |
+| Column control         | Show/hide/reorder/pin, persisted per user per entity                                 |
+| Density                | Comfortable / compact toggle — accountants want compact                              |
+| Row selection          | Page-wise and "select all N matching the filter" (the important one)                 |
+| Bulk actions           | Confirmation showing the exact count, progress, per-row result report                |
+| Saved views            | Name a filter+column set, keep it private or share with the school                   |
+| Export                 | XLSX / CSV / PDF of **the current filtered view**, server-generated                  |
+| URL state              | Every filter lives in the URL, so a link is shareable and the back button works      |
+| Empty states           | Distinct copy for "nothing yet" vs "nothing matches your filters" + a clear action   |
+| Loading                | Skeleton rows, `keepPreviousData` so the grid never flashes empty on a filter change |
+| Errors                 | Inline retry, never a blank screen                                                   |
 
 **Rule: no module writes its own table.** If `DataTable` cannot do it, extend `DataTable`.
 
@@ -55,12 +55,12 @@ zod schema and the export.
 
 ```ts
 export const studentFilters = [
-  { key: 'sessionId',    type: 'select',     label: 'Session',  source: 'sessions', default: 'current' },
-  { key: 'classLevelId', type: 'select',     label: 'Class',    source: 'classLevels' },
-  { key: 'sectionId',    type: 'select',     label: 'Section',  dependsOn: 'classLevelId' },
-  { key: 'status',       type: 'multiselect',label: 'Status',   options: STUDENT_STATUSES },
-  { key: 'hasDues',      type: 'boolean',    label: 'Has outstanding dues' },
-  { key: 'admittedAt',   type: 'daterange',  label: 'Admitted between' },
+  { key: 'sessionId', type: 'select', label: 'Session', source: 'sessions', default: 'current' },
+  { key: 'classLevelId', type: 'select', label: 'Class', source: 'classLevels' },
+  { key: 'sectionId', type: 'select', label: 'Section', dependsOn: 'classLevelId' },
+  { key: 'status', type: 'multiselect', label: 'Status', options: STUDENT_STATUSES },
+  { key: 'hasDues', type: 'boolean', label: 'Has outstanding dues' },
+  { key: 'admittedAt', type: 'daterange', label: 'Admitted between' },
 ] as const satisfies FilterDescriptor[];
 ```
 
@@ -88,9 +88,12 @@ be able to answer "who exported the entire student database, and when".
 
 Every one of these is the `DataTable` engine plus a print layout, not bespoke code.
 
-**Students:** enrolment by class/section · admissions by month and source · left students with reasons · students missing required fields · birthday list · ID card batch
+**Students:** enrolment by class/section · admissions by month and source · left students with
+reasons · students missing required fields · birthday list · ID card batch
 
-**Fees:** collection summary (expected vs collected vs outstanding) · defaulter ageing · head-wise collection · discount and waiver register · daily collection (day-book) · payment method breakdown · security deposit register
+**Fees:** collection summary (expected vs collected vs outstanding) · defaulter ageing · head-wise
+collection · discount and waiver register · daily collection (day-book) · payment method breakdown ·
+security deposit register
 
 **Attendance:** daily register · monthly grid · class comparison · chronic absentees · staff summary
 
@@ -123,8 +126,8 @@ Cached with a short TTL (60 s) per school; invalidated by the relevant domain ev
 
 School staff print constantly. Treat print as a first-class output, not an afterthought.
 
-- A dedicated print stylesheet plus server-rendered PDF for anything with a fixed layout
-  (vouchers, receipts, report cards, registers, TCs).
+- A dedicated print stylesheet plus server-rendered PDF for anything with a fixed layout (vouchers,
+  receipts, report cards, registers, TCs).
 - Every printable carries the school header, the generation timestamp, the generating user, and a
   page count. A printed page with no provenance causes arguments.
 - Batch print produces one PDF, correctly ordered and page-broken per student/section.

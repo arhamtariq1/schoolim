@@ -1,5 +1,4 @@
 import { permissionsFor, type SchoolRole, type SessionUser } from '@ilm/contracts';
-import { schoolSlugFromHost } from '@ilm/utils';
 import { Injectable, Logger } from '@nestjs/common';
 
 import { PasswordService } from '../../shared/auth/password.service';
@@ -14,10 +13,10 @@ import { SessionService, type RefreshContext } from './session.service';
  *
  * Everything here runs **before** tenant context exists — the user is not
  * authenticated yet, so there is nothing to scope by. That is why this service
- * uses the admin client and resolves the school from the request host itself.
- * It is the one place in the API where `schoolId` is legitimately derived
- * rather than read from context, and it is why the derivation is confined to
- * this file.
+ * uses the admin client and takes the school as a resolved slug from the
+ * controller. It is the one place in the API where `schoolId` is legitimately
+ * derived rather than read from context, and it is why the derivation is
+ * confined to this file.
  */
 
 /** Consecutive failures before an account is locked. */
@@ -40,17 +39,24 @@ export class AuthService {
     private readonly passwords: PasswordService,
     private readonly tokens: TokenService,
     private readonly sessions: SessionService,
-    private readonly appDomain: string,
   ) {}
 
+  /**
+   * Sign in against one school.
+   *
+   * Takes the resolved `slug`, not the raw host: the controller resolves it
+   * with `resolveTenantSlug`, the same function the tenant guard uses. When
+   * this resolved the host itself the two disagreed — the guard understood a
+   * browser arriving through the portal and this did not, so a correct password
+   * came back as "that email or password is not correct".
+   */
   async login(
-    host: string | undefined,
+    slug: string | undefined,
     identifier: string,
     password: string,
     now: Date,
     context: RefreshContext,
   ): Promise<LoginResult> {
-    const slug = schoolSlugFromHost(host, this.appDomain);
     if (slug === undefined) {
       throw new BusinessRuleError('AUTH_INVALID_CREDENTIALS', GENERIC_FAILURE);
     }
@@ -60,7 +66,13 @@ export class AuthService {
       select: { id: true, name: true, slug: true, timezone: true, locale: true, status: true },
     });
 
-    if (school === null) {
+    // `status` was being selected and then ignored, which meant a school that
+    // had left could still sign in indefinitely. Only CHURNED closes the door:
+    // PAST_DUE and SUSPENDED must still be able to get in, because a school
+    // that cannot sign in cannot read its own records or settle its bill, and
+    // dunning never takes data away (docs/19 §4). SUSPENDED is made read-only
+    // by the tenant guard instead.
+    if (school === null || school.status === 'CHURNED') {
       throw new BusinessRuleError('AUTH_INVALID_CREDENTIALS', GENERIC_FAILURE);
     }
 

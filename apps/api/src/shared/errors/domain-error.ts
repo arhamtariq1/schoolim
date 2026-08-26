@@ -79,3 +79,33 @@ export class BusinessRuleError extends DomainError {
     this.code = code;
   }
 }
+
+/**
+ * The school is suspended, and this request would have changed something.
+ *
+ * Not 401: the session is perfectly valid and reading still works. Dunning
+ * makes a school read-only, it never takes the data away (docs/19 §4), so the
+ * message says what to do about it rather than implying the account is gone.
+ */
+export class SchoolSuspendedError extends DomainError {
+  readonly code = 'SCHOOL_READ_ONLY' as const;
+
+  constructor() {
+    super(
+      'This school is read-only while its subscription is on hold. ' +
+        'Records can still be viewed. Settle the outstanding invoice to make changes again.',
+    );
+  }
+}
+
+/**
+ * A uniqueness or state conflict the caller can resolve — a slug already taken,
+ * an email already registered at that school.
+ *
+ * 409, not 422: nothing about the request was malformed. It was valid and lost
+ * a race, or names something that already exists, and the fix is a different
+ * value rather than a different shape.
+ */
+export class ConflictError extends DomainError {
+  readonly code = 'CONFLICT' as const;
+}

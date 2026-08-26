@@ -42,7 +42,13 @@ export function isTenantModel(model: string): model is TenantModel {
  * these at all; they are reachable only through the owner connection used by
  * migrations and the platform console.
  */
-export const PLATFORM_TABLES = ['platform_users', 'school_groups', 'school_domains'] as const;
+export const PLATFORM_TABLES = [
+  'platform_users',
+  /** Refresh tokens for platform staff. Belongs to no school, by definition. */
+  'platform_sessions',
+  'school_groups',
+  'school_domains',
+] as const;
 
 /**
  * `schools` is neither, and is the one genuine exception.

@@ -9,6 +9,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { type FastifyRequest } from 'fastify';
 
+import { IS_PLATFORM } from './platform.guard';
 import { TokenService, type AccessTokenClaims } from './token.service';
 
 export const IS_PUBLIC = 'auth:public';
@@ -50,7 +51,17 @@ export class AuthGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<FastifyRequest>();
-    const token = extractToken(request);
+
+    // The platform console has its own cookie name. Two names rather than one
+    // means a browser signed into both a school and the console holds two
+    // independent sessions, and neither can be presented in place of the other
+    // even by accident.
+    const isPlatform = this.reflector.getAllAndOverride<boolean>(IS_PLATFORM, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    const token = extractToken(request, isPlatform === true);
 
     if (token === undefined) {
       throw new UnauthorizedException('Sign in to continue.');
@@ -67,9 +78,10 @@ export class AuthGuard implements CanActivate {
   }
 }
 
-function extractToken(request: FastifyRequest): string | undefined {
+function extractToken(request: FastifyRequest, isPlatform: boolean): string | undefined {
   const cookies = request.cookies as Record<string, string | undefined> | undefined;
-  const fromCookie = cookies?.[COOKIES.accessToken];
+  const name = isPlatform ? COOKIES.platformAccessToken : COOKIES.accessToken;
+  const fromCookie = cookies?.[name];
   if (fromCookie !== undefined && fromCookie !== '') {
     return fromCookie;
   }
