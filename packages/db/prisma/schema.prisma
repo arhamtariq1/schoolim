@@ -500,6 +500,14 @@ enum Gender {
 model Student {
   id               String        @id @default(uuid(7)) @db.Uuid
   schoolId         String        @map("school_id") @db.Uuid
+  /// The General Register number — the school's permanent record of a child,
+  /// and in Pakistan the one the register is legally kept against. Issued once,
+  /// never reused, never changed, and it survives the student leaving.
+  ///
+  /// Distinct from `admissionNo` because the two answer different questions:
+  /// GR is "which entry in this school's register", admission is "which intake".
+  /// A school that uses one number for both simply mirrors them.
+  grNo             String        @map("gr_no")
   /// From `number_sequences`, gapless per school. Never a count of rows.
   admissionNo      String        @map("admission_no")
   firstName        String        @map("first_name")
@@ -534,8 +542,10 @@ model Student {
   guardians   StudentGuardian[]
 
   @@unique([schoolId, admissionNo])
+  @@unique([schoolId, grNo])
   @@index([schoolId, status, lastName])
   @@index([schoolId, admissionNo])
+  @@index([schoolId, grNo])
   @@map("students")
 }
 
@@ -649,7 +659,7 @@ model Enrollment {
 model NumberSequence {
   id        String   @id @default(uuid(7)) @db.Uuid
   schoolId  String   @map("school_id") @db.Uuid
-  /// `admission` · `receipt` · `voucher`.
+  /// `admission` · `gr` · `receipt` · `voucher`.
   kind      String
   nextValue Int      @default(1) @map("next_value")
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)

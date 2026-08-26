@@ -14,6 +14,7 @@ import { Injectable } from '@nestjs/common';
 /** Rows the list query returns, shaped for the grid rather than the model. */
 export interface StudentRow {
   id: string;
+  gr_no: string;
   admission_no: string;
   first_name: string;
   last_name: string;
@@ -88,7 +89,10 @@ export class StudentsRepository {
       // number, which is what reception actually types.
       const term = bind(`%${query.q}%`);
       where.push(
-        `((s.first_name || ' ' || s.last_name) ILIKE ${term} OR s.admission_no ILIKE ${term})`,
+        // Reception types whichever number is on the paper in front of them.
+        `((s.first_name || ' ' || s.last_name) ILIKE ${term}
+           OR s.admission_no ILIKE ${term}
+           OR s.gr_no ILIKE ${term})`,
       );
     }
 
@@ -118,6 +122,7 @@ export class StudentsRepository {
 
     const ORDER: Record<StudentListQuery['sort'], string> = {
       name: 's.last_name, s.first_name',
+      grNo: 's.gr_no',
       admissionNo: 's.admission_no',
       className: 'cl.numeric_order, sec.name',
       createdAt: 's.created_at',
@@ -128,6 +133,11 @@ export class StudentsRepository {
       FROM students s
       LEFT JOIN enrollments e
         ON e.student_id = s.id
+       -- Only a LIVE enrolment. Without this, a child who left last week still
+       -- shows "Grade 1" on the list and — far worse — still comes back when
+       -- the query is filtered by that section, so the class list, the roll and
+       -- anything built on them silently include a student who is gone.
+       AND e.status = 'ENROLLED'
        AND e.session_id = COALESCE(
              ${query.sessionId === undefined ? '(SELECT id FROM academic_sessions WHERE is_current LIMIT 1)' : bind(query.sessionId) + '::uuid'},
              e.session_id)
@@ -139,7 +149,7 @@ export class StudentsRepository {
     `;
 
     const rows = await tx.$queryRawUnsafe<StudentRow[]>(
-      `SELECT s.id, s.admission_no, s.first_name, s.last_name, s.status::text AS status,
+      `SELECT s.id, s.gr_no, s.admission_no, s.first_name, s.last_name, s.status::text AS status,
               s.gender::text AS gender,
               cl.name AS class_name, sec.name AS section_name, e.roll_no,
               g.name AS guardian_name, g.phone AS guardian_phone

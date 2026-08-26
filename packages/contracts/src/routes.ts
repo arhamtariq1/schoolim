@@ -33,6 +33,12 @@ export const ROUTES = {
     update: (id: string) => `${API_PREFIX}/students/${id}`,
     /** A state change, not a PATCH: it can require a reason and be audited. */
     changeStatus: (id: string) => `${API_PREFIX}/students/${id}/status`,
+    /** Soft delete. The register keeps the row; the retention job erases it. */
+    remove: (id: string) => `${API_PREFIX}/students/${id}`,
+  },
+  academics: {
+    /** Classes with their current-session sections, and the session itself. */
+    setup: `${API_PREFIX}/academics/setup`,
   },
   health: `${API_PREFIX}/health`,
 

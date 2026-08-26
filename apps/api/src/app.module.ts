@@ -3,6 +3,7 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ClsModule } from 'nestjs-cls';
 
 import { ENV, type Env } from './config/env';
+import { AcademicsModule } from './modules/academics/academics.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 import { PlatformModule } from './modules/platform/platform.module';
@@ -38,6 +39,7 @@ import { TenantGuard } from './shared/tenancy/tenant.guard';
       middleware: { mount: true },
     }),
     SharedModule,
+    AcademicsModule,
     AuthModule,
     HealthModule,
     PlatformModule,

@@ -1,4 +1,9 @@
-import { ROUTES, type StudentListItem } from '@ilm/contracts';
+import {
+  ROUTES,
+  type ClassLevelWithSections,
+  type CurrentSession,
+  type StudentListItem,
+} from '@ilm/contracts';
 
 import { AppShell } from '@/components/app-shell';
 import { StudentsTable } from '@/components/students-table';
@@ -42,12 +47,29 @@ export default async function StudentsPage({
     query.set('status', status);
   }
 
-  const result = await apiFetch<{
-    data: StudentListItem[];
-    meta: { page: { total: number }; aggregates: Record<string, number> };
-  }>(`${ROUTES.students.list}?${query.toString()}`);
+  // Both in parallel: the admission form needs the class tree, and fetching it
+  // only when the dialog opens means the first click waits on a round trip that
+  // could have happened while the page was already loading.
+  const [result, setup] = await Promise.all([
+    apiFetch<{
+      data: StudentListItem[];
+      meta: { page: { total: number }; aggregates: Record<string, number> };
+    }>(`${ROUTES.students.list}?${query.toString()}`),
+    apiFetch<{
+      data: { session: CurrentSession | null; classes: ClassLevelWithSections[] };
+    }>(ROUTES.academics.setup),
+  ]);
 
   const isFiltered = search !== '' || status !== '';
+
+  // The menu hides what the API would refuse anyway. The API is the authority —
+  // a permission check that happens only in the UI does not exist (docs/08) —
+  // but showing an action that always fails is its own kind of broken.
+  const can = {
+    create: session.permissions.includes('students.student.create'),
+    update: session.permissions.includes('students.student.update'),
+    delete: session.permissions.includes('students.student.delete'),
+  };
 
   return (
     <AppShell
@@ -63,6 +85,9 @@ export default async function StudentsPage({
         search={search}
         status={status}
         isFiltered={isFiltered}
+        classes={setup.ok ? setup.data.data.classes : []}
+        sessionId={setup.ok ? (setup.data.data.session?.id ?? undefined) : undefined}
+        can={can}
       />
     </AppShell>
   );

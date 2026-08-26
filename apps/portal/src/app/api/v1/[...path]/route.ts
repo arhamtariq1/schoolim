@@ -98,13 +98,22 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
   } catch {
     // The API being down must not render as a Next stack trace. Same shape as
     // every other error the client already knows how to read (RFC 9457).
+    //
+    // In development it says which process is missing. "Try again in a moment"
+    // is the right thing for a parent to read and exactly the wrong thing for
+    // whoever forgot to start the API — it suggests waiting, and waiting never
+    // helps. Production keeps the calm wording, because the person reading it
+    // there cannot start anything.
     return Response.json(
       {
         type: 'about:blank',
         title: 'Service unavailable',
         status: 502,
         code: 'UPSTREAM_UNAVAILABLE',
-        detail: 'Could not reach the server. Try again in a moment.',
+        detail:
+          process.env.NODE_ENV === 'production'
+            ? 'Could not reach the server. Try again in a moment.'
+            : `The API is not running at ${API_BASE}. Start it with \`pnpm --filter @ilm/api dev\`, or run \`pnpm dev\` to start everything.`,
       },
       { status: 502, headers: { 'content-type': 'application/problem+json' } },
     );

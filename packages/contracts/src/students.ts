@@ -6,6 +6,7 @@ import {
   idSchema,
   nonEmptyString,
   phoneSchema,
+  reasonSchema,
   textSchema,
 } from './primitives';
 
@@ -36,6 +37,15 @@ export const guardianRelationSchema = z.enum(GUARDIAN_RELATIONS);
  */
 export const studentListItemSchema = z.object({
   id: idSchema,
+  /**
+   * The General Register number — the school's permanent entry for this child.
+   * Issued once, never reused, never edited, and it outlives them leaving.
+   *
+   * Separate from `admissionNo` because the two answer different questions:
+   * GR is "which entry in the register", admission is "which intake". A school
+   * that uses one number for both mirrors them; that is configuration.
+   */
+  grNo: z.string(),
   admissionNo: z.string(),
   firstName: z.string(),
   lastName: z.string(),
@@ -78,7 +88,7 @@ export type StudentDetail = z.infer<typeof studentDetailSchema>;
  * the bug that leaks a whole table into a report (docs/11 §6).
  */
 export const studentListQuerySchema = listQuery(
-  ['name', 'admissionNo', 'className', 'createdAt'] as const,
+  ['name', 'grNo', 'admissionNo', 'className', 'createdAt'] as const,
   {
     status: studentStatusSchema.optional(),
     sessionId: idSchema.optional(),
@@ -94,9 +104,10 @@ export type StudentListQuery = z.infer<typeof studentListQuerySchema>;
 /**
  * Creating a student.
  *
- * `admissionNo` is absent on purpose: it comes from a gapless per-school
- * sequence on the server. A client-supplied admission number is how two
- * students end up sharing one, and how a school loses trust in the register.
+ * `grNo` and `admissionNo` are absent on purpose: both come from gapless
+ * per-school sequences allocated on the server, inside the same transaction as
+ * the insert. A client-supplied register number is how two children end up
+ * sharing one, and how a school stops trusting the register entirely.
  *
  * `schoolId` is absent for the same class of reason — tenant scope comes from
  * request context, never from the body (docs/12 R2). A caller must not be able
@@ -176,3 +187,55 @@ export const changeStudentStatusSchema = z
   .strict();
 
 export type ChangeStudentStatus = z.infer<typeof changeStudentStatusSchema>;
+
+/**
+ * Removing a student.
+ *
+ * A reason is **required**, and this is a soft delete. A school's register is a
+ * legal record: a row that vanishes takes with it the answer to "was this child
+ * ever enrolled here", which is the one question a register exists to answer.
+ * The row is hidden everywhere and erased later by the retention job in
+ * docs/17 §4 — not by a button someone clicked in a hurry.
+ *
+ * For a student who has simply left, use `changeStatus` with `LEFT`. Delete is
+ * for a record created in error.
+ */
+export const deleteStudentSchema = z
+  .object({
+    reason: reasonSchema,
+  })
+  .strict();
+
+export type DeleteStudent = z.infer<typeof deleteStudentSchema>;
+
+/**
+ * A class level with the sections that exist in the current session.
+ *
+ * Nested rather than two endpoints: a form that fetches classes, then sections
+ * for the chosen class, renders two loading states and briefly shows sections
+ * belonging to the previously selected class.
+ */
+export const sectionOptionSchema = z.object({
+  id: idSchema,
+  name: z.string(),
+  capacity: z.int().nullable(),
+});
+
+export const classLevelWithSectionsSchema = z.object({
+  id: idSchema,
+  name: z.string(),
+  /** Sort key. Alphabetical puts "Grade 10" before "Grade 2". */
+  numericOrder: z.int(),
+  sections: z.array(sectionOptionSchema),
+});
+
+export type ClassLevelWithSections = z.infer<typeof classLevelWithSectionsSchema>;
+
+export const currentSessionSchema = z.object({
+  id: idSchema,
+  name: z.string(),
+  startDate: calendarDateSchema,
+  endDate: calendarDateSchema,
+});
+
+export type CurrentSession = z.infer<typeof currentSessionSchema>;

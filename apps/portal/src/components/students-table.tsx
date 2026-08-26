@@ -1,10 +1,30 @@
 'use client';
 
-import { STUDENT_STATUSES, type StudentListItem } from '@ilm/contracts';
-import { Button, DataTable, StatusBadge, type Column } from '@ilm/ui';
-import { CreateIcon, SearchIcon } from '@ilm/ui/icons';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useTransition, type FormEvent } from 'react';
+import { ROUTES, STUDENT_STATUSES, type StudentListItem } from '@ilm/contracts';
+import {
+  Button,
+  ConfirmDialog,
+  DataTable,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  SimpleSelect,
+  StatusBadge,
+  useToast,
+  type Column,
+} from '@ilm/ui';
+import { CreateIcon, DeleteIcon, EditIcon, MoreIcon, SearchIcon } from '@ilm/ui/icons';
+import { useRouter } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useState, useTransition, type FormEvent } from 'react';
+
+import { AdmitStudentDialog, type ClassOption } from './admit-student-dialog';
+import { EditStudentDialog } from './edit-student-dialog';
+
+import { mutateOrThrow } from '@/lib/mutate';
 
 /**
  * The student list.
@@ -14,6 +34,10 @@ import { useTransition, type FormEvent } from 'react';
  * button does what it should. `useTransition` keeps the previous rows on screen
  * while the new ones load rather than flashing a skeleton over data that is
  * about to be almost identical (docs/16 §7).
+ *
+ * Row actions sit behind one menu rather than four buttons per row. Thirteen
+ * rows with four visible actions is fifty-two tap targets competing for
+ * attention; one "⋯" per row is one.
  */
 
 const STATUS_TONE: Record<string, 'success' | 'neutral' | 'warning' | 'danger'> = {
@@ -24,6 +48,10 @@ const STATUS_TONE: Record<string, 'success' | 'neutral' | 'warning' | 'danger'> 
   STRUCK_OFF: 'danger',
 };
 
+function humanise(status: string): string {
+  return status.toLowerCase().replace('_', ' ');
+}
+
 export interface StudentsTableProps {
   rows: StudentListItem[];
   total: number;
@@ -32,6 +60,10 @@ export interface StudentsTableProps {
   search: string;
   status: string;
   isFiltered: boolean;
+  /** Server-rendered, so the admission form has classes without a round trip. */
+  classes: readonly ClassOption[];
+  sessionId: string | undefined;
+  can: { create: boolean; update: boolean; delete: boolean };
 }
 
 export function StudentsTable({
@@ -42,11 +74,20 @@ export function StudentsTable({
   search,
   status,
   isFiltered,
+  classes,
+  sessionId,
+  can,
 }: StudentsTableProps) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const toast = useToast();
+
+  const [admitting, setAdmitting] = useState(false);
+  const [editing, setEditing] = useState<StudentListItem | undefined>(undefined);
+  const [deleting, setDeleting] = useState<StudentListItem | undefined>(undefined);
+  const [leaving, setLeaving] = useState<StudentListItem | undefined>(undefined);
 
   function apply(next: Record<string, string>) {
     const updated = new URLSearchParams(params.toString());
@@ -64,10 +105,21 @@ export function StudentsTable({
 
   const columns: Column<StudentListItem>[] = [
     {
+      key: 'grNo',
+      header: 'GR no.',
+      // Monospace and selectable: it is read aloud and copied constantly, and
+      // it is the number written on the physical file.
+      render: (row) => <span className="font-mono text-xs select-all">{row.grNo}</span>,
+    },
+    {
       key: 'admissionNo',
       header: 'Admission no.',
-      // Monospace and selectable: it gets read aloud and copied constantly.
-      render: (row) => <span className="font-mono text-xs select-all">{row.admissionNo}</span>,
+      hideOnMobile: true,
+      render: (row) => (
+        <span className="font-mono text-xs text-muted-foreground select-all">
+          {row.admissionNo}
+        </span>
+      ),
     },
     {
       key: 'name',
@@ -128,9 +180,71 @@ export function StudentsTable({
       header: 'Status',
       render: (row) => (
         <StatusBadge tone={STATUS_TONE[row.status] ?? 'neutral'}>
-          {row.status.toLowerCase().replace('_', ' ')}
+          {humanise(row.status)}
         </StatusBadge>
       ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      align: 'end',
+      render: (row) =>
+        !can.update && !can.delete ? null : (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              aria-label={`Actions for ${row.firstName} ${row.lastName}`}
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              <MoreIcon className="size-4" aria-hidden="true" />
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent>
+              <DropdownMenuLabel>
+                {row.firstName} {row.lastName}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+
+              {can.update ? (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setEditing(row);
+                  }}
+                >
+                  <EditIcon aria-hidden="true" />
+                  Edit details
+                </DropdownMenuItem>
+              ) : null}
+
+              {can.update && row.status === 'ACTIVE' ? (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setLeaving(row);
+                  }}
+                >
+                  Mark as left
+                </DropdownMenuItem>
+              ) : null}
+
+              {can.delete ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    destructive
+                    onSelect={() => {
+                      setDeleting(row);
+                    }}
+                  >
+                    <DeleteIcon aria-hidden="true" />
+                    Delete record
+                  </DropdownMenuItem>
+                </>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ),
     },
   ];
 
@@ -146,10 +260,17 @@ export function StudentsTable({
               : ` · ${aggregates['totalActive']} active`}
           </p>
         </div>
-        <Button disabled>
-          <CreateIcon className="size-4" aria-hidden="true" />
-          Admit student
-        </Button>
+
+        {can.create ? (
+          <Button
+            onClick={() => {
+              setAdmitting(true);
+            }}
+          >
+            <CreateIcon className="size-4" aria-hidden="true" />
+            Admit student
+          </Button>
+        ) : null}
       </header>
 
       <form
@@ -170,28 +291,23 @@ export function StudentsTable({
             type="search"
             name="q"
             defaultValue={search}
-            placeholder="Name or admission number"
+            placeholder="Name, GR or admission number"
             aria-label="Search students"
             className="h-10 w-full rounded-md border border-border bg-background ps-9 pe-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           />
         </div>
 
-        <select
-          name="status"
-          defaultValue={status}
-          aria-label="Filter by status"
-          onChange={(event) => {
-            apply({ status: event.target.value });
+        <SimpleSelect
+          className="w-44"
+          ariaLabel="Filter by status"
+          value={status}
+          emptyOption={{ value: '', label: 'Any status' }}
+          placeholder="Any status"
+          onValueChange={(value) => {
+            apply({ status: value });
           }}
-          className="h-10 rounded-md border border-border bg-background px-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        >
-          <option value="">Any status</option>
-          {STUDENT_STATUSES.map((value) => (
-            <option key={value} value={value}>
-              {value.toLowerCase().replace('_', ' ')}
-            </option>
-          ))}
-        </select>
+          options={STUDENT_STATUSES.map((value) => ({ value, label: humanise(value) }))}
+        />
 
         <Button type="submit" tone="outline" isPending={isPending}>
           Search
@@ -215,10 +331,95 @@ export function StudentsTable({
           empty={{
             title: 'No students yet',
             description:
-              'A student is admitted with an admission number, a class and a guardian. Admitting the first one takes about a minute.',
+              'A student is admitted with a GR number, a class and a guardian. Admitting the first one takes about a minute.',
           }}
         />
       </div>
+
+      <AdmitStudentDialog
+        open={admitting}
+        onOpenChange={setAdmitting}
+        sessionId={sessionId}
+        classes={classes}
+      />
+
+      {editing === undefined ? null : (
+        <EditStudentDialog
+          student={editing}
+          open
+          onOpenChange={(next) => {
+            if (!next) {
+              setEditing(undefined);
+            }
+          }}
+        />
+      )}
+
+      {/* Leaving is a status change, not a delete: the child stays in the
+          register. The reason is required because the register has to say why. */}
+      <ConfirmDialog
+        open={leaving !== undefined}
+        onOpenChange={(next) => {
+          if (!next) {
+            setLeaving(undefined);
+          }
+        }}
+        tone="primary"
+        title={`Mark ${leaving?.firstName ?? ''} ${leaving?.lastName ?? ''} as left?`}
+        description={
+          <>
+            They will be removed from{' '}
+            <span className="text-foreground">{leaving?.className ?? 'their class'}</span> and stop
+            appearing on class lists and fee runs. Their record stays in the register.
+          </>
+        }
+        confirmLabel="Mark as left"
+        onConfirm={async () => {
+          const target = leaving;
+          if (target === undefined) {
+            return;
+          }
+          await mutateOrThrow(ROUTES.students.changeStatus(target.id), 'POST', {
+            status: 'LEFT',
+            reason: 'Marked as left from the student list',
+          });
+          toast.success(`${target.firstName} ${target.lastName} marked as left`);
+          router.refresh();
+        }}
+      />
+
+      {/* Delete is for a record created in error. Typing the GR number is
+          deliberately annoying — it is the number on the physical file, so it
+          forces the operator to confirm they have the right child. */}
+      <ConfirmDialog
+        open={deleting !== undefined}
+        onOpenChange={(next) => {
+          if (!next) {
+            setDeleting(undefined);
+          }
+        }}
+        title={`Delete ${deleting?.firstName ?? ''} ${deleting?.lastName ?? ''}?`}
+        description={
+          <>
+            This is for a record created by mistake. For a student who has left, use{' '}
+            <span className="text-foreground">Mark as left</span> instead — deleting removes them
+            from the register.
+          </>
+        }
+        requireTyping={deleting?.grNo}
+        confirmLabel="Delete record"
+        onConfirm={async () => {
+          const target = deleting;
+          if (target === undefined) {
+            return;
+          }
+          await mutateOrThrow(ROUTES.students.remove(target.id), 'DELETE', {
+            reason: 'Record created in error, deleted from the student list',
+          });
+          toast.success(`${target.firstName} ${target.lastName} deleted`);
+          router.refresh();
+        }}
+      />
     </div>
   );
 }

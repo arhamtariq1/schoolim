@@ -24,7 +24,8 @@
     "verify:rls-role": "node tooling/scripts/verify-rls-role.mjs",
     "verify:isolation": "node tooling/scripts/verify-isolation.mjs",
     "verify:browser": "node tooling/scripts/verify-browser.mjs",
-    "verify:platform": "node tooling/scripts/verify-platform.mjs"
+    "verify:platform": "node tooling/scripts/verify-platform.mjs",
+    "verify:students": "node tooling/scripts/verify-student-crud.mjs"
   },
   "devDependencies": {
     "@ilm/config": "workspace:*",

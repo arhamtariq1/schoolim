@@ -83,13 +83,18 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
       cache: 'no-store',
     });
   } catch {
+    // Says which process is missing, in development only. "Try again in a
+    // moment" suggests waiting, and waiting never starts a server.
     return Response.json(
       {
         type: 'about:blank',
         title: 'Service unavailable',
         status: 502,
         code: 'UPSTREAM_UNAVAILABLE',
-        detail: 'Could not reach the server. Try again in a moment.',
+        detail:
+          process.env.NODE_ENV === 'production'
+            ? 'Could not reach the server. Try again in a moment.'
+            : `The API is not running at ${API_BASE}. Start it with \`pnpm --filter @ilm/api dev\`, or run \`pnpm dev\` to start everything.`,
       },
       { status: 502, headers: { 'content-type': 'application/problem+json' } },
     );

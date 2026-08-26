@@ -212,11 +212,21 @@ async function seedSchool(
   // through the product — UNIQUE(school_id, admission_no) then fails the seed,
   // and in the other direction would fail a real admission after a receptionist
   // had typed the whole form.
-  const existingSequence = await db.numberSequence.findUnique({
-    where: { schoolId_kind: { schoolId: school.id, kind: 'admission' } },
-    select: { nextValue: true },
-  });
-  let nextAdmission = existingSequence?.nextValue ?? 1;
+  const [admissionSequence, grSequence] = await Promise.all([
+    db.numberSequence.findUnique({
+      where: { schoolId_kind: { schoolId: school.id, kind: 'admission' } },
+      select: { nextValue: true },
+    }),
+    db.numberSequence.findUnique({
+      where: { schoolId_kind: { schoolId: school.id, kind: 'gr' } },
+      select: { nextValue: true },
+    }),
+  ]);
+  let nextAdmission = admissionSequence?.nextValue ?? 1;
+  // The GR counter is read separately rather than assumed equal to the
+  // admission one. They start in step and drift the moment a school issues a GR
+  // number to a child who never completed admission.
+  let nextGr = grSequence?.nextValue ?? 1;
 
   let created = 0;
   let rollCounter = 0;
@@ -251,8 +261,10 @@ async function seedSchool(
         select: { id: true },
       });
       const admissionNo = `2026-${String(nextAdmission).padStart(4, '0')}`;
+      const grNo = String(nextGr).padStart(4, '0');
       if (already === null) {
         nextAdmission += 1;
+        nextGr += 1;
         created += 1;
       }
 
@@ -262,6 +274,7 @@ async function seedSchool(
         create: {
           id: studentId,
           schoolId: school.id,
+          grNo,
           admissionNo,
           firstName,
           lastName: surname,
@@ -327,6 +340,12 @@ async function seedSchool(
     where: { schoolId_kind: { schoolId: school.id, kind: 'admission' } },
     update: { nextValue: nextAdmission },
     create: { schoolId: school.id, kind: 'admission', nextValue: nextAdmission },
+  });
+
+  await db.numberSequence.upsert({
+    where: { schoolId_kind: { schoolId: school.id, kind: 'gr' } },
+    update: { nextValue: nextGr },
+    create: { schoolId: school.id, kind: 'gr', nextValue: nextGr },
   });
 
   return created;
