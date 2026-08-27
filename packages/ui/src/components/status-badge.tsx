@@ -29,3 +29,11 @@ export interface StatusBadgeProps extends ComponentProps<'span'>, VariantProps<t
 export function StatusBadge({ className, tone, size, ...props }: StatusBadgeProps) {
   return <span className={cn(badge({ tone, size }), className)} {...props} />;
 }
+
+/**
+ * The tones a status may take.
+ *
+ * Exported because every list maps its own statuses onto these, and a call site
+ * writing the union out by hand drifts the moment a tone is added or renamed.
+ */
+export type StatusTone = NonNullable<VariantProps<typeof badge>['tone']>;

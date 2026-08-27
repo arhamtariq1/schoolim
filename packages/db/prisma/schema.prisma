@@ -508,8 +508,13 @@ model Student {
   /// GR is "which entry in this school's register", admission is "which intake".
   /// A school that uses one number for both simply mirrors them.
   grNo             String        @map("gr_no")
+  /// The school's **Student ID** — printed on the card and the fee voucher.
   /// From `number_sequences`, gapless per school. Never a count of rows.
-  admissionNo      String        @map("admission_no")
+  ///
+  /// Named `studentCode`, not `studentId`: that name already means the
+  /// internal UUID on every table that points at a student, and one identifier
+  /// with two meanings is a join written against the wrong one.
+  studentCode      String        @map("student_code")
   firstName        String        @map("first_name")
   lastName         String        @map("last_name")
   gender           Gender?
@@ -541,10 +546,10 @@ model Student {
   enrollments Enrollment[]
   guardians   StudentGuardian[]
 
-  @@unique([schoolId, admissionNo])
+  @@unique([schoolId, studentCode])
   @@unique([schoolId, grNo])
   @@index([schoolId, status, lastName])
-  @@index([schoolId, admissionNo])
+  @@index([schoolId, studentCode])
   @@index([schoolId, grNo])
   @@map("students")
 }
@@ -659,7 +664,7 @@ model Enrollment {
 model NumberSequence {
   id        String   @id @default(uuid(7)) @db.Uuid
   schoolId  String   @map("school_id") @db.Uuid
-  /// `admission` · `gr` · `receipt` · `voucher`.
+  /// `student` · `gr` · `receipt` · `voucher`.
   kind      String
   nextValue Int      @default(1) @map("next_value")
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)

@@ -5,6 +5,7 @@ import {
   type SchoolRole,
   type StudentListItem,
   type StudentListQuery,
+  type StudentProfile,
   type UpdateStudent,
 } from '@ilm/contracts';
 import { Prisma } from '@ilm/db';
@@ -95,28 +96,28 @@ export class StudentsService {
   /**
    * Admit a student.
    *
-   * The admission number is allocated **inside the same transaction** as the
-   * insert, from a per-school counter taken under a row lock. Deriving it from
+   * Both numbers are allocated **inside the same transaction** as the insert,
+   * from per-school counters taken under a row lock. Deriving either from
    * `count(*) + 1` would hand two receptionists admitting at once the same
-   * number, and a school that finds two children sharing an admission number
-   * stops trusting the register entirely.
+   * number, and a school that finds two children sharing one stops trusting the
+   * register entirely.
    */
-  async create(input: CreateStudent): Promise<{ id: string; grNo: string; admissionNo: string }> {
+  async create(input: CreateStudent): Promise<{ id: string; grNo: string; studentCode: string }> {
     return this.prisma.tenant(async (tx) => {
       // Both numbers come from locked counters inside this same transaction.
       // If anything below fails, neither is consumed, and the register is left
       // with no gap where a child never was.
       const grNo = await this.nextNumber(tx, 'gr', (value) => String(value).padStart(4, '0'));
-      const admissionNo = await this.nextNumber(
+      const studentCode = await this.nextNumber(
         tx,
-        'admission',
+        'student',
         (value) => `${String(this.clock.now().getUTCFullYear())}-${String(value).padStart(4, '0')}`,
       );
 
       const student = await tx.student.create({
         data: {
           grNo,
-          admissionNo,
+          studentCode,
           firstName: input.firstName,
           lastName: input.lastName,
           ...(input.gender === undefined ? {} : { gender: input.gender }),
@@ -173,7 +174,7 @@ export class StudentsService {
         });
       }
 
-      return { id: student.id, grNo, admissionNo };
+      return { id: student.id, grNo, studentCode };
     });
   }
 
@@ -339,6 +340,87 @@ export class StudentsService {
   }
 
   /**
+   * The student's own page: details, guardians and enrolment history.
+   *
+   * Scope is applied by going through `findOne` first, so a teacher restricted
+   * to their sections cannot open a student they cannot list by pasting an id.
+   * Everything after that is safe because the row has already been proven
+   * visible to this caller.
+   */
+  async profile(id: string): Promise<StudentProfile> {
+    const listRow = await this.findOne(id);
+
+    return this.prisma.tenant(async (tx) => {
+      const record = await tx.student.findUnique({
+        where: { id },
+        select: {
+          dateOfBirth: true,
+          photoUrl: true,
+          religion: true,
+          bloodGroup: true,
+          nationality: true,
+          address: true,
+          city: true,
+          emergencyContact: true,
+          admittedOn: true,
+          leftOn: true,
+          leavingReason: true,
+          custom: true,
+        },
+      });
+
+      if (record === null) {
+        throw new NotFoundError('student');
+      }
+
+      const enrollments = await tx.enrollment.findMany({
+        where: { studentId: id },
+        // Newest session first: the current year is what someone came to see.
+        orderBy: { session: { startDate: 'desc' } },
+        select: {
+          id: true,
+          rollNo: true,
+          status: true,
+          enrolledOn: true,
+          endedOn: true,
+          session: { select: { name: true } },
+          classLevel: { select: { name: true } },
+          section: { select: { name: true } },
+        },
+      });
+
+      return {
+        ...listRow,
+        dateOfBirth: asCalendarDate(record.dateOfBirth),
+        photoUrl: record.photoUrl,
+        religion: record.religion,
+        bloodGroup: record.bloodGroup,
+        nationality: record.nationality,
+        address: record.address,
+        city: record.city,
+        emergencyContact: record.emergencyContact,
+        admittedOn: asCalendarDate(record.admittedOn),
+        leftOn: asCalendarDate(record.leftOn),
+        leavingReason: record.leavingReason,
+        custom: (record.custom ?? {}) as Record<string, unknown>,
+        // Filled by the controller from GuardiansService — kept out of this
+        // service so guardians have one owner rather than two.
+        guardians: [],
+        enrollments: enrollments.map((entry) => ({
+          id: entry.id,
+          sessionName: entry.session.name,
+          className: entry.classLevel.name,
+          sectionName: entry.section?.name ?? null,
+          rollNo: entry.rollNo,
+          status: entry.status,
+          enrolledOn: asCalendarDate(entry.enrolledOn),
+          endedOn: asCalendarDate(entry.endedOn),
+        })),
+      };
+    });
+  }
+
+  /**
    * Allocate the next number of a given kind for this school.
    *
    * `ON CONFLICT DO UPDATE` takes a row lock on the counter, so two
@@ -353,7 +435,7 @@ export class StudentsService {
     tx: {
       $queryRawUnsafe: <T>(q: string, ...v: unknown[]) => Promise<T>;
     },
-    kind: 'admission' | 'gr',
+    kind: 'student' | 'gr',
     format: (value: number) => string,
   ): Promise<string> {
     // `id` is supplied explicitly: Prisma's `@default(uuid(7))` is generated by
@@ -384,7 +466,7 @@ function toListItem(row: StudentRow): StudentListItem {
   return {
     id: row.id,
     grNo: row.gr_no,
-    admissionNo: row.admission_no,
+    studentCode: row.student_code,
     firstName: row.first_name,
     lastName: row.last_name,
     status: row.status as StudentListItem['status'],
@@ -395,4 +477,13 @@ function toListItem(row: StudentRow): StudentListItem {
     guardianName: row.guardian_name,
     guardianPhone: row.guardian_phone,
   };
+}
+
+/**
+ * A `@db.Date` column comes back as a Date at UTC midnight. Formatting it with
+ * anything timezone-aware shifts a birthday by a day in half the world, so it
+ * is sliced rather than converted.
+ */
+function asCalendarDate(value: Date | null): string | null {
+  return value === null ? null : value.toISOString().slice(0, 10);
 }

@@ -40,13 +40,17 @@ export const studentListItemSchema = z.object({
   /**
    * The General Register number — the school's permanent entry for this child.
    * Issued once, never reused, never edited, and it outlives them leaving.
-   *
-   * Separate from `admissionNo` because the two answer different questions:
-   * GR is "which entry in the register", admission is "which intake". A school
-   * that uses one number for both mirrors them; that is configuration.
    */
   grNo: z.string(),
-  admissionNo: z.string(),
+  /**
+   * The school's **Student ID**, as printed on the card and the fee voucher.
+   *
+   * Named `studentCode` rather than `studentId` because that name already means
+   * the internal UUID on every table that points at a student. One identifier
+   * with two meanings is a join written against the wrong one, and it reads as
+   * correct. The label a person sees is "Student ID".
+   */
+  studentCode: z.string(),
   firstName: z.string(),
   lastName: z.string(),
   status: studentStatusSchema,
@@ -88,7 +92,7 @@ export type StudentDetail = z.infer<typeof studentDetailSchema>;
  * the bug that leaks a whole table into a report (docs/11 §6).
  */
 export const studentListQuerySchema = listQuery(
-  ['name', 'grNo', 'admissionNo', 'className', 'createdAt'] as const,
+  ['name', 'grNo', 'studentCode', 'className', 'createdAt'] as const,
   {
     status: studentStatusSchema.optional(),
     sessionId: idSchema.optional(),
@@ -104,10 +108,10 @@ export type StudentListQuery = z.infer<typeof studentListQuerySchema>;
 /**
  * Creating a student.
  *
- * `grNo` and `admissionNo` are absent on purpose: both come from gapless
+ * `grNo` and `studentCode` are absent on purpose: both come from gapless
  * per-school sequences allocated on the server, inside the same transaction as
- * the insert. A client-supplied register number is how two children end up
- * sharing one, and how a school stops trusting the register entirely.
+ * the insert. A client-supplied number is how two children end up sharing one,
+ * and how a school stops trusting its own register.
  *
  * `schoolId` is absent for the same class of reason — tenant scope comes from
  * request context, never from the body (docs/12 R2). A caller must not be able
@@ -239,3 +243,98 @@ export const currentSessionSchema = z.object({
 });
 
 export type CurrentSession = z.infer<typeof currentSessionSchema>;
+
+/** A guardian attached to a student, as the 360 page shows them. */
+export const studentGuardianSchema = z.object({
+  id: idSchema,
+  name: z.string(),
+  relation: guardianRelationSchema,
+  phone: z.string().nullable(),
+  email: z.string().nullable(),
+  cnic: z.string().nullable(),
+  occupation: z.string().nullable(),
+  isPrimary: z.boolean(),
+  /** Whose name the fee voucher goes to. Exactly one per student. */
+  isFeePayer: z.boolean(),
+  /**
+   * Other children of this guardian, in this school.
+   *
+   * Siblings fall out of the guardian link rather than being guessed from a
+   * surname — Pakistani families share a surname across households far too
+   * often for that to be safe. A real sibling link is what lets fees be billed
+   * to one family and a sibling discount mean anything.
+   */
+  siblings: z.array(
+    z.object({
+      id: idSchema,
+      name: z.string(),
+      grNo: z.string(),
+      className: z.string().nullable(),
+    }),
+  ),
+});
+
+export type StudentGuardian = z.infer<typeof studentGuardianSchema>;
+
+/** One row of a student's enrolment history — which class, which year. */
+export const enrollmentHistoryItemSchema = z.object({
+  id: idSchema,
+  sessionName: z.string(),
+  className: z.string(),
+  sectionName: z.string().nullable(),
+  rollNo: z.int().nullable(),
+  status: z.enum(['ENROLLED', 'PROMOTED', 'REPEATED', 'TRANSFERRED', 'LEFT']),
+  enrolledOn: calendarDateSchema.nullable(),
+  endedOn: calendarDateSchema.nullable(),
+});
+
+export type EnrollmentHistoryItem = z.infer<typeof enrollmentHistoryItemSchema>;
+
+/**
+ * Everything the student's own page shows, in one response.
+ *
+ * One request, not four. A 360 page that fires separate calls for details,
+ * guardians and history renders three spinners that finish out of order, and
+ * the first thing a person sees is a page assembling itself.
+ */
+export const studentProfileSchema = studentDetailSchema.extend({
+  guardians: z.array(studentGuardianSchema),
+  enrollments: z.array(enrollmentHistoryItemSchema),
+});
+
+export type StudentProfile = z.infer<typeof studentProfileSchema>;
+
+/** Adding a guardian to a student, or editing one already attached. */
+export const upsertGuardianSchema = z
+  .object({
+    name: textSchema(120),
+    relation: guardianRelationSchema,
+    phone: phoneSchema.optional(),
+    email: z.email().optional(),
+    cnic: z.string().trim().max(20).optional(),
+    occupation: z.string().trim().max(80).optional(),
+    /** Promotes this guardian and demotes whoever held the flag. */
+    isPrimary: z.boolean().optional(),
+    isFeePayer: z.boolean().optional(),
+  })
+  .strict();
+
+export type UpsertGuardian = z.infer<typeof upsertGuardianSchema>;
+
+/**
+ * Attaching an existing guardian, by id.
+ *
+ * The path that makes siblings work: the second child is linked to the guardian
+ * the first child already has, rather than a second copy of the same person
+ * being typed in. Two copies means two fee vouchers, two phone numbers to keep
+ * in step, and no sibling discount that can ever be calculated.
+ */
+export const linkGuardianSchema = z
+  .object({
+    guardianId: idSchema,
+    isPrimary: z.boolean().optional(),
+    isFeePayer: z.boolean().optional(),
+  })
+  .strict();
+
+export type LinkGuardian = z.infer<typeof linkGuardianSchema>;

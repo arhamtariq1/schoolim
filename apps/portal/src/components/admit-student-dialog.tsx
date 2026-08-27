@@ -39,7 +39,7 @@ import { mutate } from '@/lib/mutate';
  * where there is time. A form that asks for twenty things at admission is a
  * form people work around by typing "x" into the boxes they cannot answer.
  *
- * Neither register number is asked for. Both are allocated server-side inside
+ * Neither number is asked for. Both are allocated server-side inside
  * the insert's transaction, because a client-supplied number is how two
  * children end up sharing one.
  */
@@ -168,7 +168,7 @@ export function AdmitStudentDialog({
     }
 
     setIsPending(true);
-    const result = await mutate<{ id: string; grNo: string; admissionNo: string }>(
+    const result = await mutate<{ id: string; grNo: string; studentCode: string }>(
       ROUTES.students.create,
       'POST',
       parsed.data satisfies CreateStudent,
@@ -186,7 +186,7 @@ export function AdmitStudentDialog({
     // dialog closing looks the same as it being dismissed.
     toast.success(
       `${form.firstName} ${form.lastName} admitted`,
-      `GR ${result.data.grNo} · Admission ${result.data.admissionNo}`,
+      `GR ${result.data.grNo} · Student ID ${result.data.studentCode}`,
     );
 
     setForm(EMPTY);
@@ -218,8 +218,8 @@ export function AdmitStudentDialog({
           <DialogHeader>
             <DialogTitle>Admit a student</DialogTitle>
             <DialogDescription>
-              A GR number and an admission number are issued automatically. Class and guardian can
-              be added later if the parent does not have the details now.
+              A GR number and a Student ID are issued automatically. Class and guardian can be added
+              later if the parent does not have them now.
             </DialogDescription>
           </DialogHeader>
 

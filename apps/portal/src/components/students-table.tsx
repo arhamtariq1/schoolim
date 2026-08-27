@@ -112,12 +112,12 @@ export function StudentsTable({
       render: (row) => <span className="font-mono text-xs select-all">{row.grNo}</span>,
     },
     {
-      key: 'admissionNo',
-      header: 'Admission no.',
+      key: 'studentCode',
+      header: 'Student ID',
       hideOnMobile: true,
       render: (row) => (
         <span className="font-mono text-xs text-muted-foreground select-all">
-          {row.admissionNo}
+          {row.studentCode}
         </span>
       ),
     },
@@ -291,7 +291,7 @@ export function StudentsTable({
             type="search"
             name="q"
             defaultValue={search}
-            placeholder="Name, GR or admission number"
+            placeholder="Name, GR or Student ID"
             aria-label="Search students"
             className="h-10 w-full rounded-md border border-border bg-background ps-9 pe-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           />
@@ -325,6 +325,10 @@ export function StudentsTable({
           caption="Students"
           {...(error === undefined ? {} : { error })}
           isFiltered={isFiltered}
+          // The row opens the student. It never mutates (docs/16 §9).
+          onRowClick={(row) => {
+            router.push(`/students/${row.id}`);
+          }}
           onClearFilters={() => {
             apply({ q: '', status: '' });
           }}

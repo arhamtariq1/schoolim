@@ -167,13 +167,13 @@ const admitted = await call('/api/v1/students', {
 });
 const created = admitted.json()?.data;
 check(
-  'admission issues a GR number and an admission number',
+  'admission issues a GR number and an Student ID',
   (admitted.status === 200 || admitted.status === 201) &&
     typeof created?.grNo === 'string' &&
-    typeof created?.admissionNo === 'string',
+    typeof created?.studentCode === 'string',
   created === undefined
     ? JSON.stringify(admitted.json()).slice(0, 300)
-    : `GR ${created.grNo} · ${created.admissionNo}`,
+    : `GR ${created.grNo} · ${created.studentCode}`,
 );
 
 // The new number must not collide with anything already in the register.

@@ -25,7 +25,9 @@
     "verify:isolation": "node tooling/scripts/verify-isolation.mjs",
     "verify:browser": "node tooling/scripts/verify-browser.mjs",
     "verify:platform": "node tooling/scripts/verify-platform.mjs",
-    "verify:students": "node tooling/scripts/verify-student-crud.mjs"
+    "verify:students": "node tooling/scripts/verify-student-crud.mjs",
+    "verify:guardians": "node tooling/scripts/verify-guardians.mjs",
+    "verify:all": "node tooling/scripts/verify-isolation.mjs && node tooling/scripts/verify-browser.mjs && node tooling/scripts/verify-platform.mjs && node tooling/scripts/verify-student-crud.mjs && node tooling/scripts/verify-guardians.mjs"
   },
   "devDependencies": {
     "@ilm/config": "workspace:*",

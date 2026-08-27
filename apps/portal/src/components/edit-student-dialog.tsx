@@ -23,9 +23,9 @@ import { mutate } from '@/lib/mutate';
 /**
  * Edit a student's details.
  *
- * **Status is absent, and so are both register numbers.** Status is a state
+ * **Status is absent, and so are both numbers.** Status is a state
  * change with consequences — leaving ends an enrolment and stops billing — so
- * it has its own action that can require a reason. The GR and admission numbers
+ * it has its own action that can require a reason. The GR number and Student ID
  * are the school's permanent record of this child; editing them is how two
  * children end up sharing one, and how a register stops being trustworthy.
  * They are shown, read-only, so the operator can see who they are editing.
@@ -105,8 +105,8 @@ export function EditStudentDialog({ student, open, onOpenChange }: EditStudentDi
           <DialogHeader>
             <DialogTitle>Edit student</DialogTitle>
             <DialogDescription>
-              GR <span className="font-mono text-foreground">{student.grNo}</span> · Admission{' '}
-              <span className="font-mono text-foreground">{student.admissionNo}</span>. Neither can
+              GR <span className="font-mono text-foreground">{student.grNo}</span> · Student ID{' '}
+              <span className="font-mono text-foreground">{student.studentCode}</span>. Neither can
               be changed.
             </DialogDescription>
           </DialogHeader>

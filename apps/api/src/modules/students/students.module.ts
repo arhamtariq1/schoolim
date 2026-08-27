@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { clockProvider } from '../../shared/time/clock.provider';
 
+import { GuardiansService } from './guardians.service';
 import { StudentsController } from './students.controller';
 import { StudentsRepository } from './students.repository';
 import { StudentsService } from './students.service';
@@ -13,7 +14,7 @@ import { StudentsService } from './students.service';
  */
 @Module({
   controllers: [StudentsController],
-  providers: [clockProvider, StudentsService, StudentsRepository],
-  exports: [StudentsService],
+  providers: [clockProvider, StudentsService, StudentsRepository, GuardiansService],
+  exports: [StudentsService, GuardiansService],
 })
 export class StudentsModule {}

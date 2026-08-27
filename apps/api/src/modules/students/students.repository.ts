@@ -15,7 +15,7 @@ import { Injectable } from '@nestjs/common';
 export interface StudentRow {
   id: string;
   gr_no: string;
-  admission_no: string;
+  student_code: string;
   first_name: string;
   last_name: string;
   status: string;
@@ -85,13 +85,13 @@ export class StudentsRepository {
     }
 
     if (query.q !== undefined) {
-      // Trigram-friendly: matches a half-remembered name or an admission
-      // number, which is what reception actually types.
+      // Trigram-friendly: matches a half-remembered name or either number,
+      // which is what reception actually types.
       const term = bind(`%${query.q}%`);
       where.push(
         // Reception types whichever number is on the paper in front of them.
         `((s.first_name || ' ' || s.last_name) ILIKE ${term}
-           OR s.admission_no ILIKE ${term}
+           OR s.student_code ILIKE ${term}
            OR s.gr_no ILIKE ${term})`,
       );
     }
@@ -123,7 +123,7 @@ export class StudentsRepository {
     const ORDER: Record<StudentListQuery['sort'], string> = {
       name: 's.last_name, s.first_name',
       grNo: 's.gr_no',
-      admissionNo: 's.admission_no',
+      studentCode: 's.student_code',
       className: 'cl.numeric_order, sec.name',
       createdAt: 's.created_at',
     };
@@ -149,7 +149,7 @@ export class StudentsRepository {
     `;
 
     const rows = await tx.$queryRawUnsafe<StudentRow[]>(
-      `SELECT s.id, s.gr_no, s.admission_no, s.first_name, s.last_name, s.status::text AS status,
+      `SELECT s.id, s.gr_no, s.student_code, s.first_name, s.last_name, s.status::text AS status,
               s.gender::text AS gender,
               cl.name AS class_name, sec.name AS section_name, e.roll_no,
               g.name AS guardian_name, g.phone AS guardian_phone

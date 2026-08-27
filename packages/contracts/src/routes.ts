@@ -35,6 +35,14 @@ export const ROUTES = {
     changeStatus: (id: string) => `${API_PREFIX}/students/${id}/status`,
     /** Soft delete. The register keeps the row; the retention job erases it. */
     remove: (id: string) => `${API_PREFIX}/students/${id}`,
+    /** The 360 page: details, guardians and enrolment history in one call. */
+    profile: (id: string) => `${API_PREFIX}/students/${id}/profile`,
+    guardians: (id: string) => `${API_PREFIX}/students/${id}/guardians`,
+    /** Search existing guardians, so a sibling links rather than duplicates. */
+    guardianSearch: `${API_PREFIX}/guardians`,
+    guardianLink: (id: string) => `${API_PREFIX}/students/${id}/guardians/link`,
+    guardianDetach: (id: string, guardianId: string) =>
+      `${API_PREFIX}/students/${id}/guardians/${guardianId}`,
   },
   academics: {
     /** Classes with their current-session sections, and the session itself. */

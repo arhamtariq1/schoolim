@@ -207,14 +207,14 @@ async function seedSchool(
 
   // --- Students, one family at a time, so siblings share a guardian --------
   //
-  // Admission numbers are allocated from the SAME counter the API uses, rather
+  // Student IDs are allocated from the SAME counter the API uses, rather
   // than from a loop index. A loop index collides with anything already admitted
-  // through the product — UNIQUE(school_id, admission_no) then fails the seed,
+  // through the product — UNIQUE(school_id, student_code) then fails the seed,
   // and in the other direction would fail a real admission after a receptionist
   // had typed the whole form.
-  const [admissionSequence, grSequence] = await Promise.all([
+  const [studentCodeSequence, grSequence] = await Promise.all([
     db.numberSequence.findUnique({
-      where: { schoolId_kind: { schoolId: school.id, kind: 'admission' } },
+      where: { schoolId_kind: { schoolId: school.id, kind: 'student' } },
       select: { nextValue: true },
     }),
     db.numberSequence.findUnique({
@@ -222,7 +222,7 @@ async function seedSchool(
       select: { nextValue: true },
     }),
   ]);
-  let nextAdmission = admissionSequence?.nextValue ?? 1;
+  let nextStudentCode = studentCodeSequence?.nextValue ?? 1;
   // The GR counter is read separately rather than assumed equal to the
   // admission one. They start in step and drift the moment a school issues a GR
   // number to a child who never completed admission.
@@ -254,16 +254,16 @@ async function seedSchool(
       const studentId = deterministicId(spec.id, `student:${surname}:${firstName}`);
       const section = pick(sections, rollCounter);
 
-      // Only a NEW student consumes an admission number. Re-running the seed
+      // Only a NEW student consumes an Student ID. Re-running the seed
       // must not burn numbers, or the register grows holes on every run.
       const already = await db.student.findUnique({
         where: { id: studentId },
         select: { id: true },
       });
-      const admissionNo = `2026-${String(nextAdmission).padStart(4, '0')}`;
+      const studentCode = `2026-${String(nextStudentCode).padStart(4, '0')}`;
       const grNo = String(nextGr).padStart(4, '0');
       if (already === null) {
-        nextAdmission += 1;
+        nextStudentCode += 1;
         nextGr += 1;
         created += 1;
       }
@@ -275,7 +275,7 @@ async function seedSchool(
           id: studentId,
           schoolId: school.id,
           grNo,
-          admissionNo,
+          studentCode,
           firstName,
           lastName: surname,
           gender: pick(['MALE', 'FEMALE'] as const, firstName.length),
@@ -333,13 +333,13 @@ async function seedSchool(
    * Advance the admission counter past everything seeded.
    *
    * Without this the next real admission would be handed `2026-0001`, collide
-   * with a seeded student on UNIQUE(school_id, admission_no), and fail — after
+   * with a seeded student on UNIQUE(school_id, student_code), and fail — after
    * the receptionist had already typed the whole form.
    */
   await db.numberSequence.upsert({
-    where: { schoolId_kind: { schoolId: school.id, kind: 'admission' } },
-    update: { nextValue: nextAdmission },
-    create: { schoolId: school.id, kind: 'admission', nextValue: nextAdmission },
+    where: { schoolId_kind: { schoolId: school.id, kind: 'student' } },
+    update: { nextValue: nextStudentCode },
+    create: { schoolId: school.id, kind: 'student', nextValue: nextStudentCode },
   });
 
   await db.numberSequence.upsert({
