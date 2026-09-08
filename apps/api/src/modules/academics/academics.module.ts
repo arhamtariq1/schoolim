@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 
 import { AcademicsController } from './academics.controller';
 import { AcademicsService } from './academics.service';
+import { HolidaysService } from './holidays.service';
+import { StructureService } from './structure.service';
 
 /**
  * Classes, sections and academic sessions.
@@ -12,7 +14,7 @@ import { AcademicsService } from './academics.service';
  */
 @Module({
   controllers: [AcademicsController],
-  providers: [AcademicsService],
+  providers: [AcademicsService, StructureService, HolidaysService],
   exports: [AcademicsService],
 })
 export class AcademicsModule {}

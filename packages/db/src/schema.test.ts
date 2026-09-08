@@ -10,6 +10,7 @@ import {
   SELF_SCOPED_TABLES,
   TENANT_MODELS,
   TENANT_RLS_EXEMPT_TABLES,
+  isDeliberatelyUnscopedIndex,
 } from './tenant-models';
 
 /**
@@ -73,7 +74,17 @@ describe('tenant model registry', () => {
 
       expect(indexes.length).toBeGreaterThan(0);
       for (const index of indexes) {
-        expect(index.trim().startsWith('schoolId')).toBe(true);
+        const fields = index.trim();
+        if (isDeliberatelyUnscopedIndex(model, fields)) {
+          // A named, reasoned exception — see UNSCOPED_INDEXES. There is one
+          // query in the product that crosses tenants on purpose, and this is
+          // where it is declared rather than quietly tolerated.
+          continue;
+        }
+        expect(
+          fields.startsWith('schoolId'),
+          `${model}: @@index([${fields}]) does not lead with schoolId`,
+        ).toBe(true);
       }
     }
   });

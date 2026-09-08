@@ -2,7 +2,18 @@
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
   "globalDependencies": [".env.example", "tsconfig.json"],
-  "globalEnv": ["NODE_ENV", "CI"],
+  "globalEnv": [
+    "NODE_ENV",
+    "CI",
+    "APP_DOMAIN",
+    "NEXT_PUBLIC_APP_DOMAIN",
+    "API_URL",
+    "WEB_URL",
+    "PORTAL_PORT",
+    "MAIL_DRIVER",
+    "DATABASE_URL",
+    "DATABASE_ADMIN_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

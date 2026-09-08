@@ -7,20 +7,7 @@ import {
   ROUTES,
   type CreateStudent,
 } from '@ilm/contracts';
-import {
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Field,
-  Input,
-  SimpleSelect,
-  useToast,
-} from '@ilm/ui';
+import { Button, DatePicker, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Field, Input, SimpleSelect, useToast } from '@ilm/ui';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -269,11 +256,10 @@ export function AdmitStudentDialog({
               </Field>
 
               <Field label="Date of birth" error={fieldErrors['dateOfBirth']}>
-                <Input
-                  type="date"
+                <DatePicker
                   value={form.dateOfBirth}
-                  onChange={(event) => {
-                    set('dateOfBirth', event.target.value);
+                  onChange={(nextValue) => {
+                    set('dateOfBirth', nextValue);
                   }}
                 />
               </Field>

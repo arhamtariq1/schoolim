@@ -28,6 +28,19 @@ export interface NavItem {
   readonly icon: string;
   /** Shown only when the user holds this. */
   readonly permission: Permission;
+  /**
+   * Nested items, up to two levels deep.
+   *
+   * A section only earns children when it has genuinely distinct screens that
+   * people go to directly — attendance has four, and a teacher marking a
+   * register and a principal reading a month are different errands. A section
+   * whose children are just its tabs should not have any: two ways to reach the
+   * same page is two things to keep in step.
+   *
+   * A child is filtered by its own permission, so a role that can mark but not
+   * report sees one branch and not the other.
+   */
+  readonly children?: readonly NavItem[];
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
@@ -44,7 +57,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
     permission: 'students.student.read',
   },
   {
-    href: '/fees',
+    // The voucher list, not the old landing page: this is where anyone opening
+    // "Fees" actually wants to be — what has been billed and what is owed.
+    href: '/fees/vouchers',
     label: 'Fees',
     icon: 'FeesIcon',
     // Voucher read, not plan configure: an accountant and a receptionist both
@@ -55,7 +70,51 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/attendance',
     label: 'Attendance',
     icon: 'AttendanceIcon',
-    permission: 'attendance.report.read',
+    // The parent asks for the lesser of its children's permissions, so somebody
+    // who may only mark still sees the section that contains marking.
+    permission: 'attendance.record.read',
+    children: [
+      {
+        href: '/attendance/mark',
+        label: 'Mark attendance',
+        icon: 'AttendanceIcon',
+        permission: 'attendance.record.read',
+        children: [
+          {
+            href: '/attendance/mark/students',
+            label: 'Students',
+            icon: 'StudentsIcon',
+            permission: 'attendance.record.read',
+          },
+          {
+            href: '/attendance/mark/teachers',
+            label: 'Staff',
+            icon: 'AccountIcon',
+            permission: 'attendance.record.read',
+          },
+        ],
+      },
+      {
+        href: '/attendance/reports',
+        label: 'Attendance report',
+        icon: 'FinanceIcon',
+        permission: 'attendance.report.read',
+        children: [
+          {
+            href: '/attendance/reports/students',
+            label: 'Students',
+            icon: 'StudentsIcon',
+            permission: 'attendance.report.read',
+          },
+          {
+            href: '/attendance/reports/teachers',
+            label: 'Staff',
+            icon: 'AccountIcon',
+            permission: 'attendance.report.read',
+          },
+        ],
+      },
+    ],
   },
   {
     href: '/academics',
@@ -64,10 +123,16 @@ export const NAV_ITEMS: readonly NavItem[] = [
     permission: 'academics.structure.read',
   },
   {
+    href: '/staff',
+    label: 'Staff',
+    icon: 'AccountIcon',
+    permission: 'staff.record.read',
+  },
+  {
     href: '/finance',
     label: 'Finance',
     icon: 'FinanceIcon',
-    permission: 'finance.report.read',
+    permission: 'finance.expense.read',
   },
   {
     href: '/requests',
@@ -93,5 +158,37 @@ export const NAV_ITEMS: readonly NavItem[] = [
  */
 export function visibleNavItems(permissions: readonly string[]): readonly NavItem[] {
   const held = new Set(permissions);
-  return NAV_ITEMS.filter((item) => held.has(item.permission));
+  return prune(NAV_ITEMS, held);
 }
+
+/**
+ * Filter a level, and every level under it.
+ *
+ * A branch whose children are all hidden is dropped rather than left as a
+ * heading that expands to nothing — which is the bug where a menu item leads to
+ * a 403, wearing a different hat.
+ */
+function prune(items: readonly NavItem[], held: ReadonlySet<string>): readonly NavItem[] {
+  return items
+    .filter((item) => held.has(item.permission))
+    .map((item) => {
+      if (item.children === undefined) {
+        return item;
+      }
+      const children = prune(item.children, held);
+      return children.length === 0 ? { ...item, children: undefined } : { ...item, children };
+    })
+    .filter((item) => item.children !== undefined || !hasOnlyChildren(item));
+}
+
+/**
+ * A section that is only a container — no page of its own worth landing on.
+ *
+ * `/attendance` redirects, so an item pointing at it with nothing under it
+ * would be a dead heading.
+ */
+function hasOnlyChildren(item: NavItem): boolean {
+  return CONTAINER_ONLY.has(item.href);
+}
+
+const CONTAINER_ONLY: ReadonlySet<string> = new Set(['/attendance']);

@@ -1,8 +1,9 @@
 import { permissionsFor, type SchoolRole } from '@ilm/contracts';
-import { EmptyState, Money, StatusBadge } from '@ilm/ui';
+import { Card, EmptyState, Money, StatusBadge } from '@ilm/ui';
 import { minorUnits } from '@ilm/utils';
 
 import { AppShell } from '@/components/app-shell';
+import { PageHeader } from '@/components/page-header';
 import { getSession } from '@/lib/session';
 
 /**
@@ -10,13 +11,19 @@ import { getSession } from '@/lib/session';
  * URL, six experiences, rather than one dashboard with six permission checks
  * inside it.
  *
- * The tiles below are **shape, not data** — Phase 0 has no students, fees or
- * attendance to count. They exist so the layout, the money rendering and the
- * permission-driven navigation are all visible and reviewable now, rather than
- * being designed for the first time under deadline in Phase 4.
+ * The tiles below are **shape, not data**. There is no summary endpoint yet —
+ * `ROUTES` has no dashboard entry — so nothing here can show a real figure, and
+ * a tile that invents one is worse than a tile that says it is a placeholder.
+ * They exist so the layout, the money rendering and the permission-driven
+ * navigation are all visible and reviewable now, rather than being designed for
+ * the first time under deadline in Phase 4.
  */
-export default async function HomePage() {
-  const session = await getSession();
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [session, query] = await Promise.all([getSession(), searchParams]);
 
   // Without a session the API is the thing that says so; this page only decides
   // what to render. Signing in is at /login.
@@ -24,37 +31,56 @@ export default async function HomePage() {
   const permissions = session?.permissions ?? permissionsFor(roles);
   const isPreview = session === undefined;
 
+  // Set by /verify-email after following the link from the confirmation
+  // message. Expired, already used and address-since-changed are one outcome —
+  // the next step is the same for all three (ADR-0012).
+  const verifyOutcome = typeof query['verify'] === 'string' ? query['verify'] : undefined;
+
   return (
     <AppShell
       user={{ name: session?.name ?? 'Not signed in', roleLabel: roles.join(', ') }}
       school={{ name: session?.school.name ?? 'Demo School' }}
       permissions={permissions}
+      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
     >
-      <div className="space-y-6">
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold">Today</h1>
-            <p className="text-sm text-muted-foreground">
-              {isPreview
-                ? 'Preview — sign in to see your school’s real figures.'
-                : `Signed in as ${session.name}`}
-            </p>
-          </div>
-          {isPreview ? <StatusBadge tone="warning">Preview</StatusBadge> : null}
-        </header>
+      {verifyOutcome === undefined ? null : (
+        <div
+          role="status"
+          className={
+            verifyOutcome === 'ok'
+              ? 'rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm'
+              : 'rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger'
+          }
+        >
+          {verifyOutcome === 'ok'
+            ? 'Email address confirmed. You can now reset your password if you ever lose it.'
+            : verifyOutcome === 'unreachable'
+              ? 'Could not reach the server. Open the link again in a moment.'
+              : 'That confirmation link has expired or was already used. Ask for a new one above.'}
+        </div>
+      )}
 
-        <section aria-label="Collection" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Tile label="Collected this month" valueMinor={0} tone="success" />
-          <Tile label="Outstanding" valueMinor={0} tone="danger" />
-          <Tile label="Issued this period" valueMinor={0} />
-          <Tile label="Discounts given" valueMinor={0} />
-        </section>
+      <PageHeader
+        title="Today"
+        description={
+          isPreview
+            ? 'Preview — sign in to see your school’s real figures.'
+            : `Signed in as ${session.name}`
+        }
+        badge={isPreview ? <StatusBadge tone="warning">Preview</StatusBadge> : undefined}
+      />
 
-        <EmptyState
-          title="No school data yet"
-          description="Students, fee plans and attendance arrive in Phases 1–3. Everything above is laid out now so the shape is settled before the numbers are real."
-        />
-      </div>
+      <section aria-label="Collection" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Tile label="Collected this month" valueMinor={0} tone="success" />
+        <Tile label="Outstanding" valueMinor={0} tone="danger" />
+        <Tile label="Issued this period" valueMinor={0} />
+        <Tile label="Vouchers cancelled" valueMinor={0} />
+      </section>
+
+      <EmptyState
+        title="These figures are not wired up yet"
+        description="Students, fees and attendance all record real data now, but there is no summary endpoint behind this screen — so every tile above reads zero whatever the school has done. Open Fees or Attendance for the real numbers."
+      />
     </AppShell>
   );
 }
@@ -74,17 +100,21 @@ function Tile({
   tone?: 'success' | 'danger';
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
+    <Card className="p-4">
+      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
       <p className="mt-2">
         <Money
           valueMinor={minorUnits(valueMinor)}
           withSymbol
           className={
-            tone === 'success' ? 'text-lg text-success' : tone === 'danger' ? 'text-lg' : 'text-lg'
+            tone === 'success'
+              ? 'text-lg font-semibold text-success'
+              : tone === 'danger'
+                ? 'text-lg font-semibold text-danger'
+                : 'text-lg font-semibold'
           }
         />
       </p>
-    </div>
+    </Card>
   );
 }

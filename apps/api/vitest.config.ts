@@ -14,7 +14,11 @@ export default defineConfig({
     // The e2e suite shares one database with the other packages' suites.
     fileParallelism: false,
     setupFiles: ['./src/testing/load-env.ts'],
-    testTimeout: 30_000,
-    hookTimeout: 60_000,
+    // The voucher suite drives real generation runs — several round trips to a
+    // hosted database per case — and 30s was clipping the ones that bill three
+    // months and then settle them. Slow, but these are the tests that prove the
+    // money is right, so they get the time rather than being trimmed.
+    testTimeout: 90_000,
+    hookTimeout: 120_000,
   },
 });

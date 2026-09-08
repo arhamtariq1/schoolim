@@ -84,6 +84,22 @@ export class AllExceptionsFilter implements ExceptionFilter {
       );
     }
 
+    // A malformed id in the path — `/students/not-a-uuid` — is bad input, not a
+    // server fault. Prisma raises P2023 ("inconsistent column data") when a
+    // string that is not a UUID reaches a uuid column, and without this branch
+    // every endpoint taking an `:id` answers 500: it tells the caller the
+    // mistake was ours, and it fires the error alarm for somebody mistyping a
+    // URL. Mapped centrally rather than validated in forty controllers.
+    if (isInvalidIdError(exception)) {
+      return this.problem(
+        'VALIDATION_FAILED',
+        400,
+        'That identifier is not valid.',
+        instance,
+        requestId,
+      );
+    }
+
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const code: ErrorCode =
@@ -137,4 +153,24 @@ function titleFor(code: ErrorCode): string {
     .split('_')
     .join(' ')
     .replace(/^./, (first) => first.toUpperCase());
+}
+
+/**
+ * Prisma's "you passed something that is not a UUID to a uuid column".
+ *
+ * Matched on the error code rather than the message, which is reworded between
+ * releases. Both codes mean the same thing to a caller: the identifier they
+ * sent is not one. `P2007` is what Prisma 7 raises for a malformed uuid;
+ * `P2023` is the older inconsistent-column-data code, kept because it costs
+ * nothing and an upgrade should not silently reintroduce 500s.
+ *
+ * The code was verified against the running client rather than assumed — the
+ * first guess here was P2023 alone, and it matched nothing.
+ */
+function isInvalidIdError(exception: unknown): boolean {
+  if (typeof exception !== 'object' || exception === null || !('code' in exception)) {
+    return false;
+  }
+  const code = (exception as { code?: unknown }).code;
+  return code === 'P2007' || code === 'P2023';
 }

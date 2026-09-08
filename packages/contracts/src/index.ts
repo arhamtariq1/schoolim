@@ -1,5 +1,10 @@
+export * from './academics';
 export * from './auth';
 export * from './envelope';
+export * from './attendance';
+export * from './expenses';
+export * from './vouchers';
+export * from './fees';
 export * from './errors';
 export * from './pagination';
 export * from './permissions';
@@ -8,3 +13,5 @@ export * from './primitives';
 export * from './roles';
 export * from './students';
 export * from './routes';
+export * from './signup';
+export * from './staff';

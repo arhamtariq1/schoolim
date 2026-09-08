@@ -64,7 +64,7 @@ infrastructure decision in the document, and the good news is that it is cheap.
 | `apps/api`                  | **Local + one always-on free host**                                         | See the options table below                                       |
 | Database                    | **Supabase Free**                                                           | Used as plain Postgres only — no Auth, no client SDK, no Realtime |
 | Object storage              | **Supabase Storage**                                                        | 1 GB free                                                         |
-| Email                       | **Resend**                                                                  | 3k/month free                                                     |
+| Email                       | **SMTP behind `MailPort`** (ADR-0011)                                       | Gmail today — **~500/day, no SPF/DKIM. Replace before Phase 6.**  |
 | Cron                        | **GitHub Actions** or cron-job.org hitting `/internal/jobs/*` with a secret | Also serves as the Supabase keep-alive ping                       |
 | Errors                      | **Sentry** free                                                             |                                                                   |
 | Analytics                   | **PostHog** free                                                            |                                                                   |
@@ -210,9 +210,16 @@ STORAGE_BUCKET=
 STORAGE_KEY=
 STORAGE_SECRET=
 
-MAIL_DRIVER=resend
-RESEND_API_KEY=
-MAIL_FROM=
+MAIL_DRIVER=smtp         # log | smtp. Defaults to log: an unconfigured
+                         # deployment must send nothing rather than send from
+                         # an unintended identity (ADR-0011).
+SMTP_HOST=
+SMTP_PORT=587            # 587 STARTTLS, or 465 with SMTP_SECURE=true
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
+MAIL_FROM=               # normally equals SMTP_USER; most relays rewrite
+                         # anything else. The display name comes from BRAND.
 
 WHATSAPP_PROVIDER=
 WHATSAPP_TOKEN=

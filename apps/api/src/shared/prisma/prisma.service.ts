@@ -4,6 +4,7 @@ import {
   runInTenant,
   runInTenantUnscoped,
   type PrismaClient,
+  type TenantTransactionOptions,
   type TransactionClient,
 } from '@ilm/db';
 import {
@@ -63,8 +64,11 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
    *
    * The tenant is read from CLS, never taken as a parameter (docs/12 R2).
    */
-  async tenant<T>(fn: (tx: TransactionClient) => Promise<T>): Promise<T> {
-    return runInTenant(this.app, this.context.schoolId, fn);
+  async tenant<T>(
+    fn: (tx: TransactionClient) => Promise<T>,
+    options?: TenantTransactionOptions,
+  ): Promise<T> {
+    return runInTenant(this.app, this.context.schoolId, fn, this.context.schoolId, options);
   }
 
   /**

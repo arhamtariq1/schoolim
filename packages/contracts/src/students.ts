@@ -1,11 +1,13 @@
 import { z } from 'zod';
 
+import { feeTotalsSchema, studentFeeLineSchema, studentFeeSchema } from './fees';
 import { listQuery } from './pagination';
 import {
   calendarDateSchema,
   idSchema,
   nonEmptyString,
   phoneSchema,
+  positiveMinorUnitsSchema,
   reasonSchema,
   textSchema,
 } from './primitives';
@@ -62,6 +64,25 @@ export const studentListItemSchema = z.object({
   /** The primary guardian's phone — what reception actually needs on a list. */
   guardianName: z.string().nullable(),
   guardianPhone: z.string().nullable(),
+  /**
+   * The father's name where one is recorded, otherwise the primary guardian's.
+   *
+   * A register that has always printed "Father Name" cannot show a blank column
+   * for a child raised by an aunt, so this falls back rather than being null
+   * whenever no `FATHER` relation exists. `guardianName` stays available for
+   * callers that need the literal primary contact.
+   */
+  fatherName: z.string().nullable(),
+  admittedOn: calendarDateSchema.nullable(),
+  /**
+   * Integer paisa payable for the `TUITION` head, after any discount.
+   *
+   * On the list because it is the one figure reception is asked for by phone,
+   * and because a column that requires opening each row is a column nobody
+   * uses. Null when the school has no tuition head, or this child has no line
+   * against it.
+   */
+  tuitionFeeMinor: positiveMinorUnitsSchema.nullable(),
 });
 
 export type StudentListItem = z.infer<typeof studentListItemSchema>;
@@ -154,6 +175,20 @@ export const createStudentSchema = z
       })
       .optional(),
 
+    /**
+     * The fee structure agreed at admission.
+     *
+     * Part of this request rather than a second call, for the same reason
+     * `enrollment` and `guardian` are: a child admitted with no fees, because
+     * the second request failed or the tab was closed, is a child who is
+     * invisible to billing and looks perfectly fine on every screen. One
+     * transaction or none of it.
+     *
+     * Omitted entirely means "use the school's active catalogue at its default
+     * amounts", which is what the form sends when nobody touched anything.
+     */
+    fees: z.array(studentFeeLineSchema).max(50).optional(),
+
     custom: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
@@ -169,7 +204,7 @@ export type CreateStudent = z.infer<typeof createStudentSchema>;
  * `PATCH { status }` can do none of that (docs/11 §7).
  */
 export const updateStudentSchema = createStudentSchema
-  .omit({ enrollment: true, guardian: true })
+  .omit({ enrollment: true, guardian: true, fees: true })
   .partial()
   .strict();
 
@@ -300,6 +335,9 @@ export type EnrollmentHistoryItem = z.infer<typeof enrollmentHistoryItemSchema>;
 export const studentProfileSchema = studentDetailSchema.extend({
   guardians: z.array(studentGuardianSchema),
   enrollments: z.array(enrollmentHistoryItemSchema),
+  /** The agreed fee structure, with the totals already summed server-side. */
+  fees: z.array(studentFeeSchema),
+  feeTotals: feeTotalsSchema,
 });
 
 export type StudentProfile = z.infer<typeof studentProfileSchema>;

@@ -9,6 +9,7 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 
 import { AppModule } from './app.module';
 import { ENV, loadEnv, type Env } from './config/env';
+import { setupOpenApi } from './openapi';
 
 async function bootstrap(): Promise<void> {
   // Reads the workspace-root `.env`, not `apps/api/.env`. Production supplies
@@ -41,10 +42,17 @@ async function bootstrap(): Promise<void> {
 
   app.enableShutdownHooks();
 
+  // Registered before `listen`, and only where it belongs — see `openapi.ts`
+  // for why this is off in production unless somebody explicitly asks for it.
+  const docsPath = setupOpenApi(app, env.NODE_ENV === 'production');
+
   await app.listen({ port: env.API_PORT, host: '0.0.0.0' });
 
   const logger = new Logger('Bootstrap');
   logger.log(`API listening on ${env.API_URL} (${env.NODE_ENV})`);
+  if (docsPath !== null) {
+    logger.log(`API docs at ${env.API_URL}${docsPath}`);
+  }
 }
 
 void bootstrap().catch((error: unknown) => {

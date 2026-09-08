@@ -70,12 +70,65 @@ export async function runInTenant<T>(
   schoolId: string,
   fn: (tx: TransactionClient) => Promise<T>,
   scopeTenant: string = schoolId,
+  options?: TenantTransactionOptions,
 ): Promise<T> {
   const scoped = tenantClient(prisma, () => scopeTenant);
-  return scoped.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT set_config('app.school_id', ${schoolId}, true)`;
-    return fn(tx as unknown as TransactionClient);
-  });
+  return scoped.$transaction(
+    async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.school_id', ${schoolId}, true)`;
+      return fn(tx as unknown as TransactionClient);
+    },
+    { maxWait: DEFAULT_MAX_WAIT_MS, timeout: DEFAULT_TIMEOUT_MS, ...options },
+  );
+}
+
+/**
+ * How long to wait for a free connection before giving up.
+ *
+ * Prisma's default is **two seconds**, and that default is wrong for this
+ * application in a way that only shows up under load. Every tenant-scoped read
+ * needs an interactive transaction — that is not optional, it is how
+ * `app.school_id` reaches PostgreSQL — so the pool is contended by *reads*, not
+ * just writes. Against a hosted database a request's own work is already a
+ * large fraction of two seconds, so a queue two deep exceeded the budget and
+ * Prisma raised `P2028: Unable to start a transaction in the given time`.
+ *
+ * That surfaced as an intermittent **500** on a perfectly ordinary list
+ * endpoint whenever enough requests arrived together — which is precisely the
+ * morning every teacher in a school opens the register at once.
+ *
+ * Five seconds makes a burst *queue* instead of failing. It is deliberately not
+ * larger: past this the honest answer is that the pool is too small, and a
+ * request that waits thirty seconds for a connection has failed anyway, just
+ * more expensively. Size the pool with `connection_limit` in DATABASE_URL —
+ * Prisma otherwise derives it from the container's CPU count, which on a
+ * 2-vCPU instance is five connections for the whole API.
+ */
+const DEFAULT_MAX_WAIT_MS = 5_000;
+
+/**
+ * How long one transaction may run once it has started.
+ *
+ * Left at Prisma's five seconds on purpose. This is the number that catches a
+ * slow query, and raising it globally to paper over one endpoint would hide
+ * every other. The batch paths that genuinely need longer pass their own — see
+ * `voucher-generation.service.ts`.
+ */
+const DEFAULT_TIMEOUT_MS = 5_000;
+
+/**
+ * How long one tenant transaction may take.
+ *
+ * Prisma's default is five seconds, which is right for a request that touches a
+ * handful of rows and wrong for a batch that writes a whole school's vouchers.
+ * Raising it globally would hide slow queries everywhere, so it is passed in by
+ * the one caller that needs it, with a comment saying why.
+ */
+export interface TenantTransactionOptions {
+  /** Milliseconds the transaction may run before Postgres is told to give up. */
+  readonly timeout?: number;
+  /** Milliseconds to wait for a connection before failing fast. */
+  readonly maxWait?: number;
 }
 
 /**

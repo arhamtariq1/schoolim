@@ -139,15 +139,18 @@ export type CreateSchoolResult = z.infer<typeof createSchoolResultSchema>;
 /**
  * A slug that is already taken, checked as the operator types.
  *
- * This is the one place a tenant's existence is deliberately disclosed, and it
- * is safe because the caller is already an authenticated platform user. It is
- * never exposed on a public route — that is what would hand over the customer
- * list.
+ * This used to be the *only* place a tenant's existence was deliberately
+ * disclosed, and the note here said it was safe because the caller was an
+ * authenticated platform user, and that it must never appear on a public route.
+ *
+ * ADR-0010 changed that, so the note is corrected rather than quietly left to
+ * become false: a self-serve signup form has to answer "is this name taken?"
+ * before submission, and the same schema now backs the public endpoint. What
+ * that endpoint discloses is bounded to yes-or-no, and it is the same fact
+ * anyone learns by loading the address and seeing a login page. The reasoning
+ * is written out in `signup.ts`.
  */
-export const slugAvailabilitySchema = z.object({
-  slug: z.string(),
-  available: z.boolean(),
-});
+export { slugAvailabilitySchema, type SlugAvailability } from './signup';
 
 export const changeSchoolStatusSchema = z
   .object({

@@ -9,12 +9,19 @@ import {
   type UpdateStudent,
 } from '@ilm/contracts';
 import { Prisma } from '@ilm/db';
+import { fromDecimalString } from '@ilm/utils';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
+import {
+  assertHeadsExist,
+  defaultFeeLines,
+  readStructure,
+  toRow as toFeeRow,
+} from '../fees/student-fees.service';
 
 import { StudentsRepository, type StudentRow, type StudentScope } from './students.repository';
 
@@ -171,6 +178,32 @@ export class StudentsService {
             isPrimary: true,
             isFeePayer: true,
           } as never,
+        });
+      }
+
+      // The fee structure, in the same transaction as the child.
+      //
+      // A student admitted with no fees — because a second request failed, or a
+      // tab closed between them — is invisible to billing and looks completely
+      // fine on every screen until the month a voucher does not arrive. So this
+      // is not a follow-up call.
+      //
+      // Omitting `fees` means "charge the standard catalogue", which is what the
+      // form sends when nobody edited anything. Sending `[]` explicitly means
+      // "this child is charged nothing", which is a real thing a school does for
+      // a staff child, and the two must not collapse into each other.
+      const lines =
+        input.fees ??
+        (await defaultFeeLines(tx)).map((line) => ({
+          feeHeadId: line.feeHeadId,
+          amountMinor: line.amountMinor,
+        }));
+
+      await assertHeadsExist(tx, lines);
+
+      if (lines.length > 0) {
+        await tx.studentFee.createMany({
+          data: lines.map((line) => toFeeRow(student.id, line)) as never,
         });
       }
 
@@ -373,6 +406,10 @@ export class StudentsService {
         throw new NotFoundError('student');
       }
 
+      // Read inside the same transaction as the rest of the page, so the fees
+      // shown and the details shown are the same instant.
+      const { fees, totals } = await readStructure(tx, id);
+
       const enrollments = await tx.enrollment.findMany({
         where: { studentId: id },
         // Newest session first: the current year is what someone came to see.
@@ -416,6 +453,8 @@ export class StudentsService {
           enrolledOn: asCalendarDate(entry.enrolledOn),
           endedOn: asCalendarDate(entry.endedOn),
         })),
+        fees,
+        feeTotals: totals,
       };
     });
   }
@@ -476,7 +515,40 @@ function toListItem(row: StudentRow): StudentListItem {
     rollNo: row.roll_no,
     guardianName: row.guardian_name,
     guardianPhone: row.guardian_phone,
+    // Falls back to the primary guardian rather than showing a blank: the
+    // column has always read "Father Name" on a Pakistani register, and a child
+    // raised by an aunt still needs a name printed next to them.
+    fatherName: row.father_name ?? row.guardian_name,
+    admittedOn: asCalendarDate(row.admitted_on),
+    tuitionFeeMinor: decimalToMinor(row.tuition_fee),
   };
+}
+
+/**
+ * A `numeric` column from a raw query, as integer paisa.
+ *
+ * Prisma returns `numeric` as a `Decimal` from `$queryRaw`, while the `pg`
+ * driver returns a string, and this row type is filled by the former. Both are
+ * exact — the point is only that the shape differs — so this narrows rather
+ * than assuming, and goes through `fromDecimalString` either way so the
+ * conversion cannot lose a paisa to a float.
+ */
+function decimalToMinor(value: unknown): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    return fromDecimalString(value);
+  }
+  if (typeof value === 'object' && 'toFixed' in value) {
+    return fromDecimalString((value as { toFixed: (digits: number) => string }).toFixed(2));
+  }
+  if (typeof value === 'number') {
+    // Should not happen for `numeric`, and is handled rather than silently
+    // producing NaN if a driver ever starts doing it.
+    return fromDecimalString(value.toFixed(2));
+  }
+  return null;
 }
 
 /**

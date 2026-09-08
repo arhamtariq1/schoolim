@@ -1,10 +1,14 @@
 import { Global, Module } from '@nestjs/common';
 
-import { ENV, loadEnv } from '../config/env';
+import { ENV, loadEnv, type Env } from '../config/env';
 
 import { PasswordService } from './auth/password.service';
 import { TokenService } from './auth/token.service';
+import { LogMailer } from './mail/log.mailer';
+import { MAIL, type MailPort } from './mail/mail.port';
+import { SmtpMailer } from './mail/smtp.mailer';
 import { PrismaService } from './prisma/prisma.service';
+import { SchoolDirectoryService } from './tenancy/school-directory.service';
 import { TenantContextService } from './tenancy/tenant-context.service';
 
 /**
@@ -25,10 +29,28 @@ import { TenantContextService } from './tenancy/tenant-context.service';
   providers: [
     { provide: ENV, useFactory: () => loadEnv() },
     TenantContextService,
+    SchoolDirectoryService,
     PrismaService,
     TokenService,
     PasswordService,
+    {
+      provide: MAIL,
+      // The driver is chosen once, at boot, from configuration — not per call
+      // site. That is the whole point of the port (ADR-0011): a service that
+      // sends mail never learns which transport carried it.
+      useFactory: (env: Env): MailPort =>
+        env.MAIL_DRIVER === 'smtp' ? new SmtpMailer(env) : new LogMailer(),
+      inject: [ENV],
+    },
   ],
-  exports: [ENV, TenantContextService, PrismaService, TokenService, PasswordService],
+  exports: [
+    ENV,
+    TenantContextService,
+    SchoolDirectoryService,
+    PrismaService,
+    TokenService,
+    PasswordService,
+    MAIL,
+  ],
 })
 export class SharedModule {}

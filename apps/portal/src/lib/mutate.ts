@@ -43,9 +43,15 @@ export async function mutate<T>(
   try {
     response = await fetch(path, {
       method,
-      headers: { 'content-type': 'application/json' },
+      // The header goes on **only when there is a body**. Sending
+      // `content-type: application/json` with nothing after it makes Fastify's
+      // JSON parser demand a body and answer 400 — which is what a bodyless
+      // DELETE hit every time: "Body cannot be empty when content-type is set
+      // to 'application/json'".
+      ...(body === undefined
+        ? {}
+        : { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }),
       credentials: 'include',
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
   } catch {
     return {

@@ -1,10 +1,12 @@
-import { EmptyState } from '@ilm/ui';
+import { redirect } from 'next/navigation';
 
+/**
+ * Finance has no landing page of its own yet.
+ *
+ * Expenses is the only screen built, so sending people straight there beats an
+ * index listing one item — and when reports and the day book arrive this
+ * becomes a real page rather than a redirect.
+ */
 export default function FinancePage() {
-  return (
-    <EmptyState
-      title="Finance is not built yet"
-      description="The foundations are in place — tenant isolation, authentication and the permission model. This module arrives with its phase in docs/14."
-    />
-  );
+  redirect('/finance/expenses');
 }

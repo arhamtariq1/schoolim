@@ -75,8 +75,19 @@ for local development and tests. **Deployed environments point `DATABASE_URL` at
 Railway later** (docs/13 §3) — Supabase is used as plain PostgreSQL only, no Auth and no client SDK,
 which is what makes that move a `pg_dump` rather than a rewrite.
 
-**Tenants resolve from the hostname**, so the portal is reached at `{slug}.localhost:3000`, never at
-`localhost:3000`. A login page that made you pick a school would leak the list of schools.
+**Tenants resolve from the hostname**, so one process serves two sites:
+
+| Address                 | What it is                                                    |
+| ----------------------- | ------------------------------------------------------------- |
+| `localhost:3000`        | The public site — landing page, packages, signup, and sign-in |
+| `{slug}.localhost:3000` | A school's portal                                             |
+| `localhost:3001`        | The platform console                                          |
+
+Sign-in asks for an email and a password on both, and **never for a school**. On a school's address
+the tenant is in the URL; on the apex it is resolved from the credentials _after_ the password has
+been verified, and only then does a person with accounts at several schools see them. A picker
+offered before the password would hand the list of every school to anyone who loaded the page — see
+`docs/adr/0009-global-sign-in.md`.
 
 ## Verifying
 

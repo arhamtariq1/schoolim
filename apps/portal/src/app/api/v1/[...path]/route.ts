@@ -1,6 +1,8 @@
-import { API_PREFIX } from '@ilm/contracts';
+import { API_PREFIX, COOKIES, ROUTES } from '@ilm/contracts';
 import { schoolSlugFromHost } from '@ilm/utils';
 import { type NextRequest } from 'next/server';
+
+import { refreshSession, withCookie } from '@/lib/refresh';
 
 /**
  * The API, served on the school's own hostname.
@@ -57,6 +59,8 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
 
   const target = `${API_BASE}${API_PREFIX}/${segments.map(encodeURIComponent).join('/')}${request.nextUrl.search}`;
 
+  const cookieHeader = request.headers.get('cookie') ?? '';
+
   const headers = new Headers();
   for (const name of FORWARD_REQUEST_HEADERS) {
     const value = request.headers.get(name);
@@ -86,15 +90,56 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
   const method = request.method;
   const hasBody = method !== 'GET' && method !== 'HEAD';
 
+  // Read once: a body cannot be streamed twice, and the retry below needs it.
+  const body = hasBody ? await request.arrayBuffer() : undefined;
+
   let upstream: Response;
+  let renewedCookies: readonly string[] = [];
+
   try {
     upstream = await fetch(target, {
       method,
       headers,
-      ...(hasBody ? { body: await request.arrayBuffer() } : {}),
+      ...(body === undefined ? {} : { body }),
       redirect: 'manual',
       cache: 'no-store',
     });
+
+    // The access token expired mid-session. Spend the refresh token and try the
+    // same call again, exactly once.
+    //
+    // This is the counterpart to the renewal in `proxy.ts`: that one covers
+    // page navigations, this one covers a fetch from a page that has been open
+    // for a while — the receptionist who fills in an admission form for twenty
+    // minutes and then presses Save.
+    //
+    // **Once, and never for the refresh endpoint itself.** A retry loop around
+    // an endpoint whose failure means "sign in again" is an infinite loop, and
+    // a 401 from `/auth/refresh` is the one answer that must be believed.
+    const isRefreshCall = target.includes(ROUTES.auth.refresh);
+
+    if (upstream.status === 401 && !isRefreshCall) {
+      const slugForRenewal = slug ?? 'unknown';
+      const renewed = await refreshSession(API_BASE, slugForRenewal, cookieHeader);
+
+      if (renewed.ok && renewed.accessToken !== undefined) {
+        renewedCookies = renewed.setCookies;
+
+        const retryHeaders = new Headers(headers);
+        retryHeaders.set(
+          'cookie',
+          withCookie(cookieHeader, COOKIES.accessToken, renewed.accessToken),
+        );
+
+        upstream = await fetch(target, {
+          method,
+          headers: retryHeaders,
+          ...(body === undefined ? {} : { body }),
+          redirect: 'manual',
+          cache: 'no-store',
+        });
+      }
+    }
   } catch {
     // The API being down must not render as a Next stack trace. Same shape as
     // every other error the client already knows how to read (RFC 9457).
@@ -125,6 +170,13 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
     if (value !== null) {
       responseHeaders.set(name, value);
     }
+  }
+
+  // Cookies minted by a mid-flight renewal go first, so that if the upstream
+  // call also set some (a sign-in, a sign-out) the browser ends up with the
+  // later, more authoritative pair.
+  for (const cookie of renewedCookies) {
+    responseHeaders.append('set-cookie', cookie);
   }
 
   // `getSetCookie` rather than `get`: a login sets two cookies, and joining

@@ -6,20 +6,7 @@ import {
   upsertGuardianSchema,
   type StudentGuardian,
 } from '@ilm/contracts';
-import {
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Field,
-  Input,
-  SimpleSelect,
-  useToast,
-} from '@ilm/ui';
+import { Button, CheckboxField, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Field, Input, SimpleSelect, useToast } from '@ilm/ui';
 import { SearchIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -343,39 +330,23 @@ export function GuardianDialog({
             <fieldset className="space-y-2 rounded-md border border-border p-4">
               <legend className="px-1 text-sm font-medium">Role for this student</legend>
 
-              <label className="flex items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={isPrimary}
-                  onChange={(event) => {
-                    setIsPrimary(event.target.checked);
-                  }}
-                />
-                <span>
-                  Primary contact
-                  <span className="block text-muted-foreground">
-                    The first person called. Setting this moves it off whoever holds it now.
-                  </span>
-                </span>
-              </label>
+              <CheckboxField
+                label="Primary contact"
+                hint="The first person called. Setting this moves it off whoever holds it now."
+                checked={isPrimary}
+                onCheckedChange={(next) => {
+                  setIsPrimary(next === true);
+                }}
+              />
 
-              <label className="flex items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={isFeePayer}
-                  onChange={(event) => {
-                    setIsFeePayer(event.target.checked);
-                  }}
-                />
-                <span>
-                  Receives fee vouchers
-                  <span className="block text-muted-foreground">
-                    Exactly one guardian per student, or a family gets billed twice.
-                  </span>
-                </span>
-              </label>
+              <CheckboxField
+                label="Receives fee vouchers"
+                hint="Exactly one guardian per student, or a family gets billed twice."
+                checked={isFeePayer}
+                onCheckedChange={(next) => {
+                  setIsFeePayer(next === true);
+                }}
+              />
             </fieldset>
           </DialogBody>
 

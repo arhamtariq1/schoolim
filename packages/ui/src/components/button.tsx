@@ -1,3 +1,4 @@
+import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { ComponentProps } from 'react';
 
@@ -52,6 +53,19 @@ export interface ButtonProps extends ComponentProps<'button'>, VariantProps<type
    * than left to each call site to remember.
    */
   isPending?: boolean;
+  /**
+   * Render the child element with this button's styling instead of a `<button>`.
+   *
+   * For the case where the thing being pressed is a **navigation**, not an
+   * action: "Admit student" opens a page, so it has to be an `<a>` — middle
+   * click, open-in-new-tab, and a status bar showing where it goes all stop
+   * working the moment it becomes a `<button>` with an `onClick`. Styling a
+   * `<Link>` by hand instead would fork the button's appearance into a second
+   * place, which is how a design system quietly stops being one (docs/16 §1).
+   *
+   * `isPending` is meaningless here — a link does not pend — and is ignored.
+   */
+  asChild?: boolean;
 }
 
 export function Button({
@@ -60,9 +74,23 @@ export function Button({
   size,
   isPending = false,
   disabled,
+  asChild = false,
   children,
   ...props
 }: ButtonProps) {
+  // Two returns rather than one with conditionals inside, because Radix's Slot
+  // requires **exactly one** element child — and `{null}{children}` is two, so
+  // a shared body that renders a spinner slot at all throws "Slot failed to
+  // slot onto its children" the moment `asChild` is used. Splitting them makes
+  // that impossible rather than merely avoided.
+  if (asChild) {
+    return (
+      <Slot className={cn(button({ tone, size }), className)} {...props}>
+        {children}
+      </Slot>
+    );
+  }
+
   return (
     <button
       className={cn(button({ tone, size }), className)}

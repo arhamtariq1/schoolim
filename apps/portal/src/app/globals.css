@@ -6,3 +6,46 @@
    @ilm/ui class is tree-shaken away and components render unstyled. */
 @source '../../../../packages/ui/src/**/*.{ts,tsx}';
 @source '../**/*.{ts,tsx}';
+
+/* ---------------------------------------------------------------------------
+   Printing a fee challan.
+
+   `window.print()` from the preview dialog would otherwise put the whole
+   application on paper — sidebar, filters, toolbar and all — and a parent would
+   be handed a screenshot of a web app instead of something a bank will accept.
+
+   So printing hides everything and promotes the challan to the page. The three
+   copies keep their row on A4 landscape and are marked `break-inside-avoid`, so
+   no copy is ever split across two sheets.
+--------------------------------------------------------------------------- */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .voucher-challan,
+  .voucher-challan * {
+    visibility: visible;
+  }
+
+  .voucher-challan {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    padding: 0;
+  }
+
+  .voucher-challan article {
+    break-inside: avoid;
+    /* Borders print; background tints mostly do not, and a challan that relies
+       on one is a challan with invisible boxes. */
+    border: 1px solid #000;
+    background: #fff;
+    color: #000;
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+}

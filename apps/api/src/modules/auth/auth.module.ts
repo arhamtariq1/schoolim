@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { ENV, type Env } from '../../config/env';
 import { PasswordService } from '../../shared/auth/password.service';
 import { TokenService } from '../../shared/auth/token.service';
 import { PrismaService } from '../../shared/prisma/prisma.service';
@@ -7,6 +8,8 @@ import { clockProvider } from '../../shared/time/clock.provider';
 
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { EmailVerificationService } from './email-verification.service';
+import { HandoffService } from './handoff.service';
 import { SessionService } from './session.service';
 
 @Module({
@@ -14,19 +17,25 @@ import { SessionService } from './session.service';
   providers: [
     clockProvider,
     SessionService,
+    HandoffService,
+    EmailVerificationService,
     {
       provide: AuthService,
-      // Tenant resolution moved out to `resolveTenantSlug`, called by the
-      // controller, so the service no longer needs the apex domain at all.
+      // The apex domain is back, and for one reason: sign-in at the apex has to
+      // hand the browser an absolute URL on the school's own hostname, and only
+      // the environment knows what that hostname looks like (ADR-0009). Tenant
+      // *resolution* still happens in the controller via `resolveTenantSlug`.
       useFactory: (
         prisma: PrismaService,
         passwords: PasswordService,
         tokens: TokenService,
         sessions: SessionService,
-      ) => new AuthService(prisma, passwords, tokens, sessions),
-      inject: [PrismaService, PasswordService, TokenService, SessionService],
+        handoffs: HandoffService,
+        env: Env,
+      ) => new AuthService(prisma, passwords, tokens, sessions, handoffs, env),
+      inject: [PrismaService, PasswordService, TokenService, SessionService, HandoffService, ENV],
     },
   ],
-  exports: [AuthService, SessionService],
+  exports: [AuthService, SessionService, HandoffService, EmailVerificationService],
 })
 export class AuthModule {}

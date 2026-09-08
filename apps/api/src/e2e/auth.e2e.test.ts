@@ -160,9 +160,14 @@ describe('sign-in', () => {
     // A token readable by script is a token any XSS can exfiltrate.
     expect(list.every((entry) => entry.includes('HttpOnly'))).toBe(true);
 
-    const body = response.json<{ data: { roles: string[]; permissions: string[] } }>();
-    expect(body.data.roles).toEqual(['OWNER']);
-    expect(body.data.permissions.length).toBeGreaterThan(0);
+    // On a school's own hostname the outcome is a session, already set here.
+    // The `handoff` variant only happens at the apex — see global-signin.e2e.
+    const body = response.json<{
+      data: { kind: string; user: { roles: string[]; permissions: string[] } };
+    }>();
+    expect(body.data.kind).toBe('session');
+    expect(body.data.user.roles).toEqual(['OWNER']);
+    expect(body.data.user.permissions.length).toBeGreaterThan(0);
     // Tokens never appear in the body.
     expect(response.body).not.toContain('eyJ');
   });
@@ -205,6 +210,8 @@ describe('sign-in', () => {
   });
 
   it('refuses an unknown host outright', async () => {
+    // A host that names a school which does not exist. Distinct from the apex,
+    // which names no school at all and is global sign-in (ADR-0009).
     const response = await app.inject({
       method: 'POST',
       url: ROUTES.auth.login,
@@ -292,6 +299,19 @@ describe('refresh token rotation', () => {
     expect(rotate.statusCode).toBe(201);
     const replacement = cookiesFrom(rotate.headers)[COOKIES.refreshToken] ?? '';
 
+    // Age the rotation past the concurrency grace window.
+    //
+    // This assertion used to replay immediately, and that stopped being a
+    // replay when automatic refresh landed: two tabs, or a navigation racing a
+    // fetch, present the same cookie within milliseconds of each other, and
+    // treating the loser as an attack signed people out for using the product
+    // normally. Inside the window a second presentation is now served; outside
+    // it, this is unchanged and the family still dies.
+    await admin.session.updateMany({
+      where: { schoolId: SCHOOL_A, revokedReason: 'rotated' },
+      data: { revokedAt: new Date(Date.now() - 5 * 60 * 1000) },
+    });
+
     // Replay the consumed one. Either the user did, or a copy is in play, and
     // there is no way to tell — so everything in the family dies.
     const replay = await app.inject({
@@ -339,21 +359,192 @@ describe('refresh token rotation', () => {
   });
 });
 
-describe('the refresh token never leaves its own path', () => {
-  it('is scoped to the refresh endpoint', async () => {
-    const response = await app.inject({
+describe('a session survives its access token expiring', () => {
+  it('rotates on refresh and keeps working', async () => {
+    // The whole point of the refresh token: the 15-minute access token running
+    // out must not end a 30-day session.
+    const { jar } = await login();
+
+    const rotated = await app.inject({
+      method: 'POST',
+      url: ROUTES.auth.refresh,
+      headers: {
+        host: HOST_A,
+        cookie: `${COOKIES.refreshToken}=${jar[COOKIES.refreshToken] ?? ''}`,
+      },
+    });
+
+    expect(rotated.statusCode).toBe(201);
+
+    const next = cookiesFrom(rotated.headers);
+    // A fresh access token, and the session behind it still resolves.
+    const session = await app.inject({
+      method: 'GET',
+      url: ROUTES.auth.session,
+      headers: {
+        host: HOST_A,
+        cookie: `${COOKIES.accessToken}=${next[COOKIES.accessToken] ?? ''}`,
+      },
+    });
+    expect(session.statusCode).toBe(200);
+  });
+
+  it('survives two requests refreshing at the same instant', async () => {
+    // The race that automatic refresh creates: a page navigation and an
+    // in-flight fetch both carry the cookie the browser had a moment ago, and
+    // one of them necessarily arrives second. Before the grace window that
+    // second request revoked the family and signed the person out — so
+    // automatic refresh would have caused the logouts it exists to prevent.
+    const { jar } = await login();
+    const token = jar[COOKIES.refreshToken] ?? '';
+
+    const [first, second] = await Promise.all([
+      app.inject({
+        method: 'POST',
+        url: ROUTES.auth.refresh,
+        headers: { host: HOST_A, cookie: `${COOKIES.refreshToken}=${token}` },
+      }),
+      app.inject({
+        method: 'POST',
+        url: ROUTES.auth.refresh,
+        headers: { host: HOST_A, cookie: `${COOKIES.refreshToken}=${token}` },
+      }),
+    ]);
+
+    expect(first.statusCode).toBe(201);
+    expect(second.statusCode).toBe(201);
+
+    // And the family is still usable afterwards, which is the part that
+    // actually matters to the person at the desk.
+    const survivor = cookiesFrom(second.headers)[COOKIES.refreshToken] ?? '';
+    const again = await app.inject({
+      method: 'POST',
+      url: ROUTES.auth.refresh,
+      headers: { host: HOST_A, cookie: `${COOKIES.refreshToken}=${survivor}` },
+    });
+    expect(again.statusCode).toBe(201);
+  });
+
+  it('still catches a token replayed well after its rotation', async () => {
+    // The grace window must not disarm reuse detection, only narrow it to the
+    // races it was written for.
+    const { jar } = await login();
+    const original = jar[COOKIES.refreshToken] ?? '';
+
+    const rotate = await app.inject({
+      method: 'POST',
+      url: ROUTES.auth.refresh,
+      headers: { host: HOST_A, cookie: `${COOKIES.refreshToken}=${original}` },
+    });
+    expect(rotate.statusCode).toBe(201);
+    const replacement = cookiesFrom(rotate.headers)[COOKIES.refreshToken] ?? '';
+
+    // Push the rotation outside the window rather than sleeping for it.
+    //
+    // Through the typed client with a date computed here, never raw SQL
+    // `now()`: a timestamp the database computes inline comes back through
+    // Prisma misread by the session's UTC offset, which silently made this
+    // backdate land in the *future* and the replay look like a race.
+    await admin.session.updateMany({
+      where: { schoolId: SCHOOL_A, revokedReason: 'rotated' },
+      data: { revokedAt: new Date(Date.now() - 5 * 60 * 1000) },
+    });
+
+    const replay = await app.inject({
+      method: 'POST',
+      url: ROUTES.auth.refresh,
+      headers: { host: HOST_A, cookie: `${COOKIES.refreshToken}=${original}` },
+    });
+    expect(replay.statusCode).toBe(401);
+
+    // The whole family dies with it, including the legitimate replacement —
+    // otherwise an attacker who stole the original simply keeps using theirs.
+    const afterBreach = await app.inject({
+      method: 'POST',
+      url: ROUTES.auth.refresh,
+      headers: { host: HOST_A, cookie: `${COOKIES.refreshToken}=${replacement}` },
+    });
+    expect(afterBreach.statusCode).toBe(401);
+  });
+});
+
+describe('the refresh cookie is reachable from every path', () => {
+  /**
+   * The regression this pins down.
+   *
+   * The cookie was once scoped to `path: ROUTES.auth.refresh`. Widening it to
+   * `/` did not remove the old one — browsers key cookies by name *and* path —
+   * so a browser signed in before that change kept an `ilm_rt` pinned to the
+   * refresh endpoint, where the proxy never sees it on a page navigation and a
+   * `clearCookie(path: '/')` never deletes it. The person was signed out
+   * fifteen minutes into the day, and signing in again did not help, because
+   * the stale cookie outlived every session that replaced it.
+   */
+  async function signIn() {
+    return app.inject({
       method: 'POST',
       url: ROUTES.auth.login,
       headers: { host: HOST_A },
       payload: { identifier: 'head@school-a-e2e.test', password: PASSWORD },
     });
+  }
 
-    const raw = response.headers['set-cookie'];
-    const list = Array.isArray(raw) ? raw : [String(raw)];
-    const refresh = list.find((entry) => entry.startsWith(COOKIES.refreshToken));
+  function setCookieList(headers: Record<string, unknown>): string[] {
+    const raw = headers['set-cookie'];
+    return Array.isArray(raw) ? (raw as string[]) : typeof raw === 'string' ? [raw] : [];
+  }
 
-    // An XSS that could read cookies still would not get this one attached to
-    // an arbitrary request.
-    expect(refresh).toContain(`Path=${ROUTES.auth.refresh}`);
+  const isDeletion = (entry: string) => entry.includes('Max-Age=0') || entry.includes('1970');
+
+  it('issues it site-wide, so a page navigation can spend it', async () => {
+    const list = setCookieList((await signIn()).headers);
+    const live = list.filter(
+      (entry) => entry.startsWith(`${COOKIES.refreshToken}=`) && !isDeletion(entry),
+    );
+
+    expect(live).toHaveLength(1);
+    expect(live[0]).toContain('Path=/;');
+  });
+
+  it('retires the narrow-path cookie a previous version left in browsers', async () => {
+    const list = setCookieList((await signIn()).headers);
+    const retired = list.filter(
+      (entry) => entry.startsWith(`${COOKIES.refreshToken}=`) && isDeletion(entry),
+    );
+
+    expect(retired).toHaveLength(1);
+    expect(retired[0]).toContain(`Path=${ROUTES.auth.refresh}`);
+  });
+
+  it('emits the deletion before the replacement, so last-wins parsers get the token', async () => {
+    const list = setCookieList((await signIn()).headers);
+    const entries = list.filter((entry) => entry.startsWith(`${COOKIES.refreshToken}=`));
+
+    // Order is load-bearing: a client that keeps the last value it sees must
+    // end up holding the real token, not the empty string from the deletion.
+    expect(entries).toHaveLength(2);
+    expect(isDeletion(entries[0] ?? '')).toBe(true);
+    expect(isDeletion(entries[1] ?? '')).toBe(false);
+  });
+
+  it('clears it at both paths on sign-out, or the stale one survives', async () => {
+    const jar = cookiesFrom((await signIn()).headers);
+
+    const out = await app.inject({
+      method: 'POST',
+      url: ROUTES.auth.logout,
+      headers: {
+        host: HOST_A,
+        cookie: `${COOKIES.accessToken}=${jar[COOKIES.accessToken]}; ${COOKIES.refreshToken}=${jar[COOKIES.refreshToken]}`,
+      },
+    });
+
+    const deleted = setCookieList(out.headers).filter(
+      (entry) => entry.startsWith(`${COOKIES.refreshToken}=`) && isDeletion(entry),
+    );
+
+    expect(deleted).toHaveLength(2);
+    expect(deleted.some((entry) => entry.includes('Path=/;'))).toBe(true);
+    expect(deleted.some((entry) => entry.includes(`Path=${ROUTES.auth.refresh}`))).toBe(true);
   });
 });

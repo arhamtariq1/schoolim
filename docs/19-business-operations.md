@@ -143,7 +143,15 @@ Pricing is deferred (D2), but the **cost floor** is not a decision, and you cann
 The flow the product must support. Steps marked ▸ are super-admin features already in
 `modules/super-admin.md`; the rest are business process.
 
+**There are two paths in, and the self-serve one is now the default** (ADR-0010).
+
 ```
+SELF-SERVE (default)
+Landing page  →  Signup form  →  ToS + DPA accepted (versioned, recorded)
+                                          ↓
+                              School created, 30-day trial starts, owner signed in
+                                          ↓
+SALES-LED (group deals, negotiated pricing)
 Demo  →  Quote  →  ToS + DPA accepted (versioned) ▸  →  School created, trial starts ▸
                                                                     ↓
 Renewal ▸  ←  Payment recorded ▸  ←  Invoice issued (PDF) ▸  ←  Trial converts ▸
@@ -152,10 +160,34 @@ Renewal ▸  ←  Payment recorded ▸  ←  Invoice issued (PDF) ▸  ←  Tria
   then hard delete, `17` §4)           manual read-only. Never delete data.)
 ```
 
-**The acceptance record is the piece that does not exist yet.** `17` §3 specifies
-`school_agreements(school_id, document_type, version, accepted_at, accepted_by, ip)` — build it with
-the subscription module in Phase 5, because reconstructing who accepted which version afterwards is
-impossible.
+Both paths converge at "trial starts". Everything downstream — conversion, invoicing, dunning, churn
+— is identical and remains Phase 5.
+
+**The acceptance record now exists, and shipped early because of the split above.** `17` §3
+specifies `school_agreements(school_id, document_type, version, accepted_at, accepted_by, ip)`. It
+was scheduled with the subscription module in Phase 5; self-serve moved it forward, because
+self-serve is exactly what removes the operator who could otherwise attest to what was agreed. If
+the tick box is not recorded at the moment it is ticked, reconstructing who accepted which version
+afterwards is impossible.
+
+**What self-serve does not yet have, and must before it is advertised widely:**
+
+| Gap                           | Consequence today                                                     | Lands       |
+| ----------------------------- | --------------------------------------------------------------------- | ----------- |
+| Trial expiry is not enforced  | `trial_ends_at` is set and nothing reads it. A trial simply runs on   | **P5**      |
+| ~~No email verification~~     | ~~A typo in the owner's address means an account nobody can recover~~ | ✅ ADR-0012 |
+| Pricing is **D2**, still open | The packages on the landing page are placeholders                     | **P5**      |
+| **Mail deliverability**       | Confirmations go out from a consumer Gmail and often land in spam     | **D4**      |
+
+Email verification landed early (ADR-0012) because that gap was not billing-shaped: it is "this
+tenant may already be unrecoverable", and it accrues from the first real signup rather than from the
+first invoice. It sends a link and records the confirmation; it does **not** yet gate anything, and
+the gate belongs with trial conversion in P5.
+
+The gap it introduced is the last row. Mail leaves through a consumer Gmail account (ADR-0011):
+roughly 500 recipients a day, and no SPF/DKIM alignment for a domain we own, so a fair share of
+confirmations are filtered. Survivable for a handful of transactional messages, **fatal for Phase 6
+messaging**, and the fix — a registered domain and a real provider — is blocked on D4.
 
 ---
 

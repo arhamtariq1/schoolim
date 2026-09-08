@@ -42,6 +42,13 @@ const envSchema = z.object({
   // --- HTTP -----------------------------------------------------------------
   API_PORT: z.coerce.number().int().min(1).max(65_535).default(4000),
   API_URL: z.string().default('http://localhost:4000'),
+  /**
+   * Where the school portal is served. Used only to build absolute URLs that
+   * point back at it — the sign-in handoff (ADR-0009) and the login link the
+   * platform console shows after creating a school. In production the apex
+   * domain implies the port; locally it does not.
+   */
+  WEB_URL: z.string().default('http://localhost:3000'),
 
   /**
    * The apex domain tenant subdomains hang off, e.g. `example.pk` for
@@ -49,6 +56,39 @@ const envSchema = z.object({
    * request host.
    */
   APP_DOMAIN: z.string().default('localhost'),
+
+  // --- Mail -----------------------------------------------------------------
+  /**
+   * Which `MailPort` implementation to construct (ADR-0011).
+   *
+   * Defaults to `log`, which sends nothing and says so. That default is
+   * deliberate and not laziness: a deployment that forgets to configure mail
+   * should send none rather than silently send it from whatever identity
+   * happens to be lying around. Failing to send is recoverable; sending as the
+   * wrong sender is not.
+   */
+  MAIL_DRIVER: z.enum(['log', 'smtp']).default('log'),
+  SMTP_HOST: z.string().default('localhost'),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65_535).default(1025),
+  /**
+   * Implicit TLS from the first byte — port 465. Port 587 starts in the clear
+   * and upgrades, so it is `false` here and STARTTLS is required by the driver.
+   * The two are not interchangeable: `true` on 587 hangs until the socket
+   * times out.
+   */
+  SMTP_SECURE: z
+    .union([z.boolean(), z.enum(['true', 'false'])])
+    .transform((value) => value === true || value === 'true')
+    .default(false),
+  /** Unset for mailpit, which wants no credentials and refuses an empty AUTH. */
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASS: z.string().min(1).optional(),
+  /**
+   * The envelope sender. Most relays — Gmail among them — reject or rewrite a
+   * `From` that is not the authenticated account, so this normally equals
+   * `SMTP_USER`.
+   */
+  MAIL_FROM: z.string().min(1).default('no-reply@localhost'),
 
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 });

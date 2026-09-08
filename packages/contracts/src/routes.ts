@@ -25,6 +25,34 @@ export const ROUTES = {
     forgotPassword: `${API_PREFIX}/auth/forgot-password`,
     resetPassword: `${API_PREFIX}/auth/reset-password`,
     acceptInvite: `${API_PREFIX}/auth/accept-invite`,
+    /**
+     * Redeem a handoff token for cookies, on the school's own hostname.
+     *
+     * Only ever called on `{slug}.<domain>`, because that is the entire point:
+     * the apex verified the password, this host issues the session (ADR-0009).
+     */
+    continue: `${API_PREFIX}/auth/continue`,
+    /**
+     * Confirm an email address (ADR-0012). Public, because the link in the
+     * message is followed by someone who may not be signed in — on a phone,
+     * days later, in a different browser.
+     */
+    verifyEmail: `${API_PREFIX}/auth/verify-email`,
+    /** Send another confirmation. Requires a session; you can only mail yourself. */
+    resendVerification: `${API_PREFIX}/auth/resend-verification`,
+  },
+
+  /**
+   * Unauthenticated, apex-only, and rate limited.
+   *
+   * Kept under its own prefix so the shape of the surface is legible from the
+   * path alone. Nothing here has a tenant, nothing here has a session, and
+   * everything here is reachable by anyone on the internet — which is exactly
+   * why it is three endpoints and not a module that grows.
+   */
+  public: {
+    signup: `${API_PREFIX}/public/signup`,
+    slugAvailable: `${API_PREFIX}/public/slug-available`,
   },
   students: {
     list: `${API_PREFIX}/students`,
@@ -44,9 +72,79 @@ export const ROUTES = {
     guardianDetach: (id: string, guardianId: string) =>
       `${API_PREFIX}/students/${id}/guardians/${guardianId}`,
   },
+  /**
+   * Fees. `heads` is the catalogue (Settings › Fees); the per-student
+   * structure hangs off the student, because that is what it belongs to.
+   */
+  fees: {
+    heads: `${API_PREFIX}/fees/heads`,
+    head: (id: string) => `${API_PREFIX}/fees/heads/${id}`,
+    /** Deactivate rather than delete, once a head is in use. */
+    studentFees: (studentId: string) => `${API_PREFIX}/students/${studentId}/fees`,
+  },
+  /**
+   * Vouchers.
+   *
+   * `preview` and `generate` take the same body and run the same code path;
+   * the only difference is that one writes. That is deliberate — a preview
+   * computed a second way is a preview that eventually disagrees with reality.
+   */
+  vouchers: {
+    list: `${API_PREFIX}/fee-vouchers`,
+    detail: (id: string) => `${API_PREFIX}/fee-vouchers/${id}`,
+    preview: `${API_PREFIX}/fee-vouchers/preview`,
+    generate: `${API_PREFIX}/fee-vouchers/generate`,
+    cancel: (id: string) => `${API_PREFIX}/fee-vouchers/${id}/cancel`,
+    pay: (id: string) => `${API_PREFIX}/fee-vouchers/${id}/payments`,
+    waive: (id: string) => `${API_PREFIX}/fee-vouchers/${id}/waive`,
+    /** The GR-number / name typeahead on the generate screen. */
+    studentLookup: `${API_PREFIX}/fee-vouchers/student-lookup`,
+  },
+  /**
+   * Attendance.
+   *
+   * Marking and reporting are separate routes rather than one endpoint with a
+   * mode flag: they carry different permissions, and a teacher who may mark
+   * their own class is not always someone who may read the whole school.
+   */
+  attendance: {
+    /** The class cards, with the day's counts already on them. */
+    classes: `${API_PREFIX}/attendance/classes`,
+    roster: (classLevelId: string) => `${API_PREFIX}/attendance/classes/${classLevelId}`,
+    mark: `${API_PREFIX}/attendance/mark`,
+    staffRoster: `${API_PREFIX}/attendance/staff`,
+    markStaff: `${API_PREFIX}/attendance/staff/mark`,
+    studentReport: (classLevelId: string) =>
+      `${API_PREFIX}/attendance/reports/classes/${classLevelId}`,
+    staffReport: `${API_PREFIX}/attendance/reports/staff`,
+  },
   academics: {
     /** Classes with their current-session sections, and the session itself. */
     setup: `${API_PREFIX}/academics/setup`,
+    sessions: `${API_PREFIX}/academics/sessions`,
+    session: (id: string) => `${API_PREFIX}/academics/sessions/${id}`,
+    /** Making one session current necessarily un-currents the other. */
+    makeSessionCurrent: (id: string) => `${API_PREFIX}/academics/sessions/${id}/make-current`,
+    classes: `${API_PREFIX}/academics/classes`,
+    class: (id: string) => `${API_PREFIX}/academics/classes/${id}`,
+    sections: `${API_PREFIX}/academics/sections`,
+    section: (id: string) => `${API_PREFIX}/academics/sections/${id}`,
+    holidays: `${API_PREFIX}/academics/holidays`,
+    holiday: (id: string) => `${API_PREFIX}/academics/holidays/${id}`,
+  },
+  expenses: {
+    list: `${API_PREFIX}/expenses`,
+    create: `${API_PREFIX}/expenses`,
+    detail: (id: string) => `${API_PREFIX}/expenses/${id}`,
+    categories: `${API_PREFIX}/expenses/categories`,
+    category: (id: string) => `${API_PREFIX}/expenses/categories/${id}`,
+  },
+  staff: {
+    list: `${API_PREFIX}/staff`,
+    create: `${API_PREFIX}/staff`,
+    detail: (id: string) => `${API_PREFIX}/staff/${id}`,
+    update: (id: string) => `${API_PREFIX}/staff/${id}`,
+    remove: (id: string) => `${API_PREFIX}/staff/${id}`,
   },
   health: `${API_PREFIX}/health`,
 

@@ -9,11 +9,15 @@ app is a **separate application** and is specified in `docs/modules/super-admin.
 
 |                                               |   Pages |
 | --------------------------------------------- | ------: |
-| **Total routes in the school portal**         | **102** |
-| Of which ship by the sellable MVP (Phase 0–5) |      63 |
+| **Total routes in the school portal**         | **106** |
+| Of which ship by the sellable MVP (Phase 0–5) |      67 |
 | Phase 6–9 (comms, exams, payments, scale)     |      39 |
 
-**102 routes, but only 8 sidebar items.** That is the entire point. Roughly a third of these pages
+Four of those are new. Three are not school pages at all — the public landing page, signup and the
+sign-in handoff (ADR-0009, ADR-0010), which live on the apex, a different website served by the same
+process. The fourth is the email-confirmation link (ADR-0012). See §2.
+
+**106 routes, but only 8 sidebar items.** That is the entire point. Roughly a third of these pages
 live under Settings (rare, deliberate), a third are detail/wizard pages reached _from_ a list, and
 only about 20 are places a person navigates to directly. The old portal put ~30 of them in one flat
 menu; this one surfaces 5–8 per role.
@@ -38,11 +42,28 @@ menu; this one surfaces 5–8 per role.
 
 ---
 
-## 2. Auth & entry — 7 pages
+## 2. Auth & entry — 11 routes
+
+Two hostnames, and the split matters more than the page count. **The apex** (`<domain>`) is the
+public website: it has no tenant, and nothing on it may assume one. **A school's hostname**
+(`{slug}.<domain>`) is the portal. `src/proxy.ts` enforces the boundary in one place so no page has
+to ask which site it is on. See ADR-0009 and ADR-0010.
+
+### On the apex — public, no tenant
+
+| Route     | Page                     | Archetype | Phase | Roles  |
+| --------- | ------------------------ | --------- | ----- | ------ |
+| `/`       | Landing page + packages  | —         | P0    | public |
+| `/signup` | Set up your school       | Form      | P0    | public |
+| `/login`  | Sign in (school unknown) | Form      | P0    | all    |
+
+### On a school's hostname
 
 | Route                  | Page                       | Archetype | Phase | Roles            |
 | ---------------------- | -------------------------- | --------- | ----- | ---------------- |
 | `/login`               | Sign in                    | Form      | P0    | all              |
+| `/auth/continue`       | Redeem a sign-in handoff   | —         | P0    | all              |
+| `/verify-email`        | Confirm an email address   | —         | P0    | all              |
 | `/forgot-password`     | Request reset link         | Form      | P0    | all              |
 | `/reset-password`      | Set new password           | Form      | P0    | all              |
 | `/accept-invite`       | Activate invited account   | Form      | P0    | all              |
@@ -52,9 +73,29 @@ menu; this one surfaces 5–8 per role.
 
 **Functions**
 
-- **Login** — email or phone + password · school resolved from subdomain (never a school picker that
-  leaks the tenant list) · rate limit + lockout after N failures · "remember this device" · redirect
-  back to the originally requested URL · Urdu/English toggle.
+- **Login — email or phone + password, and never "which school".** On a school's hostname the tenant
+  is in the address. On the apex it is not, and the school is resolved **from the credentials, after
+  the password has been verified** — never from a picker offered up front, which would hand the
+  tenant list to anyone who loaded the page. A person with accounts at several schools sees them
+  only once the password has matched, and only the ones it matched. Rate limit + lockout after N
+  failures · "remember this device" · redirect back to the originally requested URL · Urdu/English
+  toggle. ADR-0009.
+- **Verify email** — not a page either: the link from the confirmation message. Redeems a
+  single-use, 24-hour token against the school on whose hostname it arrives, marks the address
+  confirmed and lands on `/` with the result. It **does not sign anyone in** — proving you can read
+  an inbox is not proving you know a password. Until it is followed, the shell carries a
+  non-dismissible banner with a "send again" button. ADR-0012.
+- **Continue** — not a page: a route handler that redeems the single-use, two-minute handoff token
+  minted by an apex sign-in and issues the school's host-only cookies. Expired, used, wrong school
+  and disabled account all land back on `/login` with one message.
+- **Landing page** — what the product does, the packages, and two doors: sign in, or set up a
+  school. Pricing figures are placeholders until **D2** closes (docs/15); they live in one constant.
+- **Signup** — school name, web address (with live availability), city, phone, email; owner name,
+  email, password; terms acceptance recorded with its version. One screen, not a wizard — every
+  field is independent. Logo, address and branding are deliberately **not** asked for here; they
+  belong in Settings once the school is inside. Creates the tenant, the owner, the `OWNER` role, the
+  agreement record and a 30-day trial in one transaction, then signs the owner in via the same
+  handoff. ADR-0010.
 - **Invite / reset** — single-use, expiring, hashed token · password strength meter · argon2id on
   the server · invalidates all existing sessions of that user on completion.
 - **Select role** — for a teacher who is also a parent, or an accountant who is also an admin.
@@ -504,19 +545,24 @@ certificate, document) and track it · update contact details subject to approva
 
 | Phase                    | Pages added | Cumulative | The thing you can demo                         |
 | ------------------------ | ----------: | ---------: | ---------------------------------------------- |
-| P0 Foundation            |           5 |          5 | Log in, tenant isolation proven                |
-| P1 Core Academic         |          30 |         35 | A school's students are in the system          |
-| P2 Fees Engine           |          17 |         52 | 500 vouchers generated and collected           |
-| P3 Attendance            |           5 |         57 | Teachers marking on phones                     |
-| P4 Finance & Reports     |          12 |         69 | The principal's monthly numbers                |
-| P5 Super Admin           |          6* |         75 | **Sellable.** A school onboarded in 10 minutes |
-| P6 Comms & Parent portal |          17 |         92 | Parents see their own voucher                  |
-| P7 Exams                 |           6 |         98 | Report cards printed                           |
-| P8 Payments              |           2 |        100 | Online payment, verified server-to-server      |
-| P9 Scale                 |           2 |        102 | Payroll, multi-branch                          |
+| P0 Foundation            |          9† |          9 | Sign up, sign in, tenant isolation proven      |
+| P1 Core Academic         |          30 |         39 | A school's students are in the system          |
+| P2 Fees Engine           |          17 |         56 | 500 vouchers generated and collected           |
+| P3 Attendance            |           5 |         61 | Teachers marking on phones                     |
+| P4 Finance & Reports     |          12 |         73 | The principal's monthly numbers                |
+| P5 Super Admin           |         6\* |         79 | **Sellable.** A school onboarded in 10 minutes |
+| P6 Comms & Parent portal |          17 |         96 | Parents see their own voucher                  |
+| P7 Exams                 |           6 |        102 | Report cards printed                           |
+| P8 Payments              |           2 |        104 | Online payment, verified server-to-server      |
+| P9 Scale                 |           2 |        106 | Payroll, multi-branch                          |
+
+† Five foundation pages plus the four that self-serve signup needs — landing, signup, the sign-in
+handoff and the email-confirmation link. All four were planned for Phase 5 and moved forward with
+ADR-0010 and ADR-0012.
 
 \* Phase 5's main work is the _separate_ Super Admin app; the 6 counted here are the portal-side
-settings and billing pages it requires.
+settings and billing pages it requires. Two of its original items — self-serve signup and the terms
+acceptance record — have already landed; see docs/14.
 
 ---
 
@@ -558,4 +604,4 @@ one campus** — see `docs/adr/0008-school-groups-and-multi-campus.md`.
   admission number re-issued in the destination campus's series. An explicit operation, never a
   shared row.
 
-**Total with the group console: 110 routes.**
+**Total with the group console: 114 routes.**

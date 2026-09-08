@@ -1,9 +1,4 @@
-import {
-  ROUTES,
-  type ClassLevelWithSections,
-  type CurrentSession,
-  type StudentListItem,
-} from '@ilm/contracts';
+import { MAX_PAGE_LIMIT, ROUTES, type StudentListItem } from '@ilm/contracts';
 
 import { AppShell } from '@/components/app-shell';
 import { StudentsTable } from '@/components/students-table';
@@ -37,9 +32,17 @@ export default async function StudentsPage({
     return <SignedOut />;
   }
 
-  const query = new URLSearchParams();
   const search = typeof params['q'] === 'string' ? params['q'] : '';
   const status = typeof params['status'] === 'string' ? params['status'] : '';
+
+  // Paging state comes from the URL, so a page of results is a link somebody
+  // can send and the back button works. Parsed defensively — these arrive from
+  // whatever the address bar contains, and a negative offset or a limit of
+  // 100,000 must not reach the API as-is.
+  const limit = clampInt(params['limit'], PAGE_LIMIT, 1, MAX_PAGE_LIMIT);
+  const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
+
+  const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   if (search !== '') {
     query.set('q', search);
   }
@@ -47,18 +50,16 @@ export default async function StudentsPage({
     query.set('status', status);
   }
 
-  // Both in parallel: the admission form needs the class tree, and fetching it
-  // only when the dialog opens means the first click waits on a round trip that
-  // could have happened while the page was already loading.
-  const [result, setup] = await Promise.all([
-    apiFetch<{
-      data: StudentListItem[];
-      meta: { page: { total: number }; aggregates: Record<string, number> };
-    }>(`${ROUTES.students.list}?${query.toString()}`),
-    apiFetch<{
-      data: { session: CurrentSession | null; classes: ClassLevelWithSections[] };
-    }>(ROUTES.academics.setup),
-  ]);
+  // The class tree used to be fetched here to prime the admission dialog.
+  // Admission is its own page now and fetches what it needs, so this list pays
+  // for one query instead of two.
+  const result = await apiFetch<{
+    data: StudentListItem[];
+    meta: {
+      page: { total: number; limit: number; offset: number };
+      aggregates: Record<string, number>;
+    };
+  }>(`${ROUTES.students.list}?${query.toString()}`);
 
   const isFiltered = search !== '' || status !== '';
 
@@ -76,6 +77,7 @@ export default async function StudentsPage({
       user={{ name: session.name, roleLabel: session.roles.join(', ') }}
       school={{ name: session.school.name }}
       permissions={session.permissions}
+      unverifiedEmail={session.emailVerified ? undefined : session.email}
     >
       <StudentsTable
         rows={result.ok ? result.data.data : []}
@@ -85,8 +87,8 @@ export default async function StudentsPage({
         search={search}
         status={status}
         isFiltered={isFiltered}
-        classes={setup.ok ? setup.data.data.classes : []}
-        sessionId={setup.ok ? (setup.data.data.session?.id ?? undefined) : undefined}
+        limit={result.ok ? result.data.meta.page.limit : limit}
+        offset={result.ok ? result.data.meta.page.offset : offset}
         can={can}
       />
     </AppShell>
@@ -105,4 +107,27 @@ function SignedOut() {
       </p>
     </main>
   );
+}
+
+/** Rows per page. Well under the API's cap of 200 (docs/11 §5). */
+const PAGE_LIMIT = 25;
+
+/**
+ * Read a query-string integer that a person may have typed.
+ *
+ * `?offset=-5` or `?limit=99999` reaching the API is a 400 the person did not
+ * cause and cannot read. Clamping here turns a mangled URL into the nearest
+ * sensible page instead.
+ */
+function clampInt(
+  raw: string | string[] | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  const value = typeof raw === 'string' ? Number.parseInt(raw, 10) : Number.NaN;
+  if (!Number.isFinite(value)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(min, value));
 }

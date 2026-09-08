@@ -31,6 +31,9 @@ const MODEL_TO_TABLE: Readonly<Record<string, string>> = {
   Session: 'sessions',
   Invitation: 'invitations',
   PasswordReset: 'password_resets',
+  AuthHandoff: 'auth_handoffs',
+  EmailVerification: 'email_verifications',
+  SchoolAgreement: 'school_agreements',
   AuditLog: 'audit_logs',
   AcademicSession: 'academic_sessions',
   ClassLevel: 'class_levels',
@@ -39,6 +42,21 @@ const MODEL_TO_TABLE: Readonly<Record<string, string>> = {
   Guardian: 'guardians',
   StudentGuardian: 'student_guardians',
   Enrollment: 'enrollments',
+  FeeHead: 'fee_heads',
+  StudentFee: 'student_fees',
+  Holiday: 'holidays',
+  Staff: 'staff',
+  ExpenseCategory: 'expense_categories',
+  Expense: 'expenses',
+  JobRun: 'job_runs',
+  FeeVoucher: 'fee_vouchers',
+  FeeVoucherLine: 'fee_voucher_lines',
+  FeeVoucherPeriod: 'fee_voucher_periods',
+  FeeVoucherArrear: 'fee_voucher_arrears',
+  FeePayment: 'fee_payments',
+  FeePaymentAllocation: 'fee_payment_allocations',
+  AttendanceRecord: 'attendance_records',
+  StaffAttendanceRecord: 'staff_attendance_records',
   NumberSequence: 'number_sequences',
 };
 
@@ -62,6 +80,8 @@ interface TableSecurity {
 let security: Map<string, TableSecurity>;
 let policies: Map<string, { qual: string | null; withCheck: string | null }>;
 let schoolIdTables: string[];
+/** Every partition of a tenant-scoped partitioned table, from the catalogue. */
+let partitions: string[];
 
 beforeAll(async () => {
   owner = await connectOwner();
@@ -96,6 +116,16 @@ beforeAll(async () => {
       AND pc.relkind IN ('r', 'p')
   `);
   schoolIdTables = schoolIdRows.rows.map((row) => row.table_name);
+
+  const partitionRows = await owner.query<{ relname: string }>(`
+    SELECT child.relname
+    FROM pg_inherits
+    JOIN pg_class child  ON child.oid  = pg_inherits.inhrelid
+    JOIN pg_class parent ON parent.oid = pg_inherits.inhparent
+    JOIN pg_namespace n  ON n.oid = child.relnamespace
+    WHERE n.nspname = 'public' AND parent.relkind = 'p'
+  `);
+  partitions = partitionRows.rows.map((row) => row.relname);
 }, 30_000);
 
 afterAll(async () => {
@@ -162,10 +192,12 @@ describe('nothing carrying a school_id is unaccounted for', () => {
       ...TENANT_RLS_EXEMPT_TABLES,
     ]);
 
-    // Partitions inherit their parent's policies; they are not separate tables
-    // for this purpose.
+    // Partitions are covered by the suite below rather than registered
+    // separately. Identified by asking the catalogue what is a partition, not
+    // by matching a name prefix — a prefix check silently stops covering the
+    // next partitioned table somebody adds.
     const unaccounted = schoolIdTables.filter(
-      (table) => !accounted.has(table) && !table.startsWith('audit_logs_'),
+      (table) => !accounted.has(table) && !partitions.includes(table),
     );
 
     expect(
@@ -298,5 +330,53 @@ describe('the tenant context function fails closed', () => {
     );
     await owner.query('ROLLBACK');
     expect(rows[0]?.school).toBeNull();
+  });
+});
+
+/**
+ * Every partition, secured on its own.
+ *
+ * PostgreSQL evaluates row security against the relation named in the query, so
+ * a policy on a partitioned parent does **not** protect a partition somebody
+ * selects from directly:
+ *
+ *     SELECT * FROM attendance_records_2026_09;   -- every school's rows
+ *
+ * The application role reaches partitions because privileges granted on a
+ * partitioned table propagate down, while the parent's RLS does not. This was a
+ * real leak on `audit_logs`, found by probing the deployed database rather than
+ * by reading the schema — the parent looked correct in every introspection.
+ *
+ * So the gate walks the catalogue rather than trusting a naming convention: any
+ * partition of any tenant-scoped parent, including ones a maintenance job
+ * created last night, has to carry its own policy.
+ */
+describe('every partition is secured in its own right', () => {
+  it('finds at least one, or this suite is silently passing on nothing', () => {
+    expect(partitions.length).toBeGreaterThan(0);
+  });
+
+  it('has RLS enabled, forced and policed on each', () => {
+    const unprotected: string[] = [];
+
+    for (const partition of partitions) {
+      const row = security.get(partition);
+      const policy = policies.get(partition);
+      if (
+        row?.relrowsecurity !== true ||
+        row.relforcerowsecurity !== true ||
+        policy?.qual === null ||
+        policy?.qual === undefined ||
+        policy.withCheck === null
+      ) {
+        unprotected.push(partition);
+      }
+    }
+
+    expect(
+      unprotected,
+      'A partition is reachable without a tenant policy. Pass it through ' +
+        'secure_tenant_partition(), including in whatever created it.',
+    ).toEqual([]);
   });
 });

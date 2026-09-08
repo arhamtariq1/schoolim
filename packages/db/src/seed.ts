@@ -222,6 +222,7 @@ async function seedSchool(
       select: { nextValue: true },
     }),
   ]);
+  const admittedIds: string[] = [];
   let nextStudentCode = studentCodeSequence?.nextValue ?? 1;
   // The GR counter is read separately rather than assumed equal to the
   // admission one. They start in step and drift the moment a school issues a GR
@@ -267,6 +268,11 @@ async function seedSchool(
         nextGr += 1;
         created += 1;
       }
+
+      // Deferred until after the loop: every student gets the same catalogue,
+      // and doing it per student inside the loop is N round trips for a value
+      // that does not change.
+      admittedIds.push(studentId);
 
       const student = await db.student.upsert({
         where: { id: studentId },
@@ -348,7 +354,85 @@ async function seedSchool(
     create: { schoolId: school.id, kind: 'gr', nextValue: nextGr },
   });
 
+  await seedFees(db, school.id, admittedIds);
+  await seedExpenses(db, school.id, session.id);
+
   return created;
+}
+
+/**
+ * A fee catalogue, and a structure for every seeded child.
+ *
+ * The amounts are the ones a Lahore private school actually charges, because a
+ * demo where tuition is 100 teaches nobody anything about whether the totals
+ * column is readable at real widths.
+ *
+ * Two children per school get a discount, so the discounted-price rendering and
+ * the gross/payable split are visible without anyone having to create one by
+ * hand before they can see it work.
+ */
+async function seedFees(
+  db: PrismaClient,
+  schoolId: string,
+  studentIds: readonly string[],
+): Promise<void> {
+  const catalogue = [
+    { type: 'ADMISSION' as const, name: 'Admission Fee', amount: '25000.00', sortOrder: 0 },
+    { type: 'TUITION' as const, name: 'Tuition Fee', amount: '6000.00', sortOrder: 1 },
+    { type: 'ANNUAL' as const, name: 'Annual Charges', amount: '6000.00', sortOrder: 2 },
+    { type: 'STATIONERY' as const, name: 'Stationery Charges', amount: '1500.00', sortOrder: 3 },
+    { type: 'LAB' as const, name: 'Lab Fee', amount: '1000.00', sortOrder: 4 },
+    { type: 'SECURITY' as const, name: 'Security Deposit', amount: '15000.00', sortOrder: 5 },
+  ];
+
+  const heads = [];
+  for (const entry of catalogue) {
+    const id = deterministicId(schoolId, `fee-head:${entry.name}`);
+    heads.push(
+      await db.feeHead.upsert({
+        where: { id },
+        update: { defaultAmount: entry.amount, sortOrder: entry.sortOrder },
+        create: {
+          id,
+          schoolId,
+          type: entry.type,
+          name: entry.name,
+          defaultAmount: entry.amount,
+          sortOrder: entry.sortOrder,
+        },
+      }),
+    );
+  }
+
+  for (const [index, studentId] of studentIds.entries()) {
+    for (const head of heads) {
+      // Every third child pays a little less tuition, and every seventh gets a
+      // reduced admission fee — enough variation that the list is not a column
+      // of identical numbers.
+      const discounted =
+        head.type === 'TUITION' && index % 3 === 0
+          ? '4500.00'
+          : head.type === 'ADMISSION' && index % 7 === 0
+            ? '10000.00'
+            : null;
+
+      await db.studentFee.upsert({
+        where: {
+          schoolId_studentId_feeHeadId: { schoolId, studentId, feeHeadId: head.id },
+        },
+        update: {},
+        create: {
+          schoolId,
+          studentId,
+          feeHeadId: head.id,
+          amount: head.defaultAmount,
+          ...(discounted === null
+            ? {}
+            : { discountedAmount: discounted, discountReason: 'Sibling discount' }),
+        },
+      });
+    }
+  }
 }
 
 /**
@@ -359,6 +443,198 @@ async function seedSchool(
  * is a birthday collision waiting to happen, and a collision here silently
  * merges two students into one.
  */
+/**
+ * Spending, so the expense screens open with something in them.
+ *
+ * Categories a Pakistani private school actually keeps, and entries spread back
+ * across three months rather than all dated today — a date filter that cannot
+ * be seen working is a date filter nobody trusts.
+ *
+ * The voucher sequence is advanced to match. Seeding rows without moving it
+ * would leave the next expense somebody records colliding on
+ * `(school_id, voucher_no)`, which is the sort of thing that looks like a bug
+ * in the feature rather than in the seed.
+ */
+async function seedExpenses(db: PrismaClient, schoolId: string, sessionId: string): Promise<void> {
+  const categories = [
+    { name: 'Utilities', glCode: '5100', sortOrder: 0 },
+    { name: 'Salaries', glCode: '5200', sortOrder: 1 },
+    { name: 'Maintenance', glCode: '5300', sortOrder: 2 },
+    { name: 'Transport', glCode: '5400', sortOrder: 3 },
+    { name: 'Stationery & Printing', glCode: '5500', sortOrder: 4 },
+    { name: 'Events', glCode: '5600', sortOrder: 5 },
+  ];
+
+  const byName = new Map<string, string>();
+  for (const entry of categories) {
+    const id = deterministicId(schoolId, `expense-category:${entry.name}`);
+    const row = await db.expenseCategory.upsert({
+      where: { id },
+      update: { glCode: entry.glCode, sortOrder: entry.sortOrder, isActive: true },
+      create: { id, schoolId, ...entry },
+    });
+    byName.set(entry.name, row.id);
+  }
+
+  const entries = [
+    {
+      category: 'Utilities',
+      description: 'Electricity bill',
+      payee: 'LESCO',
+      amount: '184500.00',
+      method: 'BANK_TRANSFER' as const,
+      daysAgo: 4,
+    },
+    {
+      category: 'Utilities',
+      description: 'Sui gas bill',
+      payee: 'SNGPL',
+      amount: '22750.00',
+      method: 'BANK_TRANSFER' as const,
+      daysAgo: 11,
+    },
+    {
+      category: 'Utilities',
+      description: 'Internet and phone',
+      payee: 'PTCL',
+      amount: '14000.00',
+      method: 'BANK_TRANSFER' as const,
+      daysAgo: 19,
+    },
+    {
+      category: 'Salaries',
+      description: 'Teaching staff salaries',
+      payee: null,
+      amount: '1450000.00',
+      method: 'BANK_TRANSFER' as const,
+      daysAgo: 6,
+    },
+    {
+      category: 'Salaries',
+      description: 'Support staff salaries',
+      payee: null,
+      amount: '312000.00',
+      method: 'CASH' as const,
+      daysAgo: 6,
+    },
+    {
+      category: 'Maintenance',
+      description: 'Generator servicing',
+      payee: 'Al-Noor Engineering',
+      amount: '38500.00',
+      method: 'CHEQUE' as const,
+      daysAgo: 23,
+    },
+    {
+      category: 'Maintenance',
+      description: 'Classroom fans and wiring',
+      payee: 'Rehman Electric Store',
+      amount: '61200.00',
+      method: 'CASH' as const,
+      daysAgo: 41,
+    },
+    {
+      category: 'Maintenance',
+      description: 'Water tank cleaning',
+      payee: 'Clean Care Services',
+      amount: '9500.00',
+      method: 'CASH' as const,
+      daysAgo: 57,
+    },
+    {
+      category: 'Transport',
+      description: 'Diesel for school vans',
+      payee: 'Shell Ferozepur Road',
+      amount: '96800.00',
+      method: 'CARD' as const,
+      daysAgo: 9,
+    },
+    {
+      category: 'Transport',
+      description: 'Van tyre replacement',
+      payee: 'Sardar Tyre House',
+      amount: '74000.00',
+      method: 'CASH' as const,
+      daysAgo: 34,
+    },
+    {
+      category: 'Stationery & Printing',
+      description: 'Exam paper printing',
+      payee: 'Kitab Ghar Printers',
+      amount: '43600.00',
+      method: 'CASH' as const,
+      daysAgo: 15,
+    },
+    {
+      category: 'Stationery & Printing',
+      description: 'Registers and attendance books',
+      payee: 'Kitab Ghar Printers',
+      amount: '18900.00',
+      method: 'CASH' as const,
+      daysAgo: 62,
+    },
+    {
+      category: 'Events',
+      description: 'Annual sports day arrangements',
+      payee: 'Falcon Events',
+      amount: '128000.00',
+      method: 'CHEQUE' as const,
+      daysAgo: 48,
+    },
+    {
+      category: 'Events',
+      description: 'Independence Day decorations',
+      payee: null,
+      amount: '16400.00',
+      method: 'CASH' as const,
+      daysAgo: 78,
+    },
+  ];
+
+  // UTC midnight, `daysAgo` back. `@db.Date` has no time component, so anything
+  // else would be silently truncated — and truncated in the *server's* zone,
+  // which in Asia/Karachi is five hours off and lands on the previous day.
+  const midnight = (daysAgo: number) => {
+    const date = new Date(systemClock.now());
+    date.setUTCHours(0, 0, 0, 0);
+    date.setUTCDate(date.getUTCDate() - daysAgo);
+    return date;
+  };
+
+  for (const [index, entry] of entries.entries()) {
+    const categoryId = byName.get(entry.category);
+    if (categoryId === undefined) {
+      continue;
+    }
+    const voucherNo = `EXP-${String(index + 1).padStart(5, '0')}`;
+    const id = deterministicId(schoolId, `expense:${voucherNo}`);
+    await db.expense.upsert({
+      where: { id },
+      update: { amount: entry.amount, paidOn: midnight(entry.daysAgo) },
+      create: {
+        id,
+        schoolId,
+        sessionId,
+        categoryId,
+        voucherNo,
+        description: entry.description,
+        payee: entry.payee,
+        amount: entry.amount,
+        method: entry.method,
+        paidOn: midnight(entry.daysAgo),
+      },
+    });
+  }
+
+  // Where the app picks up. `nextVoucherNo` returns `next_value - 1`, so this
+  // must be one past the last seeded voucher for the next one to be unused.
+  await db.numberSequence.upsert({
+    where: { schoolId_kind: { schoolId, kind: 'expense' } },
+    update: { nextValue: entries.length + 1 },
+    create: { schoolId, kind: 'expense', nextValue: entries.length + 1 },
+  });
+}
+
 function deterministicId(schoolId: string, key: string): string {
   const digest = createHash('sha1').update(`${schoolId}:${key}`).digest('hex');
   // Formatted as a version-4 variant-8 UUID so PostgreSQL accepts it.

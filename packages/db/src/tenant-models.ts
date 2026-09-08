@@ -17,6 +17,12 @@ export const TENANT_MODELS = [
   'Session',
   'Invitation',
   'PasswordReset',
+  /** ADR-0009: the apex-to-school bridge. Minted after a verified password. */
+  'AuthHandoff',
+  /** ADR-0012: proof that a person can read mail at the address they typed. */
+  'EmailVerification',
+  /** ADR-0010 / docs/17 §3: who accepted which terms version, and when. */
+  'SchoolAgreement',
   'AuditLog',
   // Phase 1
   'AcademicSession',
@@ -26,6 +32,25 @@ export const TENANT_MODELS = [
   'Guardian',
   'StudentGuardian',
   'Enrollment',
+  // Phase 2 — fees
+  'FeeHead',
+  'StudentFee',
+  'Holiday',
+  'Staff',
+  'ExpenseCategory',
+  'Expense',
+  // Vouchers, payments, and the batch engine behind them.
+  'JobRun',
+  'FeeVoucher',
+  'FeeVoucherLine',
+  'FeeVoucherPeriod',
+  'FeeVoucherArrear',
+  'FeePayment',
+  'FeePaymentAllocation',
+  // Attendance. `AttendanceRecord` is partitioned by month; every partition
+  // carries its own RLS, checked by the gate suite.
+  'AttendanceRecord',
+  'StaffAttendanceRecord',
   'NumberSequence',
 ] as const;
 
@@ -74,3 +99,44 @@ export const SELF_SCOPED_TABLES = ['schools'] as const;
  * "someone forgot", and every entry needs the reasoning written above it.
  */
 export const TENANT_RLS_EXEMPT_TABLES = ['school_domains'] as const;
+
+/**
+ * Indexes on a tenant table that deliberately do **not** lead with `school_id`.
+ *
+ * Every tenant-scoped query carries a school, so every index leads with one,
+ * and `schema.test.ts` enforces that. This is the named exception list, because
+ * a gate with a silent exception is worse than no gate — the same reasoning
+ * that put `TENANT_RLS_EXEMPT_TABLES` above.
+ *
+ * An entry here is a claim that a query genuinely crosses tenants on purpose.
+ * There is exactly one such query in the product, and it needs a written reason
+ * to be added to.
+ */
+export const UNSCOPED_INDEXES: ReadonlyArray<{
+  readonly model: string;
+  readonly fields: string;
+  readonly why: string;
+}> = [
+  {
+    model: 'User',
+    fields: 'email',
+    why:
+      'Global sign-in (ADR-0009) resolves the school from the credentials, so it looks an ' +
+      'identifier up across every school before a tenant exists. It runs on the admin ' +
+      'connection from AuthService and nowhere else. Unindexed it would be a sequential scan ' +
+      'over every user on the platform, on an endpoint anyone can call.',
+  },
+  {
+    model: 'User',
+    fields: 'phone',
+    why: 'Same query, same reasoning: sign-in accepts an email or a phone number.',
+  },
+];
+
+const UNSCOPED_INDEX_SET: ReadonlySet<string> = new Set(
+  UNSCOPED_INDEXES.map((entry) => `${entry.model}.${entry.fields}`),
+);
+
+export function isDeliberatelyUnscopedIndex(model: string, fields: string): boolean {
+  return UNSCOPED_INDEX_SET.has(`${model}.${fields}`);
+}

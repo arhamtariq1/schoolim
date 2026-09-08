@@ -25,6 +25,17 @@ export interface StudentRow {
   roll_no: number | null;
   guardian_name: string | null;
   guardian_phone: string | null;
+  father_name: string | null;
+  admitted_on: Date | null;
+  /**
+   * `numeric(14,2)` rupees, converted to paisa in `toListItem`.
+   *
+   * Typed as `unknown` on purpose: a raw query hands `numeric` back as a Prisma
+   * `Decimal`, not the string the `pg` driver returns, and writing `string`
+   * here produced a `value.trim is not a function` 500 on the student list that
+   * no unit test saw. `decimalToMinor` narrows it rather than trusting either.
+   */
+  tuition_fee: unknown;
 }
 
 /** Extra restriction from a scoped permission, composed into the query. */
@@ -152,7 +163,27 @@ export class StudentsRepository {
       `SELECT s.id, s.gr_no, s.student_code, s.first_name, s.last_name, s.status::text AS status,
               s.gender::text AS gender,
               cl.name AS class_name, sec.name AS section_name, e.roll_no,
-              g.name AS guardian_name, g.phone AS guardian_phone
+              g.name AS guardian_name, g.phone AS guardian_phone,
+              s.admitted_on,
+              -- Scalar subqueries, deliberately, not joins.
+              --
+              -- A child has several fee lines and often more than one guardian,
+              -- so joining either would fan the result out: one student would
+              -- come back as five rows, LIMIT would cut the page mid-student,
+              -- and the list would show duplicates. The count below uses
+              -- count(DISTINCT s.id), so it would still report the right total
+              -- while the rows were wrong — which is what makes that bug so
+              -- unpleasant to find.
+              (SELECT gf.name
+                 FROM student_guardians sgf
+                 JOIN guardians gf ON gf.id = sgf.guardian_id
+                WHERE sgf.student_id = s.id AND gf.relation = 'FATHER'
+                LIMIT 1) AS father_name,
+              (SELECT COALESCE(sf.discounted_amount, sf.amount)
+                 FROM student_fees sf
+                 JOIN fee_heads fh ON fh.id = sf.fee_head_id
+                WHERE sf.student_id = s.id AND fh.type = 'TUITION'
+                LIMIT 1) AS tuition_fee
        ${from}
        ORDER BY ${ORDER[query.sort]} ${direction}
        LIMIT ${bind(query.limit)} OFFSET ${bind(query.offset)}`,

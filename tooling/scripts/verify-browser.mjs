@@ -90,16 +90,44 @@ check(
   `HTTP ${String(loginPage.status)}`,
 );
 
-// --- 2. The apex offers no form, and no school list ------------------------
-// A picker would hand the customer list to anyone who loaded the page.
+// --- 2. The apex sign-in page asks for two things, and names no school ------
+// It offers the same form as a school host (ADR-0009) — what it must never do
+// is enumerate tenants, which is what a picker before the password would be.
 const apexPage = await call(apexHost, '/login');
 const namesAnyone = ['demo', 'beacon', 'city'].filter(
   (slug) => apexPage.text.includes(`>${slug}<`) || apexPage.text.includes(`"${slug}"`),
 );
 check(
-  'apex page does not enumerate schools',
+  'apex login page does not enumerate schools',
   apexPage.status === 200 && namesAnyone.length === 0,
   namesAnyone.length === 0 ? 'no slugs in HTML' : `leaked: ${namesAnyone.join(', ')}`,
+);
+check(
+  'apex login page asks for a password, not a school name',
+  apexPage.text.includes('name="password"') && !apexPage.text.includes('Know your school'),
+  'email + password only',
+);
+
+// --- 2b. The apex is a public website, the school host is not ---------------
+const landing = await call(apexHost, '/');
+check(
+  'apex / renders the landing page with packages',
+  landing.status === 200 && landing.text.includes('Packages'),
+  `HTTP ${String(landing.status)}`,
+);
+
+const signupPage = await call(apexHost, '/signup');
+check(
+  'apex /signup renders the school setup form',
+  signupPage.status === 200 && signupPage.text.includes('Set up your school'),
+  `HTTP ${String(signupPage.status)}`,
+);
+
+const signupOnSchoolHost = await call(demoHost, '/signup');
+check(
+  'a school host has no signup form',
+  signupOnSchoolHost.status >= 300 && signupOnSchoolHost.status < 400,
+  `HTTP ${String(signupOnSchoolHost.status)} → ${String(signupOnSchoolHost.headers.location)}`,
 );
 
 // --- 3. Sign-in works from the browser's own origin ------------------------
@@ -177,16 +205,79 @@ check(
   `HTTP ${String(wrong.status)}`,
 );
 
-// --- 10. A real password on the apex host still fails ----------------------
-// There is no school in the address, so there is no account to match.
+// --- 10. A real password on the apex host resolves the school --------------
+// ADR-0009. No school in the address, so the school comes out of the
+// credentials — and the answer is a handoff, never a session, because a cookie
+// set here would be a cookie for the wrong host.
 const apexLogin = await call(apexHost, '/api/v1/auth/login', {
   method: 'POST',
   body: { identifier: 'owner@demo.test', password: PASSWORD, rememberDevice: false },
 });
+const apexOutcome = apexLogin.json()?.data;
 check(
-  'a valid password on the apex host is rejected',
-  apexLogin.status === 401,
-  `HTTP ${String(apexLogin.status)}`,
+  'a valid password at the apex resolves the school',
+  (apexLogin.status === 200 || apexLogin.status === 201) &&
+    apexOutcome?.kind === 'handoff' &&
+    apexOutcome.choices?.length === 1 &&
+    String(apexOutcome.choices[0].continueUrl).includes('demo.localhost'),
+  apexOutcome?.kind === 'handoff'
+    ? String(apexOutcome.choices?.[0]?.slug)
+    : `HTTP ${String(apexLogin.status)}`,
+);
+check(
+  'the apex sets no session cookie',
+  !apexLogin.setCookie.join(';').includes('ilm_at='),
+  apexLogin.setCookie.length === 0 ? 'none' : apexLogin.setCookie.join(' | '),
+);
+
+// --- 10b. A wrong password at the apex says nothing about who exists --------
+const apexWrong = await call(apexHost, '/api/v1/auth/login', {
+  method: 'POST',
+  body: { identifier: 'owner@demo.test', password: 'not-the-password', rememberDevice: false },
+});
+const apexStranger = await call(apexHost, '/api/v1/auth/login', {
+  method: 'POST',
+  body: { identifier: 'nobody@nowhere.test', password: 'not-the-password', rememberDevice: false },
+});
+check(
+  'a registered and an unregistered address fail identically at the apex',
+  apexWrong.status === apexStranger.status &&
+    apexWrong.json()?.detail === apexStranger.json()?.detail,
+  `both HTTP ${String(apexWrong.status)}`,
+);
+
+// --- 10c. The handoff completes on the school's own host --------------------
+// The half of ADR-0009 that only a browser exercises: follow the URL, land on
+// demo.localhost, and come away with the cookies the apex could not set.
+const handoffPath = new URL(String(apexOutcome?.choices?.[0]?.continueUrl ?? 'http://x/')).pathname;
+const handoffQuery = new URL(String(apexOutcome?.choices?.[0]?.continueUrl ?? 'http://x/')).search;
+const continued = await call(demoHost, `${handoffPath}${handoffQuery}`);
+check(
+  'the handoff issues cookies on the school host and redirects in',
+  continued.status === 303 &&
+    continued.headers.location === '/' &&
+    continued.setCookie.join(';').includes('ilm_at='),
+  `HTTP ${String(continued.status)} → ${String(continued.headers.location)}`,
+);
+
+// --- 10e. The confirmation link is a route, not a session -------------------
+// ADR-0012. A bad token must land back on the portal with a result, never on a
+// stack trace, and it must not leak into the next page's referrer.
+const badVerify = await call(demoHost, '/verify-email?t=not-a-real-token');
+check(
+  'a bad confirmation link redirects with a result, and no referrer',
+  badVerify.status === 303 &&
+    String(badVerify.headers.location).includes('verify=failed') &&
+    badVerify.headers['referrer-policy'] === 'no-referrer',
+  `HTTP ${String(badVerify.status)} → ${String(badVerify.headers.location)}`,
+);
+
+// --- 10d. …and only once ----------------------------------------------------
+const replayed = await call(demoHost, `${handoffPath}${handoffQuery}`);
+check(
+  'the same handoff link cannot be used twice',
+  replayed.status === 303 && String(replayed.headers.location).includes('/login'),
+  `HTTP ${String(replayed.status)} → ${String(replayed.headers.location)}`,
 );
 
 // --- 11. The proxy ignores a caller-supplied tenant hint -------------------

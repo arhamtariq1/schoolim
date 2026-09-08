@@ -28,6 +28,17 @@ import { PrismaService } from '../../shared/prisma/prisma.service';
 
 const TOKEN_BYTES = 32;
 
+/**
+ * How long after a rotation the old token is still treated as a race rather
+ * than a replay.
+ *
+ * Long enough to cover a page navigation and a parallel fetch that both carried
+ * the cookie the browser had a moment ago; short enough that a token lifted
+ * from a machine and used later still trips reuse detection. Ten seconds is
+ * comfortably more than a round trip and far less than an attacker's window.
+ */
+const ROTATION_GRACE_MS = 10_000;
+
 export interface IssuedRefreshToken {
   readonly token: string;
   readonly familyId: string;
@@ -118,6 +129,7 @@ export class SessionService {
         familyId: true,
         expiresAt: true,
         revokedAt: true,
+        revokedReason: true,
       },
     });
 
@@ -125,10 +137,71 @@ export class SessionService {
       return undefined;
     }
 
-    // A revoked row means this token was already consumed by a rotation, and
-    // someone is presenting it a second time. Either the user replayed it or a
-    // copy is in play; there is no way to tell, so assume the worse case.
+    // A revoked row means this token was already consumed, and someone is
+    // presenting it a second time.
     if (session.revokedAt !== null) {
+      // ...but two of *our own* requests racing is not an attack, and it is the
+      // common case now that refresh happens automatically. A page navigation
+      // and an in-flight fetch both carry the same cookie, both reach here, and
+      // one of them necessarily arrives second.
+      //
+      // Without this window that second request revokes the whole family and
+      // signs the person out — which would make automatic refresh *cause* the
+      // logouts it exists to prevent. So a token consumed by a rotation moments
+      // ago is treated as the race it almost certainly is: mint a fresh token
+      // in the same family and revoke nothing.
+      //
+      // This is deliberately narrow. Only `rotated` qualifies (never `logout`
+      // or a previous reuse revocation), only inside the window, and only while
+      // the family is still live. A stolen token replayed minutes later still
+      // trips the alarm, which is the case reuse detection is actually for.
+      // Bounded at both ends. The lower bound is not pedantry: a `revokedAt`
+      // sitting in the future — a clock that stepped, a timestamp written by
+      // something other than the app — makes the subtraction negative, which
+      // would pass an upper-bound-only test and quietly widen this window to
+      // forever. Reuse detection has to fail toward revoking.
+      const sinceRotation = now.getTime() - session.revokedAt.getTime();
+      const rotatedRecently =
+        session.revokedReason === 'rotated' &&
+        sinceRotation >= 0 &&
+        sinceRotation <= ROTATION_GRACE_MS;
+
+      if (rotatedRecently) {
+        const familyStillLive = await this.prisma.admin.session.count({
+          where: { familyId: session.familyId, revokedAt: null, expiresAt: { gt: now } },
+        });
+
+        if (familyStillLive > 0) {
+          const token = SessionService.newToken();
+          const expiresAt = this.expiry(now);
+
+          await this.prisma.admin.session.create({
+            data: {
+              schoolId: session.schoolId,
+              userId: session.userId,
+              familyId: session.familyId,
+              refreshTokenHash: SessionService.hash(token),
+              expiresAt,
+              ip: context.ip ?? null,
+              userAgent: context.userAgent ?? null,
+            },
+          });
+
+          this.logger.debug(
+            { familyId: session.familyId, userId: session.userId },
+            'Concurrent refresh inside the grace window; issued a second token rather than revoking',
+          );
+
+          return {
+            userId: session.userId,
+            schoolId: session.schoolId,
+            issued: { token, familyId: session.familyId, expiresAt },
+          };
+        }
+      }
+
+      // Either the user replayed it or a copy is in play; there is no way to
+      // tell, so assume the worse case.
       await this.revokeFamily(session.familyId, now, 'refresh-token-reuse-detected');
       this.logger.warn(
         { familyId: session.familyId, userId: session.userId },

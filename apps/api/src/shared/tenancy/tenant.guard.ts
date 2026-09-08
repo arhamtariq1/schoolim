@@ -6,9 +6,9 @@ import { ENV, type Env } from '../../config/env';
 import { IS_PUBLIC } from '../auth/auth.guard';
 import { IS_PLATFORM } from '../auth/platform.guard';
 import { SchoolSuspendedError, TenantMismatchError } from '../errors/domain-error';
-import { PrismaService } from '../prisma/prisma.service';
 
 import { resolveTenantSlug } from './resolve-tenant-slug';
+import { SchoolDirectoryService } from './school-directory.service';
 import { TenantContextService } from './tenant-context.service';
 
 /** Methods that only read. A suspended school may still use these. */
@@ -26,12 +26,19 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
  * happens before any tenant context exists, so a tenant-scoped query would
  * return nothing and every request would fail closed. That is why
  * `school_domains` is deliberately exempt from RLS — see TENANT_RLS_EXEMPT_TABLES.
+ *
+ * That lookup goes through `SchoolDirectoryService` rather than straight to
+ * Prisma. It used to be a query on every request for a row that changes when a
+ * school is created, renamed, suspended or churned and never otherwise — one
+ * connection borrowed from the pool, per request, before any real work began.
+ * The authority checks below are unchanged: the cache only supplies the row,
+ * and a stale one is still compared against the token claim.
  */
 @Injectable()
 export class TenantGuard implements CanActivate {
   constructor(
     @Inject(ENV) private readonly env: Env,
-    private readonly prisma: PrismaService,
+    private readonly schools: SchoolDirectoryService,
     private readonly context: TenantContextService,
     private readonly reflector: Reflector,
   ) {}
@@ -83,10 +90,7 @@ export class TenantGuard implements CanActivate {
       throw new TenantMismatchError();
     }
 
-    const school = await this.prisma.admin.school.findUnique({
-      where: { slug },
-      select: { id: true, status: true },
-    });
+    const school = await this.schools.lookup(slug);
 
     if (school === null || school.id !== claims.sid) {
       // Same error whether the school does not exist or the token belongs to a

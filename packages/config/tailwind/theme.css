@@ -20,8 +20,26 @@
   --font-urdu: 'Noto Nastaliq Urdu', serif;
 
   /* --- Radius ------------------------------------------------------------- */
-  --radius-md: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.75rem;
   --radius-card: 0.75rem;
+
+  /* --- Elevation ---------------------------------------------------------
+   * Four steps, and no component may invent a fifth.
+   *
+   * These are deliberately shallow. A shadow's job in an admin product is to
+   * say "this sits above that", not to look like a drop shadow — and depth
+   * that reads as elegant on white becomes a grey smear on a dark ground.
+   * Which is why the dark values below are almost pure black at low alpha
+   * plus a hairline top highlight: on a dark surface, elevation is carried by
+   * the light edge, not by the shadow.
+   * --------------------------------------------------------------------- */
+  --shadow-xs: 0 1px 2px 0 var(--shadow-tint);
+  --shadow-raised: 0 1px 2px -1px var(--shadow-tint), 0 1px 3px 0 var(--shadow-tint);
+  --shadow-overlay:
+    0 4px 6px -2px var(--shadow-tint), 0 12px 24px -4px var(--shadow-tint-strong);
+  --shadow-sticky: 0 1px 0 0 var(--border), 0 4px 12px -6px var(--shadow-tint-strong);
 
   /* --- Brand ramp. Overridden at runtime from schools.primary_color. ------ */
   --color-brand-50: oklch(0.971 0.021 158);
@@ -46,7 +64,7 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-fg);
   --color-border: var(--border);
-  --color-input: var(--border);
+  --color-input: var(--input-border);
   --color-ring: var(--ring);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-fg);
@@ -60,15 +78,28 @@
   --color-info: var(--info);
   --color-destructive: var(--danger);
   --color-destructive-foreground: oklch(0.985 0 0);
+  /* The chrome behind the app frame: sidebar, headers, toolbars. Distinct
+     from --card so a card placed on the sidebar is still visible. */
+  --color-surface: var(--surface);
 }
 
 :root {
-  --bg: oklch(1 0 0);
-  --fg: oklch(0.21 0.006 285);
+  /* The page is NOT the same colour as a card.
+     Pure-white-on-pure-white was the single biggest reason this looked flat:
+     with no tonal difference, every card boundary had to be carried by a
+     border alone, so the screen read as a wireframe. A hair of warmth in the
+     page ground lets white cards lift off it without a heavy shadow. */
+  --bg: oklch(0.985 0.002 286);
+  --surface: oklch(0.995 0.001 286);
   --card: oklch(1 0 0);
-  --muted: oklch(0.967 0.001 286);
+
+  --fg: oklch(0.21 0.006 285);
+  --muted: oklch(0.968 0.002 286);
   --muted-fg: oklch(0.552 0.014 285);
-  --border: oklch(0.92 0.004 286);
+  --border: oklch(0.916 0.004 286);
+  /* Inputs carry a slightly stronger edge than layout borders: a form control
+     has to look like something you can click into. */
+  --input-border: oklch(0.885 0.005 286);
   --ring: var(--color-brand-500);
   --primary: var(--color-brand-600);
   --primary-fg: oklch(0.985 0 0);
@@ -77,15 +108,23 @@
   --warning: oklch(0.68 0.13 75);
   --danger: oklch(0.55 0.2 27);
   --info: oklch(0.6 0.13 240);
+
+  --shadow-tint: oklch(0.21 0.006 285 / 7%);
+  --shadow-tint-strong: oklch(0.21 0.006 285 / 12%);
 }
 
 .dark {
-  --bg: oklch(0.17 0.005 285);
+  /* Same relationship inverted: the page is the darkest layer, cards sit
+     above it, chrome sits between. Three steps, not one flat sheet. */
+  --bg: oklch(0.155 0.005 285);
+  --surface: oklch(0.185 0.005 285);
+  --card: oklch(0.205 0.006 285);
+
   --fg: oklch(0.96 0.001 286);
-  --card: oklch(0.21 0.006 285);
-  --muted: oklch(0.27 0.006 286);
+  --muted: oklch(0.265 0.006 286);
   --muted-fg: oklch(0.712 0.013 286);
-  --border: oklch(1 0 0 / 12%);
+  --border: oklch(1 0 0 / 10%);
+  --input-border: oklch(1 0 0 / 16%);
   --ring: var(--color-brand-400);
   --primary: var(--color-brand-400);
   --primary-fg: oklch(0.21 0.006 285);
@@ -94,6 +133,9 @@
   --warning: oklch(0.78 0.14 75);
   --danger: oklch(0.68 0.19 25);
   --info: oklch(0.7 0.13 240);
+
+  --shadow-tint: oklch(0 0 0 / 32%);
+  --shadow-tint-strong: oklch(0 0 0 / 45%);
 }
 
 @layer base {
@@ -104,12 +146,52 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Headings are tightened rather than enlarged. docs/16 §5 caps the type
+     scale at four sizes, so hierarchy has to come from weight, tracking and
+     colour — which is also what stops an admin screen looking like a blog. */
+  h1,
+  h2,
+  h3 {
+    @apply tracking-tight;
+    text-wrap: balance;
   }
 
   /* Money, IDs and voucher numbers are always tabular and monospace.
      docs/16-ui-principles.md section 10. */
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Scrollbars, so a long table does not paint a 1990s grey trough down the
+     side of an otherwise finished screen. Firefox first, then WebKit. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted-fg);
+    background-clip: content-box;
   }
 
   /* docs/16 section 12: respect the user's setting. This is a rule. */
@@ -123,4 +205,100 @@
       scroll-behavior: auto !important;
     }
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * Enter and exit animation.
+ *
+ * These utilities were being used by the dialog, select, dropdown and toast
+ * long before this block existed — and doing nothing, because the classes were
+ * never defined. `animate-in`, `fade-in-0` and friends come from
+ * `tailwindcss-animate`, which was never installed, so every overlay in the
+ * product appeared and vanished instantly.
+ *
+ * They are defined here rather than by adding the plugin because that is all
+ * the plugin does: emit keyframes and a handful of custom properties. docs/16
+ * §2 says CSS transitions unless CSS genuinely cannot, and this is CSS.
+ *
+ * Durations follow §12: 150ms leaving, 200ms entering, ease-out in and ease-in
+ * out. The reduced-motion block above already collapses all of it to nothing.
+ * ------------------------------------------------------------------------- */
+
+@theme {
+  --animate-enter: enter 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-exit: exit 150ms cubic-bezier(0.4, 0, 1, 1);
+
+  @keyframes enter {
+    from {
+      opacity: var(--enter-opacity, 1);
+      transform: translate3d(var(--enter-translate-x, 0), var(--enter-translate-y, 0), 0)
+        scale3d(var(--enter-scale, 1), var(--enter-scale, 1), 1);
+    }
+  }
+
+  @keyframes exit {
+    to {
+      opacity: var(--exit-opacity, 1);
+      transform: translate3d(var(--exit-translate-x, 0), var(--exit-translate-y, 0), 0)
+        scale3d(var(--exit-scale, 1), var(--exit-scale, 1), 1);
+    }
+  }
+}
+
+@utility animate-in {
+  animation: var(--animate-enter);
+  animation-fill-mode: both;
+}
+
+@utility animate-out {
+  animation: var(--animate-exit);
+  animation-fill-mode: both;
+}
+
+@utility fade-in-0 {
+  --enter-opacity: 0;
+}
+
+@utility fade-out-0 {
+  --exit-opacity: 0;
+}
+
+@utility zoom-in-95 {
+  --enter-scale: 0.95;
+}
+
+@utility zoom-out-95 {
+  --exit-scale: 0.95;
+}
+
+@utility slide-in-from-top-2 {
+  --enter-translate-y: -0.5rem;
+}
+
+@utility slide-in-from-bottom-2 {
+  --enter-translate-y: 0.5rem;
+}
+
+@utility slide-in-from-left-2 {
+  --enter-translate-x: -0.5rem;
+}
+
+@utility slide-in-from-right-2 {
+  --enter-translate-x: 0.5rem;
+}
+
+@utility slide-in-from-bottom-4 {
+  --enter-translate-y: 1rem;
+}
+
+@utility slide-out-to-bottom-4 {
+  --exit-translate-y: 1rem;
+}
+
+@utility slide-in-from-right-full {
+  --enter-translate-x: 100%;
+}
+
+@utility slide-out-to-right-full {
+  --exit-translate-x: 100%;
 }

@@ -5,23 +5,27 @@ import {
   Button,
   ConfirmDialog,
   DataTable,
+  Pagination,
+  DateDisplay,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Money,
   SimpleSelect,
   StatusBadge,
   useToast,
   type Column,
 } from '@ilm/ui';
 import { CreateIcon, DeleteIcon, EditIcon, MoreIcon, SearchIcon } from '@ilm/ui/icons';
+import { minorUnits } from '@ilm/utils';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useState, useTransition, type FormEvent } from 'react';
 
-import { AdmitStudentDialog, type ClassOption } from './admit-student-dialog';
 import { EditStudentDialog } from './edit-student-dialog';
 
 import { mutateOrThrow } from '@/lib/mutate';
@@ -57,12 +61,11 @@ export interface StudentsTableProps {
   total: number;
   aggregates: Record<string, number>;
   error?: string | undefined;
+  limit: number;
+  offset: number;
   search: string;
   status: string;
   isFiltered: boolean;
-  /** Server-rendered, so the admission form has classes without a round trip. */
-  classes: readonly ClassOption[];
-  sessionId: string | undefined;
   can: { create: boolean; update: boolean; delete: boolean };
 }
 
@@ -74,8 +77,8 @@ export function StudentsTable({
   search,
   status,
   isFiltered,
-  classes,
-  sessionId,
+  limit,
+  offset,
   can,
 }: StudentsTableProps) {
   const router = useRouter();
@@ -84,7 +87,6 @@ export function StudentsTable({
   const [isPending, startTransition] = useTransition();
   const toast = useToast();
 
-  const [admitting, setAdmitting] = useState(false);
   const [editing, setEditing] = useState<StudentListItem | undefined>(undefined);
   const [deleting, setDeleting] = useState<StudentListItem | undefined>(undefined);
   const [leaving, setLeaving] = useState<StudentListItem | undefined>(undefined);
@@ -98,6 +100,17 @@ export function StudentsTable({
         updated.set(key, value);
       }
     }
+
+    // Changing a filter always returns to the first page.
+    //
+    // Without this, searching from page 3 asks for rows 51–75 of a result set
+    // that now has four rows, and the screen says "no students" for a search
+    // that matched. Paging itself is exempt, or it would reset the page it just
+    // set.
+    if (!Object.hasOwn(next, 'offset')) {
+      updated.delete('offset');
+    }
+
     startTransition(() => {
       router.replace(`${pathname}?${updated.toString()}`);
     });
@@ -151,28 +164,34 @@ export function StudentsTable({
       render: (row) => <span className="font-mono text-xs tabular-nums">{row.rollNo ?? '—'}</span>,
     },
     {
-      key: 'guardian',
-      header: 'Guardian',
+      key: 'father',
+      header: 'Father / guardian',
       render: (row) =>
-        row.guardianName === null ? (
+        row.fatherName === null ? (
           // Named plainly: this is a task-queue item, not a cosmetic gap.
           <span className="text-warning">No guardian on file</span>
         ) : (
-          <div>
-            <div>{row.guardianName}</div>
-            {row.guardianPhone === null ? null : (
-              <a
-                href={`tel:${row.guardianPhone}`}
-                className="font-mono text-xs text-muted-foreground underline"
-                onClick={(event) => {
-                  // The row opens the student; the phone link must not.
-                  event.stopPropagation();
-                }}
-              >
-                {row.guardianPhone}
-              </a>
-            )}
-          </div>
+          <span>{row.fatherName}</span>
+        ),
+    },
+    {
+      key: 'contact',
+      header: 'Contact',
+      hideOnMobile: true,
+      render: (row) =>
+        row.guardianPhone === null ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <a
+            href={`tel:${row.guardianPhone}`}
+            className="font-mono text-xs underline"
+            onClick={(event) => {
+              // The row opens the student; the phone link must not.
+              event.stopPropagation();
+            }}
+          >
+            {row.guardianPhone}
+          </a>
         ),
     },
     {
@@ -183,6 +202,31 @@ export function StudentsTable({
           {humanise(row.status)}
         </StatusBadge>
       ),
+    },
+    {
+      key: 'tuition',
+      header: 'Tuition',
+      align: 'end',
+      hideOnMobile: true,
+      // Payable, after any agreed discount — the figure reception is asked for
+      // on the phone, which is why it is on the list rather than one click in.
+      render: (row) =>
+        row.tuitionFeeMinor === null ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <Money valueMinor={minorUnits(row.tuitionFeeMinor)} />
+        ),
+    },
+    {
+      key: 'admittedOn',
+      header: 'Admitted',
+      hideOnMobile: true,
+      render: (row) =>
+        row.admittedOn === null ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <DateDisplay value={row.admittedOn} />
+        ),
     },
     {
       key: 'actions',
@@ -261,14 +305,16 @@ export function StudentsTable({
           </p>
         </div>
 
+        {/* A link to a page, not a dialog. Admission grew a fee structure and a
+            money total, and a modal cannot be linked to, cannot survive a
+            refresh, and gives a receptionist nowhere to leave a half-finished
+            admission while they phone a parent for a CNIC. */}
         {can.create ? (
-          <Button
-            onClick={() => {
-              setAdmitting(true);
-            }}
-          >
-            <CreateIcon className="size-4" aria-hidden="true" />
-            Admit student
+          <Button asChild>
+            <Link href="/students/new">
+              <CreateIcon className="size-4" aria-hidden="true" />
+              Admit student
+            </Link>
           </Button>
         ) : null}
       </header>
@@ -338,14 +384,21 @@ export function StudentsTable({
               'A student is admitted with a GR number, a class and a guardian. Admitting the first one takes about a minute.',
           }}
         />
-      </div>
 
-      <AdmitStudentDialog
-        open={admitting}
-        onOpenChange={setAdmitting}
-        sessionId={sessionId}
-        classes={classes}
-      />
+        {/* Hidden while there is nothing to page through, so an empty school
+            is not handed a control that does nothing. */}
+        {total === 0 ? null : (
+          <Pagination
+            total={total}
+            limit={limit}
+            offset={offset}
+            label="students"
+            onChange={(next) => {
+              apply({ offset: next === 0 ? '' : String(next) });
+            }}
+          />
+        )}
+      </div>
 
       {editing === undefined ? null : (
         <EditStudentDialog

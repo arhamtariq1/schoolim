@@ -42,6 +42,7 @@ export default async function StudentProfilePage({ params }: { params: Promise<{
       user={{ name: session.name, roleLabel: session.roles.join(', ') }}
       school={{ name: session.school.name }}
       permissions={session.permissions}
+      unverifiedEmail={session.emailVerified ? undefined : session.email}
     >
       {result.ok ? (
         <StudentProfileView student={result.data.data} can={can} />

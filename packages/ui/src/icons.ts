@@ -53,6 +53,33 @@ export {
   TriangleAlert as DangerIcon,
   FileQuestion as EmptyIcon,
   WifiOff as OfflineIcon,
+
+  // --- Account and session --------------------------------------------------
+  LogOut as SignOutIcon,
+  User as AccountIcon,
+
+  // --- Academic structure ---------------------------------------------------
+  GraduationCap as ClassIcon,
+  LayoutGrid as SectionIcon,
+  CalendarRange as SessionIcon,
+  CalendarOff as HolidayIcon,
+  Receipt as ExpenseIcon,
+
+  // --- Dates ----------------------------------------------------------------
+  Calendar as CalendarIcon,
+  CalendarDays as DateRangeIcon,
+
+  // --- Chrome ---------------------------------------------------------------
+  Menu as MenuIcon,
+  Command as CommandIcon,
+  Sun as LightModeIcon,
+  Moon as DarkModeIcon,
+  Building2 as SchoolIcon,
+  ArrowRight as ForwardIcon,
+  ArrowUpDown as SortIcon,
+  Eye as ViewIcon,
+  TrendingUp as TrendUpIcon,
+  TrendingDown as TrendDownIcon,
 } from 'lucide-react';
 
 /** The only permitted icon sizes (docs/16 section 3). */

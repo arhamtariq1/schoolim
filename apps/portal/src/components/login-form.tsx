@@ -1,6 +1,6 @@
 'use client';
 
-import { loginRequestSchema, ROUTES, type SessionUser } from '@ilm/contracts';
+import { loginRequestSchema, ROUTES, type LoginOutcome, type SchoolChoice } from '@ilm/contracts';
 import { Button, Field, Input } from '@ilm/ui';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
@@ -11,11 +11,21 @@ interface Problem {
 }
 
 /**
- * The sign-in form.
+ * The sign-in form. **Email and password. Never "which school".**
  *
- * Rendered only once the page has confirmed the address carries a school
- * (see login/page.tsx). Validation comes from the shared zod schema in
- * `@ilm/contracts`, so the client and the server cannot drift (docs/16 §8).
+ * The same component serves both addresses, because from here they are the same
+ * interaction — the difference is entirely in what the server can infer:
+ *
+ * - On `{slug}.<domain>` the school is in the address, and a correct password
+ *   comes back as a session that is already set on this origin.
+ * - On the apex it is not, so the school is resolved from the credentials and a
+ *   correct password comes back as one or more **handoff URLs** (ADR-0009).
+ *   Almost always one, and then this redirects without asking anything.
+ *
+ * The picker below therefore appears only for a person who genuinely holds
+ * accounts at more than one school with the same email and password — and only
+ * after they have proved it. Asking before the password would be handing the
+ * tenant list to anyone who loaded the page.
  */
 export function LoginForm() {
   const router = useRouter();
@@ -24,6 +34,7 @@ export function LoginForm() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [isPending, setIsPending] = useState(false);
+  const [choices, setChoices] = useState<SchoolChoice[] | undefined>(undefined);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,11 +56,10 @@ export function LoginForm() {
 
     setIsPending(true);
     try {
-      // Same-origin, always. The school's own hostname serves the API under
-      // `/api/v1` (see app/api/v1/[...path]/route.ts), which is what keeps the
-      // session cookie first-party. Pointing this at another origin would need
-      // `SameSite=None` and CORS with credentials, so there is no base-URL
-      // setting to get wrong.
+      // Same-origin, always. Whichever host is serving this page also serves
+      // the API under `/api/v1` (see app/api/v1/[...path]/route.ts), which is
+      // what keeps the session cookie first-party and, at the apex, what tells
+      // the API there is no tenant to check against.
       const response = await fetch(ROUTES.auth.login, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -66,19 +76,36 @@ export function LoginForm() {
         return;
       }
 
-      const body = (await response.json()) as { data: SessionUser };
-      // An invited or reset account must set a password before anything else.
-      if (body.data.mustChangePassword) {
-        router.replace('/settings/password');
-      } else {
-        router.replace('/');
+      const body = (await response.json()) as { data: LoginOutcome };
+
+      if (body.data.kind === 'session') {
+        // An invited or reset account must set a password before anything else.
+        router.replace(body.data.user.mustChangePassword ? '/settings/password' : '/');
+        router.refresh();
+        return;
       }
-      router.refresh();
+
+      const [only, ...rest] = body.data.choices;
+
+      if (only !== undefined && rest.length === 0) {
+        // The ordinary case, and it must not flicker: a full page load to
+        // another origin, not a router push. `router` cannot cross hosts, and
+        // the whole point of the handoff is that the cookie is set over there.
+        setChoices(undefined);
+        window.location.assign(only.continueUrl);
+        return;
+      }
+
+      setChoices(body.data.choices);
     } catch {
       setFormError('Could not reach the server. Check your connection and try again.');
     } finally {
       setIsPending(false);
     }
+  }
+
+  if (choices !== undefined) {
+    return <SchoolPicker choices={choices} />;
   }
 
   return (
@@ -135,5 +162,38 @@ export function LoginForm() {
         Trouble signing in? Ask your school administrator to reset your password.
       </p>
     </>
+  );
+}
+
+/**
+ * Shown only when one set of credentials unlocked several schools.
+ *
+ * Every entry here is a school this person has just authenticated against, so
+ * naming them discloses nothing they did not already know. Each link carries
+ * its own single-use token; taking one leaves the others to expire in a couple
+ * of minutes, unused.
+ */
+function SchoolPicker({ choices }: { choices: SchoolChoice[] }) {
+  return (
+    <div className="space-y-3">
+      <div className="rounded-md border border-border bg-muted/50 px-4 py-3 text-sm">
+        <p className="font-medium text-foreground">You have access to more than one school.</p>
+        <p className="mt-1 text-muted-foreground">Choose where you want to work.</p>
+      </div>
+
+      <ul className="space-y-2">
+        {choices.map((choice) => (
+          <li key={choice.schoolId}>
+            <a
+              href={choice.continueUrl}
+              className="flex w-full items-center justify-between rounded-md border border-border bg-card px-4 py-3 text-sm hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <span className="font-medium text-foreground">{choice.name}</span>
+              <span className="font-mono text-xs text-muted-foreground">{choice.slug}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

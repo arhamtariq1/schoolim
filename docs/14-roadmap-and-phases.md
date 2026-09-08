@@ -160,9 +160,19 @@ the same query and always agree.
 
 ## Phase 5 — Super Admin & Subscriptions (2–3 weeks) ← **SELLABLE MVP**
 
+> **Three items below landed early**, with ADR-0010: self-serve signup, the trial that starts with
+> it, and `school_agreements`. The agreement record could not wait, because self-serve is precisely
+> what removes the operator who could otherwise attest to what a school agreed to. What did **not**
+> come forward is everything downstream of the trial — expiry, dunning, invoicing and pricing are
+> still Phase 5, and until they land a trial that ends does nothing.
+
 - [ ] `apps/admin` with a separate user table, cookie, guard and mandatory MFA
 - [ ] School CRUD; the onboarding wizard with seed defaults
-- [ ] Plans, subscriptions, invoices, trials, dunning, read-only grace mode
+- [x] **Self-serve signup + 30-day trial start** (ADR-0010) — 2026-09-02
+- [ ] Plans, subscriptions, invoices, **trial expiry**, dunning, read-only grace mode
+- [x] **Verify the owner's email address at signup** (ADR-0012) — 2026-09-02. Sends and records;
+      gating trial conversion on it is still this phase's work
+- [ ] A registered domain and a real mail provider — Gmail cannot carry Phase 6 (ADR-0011, **D4**)
 - [ ] Usage metering (nightly snapshots) and graduated plan-limit enforcement
 - [ ] Feature flags: global, per-plan, per-school
 - [ ] Impersonation with reason, expiry, banner and dual-sided audit — **the school sees its own
@@ -171,7 +181,7 @@ the same query and always agree.
 - [ ] Subdomain routing (`{slug}.<domain>`) with wildcard TLS — **D4 must be decided before this**
 - [ ] Marketing site + pricing page (**D2 due**) + **published ToS / Privacy Policy / DPA** (`17`
       §3)
-- [ ] `school_agreements` — versioned acceptance record (`17` §3, `19` §6)
+- [x] **`school_agreements` — versioned acceptance record** (`17` §3, `19` §6) — 2026-09-02
 - [ ] `platform_invoices` with `gross / salesTax / withholding / received / writeOff` in minor
       units, settling by invariant (`19` §3) · invoice PDF with NTN and a gapless sequence
 - [ ] Support-minutes-per-school tracking (R9)

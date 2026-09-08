@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 
 import {
+  RESERVED_SLUGS,
   type CreateSchool,
   type CreateSchoolResult,
   type SchoolListItem,
@@ -12,6 +13,8 @@ import { ENV, type Env } from '../../config/env';
 import { PasswordService } from '../../shared/auth/password.service';
 import { ConflictError } from '../../shared/errors/domain-error';
 import { PrismaService } from '../../shared/prisma/prisma.service';
+import { SchoolDirectoryService } from '../../shared/tenancy/school-directory.service';
+import { schoolOrigin } from '../../shared/tenancy/school-origin';
 
 /**
  * Schools, seen from the platform console.
@@ -28,42 +31,12 @@ import { PrismaService } from '../../shared/prisma/prisma.service';
  * them from here.
  */
 
-/** Slugs that must never become a school's address. */
-const RESERVED_SLUGS = new Set([
-  'www',
-  'api',
-  'admin',
-  'app',
-  'mail',
-  'smtp',
-  'imap',
-  'ftp',
-  'ns1',
-  'ns2',
-  'status',
-  'help',
-  'support',
-  'docs',
-  'blog',
-  'static',
-  'assets',
-  'cdn',
-  'billing',
-  'account',
-  'accounts',
-  'login',
-  'signup',
-  'dashboard',
-  'internal',
-  'test',
-  'staging',
-]);
-
 @Injectable()
 export class SchoolsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwords: PasswordService,
+    private readonly schools: SchoolDirectoryService,
     @Inject(ENV) private readonly env: Env,
   ) {}
 
@@ -193,7 +166,7 @@ export class SchoolsService {
         userCount: 1,
         createdAt: school.createdAt.toISOString(),
       },
-      loginUrl: `${this.env.APP_DOMAIN === 'localhost' ? 'http' : 'https'}://${school.slug}.${this.env.APP_DOMAIN}${this.env.APP_DOMAIN === 'localhost' ? ':3000' : ''}/login`,
+      loginUrl: `${schoolOrigin(school.slug, this.env.APP_DOMAIN, this.env.WEB_URL)}/login`,
       owner: { email: input.owner.email, temporaryPassword },
     };
   }
@@ -216,6 +189,12 @@ export class SchoolsService {
         _count: { select: { students: true, users: true } },
       },
     });
+
+    // Suspension and churn are what the guard reads on every request, so the
+    // instance that made the change stops serving the old status immediately.
+    // Every other instance is bounded by the directory's TTL — see the note in
+    // school-directory.service.ts on why both are needed.
+    this.schools.forget(updated.slug);
 
     return {
       id: updated.id,
