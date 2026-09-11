@@ -289,16 +289,28 @@ async function flows(demo, beacon) {
       `${generate.status} ${generate.status >= 400 ? generate.raw.slice(0, 160) : ''}`,
     );
 
+    const firstData = generate.json()?.data;
+
     const again = await call('/api/v1/fee-vouchers/generate', {
       method: 'POST',
       cookie: demo,
       body: { ...previewBody, idempotencyKey: key },
     });
     const againData = again.json()?.data;
+
+    // Idempotency is **replay**, not silence: the second call returns the answer
+    // the first one gave, so a retried request reports what actually happened
+    // rather than "nothing to do". Asserting `created === 0` here was wrong, and
+    // passed only because a database with leftover vouchers made the *first*
+    // call return 0 as well — a green tick for the wrong reason. On a clean
+    // database it went red immediately, which is how it was found.
     check(
-      'the same idempotency key bills nobody twice',
-      (again.status === 200 || again.status === 201) && (againData?.created ?? 0) === 0,
-      `created=${againData?.created ?? '?'}`,
+      'the same idempotency key replays the first answer rather than billing again',
+      (again.status === 200 || again.status === 201) &&
+        againData?.created === firstData?.created &&
+        againData?.skipped === firstData?.skipped &&
+        againData?.netPayableMinor === firstData?.netPayableMinor,
+      `first created=${firstData?.created ?? '?'} → replay created=${againData?.created ?? '?'}`,
     );
 
     // And without the key: the unique index on (school, student, head, period)

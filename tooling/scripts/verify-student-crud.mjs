@@ -14,6 +14,8 @@ import { request as httpRequest } from 'node:http';
 
 import 'dotenv/config';
 
+import { pgConfig, withAdminClient } from './lib/pg-connection.mjs';
+
 const PORT = Number(process.env.API_PORT ?? 4000);
 const PASSWORD = 'demo-password-1234';
 
@@ -298,28 +300,20 @@ const stillThere = await softDeletedRowExists(created.id);
 check(
   'the row is soft-deleted, not erased',
   stillThere === true,
-  stillThere === undefined ? 'could not check (no DATABASE_ADMIN_URL)' : String(stillThere),
+  // A string means the check could not be made, and says why. Reporting a
+  // connection failure as "not configured" sends the reader to the one place
+  // the problem is not.
+  typeof stillThere === 'string' ? stillThere : String(stillThere),
 );
 
-async function softDeletedRowExists(id) {
-  const url = process.env.DATABASE_ADMIN_URL;
-  if (url === undefined || url === '') {
-    return undefined;
-  }
-  const { Client } = await import('pg');
-  const client = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
-  try {
-    await client.connect();
+function softDeletedRowExists(id) {
+  return withAdminClient(async (client) => {
     const found = await client.query(
       'SELECT deleted_at, leaving_reason FROM students WHERE id = $1',
       [id],
     );
     return found.rows[0]?.deleted_at !== null && found.rows[0]?.deleted_at !== undefined;
-  } catch {
-    return undefined;
-  } finally {
-    await client.end().catch(() => undefined);
-  }
+  });
 }
 
 // --- Clean up the probes ----------------------------------------------------
@@ -332,7 +326,7 @@ async function cleanUp() {
     return;
   }
   const { Client } = await import('pg');
-  const client = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
+  const client = new Client(pgConfig(url));
   try {
     await client.connect();
     // Enrolments and guardian links cascade from the student row.

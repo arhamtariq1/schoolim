@@ -21,24 +21,14 @@ import 'dotenv/config';
 
 import { Client } from 'pg';
 
+import { pgConfig } from './lib/pg-connection.mjs';
+
 function required(name) {
   const value = process.env[name];
   if (value === undefined || value === '') {
     throw new Error(`${name} is not set.`);
   }
   return value;
-}
-
-/** `pg` rejects Prisma's `?schema=`; SSL is required by every managed host. */
-function connection(url) {
-  const parsed = new URL(url);
-  parsed.search = '';
-  const isLocal = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
-  return {
-    connectionString: parsed.toString(),
-    connectionTimeoutMillis: 30_000,
-    ...(isLocal ? {} : { ssl: { rejectUnauthorized: false } }),
-  };
 }
 
 const adminUrl = required('DATABASE_ADMIN_URL');
@@ -73,7 +63,7 @@ if (appPassword === '') {
   throw new Error('DATABASE_URL has no password; the application role needs one.');
 }
 
-const client = new Client(connection(adminUrl));
+const client = new Client(pgConfig(adminUrl));
 await client.connect();
 
 try {

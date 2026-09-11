@@ -19,6 +19,8 @@ import { request as httpRequest } from 'node:http';
 
 import 'dotenv/config';
 
+import { pgConfig } from './lib/pg-connection.mjs';
+
 const PORT = Number(process.env.API_PORT ?? 4000);
 const PASSWORD = 'demo-password-1234';
 
@@ -253,7 +255,7 @@ async function cleanUp() {
     return;
   }
   const { Client } = await import('pg');
-  const client = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
+  const client = new Client(pgConfig(url));
   try {
     await client.connect();
     const students = await client.query("DELETE FROM students WHERE last_name = 'Guardianprobe'");

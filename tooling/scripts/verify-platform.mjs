@@ -20,6 +20,8 @@ import { request as httpRequest } from 'node:http';
 
 import 'dotenv/config';
 
+import { pgConfig } from './lib/pg-connection.mjs';
+
 const API_PORT = Number(process.env.API_PORT ?? 4000);
 const ADMIN_PORT = Number(process.env.ADMIN_PORT ?? 3001);
 const PASSWORD = 'demo-password-1234';
@@ -219,7 +221,13 @@ if (result !== undefined) {
       rememberDevice: false,
     },
   });
-  const body = newOwnerLogin.json()?.data;
+  // ADR-0009 wrapped the sign-in response in a discriminated union: `session`
+  // when the host already names the school, `handoff` when the apex has to
+  // offer a choice. The signed-in user — and with it `school` and
+  // `mustChangePassword` — moved under `.user`. This script still read them
+  // from the top level, so both assertions compared against `undefined` and
+  // reported a working sign-in as a failure.
+  const body = newOwnerLogin.json()?.data?.user;
   check(
     'the new owner can sign in at the new school',
     (newOwnerLogin.status === 200 || newOwnerLogin.status === 201) && body?.school?.slug === slug,
@@ -272,7 +280,7 @@ async function cleanUp() {
   }
 
   const { Client } = await import('pg');
-  const client = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
+  const client = new Client(pgConfig(url));
   try {
     await client.connect();
     const deleted = await client.query("DELETE FROM schools WHERE slug LIKE 'probe-%'");
