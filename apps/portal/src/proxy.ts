@@ -201,26 +201,37 @@ async function renewIfExpired(
   slug: string,
   inner: string,
 ): Promise<NextResponse> {
-  const hasRefresh = request.cookies.has(COOKIES.refreshToken);
-
-  // No refresh token: either a signed-out visitor, or — the case that produced
-  // the reported bug — a browser still holding one at the old narrow path,
-  // where it is not sent on a page request. Asking the API anyway would add a
-  // round trip to every anonymous hit, and there is nothing to ask *with*.
-  if (!hasRefresh) {
-    return signedOut(request, inner);
-  }
-
-  // Whether the token has **expired**, not whether the cookie exists.
+  // **A working session renders, and nothing else is asked.**
   //
-  // That distinction is the whole bug this function was written for and then
-  // got wrong: the access cookie carries no `expires`, so a browser holds it
-  // for the rest of the session while the token inside dies after fifteen
-  // minutes. Testing for presence meant renewal was skipped in precisely the
-  // state that needed it, and the next page render said "your session has
-  // ended" — with the mutation that preceded it having returned 200.
+  // This test comes first, and the order is the fix for a real bug: the refresh
+  // check below used to run ahead of it, so a browser holding a perfectly valid
+  // access token but no *visible* refresh cookie was bounced to the sign-in
+  // page mid-session — losing whatever had been typed. That is exactly the
+  // browser the legacy narrow-path cookie produced, which is the state the
+  // refresh check was added to rescue. It over-corrected.
+  //
+  // Reordering costs nothing: this is a local JWT decode, no round trip. An
+  // anonymous visitor has no token at all, and `isAccessTokenExpired` reports
+  // an absent one as expired, so they fall through to the checks below.
+  //
+  // Note it asks whether the token has **expired**, not whether the cookie
+  // exists. The access cookie carries no `expires`, so a browser holds it for
+  // the rest of the session while the token inside dies after fifteen minutes.
+  // Testing for presence meant renewal was skipped in precisely the state that
+  // needed it, and the next page render said "your session has ended" — with
+  // the mutation that preceded it having returned 200.
   if (!isAccessTokenExpired(request.cookies.get(COOKIES.accessToken)?.value)) {
     return proceed(request, inner, new Headers(request.headers));
+  }
+
+  // The access token is gone or stale, so renewal is the only way forward.
+  //
+  // No refresh token means there is nothing to renew *with*: either a
+  // signed-out visitor, or a browser still holding one at the old narrow path
+  // where it is not sent on a page request. Asking the API anyway would add a
+  // round trip to every anonymous hit and could not succeed.
+  if (!request.cookies.has(COOKIES.refreshToken)) {
+    return signedOut(request, inner);
   }
 
   const apiBase = process.env['API_URL'] ?? 'http://localhost:4000';
