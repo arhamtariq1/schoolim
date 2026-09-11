@@ -3,7 +3,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { ENV, type Env } from '../../config/env';
-import { PrismaService } from '../../shared/prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 /**
  * Refresh tokens: opaque, stored hashed, rotated on every use, with reuse

@@ -9,8 +9,8 @@ import {
 import { Reflector } from '@nestjs/core';
 import { type FastifyRequest } from 'fastify';
 
+import { PrismaService } from '../../prisma/prisma.service';
 import { PermissionDeniedError } from '../errors/domain-error';
-import { PrismaService } from '../prisma/prisma.service';
 
 export const IS_PLATFORM = 'auth:platform';
 export const PLATFORM_CAPABILITY = 'auth:platform-capability';

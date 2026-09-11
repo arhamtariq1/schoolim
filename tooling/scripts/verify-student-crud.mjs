@@ -12,7 +12,7 @@
 
 import { request as httpRequest } from 'node:http';
 
-import 'dotenv/config';
+import './lib/load-env.mjs';
 
 import { pgConfig, withAdminClient } from './lib/pg-connection.mjs';
 

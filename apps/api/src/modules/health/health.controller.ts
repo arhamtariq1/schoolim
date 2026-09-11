@@ -1,8 +1,8 @@
 import { ROUTES } from '@ilm/contracts';
 import { Controller, Get } from '@nestjs/common';
 
+import { PrismaService } from '../../prisma/prisma.service';
 import { Public } from '../../shared/auth/auth.guard';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 
 /**
  * Liveness and readiness.

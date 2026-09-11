@@ -3,10 +3,10 @@ import { createHash, randomBytes } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { ENV, type Env } from '../../config/env';
+import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError } from '../../shared/errors/domain-error';
 import { MAIL, type MailPort } from '../../shared/mail/mail.port';
 import { verifyEmailTemplate } from '../../shared/mail/templates/verify-email.template';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 import { schoolOrigin } from '../../shared/tenancy/school-origin';
 
 /**

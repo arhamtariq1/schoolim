@@ -1,13 +1,13 @@
 import { Global, Module } from '@nestjs/common';
 
 import { ENV, loadEnv, type Env } from '../config/env';
+import { PrismaService } from '../prisma/prisma.service';
 
 import { PasswordService } from './auth/password.service';
 import { TokenService } from './auth/token.service';
 import { LogMailer } from './mail/log.mailer';
 import { MAIL, type MailPort } from './mail/mail.port';
 import { SmtpMailer } from './mail/smtp.mailer';
-import { PrismaService } from './prisma/prisma.service';
 import { SchoolDirectoryService } from './tenancy/school-directory.service';
 import { TenantContextService } from './tenancy/tenant-context.service';
 

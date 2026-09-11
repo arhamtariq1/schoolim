@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 
 import { ENV, type Env } from '../../config/env';
+import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from '../../shared/auth/password.service';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 import { clockProvider } from '../../shared/time/clock.provider';
 import { AuthModule } from '../auth/auth.module';
 import { EmailVerificationService } from '../auth/email-verification.service';

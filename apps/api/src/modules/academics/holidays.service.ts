@@ -2,8 +2,8 @@ import { type CreateHoliday, type Holiday, type UpdateHoliday } from '@ilm/contr
 import { calendarDate, daysBetween } from '@ilm/utils';
 import { Injectable } from '@nestjs/common';
 
+import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 
 /**
  * The school calendar.

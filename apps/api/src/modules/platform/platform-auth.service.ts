@@ -1,10 +1,10 @@
 import { PLATFORM_CAPABILITIES, type PlatformRole, type PlatformSession } from '@ilm/contracts';
 import { Injectable, Logger } from '@nestjs/common';
 
+import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from '../../shared/auth/password.service';
 import { TokenService } from '../../shared/auth/token.service';
 import { BusinessRuleError } from '../../shared/errors/domain-error';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 
 import { PlatformSessionService, type SessionContext } from './platform-session.service';
 

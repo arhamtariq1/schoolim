@@ -17,7 +17,7 @@
  * Run: node tooling/scripts/provision-app-role.mjs
  */
 
-import 'dotenv/config';
+import './lib/load-env.mjs';
 
 import { Client } from 'pg';
 

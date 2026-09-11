@@ -8,7 +8,6 @@ import {
   type VoucherPreview,
   type VoucherScope,
 } from '@ilm/contracts';
-import { type TransactionClient } from '@ilm/db';
 import {
   fromDecimalString,
   minorUnits,
@@ -19,8 +18,9 @@ import {
 } from '@ilm/utils';
 import { Injectable, Logger } from '@nestjs/common';
 
+import { type TransactionClient } from '../../prisma';
+import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 
 import {
   type PlannedLine,

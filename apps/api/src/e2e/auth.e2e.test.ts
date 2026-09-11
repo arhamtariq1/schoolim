@@ -1,10 +1,10 @@
 import { COOKIES, ROUTES } from '@ilm/contracts';
-import { createAdminClient, type PrismaClient } from '@ilm/db';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../app.module';
+import { createAdminClient, type PrismaClient } from '../prisma';
 import { PasswordService } from '../shared/auth/password.service';
 
 /**

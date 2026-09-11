@@ -108,9 +108,6 @@ importers:
       '@ilm/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@ilm/db':
-        specifier: workspace:*
-        version: link:../../packages/db
       '@ilm/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -132,6 +129,12 @@ importers:
       '@node-rs/argon2':
         specifier: ^2.1.0
         version: 2.1.0
+      '@prisma/adapter-pg':
+        specifier: ^7.9.1
+        version: 7.9.1
+      '@prisma/client':
+        specifier: ^7.9.1
+        version: 7.9.1(prisma@7.9.1(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3))(typescript@5.9.3)
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
@@ -159,6 +162,9 @@ importers:
       pino-http:
         specifier: ^11.0.0
         version: 11.0.0
+      prisma:
+        specifier: ^7.9.1
+        version: 7.9.1(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -184,15 +190,24 @@ importers:
       '@types/nodemailer':
         specifier: ^8.0.1
         version: 8.0.1
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
       eslint:
         specifier: ^9.39.5
         version: 9.39.5(jiti@2.7.0)
+      pg:
+        specifier: ^8.23.0
+        version: 8.23.0
       pino-pretty:
         specifier: ^13.1.3
         version: 13.1.3
       rimraf:
         specifier: ^6.1.3
         version: 6.1.3
+      tsx:
+        specifier: ^4.23.12
+        version: 4.23.12
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -306,55 +321,6 @@ importers:
       eslint:
         specifier: ^9.39.5
         version: 9.39.5(jiti@2.7.0)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.7(@types/node@26.3.0)(jiti@2.7.0)(jsdom@30.0.1)(lightningcss@1.32.0)(terser@5.50.0)(tsx@4.23.12)
-
-  packages/db:
-    dependencies:
-      '@ilm/utils':
-        specifier: workspace:*
-        version: link:../utils
-      '@node-rs/argon2':
-        specifier: ^2.1.0
-        version: 2.1.0
-      '@prisma/adapter-pg':
-        specifier: ^7.9.1
-        version: 7.9.1
-      '@prisma/client':
-        specifier: ^7.9.1
-        version: 7.9.1(prisma@7.9.1(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3))(typescript@5.9.3)
-      prisma:
-        specifier: ^7.9.1
-        version: 7.9.1(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
-    devDependencies:
-      '@ilm/config':
-        specifier: workspace:*
-        version: link:../config
-      '@ilm/contracts':
-        specifier: workspace:*
-        version: link:../contracts
-      '@types/node':
-        specifier: ^26.3.0
-        version: 26.3.0
-      '@types/pg':
-        specifier: ^8.23.1
-        version: 8.23.1
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
-      eslint:
-        specifier: ^9.39.5
-        version: 9.39.5(jiti@2.7.0)
-      pg:
-        specifier: ^8.23.0
-        version: 8.23.0
-      tsx:
-        specifier: ^4.23.12
-        version: 4.23.12
       typescript:
         specifier: ^5.9.3
         version: 5.9.3

@@ -2,7 +2,6 @@ import 'reflect-metadata';
 
 import fastifyCookie from '@fastify/cookie';
 import fastifyHelmet from '@fastify/helmet';
-import { loadEnv as loadDotenvFromWorkspaceRoot } from '@ilm/db';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -10,6 +9,7 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import { AppModule } from './app.module';
 import { ENV, loadEnv, type Env } from './config/env';
 import { setupOpenApi } from './openapi';
+import { loadEnv as loadDotenvFromWorkspaceRoot } from './prisma';
 
 async function bootstrap(): Promise<void> {
   // Reads the workspace-root `.env`, not `apps/api/.env`. Production supplies

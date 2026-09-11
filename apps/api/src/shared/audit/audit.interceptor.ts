@@ -9,7 +9,7 @@ import { type FastifyRequest } from 'fastify';
 import { type Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { TenantContextService } from '../tenancy/tenant-context.service';
 
 /**

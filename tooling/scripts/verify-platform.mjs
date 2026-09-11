@@ -18,7 +18,7 @@
 
 import { request as httpRequest } from 'node:http';
 
-import 'dotenv/config';
+import './lib/load-env.mjs';
 
 import { pgConfig } from './lib/pg-connection.mjs';
 

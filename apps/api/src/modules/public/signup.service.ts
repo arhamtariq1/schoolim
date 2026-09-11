@@ -8,9 +8,9 @@ import {
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { ENV, type Env } from '../../config/env';
+import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from '../../shared/auth/password.service';
 import { ConflictError } from '../../shared/errors/domain-error';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 import { schoolOrigin } from '../../shared/tenancy/school-origin';
 import { EmailVerificationService } from '../auth/email-verification.service';
 import { HandoffService } from '../auth/handoff.service';

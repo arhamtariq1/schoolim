@@ -11,8 +11,8 @@ import {
 import { fromDecimalString, minorUnits, toDecimalString } from '@ilm/utils';
 import { Injectable } from '@nestjs/common';
 
+import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/errors/domain-error';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 
 /**
  * Expenses and the categories they are booked against.

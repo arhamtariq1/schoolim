@@ -39,8 +39,8 @@ ilm/
               @ilm/ui   @ilm/contracts ◀────── apps/api
                   │          │                     │
                   └────┬─────┘                     ▼
-                       ▼                       @ilm/db
-                   @ilm/utils ◀────────────────────┘
+                       ▼                    (its own prisma/)
+                   @ilm/utils
                        │
                        ▼
                   @ilm/config
@@ -48,11 +48,18 @@ ilm/
 
 Hard rules:
 
-- **`@ilm/db` is imported only by `apps/api`.** No Next.js app ever imports Prisma. If it did, the
-  Prisma client would be bundled into a frontend and tenant enforcement would be bypassable.
-- **`@ilm/contracts` imports nothing from `@ilm/db`.** It defines shapes independently, so the API
-  contract can stay stable while the schema evolves. Prisma types are mapped to contract types in
-  the API's mapper layer, never leaked outward.
+- **The database layer lives inside `apps/api`**, at `prisma/` for the schema and migrations and
+  `src/prisma/` for the client, the tenant extension and `PrismaService`. It used to be a package,
+  `@ilm/db` — but a package with exactly one permitted consumer is a folder in the wrong place, and
+  keeping it separate meant the "only the API may import it" rule had to be enforced by a linter
+  rather than by where the code sat.
+- **No Next.js app ever touches Prisma.** If it did, tenant enforcement would be bypassable: a
+  Server Component calling the client directly skips CLS, the tenant extension, the guards and the
+  audit log. Now structural — reaching into `apps/api` from a Next app is its own violation — and
+  still lint-enforced as a second line.
+- **`@ilm/contracts` imports nothing from the database layer.** It defines shapes independently, so
+  the API contract can stay stable while the schema evolves. Prisma types are mapped to contract
+  types in the API's mapper layer, never leaked outward.
 - `@ilm/ui` may not import `@ilm/contracts`. Design-system components are domain-agnostic; a
   `<VoucherTable>` lives in `apps/portal/features/fees`, not in the design system.
 
@@ -61,11 +68,17 @@ Enforced by `eslint-plugin-boundaries` and by a `depcheck` step in CI.
 ## 3. Inside `apps/api`
 
 ```
-apps/api/src/
-├── main.ts                      bootstrap, global pipes/filters, Swagger
-├── app.module.ts
-├── shared/
-│   ├── prisma/                  PrismaService, TenantPrisma, tenant.extension.ts
+apps/api/
+├── prisma/
+│   ├── schema.prisma            the schema; migrations GRANT to ilm_app by name
+│   ├── migrations/
+│   └── seed.ts                  three schools, so isolation is provable with real rows
+├── prisma.config.ts             migrations connect as the OWNER role, not the app role
+└── src/
+    ├── prisma/                  PrismaService, the generated client, the tenant extension
+    ├── main.ts                  bootstrap, global pipes/filters, Swagger
+    ├── app.module.ts
+    └── shared/
 │   ├── tenancy/                 TenantGuard, CLS setup, feature-flag service
 │   ├── auth/                    AuthGuard, JWT service, session service, decorators
 │   ├── rbac/                    RbacGuard, @RequirePermission, matrix loader

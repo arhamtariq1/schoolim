@@ -42,12 +42,21 @@ export const next = [
               message: 'No runtime CSS-in-JS. Tailwind v4 tokens only.',
             },
             {
-              name: '@ilm/db',
+              name: '@prisma/client',
               message:
                 'A Next.js app may never import Prisma - tenant enforcement would be bypassable. See docs/06-repo-structure.md section 2.',
             },
           ],
           patterns: [
+            {
+              // The database layer lives inside apps/api now, so the boundary
+              // that @ilm/db used to enforce by package name is enforced by
+              // path: a Next app reaching into the API's source is the same
+              // mistake wearing a different hat.
+              group: ['**/apps/api/**'],
+              message:
+                'A Next.js app may never reach into the API. Talk to it over HTTP. See docs/06-repo-structure.md section 2.',
+            },
             {
               group: ['lucide-react'],
               message:

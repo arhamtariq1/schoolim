@@ -15,7 +15,7 @@
  * Run: node tooling/scripts/verify-rls-role.mjs
  */
 
-import 'dotenv/config';
+import './lib/load-env.mjs';
 
 import { Client } from 'pg';
 

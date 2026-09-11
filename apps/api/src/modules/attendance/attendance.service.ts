@@ -9,12 +9,12 @@ import {
   type Roster,
   type RosterQuery,
 } from '@ilm/contracts';
-import { type TransactionClient } from '@ilm/db';
 import { systemClock } from '@ilm/utils';
 import { Injectable } from '@nestjs/common';
 
+import { type TransactionClient } from '../../prisma';
+import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 
 import {
   attendanceBasisPoints,

@@ -1,6 +1,7 @@
 import { type StudentListQuery } from '@ilm/contracts';
-import { type TransactionClient } from '@ilm/db';
 import { Injectable } from '@nestjs/common';
+
+import { type TransactionClient } from '../../prisma';
 
 /**
  * Data access for students.

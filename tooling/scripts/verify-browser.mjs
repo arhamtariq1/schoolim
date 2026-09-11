@@ -17,7 +17,7 @@
 
 import { request as httpRequest } from 'node:http';
 
-import 'dotenv/config';
+import './lib/load-env.mjs';
 
 const PORT = Number(process.env.PORTAL_PORT ?? 3000);
 const PASSWORD = 'demo-password-1234';

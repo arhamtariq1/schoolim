@@ -10,9 +10,9 @@ import {
 import { Inject, Injectable } from '@nestjs/common';
 
 import { ENV, type Env } from '../../config/env';
+import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from '../../shared/auth/password.service';
 import { ConflictError } from '../../shared/errors/domain-error';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 import { SchoolDirectoryService } from '../../shared/tenancy/school-directory.service';
 import { schoolOrigin } from '../../shared/tenancy/school-origin';
 

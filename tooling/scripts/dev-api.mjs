@@ -68,7 +68,7 @@ async function startWhenBuilt() {
     await new Promise((wake) => setTimeout(wake, 250));
   }
 
-  const server = run('node', ['--watch', '--watch-preserve-output', 'dist/main.js']);
+  const server = run('node', ['--watch', '--watch-preserve-output', 'dist/src/main.js']);
   server.on('exit', (code) => {
     console.error(`\nAPI exited (${String(code)}).`);
     shutdown(code ?? 1);

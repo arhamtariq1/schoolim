@@ -1,4 +1,4 @@
-import { loadEnv } from '@ilm/db';
+import { loadEnv } from '../prisma';
 
 loadEnv();
 

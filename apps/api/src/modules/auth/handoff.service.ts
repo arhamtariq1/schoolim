@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
 
-import { PrismaService } from '../../shared/prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 /**
  * The bridge from "password verified at the apex" to "session on the school's

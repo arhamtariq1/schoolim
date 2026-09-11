@@ -1,6 +1,7 @@
 import { type SkipReason } from '@ilm/contracts';
-import { type TransactionClient } from '@ilm/db';
 import { fromDecimalString } from '@ilm/utils';
+
+import { type TransactionClient } from '../../prisma';
 
 /**
  * Working out what one child owes — the pure part of generation.

@@ -1,7 +1,7 @@
 import { type ClassLevelWithSections, type CurrentSession } from '@ilm/contracts';
 import { Injectable } from '@nestjs/common';
 
-import { PrismaService } from '../../shared/prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 /**
  * Classes, sections and the current academic session.

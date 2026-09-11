@@ -10,9 +10,9 @@ import {
 import { fromDecimalString, minorUnits, toDecimalString } from '@ilm/utils';
 import { Inject, Injectable } from '@nestjs/common';
 
+import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from '../../shared/auth/password.service';
 import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/errors/domain-error';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
 
 /**

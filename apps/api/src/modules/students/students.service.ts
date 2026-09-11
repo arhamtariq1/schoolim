@@ -8,12 +8,12 @@ import {
   type StudentProfile,
   type UpdateStudent,
 } from '@ilm/contracts';
-import { Prisma } from '@ilm/db';
 import { fromDecimalString } from '@ilm/utils';
 import { Inject, Injectable } from '@nestjs/common';
 
+import { Prisma } from '../../prisma';
+import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
 import {

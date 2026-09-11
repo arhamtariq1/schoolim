@@ -20,7 +20,7 @@
  */
 import { request as httpRequest } from 'node:http';
 
-import 'dotenv/config';
+import './lib/load-env.mjs';
 
 const PORTAL = Number(process.env.PORTAL_PORT ?? 3000);
 const API = Number(process.env.API_PORT ?? 4000);

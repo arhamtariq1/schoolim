@@ -11,8 +11,8 @@ import {
 } from '@ilm/contracts';
 import { Injectable } from '@nestjs/common';
 
+import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/errors/domain-error';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 
 /**
  * Sessions, classes and sections — the structure everything else hangs off.

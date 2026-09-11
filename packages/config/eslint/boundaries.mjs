@@ -37,7 +37,16 @@ export const apiBoundaries = [
               message: `R9: a controller may not import a repository — go through the service. ${LAYER_MESSAGE_SUFFIX}`,
             },
             {
-              group: ['@ilm/db', '@ilm/db/*'],
+              // The database layer moved from `@ilm/db` into this app, so the
+              // rule follows it by path rather than by package name. It bans the
+              // raw client and the tenancy helpers, exactly as the package ban
+              // did — not the injected `PrismaService`, which is how the health
+              // controller runs its liveness probe.
+              // Gitignore semantics, so this covers the folder and everything
+              // in it — the barrel, the generated client, the tenancy helpers
+              // and the injected service alike. The liveness probe is the one
+              // documented exception; see apps/api/eslint.config.mjs.
+              group: ['**/prisma'],
               message: `R9: a controller may not touch the database directly. ${LAYER_MESSAGE_SUFFIX}`,
             },
           ],

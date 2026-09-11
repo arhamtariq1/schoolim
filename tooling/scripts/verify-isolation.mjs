@@ -2,7 +2,8 @@
 /**
  * Prove tenant isolation **through the running API**, with real seeded data.
  *
- * The isolation suite in `@ilm/db` proves it at the database layer. This proves
+ * The isolation suite in `apps/api/src/prisma` proves it at the database
+ * layer. This proves
  * it end to end: sign in as each school's owner and confirm the API returns
  * that school's students and none of anyone else's — over HTTP, through the
  * whole guard chain, exactly as a browser would.
@@ -23,7 +24,7 @@
 
 import { request as httpRequest } from 'node:http';
 
-import 'dotenv/config';
+import './lib/load-env.mjs';
 
 const PORT = Number(process.env.API_PORT ?? 4000);
 const PASSWORD = 'demo-password-1234';

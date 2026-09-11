@@ -2,8 +2,8 @@ import { type CreateFeeHead, type FeeHead, type UpdateFeeHead } from '@ilm/contr
 import { fromDecimalString, minorUnits, toDecimalString, type MinorUnits } from '@ilm/utils';
 import { Injectable } from '@nestjs/common';
 
+import { PrismaService } from '../../prisma/prisma.service';
 import { ConflictError, NotFoundError } from '../../shared/errors/domain-error';
-import { PrismaService } from '../../shared/prisma/prisma.service';
 
 /**
  * The fee catalogue — docs/modules/fees-and-finance.md §2.

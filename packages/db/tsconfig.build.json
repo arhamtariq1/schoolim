@@ -1,9 +1,0 @@
-{
-  "extends": "@ilm/config/typescript/library-build",
-  "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src"
-  },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/testing/**"]
-}

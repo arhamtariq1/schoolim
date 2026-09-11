@@ -63,7 +63,7 @@ jobs:
       - run: pnpm turbo run build
 
       - name: Apply migrations
-        run: pnpm --filter @ilm/db exec prisma migrate deploy
+        run: pnpm --filter @ilm/api exec prisma migrate deploy
 
       - run: pnpm turbo run lint typecheck
 
@@ -91,7 +91,7 @@ jobs:
                --include='*.ts' --include='*.tsx' \
                apps packages \
                | grep -viE '@ilm/|ilm_app|ilm_local_dev|ilm_at|ilm_rt|ilm_csrf|ilm_pat|ilm_prt|/ilm\?|:5433/ilm|localhost:5432/ilm' \
-               | grep -viE 'packages/db/src/generated/|packages/utils/src/product.ts|/dist/' ; then
+               | grep -viE 'apps/api/src/prisma/generated/|packages/utils/src/product.ts|/dist/' ; then
             echo
             echo 'Found a brand reference outside the four permitted places.'
             echo 'Use BRAND from @ilm/utils. See docs/15 Part C, D4 containment rule.'
