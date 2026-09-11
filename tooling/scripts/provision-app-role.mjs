@@ -44,7 +44,29 @@ function connection(url) {
 const adminUrl = required('DATABASE_ADMIN_URL');
 const appUrl = new URL(required('DATABASE_URL'));
 
-const appRole = decodeURIComponent(appUrl.username);
+/**
+ * The role name, with a connection-pooler suffix stripped.
+ *
+ * Supabase's pooler addresses a project by putting it in the username —
+ * `ilm_app.wfvrkgli…` — but the role in `pg_roles` is plain `ilm_app`. Taking
+ * the username literally would have this script CREATE a second, bogus role
+ * called `ilm_app.wfvrkgli…` and report success, while the role the
+ * application actually connects as kept its old password. A rotation that
+ * silently rotates nothing is worse than one that fails.
+ *
+ * Only stripped for a recognised pooler host, so a role name that genuinely
+ * contains a dot survives everywhere else.
+ */
+function roleNameFrom(url) {
+  const username = decodeURIComponent(url.username);
+  const isPooler = /(^|.)pooler.supabase.com$/.test(url.hostname);
+  if (!isPooler) return username;
+
+  const cut = username.lastIndexOf('.');
+  return cut === -1 ? username : username.slice(0, cut);
+}
+
+const appRole = roleNameFrom(appUrl);
 const appPassword = decodeURIComponent(appUrl.password);
 
 if (appPassword === '') {
@@ -89,7 +111,8 @@ try {
   }
 
   console.error(
-    `${verb === 'CREATE' ? 'Created' : 'Updated'} role ${appRole}: ` +
+    `${verb === 'CREATE' ? 'Created' : 'Updated'} role ${appRole} ` +
+      `(from username "${decodeURIComponent(appUrl.username)}"): ` +
       `login=${String(row.rolcanlogin)} bypassrls=${String(row.rolbypassrls)} superuser=${String(row.rolsuper)}`,
   );
 } finally {
