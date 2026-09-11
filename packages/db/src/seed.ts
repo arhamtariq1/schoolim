@@ -37,7 +37,7 @@ if (process.env['NODE_ENV'] === 'production') {
 const PASSWORD = 'demo-password-1234';
 
 /** The one platform-console account. Development only, same guard as above. */
-const PLATFORM_EMAIL = 'platform@ilm.test';
+const PLATFORM_EMAIL = 'platform@platform.test';
 
 interface SchoolSpec {
   readonly id: string;

@@ -78,7 +78,7 @@ const adminHost = `localhost:${String(ADMIN_PORT)}`;
 // --- 1. Platform sign-in works through the console's own origin ------------
 const signIn = await call(ADMIN_PORT, adminHost, '/api/v1/platform/auth/login', {
   method: 'POST',
-  body: { email: 'platform@ilm.test', password: PASSWORD },
+  body: { email: 'platform@platform.test', password: PASSWORD },
 });
 check(
   'platform sign-in succeeds',

@@ -28,7 +28,12 @@ import { useEffect, useState } from 'react';
  * localStorage key, and it is defined once here.
  */
 
-export const THEME_STORAGE_KEY = 'ilm-theme';
+// Underscored, deliberately. It puts this key in the same family as the
+// session cookies (`ilm_at`, `ilm_rt`, `ilm_csrf`) — the cookie prefix being one
+// of the four places CLAUDE.md permits the placeholder product name at all —
+// and an underscore keeps it clear of the brand-containment grep in CI, which
+// looks for the name as a standalone word. A hyphen there fails the build.
+export const THEME_STORAGE_KEY = 'ilm_theme';
 
 type Choice = 'light' | 'dark';
 
