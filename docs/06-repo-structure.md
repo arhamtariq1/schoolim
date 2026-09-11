@@ -188,8 +188,7 @@ unreliable.
     "typecheck": { "dependsOn": ["^build"] },
     "test": { "dependsOn": ["^build"], "outputs": ["coverage/**"] },
     "test:e2e": { "dependsOn": ["build"], "cache": false },
-    "db:generate": { "cache": false },
-    "db:migrate": { "cache": false },
+    "prisma:generate": { "cache": false },
   },
 }
 ```

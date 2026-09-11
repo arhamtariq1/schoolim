@@ -240,7 +240,7 @@ async function flows(demo, beacon) {
   const monthlyHead = heads.find((head) => head.frequency === 'MONTHLY') ?? heads[0];
 
   if (monthlyHead === undefined || students.length === 0 || currentSessionId === undefined) {
-    check('school has fee heads and students to bill', false, 'seed data missing — run pnpm db:seed');
+    check('school has fee heads and students to bill', false, 'seed data missing — run pnpm prisma:seed');
   } else {
     const student = students[0];
     // A month far enough out that a re-run of this script does not collide with

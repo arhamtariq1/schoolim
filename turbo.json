@@ -59,10 +59,10 @@
         "^build"
       ]
     },
-    "db:generate": {
+    "clean": {
       "cache": false
     },
-    "clean": {
+    "prisma:generate": {
       "cache": false
     }
   }

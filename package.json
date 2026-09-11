@@ -18,9 +18,7 @@
     "clean": "turbo run clean && rimraf node_modules",
     "db": "node tooling/scripts/local-db.mjs start",
     "db:stop": "node tooling/scripts/local-db.mjs stop",
-    "db:reset": "node tooling/scripts/local-db.mjs reset",
-    "db:migrate": "pnpm --filter @ilm/api migrate",
-    "db:seed": "pnpm --filter @ilm/api seed",
+    "db:reset": "pnpm --filter @ilm/api db:reset",
     "verify:rls-role": "node tooling/scripts/verify-rls-role.mjs",
     "verify:isolation": "node tooling/scripts/verify-isolation.mjs",
     "verify:browser": "node tooling/scripts/verify-browser.mjs",
@@ -31,8 +29,11 @@
     "verify:flows": "node tooling/scripts/verify-flows.mjs",
     "verify:load": "node tooling/scripts/verify-flows.mjs --load-only",
     "verify:path-mode": "node tooling/scripts/verify-path-mode.mjs",
-    "db:generate": "pnpm --filter @ilm/api db:generate",
-    "db:studio": "pnpm --filter @ilm/api studio"
+    "prisma:generate": "pnpm --filter @ilm/api prisma:generate",
+    "prisma:migrate": "pnpm --filter @ilm/api prisma:migrate",
+    "prisma:deploy": "pnpm --filter @ilm/api prisma:deploy",
+    "prisma:seed": "pnpm --filter @ilm/api prisma:seed",
+    "prisma:studio": "pnpm --filter @ilm/api prisma:studio"
   },
   "devDependencies": {
     "@ilm/config": "workspace:*",
