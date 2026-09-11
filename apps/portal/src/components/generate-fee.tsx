@@ -1,5 +1,6 @@
 'use client';
 
+
 import {
   FEE_FREQUENCY_LABELS,
   ROUTES,
@@ -28,6 +29,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
  * Fees › Generate.
@@ -75,6 +77,7 @@ export function GenerateFee({
   error,
 }: GenerateFeeProps) {
   const router = useRouter();
+  const tenantHref = useTenantHref();
   const toast = useToast();
 
   const [scopeKind, setScopeKind] = useState<ScopeKind>('STUDENT');
@@ -238,7 +241,7 @@ export function GenerateFee({
       `${String(result.data.created)} ${result.data.created === 1 ? 'voucher' : 'vouchers'} generated`,
       result.data.skipped > 0 ? `${String(result.data.skipped)} skipped.` : undefined,
     );
-    router.push('/fees/vouchers');
+    router.push(tenantHref('/fees/vouchers'));
   }
 
   return (

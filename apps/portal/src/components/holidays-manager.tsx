@@ -1,5 +1,6 @@
 'use client';
 
+
 import {
   createHolidaySchema,
   HOLIDAY_AUDIENCE_LABELS,
@@ -16,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
 import { mutate } from '@/lib/mutate';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
  * The school calendar.
@@ -59,6 +61,7 @@ export function HolidaysManager({
   canConfigure,
 }: HolidaysManagerProps) {
   const router = useRouter();
+  const tenantHref = useTenantHref();
   const toast = useToast();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -228,7 +231,7 @@ export function HolidaysManager({
           description="A calendar belongs to a school year, so create a session first — the same date next year is a separate decision."
           action={
             <Button asChild>
-              <a href="/academics/sessions">Go to sessions</a>
+              <a href={tenantHref('/academics/sessions')}>Go to sessions</a>
             </Button>
           }
         />

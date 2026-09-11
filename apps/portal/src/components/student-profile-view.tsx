@@ -1,5 +1,6 @@
 'use client';
 
+
 import { ROUTES, type StudentGuardian, type StudentProfile } from '@ilm/contracts';
 import {
   Button,
@@ -18,6 +19,7 @@ import { EditStudentDialog } from './edit-student-dialog';
 import { GuardianDialog } from './guardian-dialog';
 
 import { mutateOrThrow } from '@/lib/mutate';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
  * The student 360.
@@ -50,6 +52,7 @@ export interface StudentProfileViewProps {
 
 export function StudentProfileView({ student, can }: StudentProfileViewProps) {
   const router = useRouter();
+  const tenantHref = useTenantHref();
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [guardianDialog, setGuardianDialog] = useState<
@@ -63,7 +66,7 @@ export function StudentProfileView({ student, can }: StudentProfileViewProps) {
     <div className="space-y-6">
       <nav>
         <Link
-          href="/students"
+          href={tenantHref('/students')}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground underline"
         >
           <BackIcon className="size-4" aria-hidden="true" />
@@ -205,7 +208,7 @@ export function StudentProfileView({ student, can }: StudentProfileViewProps) {
                     <ul className="mt-1 space-y-0.5">
                       {guardian.siblings.map((sibling) => (
                         <li key={sibling.id} className="text-sm">
-                          <Link href={`/students/${sibling.id}`} className="underline">
+                          <Link href={tenantHref(`/students/${sibling.id}`)} className="underline">
                             {sibling.name}
                           </Link>
                           <span className="text-muted-foreground">

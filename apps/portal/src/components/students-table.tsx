@@ -1,5 +1,6 @@
 'use client';
 
+
 import { ROUTES, STUDENT_STATUSES, type StudentListItem } from '@ilm/contracts';
 import {
   Button,
@@ -29,6 +30,7 @@ import { useState, useTransition, type FormEvent } from 'react';
 import { EditStudentDialog } from './edit-student-dialog';
 
 import { mutateOrThrow } from '@/lib/mutate';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
  * The student list.
@@ -82,6 +84,7 @@ export function StudentsTable({
   can,
 }: StudentsTableProps) {
   const router = useRouter();
+  const tenantHref = useTenantHref();
   const pathname = usePathname();
   const params = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -311,7 +314,7 @@ export function StudentsTable({
             admission while they phone a parent for a CNIC. */}
         {can.create ? (
           <Button asChild>
-            <Link href="/students/new">
+            <Link href={tenantHref('/students/new')}>
               <CreateIcon className="size-4" aria-hidden="true" />
               Admit student
             </Link>
@@ -373,7 +376,7 @@ export function StudentsTable({
           isFiltered={isFiltered}
           // The row opens the student. It never mutates (docs/16 §9).
           onRowClick={(row) => {
-            router.push(`/students/${row.id}`);
+            router.push(tenantHref(`/students/${row.id}`));
           }}
           onClearFilters={() => {
             apply({ q: '', status: '' });

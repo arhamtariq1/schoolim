@@ -57,6 +57,23 @@ const envSchema = z.object({
    */
   APP_DOMAIN: z.string().default('localhost'),
 
+  /**
+   * How the portal names a school in a URL.
+   *
+   * `subdomain` — the default and the intended production mode — is
+   * `beacon.<APP_DOMAIN>`. `path` is a temporary mode for hosts that cannot
+   * issue wildcard subdomains, where the school is the first path segment
+   * instead: `<WEB_URL>/beacon`.
+   *
+   * The API only needs to know because it builds absolute links back into the
+   * portal — the sign-in handoff, the email-confirmation link, and the login URL
+   * the platform console shows after creating a school. Tenant *resolution* is
+   * unaffected: the portal names the school in `x-school-slug` either way.
+   *
+   * Must match the portal's `PORTAL_TENANT_MODE`. See docs/SINGLE-HOST-MODE.md.
+   */
+  PORTAL_TENANT_MODE: z.enum(['subdomain', 'path']).default('subdomain'),
+
   // --- Mail -----------------------------------------------------------------
   /**
    * Which `MailPort` implementation to construct (ADR-0011).

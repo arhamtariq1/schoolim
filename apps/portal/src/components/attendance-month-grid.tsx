@@ -1,10 +1,13 @@
 'use client';
 
+
 import { type MonthlyReport } from '@ilm/contracts';
 import { Button, cn, Field, Input, MonthPicker } from '@ilm/ui';
 import { ExportIcon, ICON_SIZE, SearchIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+
+import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
  * A month of attendance, as a grid.
@@ -46,6 +49,7 @@ export function AttendanceMonthGrid({
   error,
 }: AttendanceMonthGridProps) {
   const router = useRouter();
+  const tenantHref = useTenantHref();
   const [draft, setDraft] = useState(filters);
 
   function apply(next: Partial<typeof filters>) {
@@ -56,7 +60,7 @@ export function AttendanceMonthGrid({
         query.set(key, value);
       }
     }
-    router.push(`${basePath}?${query.toString()}`);
+    router.push(tenantHref(`${basePath}?${query.toString()}`));
   }
 
   return (

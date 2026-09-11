@@ -1,6 +1,8 @@
-import { ROUTES } from '@ilm/contracts';
+import { COOKIES, ROUTES } from '@ilm/contracts';
 import { schoolSlugFromHost } from '@ilm/utils';
 import { type NextRequest } from 'next/server';
+
+import { TENANT_MODE, tenantSlugFromPathname } from '@/lib/tenant-mode';
 
 /**
  * The second half of an apex sign-in — ADR-0009.
@@ -31,7 +33,15 @@ const APP_DOMAIN = process.env['APP_DOMAIN'] ?? 'localhost';
 
 export async function GET(request: NextRequest): Promise<Response> {
   const token = request.nextUrl.searchParams.get('t') ?? '';
-  const slug = schoolSlugFromHost(request.headers.get('host') ?? undefined, APP_DOMAIN);
+
+  // Under `PORTAL_TENANT_MODE=path` the school is in the address as
+  // `/beacon/auth/continue` rather than as a subdomain. Note this route is
+  // reached *before* the cookie exists — it is what writes it — so the path is
+  // the only place the school can come from here.
+  const slug =
+    TENANT_MODE === 'path'
+      ? tenantSlugFromPathname(request.nextUrl.pathname)
+      : schoolSlugFromHost(request.headers.get('host') ?? undefined, APP_DOMAIN);
 
   // No school in the address means there is nothing to redeem the token
   // against. The API would refuse it anyway; failing here saves a round trip
@@ -68,7 +78,9 @@ export async function GET(request: NextRequest): Promise<Response> {
   }
 
   const headers = new Headers({
-    location: '/',
+    // Into the school, not to the apex: in path mode `/` is the marketing page
+    // and `/beacon` is the workspace.
+    location: TENANT_MODE === 'path' ? `/${slug}` : '/',
     'cache-control': 'no-store',
     // The token is still in this request's URL. Without this it would be sent
     // as the referrer of whatever the next page loads.
@@ -80,6 +92,21 @@ export async function GET(request: NextRequest): Promise<Response> {
   // so the session would work for fifteen minutes and then end.
   for (const cookie of upstream.headers.getSetCookie()) {
     headers.append('set-cookie', cookie);
+  }
+
+  // In path mode the host names no school, so the API proxy has nowhere else to
+  // learn which one every later call is for. Written here because this is the
+  // moment the session is established, and cleared on sign-out.
+  //
+  // `Lax` and `httpOnly`: it is read on the server by the API proxy and never
+  // by page script, and no cross-site request needs to carry it.
+  if (TENANT_MODE === 'path') {
+    headers.append(
+      'set-cookie',
+      `${COOKIES.school}=${slug}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 400}${
+        request.nextUrl.protocol === 'https:' ? '; Secure' : ''
+      }`,
+    );
   }
 
   // 303, so the browser follows with a GET and the token URL is not repeated.

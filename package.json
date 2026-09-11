@@ -29,7 +29,8 @@
     "verify:guardians": "node tooling/scripts/verify-guardians.mjs",
     "verify:all": "node tooling/scripts/verify-isolation.mjs && node tooling/scripts/verify-browser.mjs && node tooling/scripts/verify-platform.mjs && node tooling/scripts/verify-student-crud.mjs && node tooling/scripts/verify-guardians.mjs && node tooling/scripts/verify-flows.mjs",
     "verify:flows": "node tooling/scripts/verify-flows.mjs",
-    "verify:load": "node tooling/scripts/verify-flows.mjs --load-only"
+    "verify:load": "node tooling/scripts/verify-flows.mjs --load-only",
+    "verify:path-mode": "node tooling/scripts/verify-path-mode.mjs"
   },
   "devDependencies": {
     "@ilm/config": "workspace:*",

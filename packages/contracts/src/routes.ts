@@ -185,6 +185,20 @@ export const COOKIES = {
   refreshToken: 'ilm_rt',
   /** Double-submit CSRF token, readable by script by design. */
   csrf: 'ilm_csrf',
+  /**
+   * Which school the session belongs to, by slug.
+   *
+   * Only written under `PORTAL_TENANT_MODE=path`, the temporary single-host
+   * deployment mode. In subdomain mode the hostname already says which school
+   * this is and nothing sets it; on one shared host nothing else does, and the
+   * API needs a slug to resolve the tenant against the token's claim.
+   *
+   * It is a **name, not a credential**. Editing it grants nothing:
+   * `TenantGuard` requires the school it names to equal the `sid` inside the
+   * signed access token, so a tampered value is a 401. See
+   * docs/SINGLE-HOST-MODE.md.
+   */
+  school: 'ilm_school',
   /** Platform console tokens. Separate names so the two can never be confused. */
   platformAccessToken: 'ilm_pat',
   platformRefreshToken: 'ilm_prt',

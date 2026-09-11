@@ -11,8 +11,9 @@ import {
   SessionIcon,
 } from '@ilm/ui/icons';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import type { ComponentType } from 'react';
+
+import { useCanonicalPathname, useTenantHref } from '@/lib/use-tenant-href';
 
 /**
  * Navigation between sibling screens in a section.
@@ -53,7 +54,10 @@ export interface TabLinksProps {
 }
 
 export function TabLinks({ label, items, className }: TabLinksProps) {
-  const pathname = usePathname();
+  // Canonical, so the comparison below still works when the school is in the
+  // path rather than the hostname.
+  const pathname = useCanonicalPathname();
+  const tenantHref = useTenantHref();
 
   return (
     <nav aria-label={label} className={cn('border-b border-border', className)}>
@@ -67,7 +71,7 @@ export function TabLinks({ label, items, className }: TabLinksProps) {
           return (
             <li key={item.href}>
               <Link
-                href={item.href}
+                href={tenantHref(item.href)}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
                   'flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap',

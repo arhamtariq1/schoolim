@@ -1,5 +1,6 @@
 'use client';
 
+
 import {
   ROUTES,
   VOUCHER_STATUSES,
@@ -21,6 +22,7 @@ import { VoucherChallan } from './voucher-challan';
 
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
  * Fees › Vouchers.
@@ -78,6 +80,7 @@ export function VouchersView({
   canCancel,
 }: VouchersViewProps) {
   const router = useRouter();
+  const tenantHref = useTenantHref();
   const params = useSearchParams();
   const toast = useToast();
 
@@ -101,7 +104,7 @@ export function VouchersView({
     if (!resetPage) {
       query.set('offset', String(offset));
     }
-    router.push(`/fees/vouchers?${query.toString()}`);
+    router.push(tenantHref(`/fees/vouchers?${query.toString()}`));
   }
 
   function reset() {
@@ -115,7 +118,7 @@ export function VouchersView({
       to: '',
     };
     setDraft(cleared);
-    router.push('/fees/vouchers');
+    router.push(tenantHref('/fees/vouchers'));
   }
 
   async function openChallan(row: VoucherSummary) {
@@ -405,7 +408,7 @@ export function VouchersView({
             } else {
               query.set('offset', String(next));
             }
-            router.push(`/fees/vouchers?${query.toString()}`);
+            router.push(tenantHref(`/fees/vouchers?${query.toString()}`));
           }}
         />
       )}

@@ -1,5 +1,6 @@
 'use client';
 
+
 import {
   ROUTES,
   STAFF_ATTENDANCE_STATUS_LABELS,
@@ -14,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 import { mutate } from '@/lib/mutate';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
  * Marking staff.
@@ -40,6 +42,7 @@ const STATUSES: readonly StaffAttendanceStatus[] = [
 
 export function StaffAttendanceRosterView({ roster, canMark, error }: StaffAttendanceRosterProps) {
   const router = useRouter();
+  const tenantHref = useTenantHref();
   const toast = useToast();
 
   const [marks, setMarks] = useState<Record<string, StaffAttendanceStatus>>(() =>
@@ -152,7 +155,7 @@ export function StaffAttendanceRosterView({ roster, canMark, error }: StaffAtten
             <DatePicker
               value={roster.date}
               onChange={(nextValue) => {
-                router.push(`/attendance/mark/teachers?date=${nextValue}`);
+                router.push(tenantHref(`/attendance/mark/teachers?date=${nextValue}`));
               }}
             />
           </Field>

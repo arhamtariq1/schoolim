@@ -1,5 +1,8 @@
+import { COOKIES } from '@ilm/contracts';
 import { schoolSlugFromHost } from '@ilm/utils';
 import { headers as nextHeaders, cookies as nextCookies } from 'next/headers';
+
+import { TENANT_MODE } from './tenant-mode';
 
 /**
  * Call the API from a server component, forwarding the caller's session.
@@ -19,6 +22,15 @@ import { headers as nextHeaders, cookies as nextCookies } from 'next/headers';
  *    The header is a hint, not an authority. The API resolves it and requires
  *    it to match the tenant claim inside the session token, so it can only ever
  *    select the school the caller already holds a valid token for.
+ *
+ *    Where the slug comes from depends on the deployment. Normally the request
+ *    host. Under `PORTAL_TENANT_MODE=path` the host names no school, so it
+ *    comes from the `ilm_school` cookie the handoff wrote — the same source the
+ *    browser-facing API proxy uses, so the two cannot disagree.
+ *
+ *    **This is not optional.** Without it every server-rendered page fetches
+ *    with no tenant, the API refuses, and the screen renders its signed-out
+ *    state — a shell with an empty sidebar on a page you are signed in to.
  */
 
 export type ApiResult<T> =
@@ -35,13 +47,16 @@ export async function apiFetch<T>(path: string): Promise<ApiResult<T>> {
 
   const base = process.env['API_URL'] ?? 'http://localhost:4000';
   const appDomain = process.env['APP_DOMAIN'] ?? 'localhost';
-  const slug = schoolSlugFromHost(incoming.get('host') ?? undefined, appDomain);
+  const slug =
+    TENANT_MODE === 'path'
+      ? (jar.get(COOKIES.school)?.value ?? undefined)
+      : schoolSlugFromHost(incoming.get('host') ?? undefined, appDomain);
 
   try {
     const response = await fetch(`${base}${path}`, {
       headers: {
         cookie,
-        ...(slug === undefined ? {} : { 'x-school-slug': slug }),
+        ...(slug === undefined || slug === '' ? {} : { 'x-school-slug': slug }),
       },
       // A tenant-scoped list must never be served from a shared cache.
       cache: 'no-store',

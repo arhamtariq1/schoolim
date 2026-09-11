@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
 
+import { tenantHref } from '@/lib/tenant-server';
+
 /**
  * `/attendance` has no screen of its own.
  *
@@ -7,6 +9,6 @@ import { redirect } from 'next/navigation';
  * sidebar link lands. A landing page listing four links would be a click
  * everybody pays and nobody wants.
  */
-export default function AttendanceIndexPage() {
-  redirect('/attendance/mark/students');
+export default async function AttendanceIndexPage() {
+  redirect(await tenantHref('/attendance/mark/students'));
 }

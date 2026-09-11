@@ -8,6 +8,7 @@ import { AdmissionForm } from '@/components/admission-form';
 import { AppShell } from '@/components/app-shell';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
+import { tenantHref } from '@/lib/tenant-server';
 
 /**
  * Admission — its own page, not a dialog.
@@ -26,12 +27,13 @@ import { getSession } from '@/lib/session';
 export const metadata: Metadata = { title: 'Admit a student' };
 
 export default async function NewStudentPage() {
-  const [session, academics, fees] = await Promise.all([
+  const [session, academics, fees, studentsHref] = await Promise.all([
     getSession(),
     apiFetch<{ data: { session: { id: string } | null; classes: ClassLevelWithSections[] } }>(
       ROUTES.academics.setup,
     ),
     apiFetch<{ data: FeeHead[] }>(ROUTES.fees.heads),
+    tenantHref('/students'),
   ]);
 
   const setup = academics.ok ? academics.data.data : { session: null, classes: [] };
@@ -49,7 +51,7 @@ export default async function NewStudentPage() {
       <div className="mx-auto max-w-5xl space-y-6">
         <div>
           <Link
-            href="/students"
+            href={studentsHref}
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
           >
             <BackIcon className={ICON_SIZE.inline} aria-hidden />

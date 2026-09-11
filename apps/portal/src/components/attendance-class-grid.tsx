@@ -1,10 +1,13 @@
 'use client';
 
+
 import { type ClassOverview } from '@ilm/contracts';
 import { Button, cn, DatePicker, Field, StatusBadge } from '@ilm/ui';
 import { ICON_SIZE, SuccessIcon, WarningIcon } from '@ilm/ui/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
+import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
  * Pick a class.
@@ -53,6 +56,7 @@ export function AttendanceClassGrid({
   error,
 }: AttendanceClassGridProps) {
   const router = useRouter();
+  const tenantHref = useTenantHref();
 
   const unmarked = overview.classes.filter(
     (entry) => entry.markedAt === null && entry.strength > 0,
@@ -73,7 +77,7 @@ export function AttendanceClassGrid({
                 value={overview.date}
                 max={overview.day.reason === 'FUTURE' ? undefined : overview.date}
                 onChange={(nextValue) => {
-                  router.push(`${basePath}?date=${nextValue}`);
+                  router.push(tenantHref(`${basePath}?date=${nextValue}`));
                 }}
               />
             </Field>
@@ -168,7 +172,7 @@ export function AttendanceClassGrid({
                       className="w-full"
                       disabled={entry.strength === 0}
                     >
-                      <Link href={`${hrefPrefix}/${entry.classLevelId}${hrefSuffix}`}>
+                      <Link href={tenantHref(`${hrefPrefix}/${entry.classLevelId}${hrefSuffix}`)}>
                         {marked ? 'Review' : actionLabel}
                       </Link>
                     </Button>

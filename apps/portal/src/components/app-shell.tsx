@@ -20,6 +20,7 @@ import { NAV_ICONS } from '@/components/nav-icons';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { VerifyEmailBanner } from '@/components/verify-email-banner';
 import { visibleNavItems, type NavItem } from '@/lib/navigation';
+import { useCanonicalPathname, useTenantHref } from '@/lib/use-tenant-href';
 
 /**
  * The application shell.
@@ -70,6 +71,7 @@ export interface AppShellProps {
 export function AppShell({ user, school, permissions, unverifiedEmail, children }: AppShellProps) {
   const items = visibleNavItems(permissions);
   const pathname = usePathname();
+
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // A tap that navigates must also close the drawer, or the next screen arrives
@@ -366,13 +368,17 @@ function roleLabel(raw: string): string {
 }
 
 function NavLink({ item, compact = false }: { item: NavItem; compact?: boolean }) {
-  const pathname = usePathname();
+  // Canonical, not raw: `navigation.ts` is written in unprefixed paths, and in
+  // path mode `usePathname()` returns `/beacon/students`. Comparing those two
+  // directly would light up nothing at all.
+  const pathname = useCanonicalPathname();
+  const tenantHref = useTenantHref();
   const isActive = isCurrent(item.href, pathname);
   const Icon = NAV_ICONS[item.icon];
 
   return (
     <Link
-      href={item.href}
+      href={tenantHref(item.href)}
       // Announced to assistive technology, not inferred from styling alone.
       aria-current={isActive ? 'page' : undefined}
       className={cn(
@@ -419,7 +425,7 @@ function NavLink({ item, compact = false }: { item: NavItem; compact?: boolean }
  * exactly that.
  */
 function NavBranch({ item, depth = 0 }: { item: NavItem; depth?: number }) {
-  const pathname = usePathname();
+  const pathname = useCanonicalPathname();
   const children = item.children ?? [];
   const containsCurrent = children.some((child) => isWithin(child, pathname));
 

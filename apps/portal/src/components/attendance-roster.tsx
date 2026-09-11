@@ -1,5 +1,6 @@
 'use client';
 
+
 import {
   ATTENDANCE_STATUS_LABELS,
   ROUTES,
@@ -16,6 +17,7 @@ import { useMemo, useState } from 'react';
 import { closedMessage } from './attendance-class-grid';
 
 import { mutate } from '@/lib/mutate';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
  * Marking a class.
@@ -53,6 +55,7 @@ const EXTRA: readonly AttendanceStatus[] = ['LATE', 'HALF_DAY', 'EXCUSED'];
 
 export function AttendanceRoster({ roster, canMark, error }: AttendanceRosterProps) {
   const router = useRouter();
+  const tenantHref = useTenantHref();
   const toast = useToast();
 
   const [marks, setMarks] = useState<Record<string, AttendanceStatus>>(() =>
@@ -128,7 +131,7 @@ export function AttendanceRoster({ roster, canMark, error }: AttendanceRosterPro
     <div className="space-y-5 pb-24">
       <div>
         <Link
-          href="/attendance/mark/students"
+          href={tenantHref('/attendance/mark/students')}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <BackIcon className={ICON_SIZE.inline} aria-hidden />
@@ -194,7 +197,9 @@ export function AttendanceRoster({ roster, canMark, error }: AttendanceRosterPro
               value={roster.date}
               onChange={(nextValue) => {
                 router.push(
-                  `/attendance/mark/students/${roster.classLevelId}?date=${nextValue}`,
+                  tenantHref(
+                    `/attendance/mark/students/${roster.classLevelId}?date=${nextValue}`,
+                  ),
                 );
               }}
             />

@@ -230,7 +230,12 @@ export class SignupService {
     }
 
     const token = await this.handoffs.mint(created.school.id, created.ownerId, now, context);
-    const origin = schoolOrigin(created.school.slug, this.env.APP_DOMAIN, this.env.WEB_URL);
+    const origin = schoolOrigin(
+      created.school.slug,
+      this.env.APP_DOMAIN,
+      this.env.WEB_URL,
+      this.env.PORTAL_TENANT_MODE,
+    );
 
     return {
       school: created.school,

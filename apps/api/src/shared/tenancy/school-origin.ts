@@ -13,8 +13,33 @@
  * read from `WEB_URL` rather than assumed to be 3000 — it was hard-coded here
  * until a machine with something else already on 3000 produced handoff links
  * that pointed at the wrong application.
+ *
+ * ## Path mode
+ *
+ * Under `PORTAL_TENANT_MODE=path` a school has no hostname of its own — the
+ * whole product sits on one shared host, with the school in the first path
+ * segment. Everything this function feeds appends a path to it (`/login`,
+ * `/auth/continue`, `/verify-email`), so returning `WEB_URL` with the slug
+ * already on the end keeps every one of those call sites unchanged.
+ *
+ * That mode is temporary; see `docs/SINGLE-HOST-MODE.md`.
  */
-export function schoolOrigin(slug: string, appDomain: string, webUrl?: string): string {
+export type PortalTenantMode = 'subdomain' | 'path';
+
+export function schoolOrigin(
+  slug: string,
+  appDomain: string,
+  webUrl?: string,
+  mode: PortalTenantMode = 'subdomain',
+): string {
+  if (mode === 'path') {
+    // The portal's own address, with the school appended as a path segment.
+    // Falls back rather than throwing: a missing WEB_URL must not take sign-in
+    // down, and localhost:3000 is right for every ordinary local setup.
+    const base = (webUrl ?? 'http://localhost:3000').replace(/\/+$/, '');
+    return `${base}/${slug}`;
+  }
+
   if (appDomain !== 'localhost') {
     return `https://${slug}.${appDomain}`;
   }

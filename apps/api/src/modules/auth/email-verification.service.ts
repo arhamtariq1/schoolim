@@ -109,7 +109,12 @@ export class EmailVerificationService {
       select: { id: true },
     });
 
-    const origin = schoolOrigin(user.school.slug, this.env.APP_DOMAIN, this.env.WEB_URL);
+    const origin = schoolOrigin(
+      user.school.slug,
+      this.env.APP_DOMAIN,
+      this.env.WEB_URL,
+      this.env.PORTAL_TENANT_MODE,
+    );
 
     const result = await this.mail.send(
       verifyEmailTemplate({

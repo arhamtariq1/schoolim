@@ -1,5 +1,6 @@
 'use client';
 
+
 import {
   createStudentSchema,
   GENDERS,
@@ -15,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, type FormEvent } from 'react';
 
 import { mutate } from '@/lib/mutate';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
  * The admission form.
@@ -75,6 +77,7 @@ export function AdmissionForm({
   canSetFees,
 }: AdmissionFormProps) {
   const router = useRouter();
+  const tenantHref = useTenantHref();
   const toast = useToast();
 
   const [firstName, setFirstName] = useState('');
@@ -190,7 +193,7 @@ export function AdmissionForm({
       `${firstName} ${lastName} admitted`,
       `GR ${result.data.data.grNo} · Student ID ${result.data.data.studentCode}`,
     );
-    router.push(`/students/${result.data.data.id}`);
+    router.push(tenantHref(`/students/${result.data.data.id}`));
     router.refresh();
   }
 
@@ -360,7 +363,7 @@ export function AdmissionForm({
               <p className="mt-1 text-muted-foreground">
                 This student can still be admitted — they just will not be billed for anything. Set
                 your fees in{' '}
-                <a href="/settings/fees" className="font-medium text-primary hover:underline">
+                <a href={tenantHref('/settings/fees')} className="font-medium text-primary hover:underline">
                   Settings › Fees
                 </a>
                 .
@@ -402,7 +405,7 @@ export function AdmissionForm({
             tone="outline"
             size="touch"
             onClick={() => {
-              router.push('/students');
+              router.push(tenantHref('/students'));
             }}
           >
             Cancel

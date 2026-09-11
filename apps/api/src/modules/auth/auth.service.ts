@@ -267,7 +267,12 @@ export class AuthService {
         schoolId: candidate.school.id,
         name: candidate.school.name,
         slug: candidate.school.slug,
-        continueUrl: `${schoolOrigin(candidate.school.slug, this.env.APP_DOMAIN, this.env.WEB_URL)}/auth/continue?t=${token}`,
+        continueUrl: `${schoolOrigin(
+          candidate.school.slug,
+          this.env.APP_DOMAIN,
+          this.env.WEB_URL,
+          this.env.PORTAL_TENANT_MODE,
+        )}/auth/continue?t=${token}`,
       });
     }
 

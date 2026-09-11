@@ -2,6 +2,8 @@ import { ROUTES } from '@ilm/contracts';
 import { schoolSlugFromHost } from '@ilm/utils';
 import { type NextRequest } from 'next/server';
 
+import { TENANT_MODE, tenantSlugFromPathname, withTenantPrefix } from '@/lib/tenant-mode';
+
 /**
  * The link in the confirmation email — ADR-0012.
  *
@@ -25,10 +27,18 @@ const APP_DOMAIN = process.env['APP_DOMAIN'] ?? 'localhost';
 
 export async function GET(request: NextRequest): Promise<Response> {
   const token = request.nextUrl.searchParams.get('t') ?? '';
-  const slug = schoolSlugFromHost(request.headers.get('host') ?? undefined, APP_DOMAIN);
+
+  // In path mode the confirmation link the API mailed is
+  // `${WEB_URL}/beacon/verify-email?t=…`, so the school is in the path. This
+  // route is reachable with no session at all — days later, on a phone, in a
+  // different browser — so the `ilm_school` cookie cannot be relied on here.
+  const slug =
+    TENANT_MODE === 'path'
+      ? tenantSlugFromPathname(request.nextUrl.pathname)
+      : schoolSlugFromHost(request.headers.get('host') ?? undefined, APP_DOMAIN);
 
   if (token === '' || slug === undefined) {
-    return redirectTo('/?verify=failed');
+    return redirectTo(withTenantPrefix('/?verify=failed', slug));
   }
 
   let upstream: Response;
@@ -47,13 +57,13 @@ export async function GET(request: NextRequest): Promise<Response> {
       cache: 'no-store',
     });
   } catch {
-    return redirectTo('/?verify=unreachable');
+    return redirectTo(withTenantPrefix('/?verify=unreachable', slug));
   }
 
   // Expired, already used, wrong school, address since changed: one outcome.
   // The person's next step is the same in every case — ask for a new link from
   // the banner — so distinguishing them only invites them to wonder why.
-  return redirectTo(upstream.ok ? '/?verify=ok' : '/?verify=failed');
+  return redirectTo(withTenantPrefix(upstream.ok ? '/?verify=ok' : '/?verify=failed', slug));
 }
 
 function redirectTo(path: string): Response {

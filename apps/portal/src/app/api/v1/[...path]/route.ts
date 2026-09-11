@@ -3,6 +3,7 @@ import { schoolSlugFromHost } from '@ilm/utils';
 import { type NextRequest } from 'next/server';
 
 import { refreshSession, withCookie } from '@/lib/refresh';
+import { TENANT_MODE } from '@/lib/tenant-mode';
 
 /**
  * The API, served on the school's own hostname.
@@ -69,11 +70,23 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
     }
   }
 
-  // The tenant hint is derived here from the Host the browser actually used,
-  // never copied from the request. In production the API sits at `api.<domain>`
-  // where the Host names no school, so it cannot resolve the tenant itself.
-  const slug = schoolSlugFromHost(request.headers.get('host') ?? undefined, APP_DOMAIN);
-  if (slug !== undefined) {
+  // The tenant hint is derived here, never copied from the request. In
+  // production the API sits at `api.<domain>` where the Host names no school,
+  // so it cannot resolve the tenant itself.
+  //
+  // Normally it comes from the Host the browser actually used. Under
+  // `PORTAL_TENANT_MODE=path` there is one shared host that names no school, so
+  // it comes from the `ilm_school` cookie the handoff wrote — which is a name,
+  // not a credential: `TenantGuard` still requires it to equal the `sid` claim
+  // in the signed token, so a tampered cookie is a 401 rather than a crossing.
+  //
+  // Either way it is derived server-side and the caller's own `x-school-slug`
+  // header is dropped by the allow-list above.
+  const slug =
+    TENANT_MODE === 'path'
+      ? (request.cookies.get(COOKIES.school)?.value ?? undefined)
+      : schoolSlugFromHost(request.headers.get('host') ?? undefined, APP_DOMAIN);
+  if (slug !== undefined && slug !== '') {
     headers.set('x-school-slug', slug);
   }
 
@@ -183,6 +196,17 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
   // them into one header value silently loses the second one.
   for (const cookie of upstream.headers.getSetCookie()) {
     responseHeaders.append('set-cookie', cookie);
+  }
+
+  // Sign-out clears the API's cookies but knows nothing about this one, which
+  // the portal wrote. Left behind, it would send the next visitor straight back
+  // into the school they just left — and, worse, the proxy would bounce anyone
+  // signing in as a different school back to the old one.
+  if (TENANT_MODE === 'path' && target.includes(ROUTES.auth.logout) && upstream.ok) {
+    responseHeaders.append(
+      'set-cookie',
+      `${COOKIES.school}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
+    );
   }
 
   // A tenant-scoped response must never sit in a shared cache.

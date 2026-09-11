@@ -166,7 +166,7 @@ export class SchoolsService {
         userCount: 1,
         createdAt: school.createdAt.toISOString(),
       },
-      loginUrl: `${schoolOrigin(school.slug, this.env.APP_DOMAIN, this.env.WEB_URL)}/login`,
+      loginUrl: `${schoolOrigin(school.slug, this.env.APP_DOMAIN, this.env.WEB_URL, this.env.PORTAL_TENANT_MODE)}/login`,
       owner: { email: input.owner.email, temporaryPassword },
     };
   }

@@ -1,5 +1,6 @@
 'use client';
 
+
 import {
   CURRENT_TERMS_VERSION,
   ROUTES,
@@ -11,6 +12,8 @@ import {
 import { Button, CheckboxField, Field, Input } from '@ilm/ui';
 import { ErrorIcon, ICON_SIZE, SpinnerIcon, SuccessIcon } from '@ilm/ui/icons';
 import { useEffect, useState, type FormEvent } from 'react';
+
+import { TENANT_MODE } from '@/lib/tenant-mode';
 
 /**
  * Set up a school — ADR-0010.
@@ -213,7 +216,7 @@ export function SignupForm() {
 
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
           <span className="font-mono text-muted-foreground">
-            {effectiveSlug === '' ? 'your-school' : effectiveSlug}.{appDomain()}
+            {schoolAddress(effectiveSlug === '' ? 'your-school' : effectiveSlug)}
           </span>
           {slugHint === undefined ? null : (
             <span className={`flex items-center gap-1 ${slugHint.tone}`}>
@@ -356,13 +359,20 @@ export function SignupForm() {
 }
 
 /**
- * Apex domain for display next to the subdomain field.
+ * The address this school will actually live at, shown as the name is typed.
  *
  * `NEXT_PUBLIC_APP_DOMAIN` rather than `APP_DOMAIN`: this renders in the
  * browser, and a server-only variable would be an empty string there.
+ *
+ * It has to follow the tenant mode. Under `PORTAL_TENANT_MODE=path` a school
+ * has no subdomain, so promising `beacon.<domain>` here would be showing
+ * somebody an address that does not resolve — at the exact moment they are
+ * choosing a name on the strength of it. In that mode `NEXT_PUBLIC_APP_DOMAIN`
+ * is the portal's own host.
  */
-function appDomain(): string {
-  return process.env['NEXT_PUBLIC_APP_DOMAIN'] ?? 'localhost';
+function schoolAddress(slug: string): string {
+  const domain = process.env['NEXT_PUBLIC_APP_DOMAIN'] ?? 'localhost';
+  return TENANT_MODE === 'path' ? `${domain}/${slug}` : `${slug}.${domain}`;
 }
 
 /**
