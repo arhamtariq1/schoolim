@@ -9,7 +9,6 @@ import {
 import type { Metadata } from 'next';
 
 import { AppShell } from '@/components/app-shell';
-import { FeesTabs } from '@/components/tab-links';
 import { VouchersView } from '@/components/vouchers-view';
 import { apiFetch } from '@/lib/api';
 import { clampInt, readParam } from '@/lib/search-params';
@@ -76,24 +75,20 @@ export default async function VouchersPage({
       permissions={session?.permissions ?? []}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
     >
-      <div className="space-y-6">
-        <FeesTabs />
-        <VouchersView
-          rows={listResult.ok ? listResult.data.data : []}
-          sessions={sessionsResult.ok ? sessionsResult.data.data : []}
-          classes={academicsResult.ok ? academicsResult.data.data.classes : []}
-          totals={listResult.ok ? listResult.data.meta.totals : emptyTotals}
-          total={listResult.ok ? listResult.data.meta.page.total : 0}
-          limit={listResult.ok ? listResult.data.meta.page.limit : limit}
-          offset={listResult.ok ? listResult.data.meta.page.offset : offset}
-          filters={filters}
-          school={{ name: session?.school.name ?? '' }}
-          error={listResult.ok ? undefined : listResult.message}
-          canCollect={session?.permissions.includes('fees.payment.create') ?? false}
-          canCancel={session?.permissions.includes('fees.voucher.cancel') ?? false}
-        />
-      </div>
+      <VouchersView
+        rows={listResult.ok ? listResult.data.data : []}
+        sessions={sessionsResult.ok ? sessionsResult.data.data : []}
+        classes={academicsResult.ok ? academicsResult.data.data.classes : []}
+        totals={listResult.ok ? listResult.data.meta.totals : emptyTotals}
+        total={listResult.ok ? listResult.data.meta.page.total : 0}
+        limit={listResult.ok ? listResult.data.meta.page.limit : limit}
+        offset={listResult.ok ? listResult.data.meta.page.offset : offset}
+        filters={filters}
+        school={{ name: session?.school.name ?? '' }}
+        error={listResult.ok ? undefined : listResult.message}
+        canCollect={session?.permissions.includes('fees.payment.create') ?? false}
+        canCancel={session?.permissions.includes('fees.voucher.cancel') ?? false}
+      />
     </AppShell>
   );
 }
-

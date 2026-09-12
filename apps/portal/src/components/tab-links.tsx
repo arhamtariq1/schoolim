@@ -3,15 +3,11 @@
 import { cn } from '@ilm/ui';
 import {
   ClassIcon,
-  CreateIcon,
-  DepositIcon,
   ExpenseIcon,
   FeesIcon,
   HolidayIcon,
   ICON_SIZE,
-  OverdueIcon,
   SessionIcon,
-  TrendUpIcon,
 } from '@ilm/ui/icons';
 import Link from 'next/link';
 import type { ComponentType } from 'react';
@@ -30,11 +26,19 @@ import { useCanonicalPathname, useTenantHref } from '@/lib/use-tenant-href';
  * items and reflects what people do daily (docs/00 §6); structure is set up
  * once a year and then rarely touched.
  *
- * ## Why one component and not three
+ * ## When a section outgrows this
+ *
+ * Tabs work for two or three sibling screens. Fees reached five and moved to
+ * the sidebar as a nested section instead: past three, a row of tabs stops
+ * reading as navigation and starts reading as clutter, and it competes with the
+ * sidebar for the same job. Academics and Finance are two apiece, which is what
+ * this is for.
+ *
+ * ## Why one component and not several
  *
  * There were three of these — academics, fees, finance — identical apart from
- * their arrays, and they had already drifted in their icon sizes. Three copies
- * of a navigation pattern is three places to fix the next thing.
+ * their arrays, and they had already drifted in their icon sizes. A copy of a
+ * navigation pattern per section is a place to fix the next thing per section.
  *
  * ## Why the active tab is derived, not passed
  *
@@ -102,14 +106,6 @@ const ACADEMICS: readonly TabLinkItem[] = [
   { href: '/academics/holidays', label: 'Calendar', icon: HolidayIcon },
 ];
 
-const FEES: readonly TabLinkItem[] = [
-  { href: '/fees/vouchers', label: 'Fee vouchers', icon: FeesIcon },
-  { href: '/fees/generate', label: 'Generate fee', icon: CreateIcon },
-  { href: '/fees/defaulters', label: 'Defaulters', icon: OverdueIcon },
-  { href: '/fees/increments', label: 'Fee increment', icon: TrendUpIcon },
-  { href: '/fees/security-deposits', label: 'Security deposits', icon: DepositIcon },
-];
-
 const FINANCE: readonly TabLinkItem[] = [
   { href: '/finance/expenses', label: 'Expenses', icon: ExpenseIcon },
   { href: '/finance/expense-types', label: 'Expense types', icon: FeesIcon },
@@ -117,10 +113,6 @@ const FINANCE: readonly TabLinkItem[] = [
 
 export function AcademicsTabs() {
   return <TabLinks label="Academics" items={ACADEMICS} />;
-}
-
-export function FeesTabs() {
-  return <TabLinks label="Fees" items={FEES} />;
 }
 
 export function FinanceTabs() {

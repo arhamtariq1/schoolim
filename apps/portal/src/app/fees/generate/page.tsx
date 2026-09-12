@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 
 import { AppShell } from '@/components/app-shell';
 import { GenerateFee } from '@/components/generate-fee';
-import { FeesTabs } from '@/components/tab-links';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -36,17 +35,14 @@ export default async function GenerateFeePage() {
       permissions={session?.permissions ?? []}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
     >
-      <div className="space-y-6">
-        <FeesTabs />
-        <GenerateFee
-          sessions={sessions.ok ? sessions.data.data : []}
-          classes={setup.classes}
-          heads={heads.ok ? heads.data.data : []}
-          currentSessionId={setup.session?.id}
-          canGenerate={session?.permissions.includes('fees.voucher.generate') ?? false}
-          error={failure === undefined || failure.ok ? undefined : failure.message}
-        />
-      </div>
+      <GenerateFee
+        sessions={sessions.ok ? sessions.data.data : []}
+        classes={setup.classes}
+        heads={heads.ok ? heads.data.data : []}
+        currentSessionId={setup.session?.id}
+        canGenerate={session?.permissions.includes('fees.voucher.generate') ?? false}
+        error={failure === undefined || failure.ok ? undefined : failure.message}
+      />
     </AppShell>
   );
 }

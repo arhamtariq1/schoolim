@@ -1,15 +1,9 @@
-import {
-  MAX_PAGE_LIMIT,
-  ROUTES,
-  type ClassLevel,
-  type DefaulterList,
-} from '@ilm/contracts';
+import { MAX_PAGE_LIMIT, ROUTES, type ClassLevel, type DefaulterList } from '@ilm/contracts';
 import { systemClock } from '@ilm/utils';
 import type { Metadata } from 'next';
 
 import { AppShell } from '@/components/app-shell';
 import { DefaultersView } from '@/components/defaulters-view';
-import { FeesTabs } from '@/components/tab-links';
 import { apiFetch } from '@/lib/api';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
@@ -77,17 +71,14 @@ export default async function DefaultersPage({
       permissions={session?.permissions ?? []}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
     >
-      <div className="space-y-6">
-        <FeesTabs />
-        <DefaultersView
-          page={listResult.ok ? listResult.data.data : empty}
-          classes={academicsResult.ok ? academicsResult.data.data.classes : []}
-          limit={limit}
-          offset={offset}
-          filters={filters}
-          error={listResult.ok ? undefined : listResult.message}
-        />
-      </div>
+      <DefaultersView
+        page={listResult.ok ? listResult.data.data : empty}
+        classes={academicsResult.ok ? academicsResult.data.data.classes : []}
+        limit={limit}
+        offset={offset}
+        filters={filters}
+        error={listResult.ok ? undefined : listResult.message}
+      />
     </AppShell>
   );
 }

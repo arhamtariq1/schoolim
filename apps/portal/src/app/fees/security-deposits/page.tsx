@@ -1,14 +1,8 @@
-import {
-  MAX_PAGE_LIMIT,
-  ROUTES,
-  type ClassLevel,
-  type SecurityDepositList,
-} from '@ilm/contracts';
+import { MAX_PAGE_LIMIT, ROUTES, type ClassLevel, type SecurityDepositList } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
 import { AppShell } from '@/components/app-shell';
 import { SecurityDepositsView } from '@/components/security-deposits-view';
-import { FeesTabs } from '@/components/tab-links';
 import { apiFetch } from '@/lib/api';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
@@ -52,9 +46,7 @@ export default async function SecurityDepositsPage({
 
   const [session, listResult, academicsResult] = await Promise.all([
     getSession(),
-    apiFetch<{ data: SecurityDepositList }>(
-      `${ROUTES.securityDeposits.list}?${query.toString()}`,
-    ),
+    apiFetch<{ data: SecurityDepositList }>(`${ROUTES.securityDeposits.list}?${query.toString()}`),
     apiFetch<{ data: { session: { id: string } | null; classes: ClassLevel[] } }>(
       ROUTES.academics.setup,
     ),
@@ -74,18 +66,15 @@ export default async function SecurityDepositsPage({
       permissions={session?.permissions ?? []}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
     >
-      <div className="space-y-6">
-        <FeesTabs />
-        <SecurityDepositsView
-          page={listResult.ok ? listResult.data.data : empty}
-          classes={academicsResult.ok ? academicsResult.data.data.classes : []}
-          limit={limit}
-          offset={offset}
-          filters={filters}
-          error={listResult.ok ? undefined : listResult.message}
-          canRefund={session?.permissions.includes('fees.deposit.update') ?? false}
-        />
-      </div>
+      <SecurityDepositsView
+        page={listResult.ok ? listResult.data.data : empty}
+        classes={academicsResult.ok ? academicsResult.data.data.classes : []}
+        limit={limit}
+        offset={offset}
+        filters={filters}
+        error={listResult.ok ? undefined : listResult.message}
+        canRefund={session?.permissions.includes('fees.deposit.update') ?? false}
+      />
     </AppShell>
   );
 }

@@ -9,7 +9,6 @@ import type { Metadata } from 'next';
 
 import { AppShell } from '@/components/app-shell';
 import { FeeIncrementsView } from '@/components/fee-increments-view';
-import { FeesTabs } from '@/components/tab-links';
 import { apiFetch } from '@/lib/api';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
@@ -78,20 +77,17 @@ export default async function FeeIncrementsPage({
       permissions={session?.permissions ?? []}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
     >
-      <div className="space-y-6">
-        <FeesTabs />
-        <FeeIncrementsView
-          page={page}
-          sessions={sessionsResult.ok ? sessionsResult.data.data : []}
-          classes={academicsResult.ok ? academicsResult.data.data.classes : []}
-          total={page.total}
-          limit={limit}
-          offset={offset}
-          filters={filters}
-          error={listResult.ok ? undefined : listResult.message}
-          canApply={session?.permissions.includes('fees.increment.generate') ?? false}
-        />
-      </div>
+      <FeeIncrementsView
+        page={page}
+        sessions={sessionsResult.ok ? sessionsResult.data.data : []}
+        classes={academicsResult.ok ? academicsResult.data.data.classes : []}
+        total={page.total}
+        limit={limit}
+        offset={offset}
+        filters={filters}
+        error={listResult.ok ? undefined : listResult.message}
+        canApply={session?.permissions.includes('fees.increment.generate') ?? false}
+      />
     </AppShell>
   );
 }

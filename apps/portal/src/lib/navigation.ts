@@ -57,14 +57,56 @@ export const NAV_ITEMS: readonly NavItem[] = [
     permission: 'students.student.read',
   },
   {
-    // The voucher list, not the old landing page: this is where anyone opening
-    // "Fees" actually wants to be — what has been billed and what is owed.
-    href: '/fees/vouchers',
+    href: '/fees',
     label: 'Fees',
     icon: 'FeesIcon',
     // Voucher read, not plan configure: an accountant and a receptionist both
-    // live here, and only one of them configures anything.
+    // live here, and only one of them configures anything. The parent asks for
+    // the lowest bar of its children so somebody who may only chase defaulters
+    // still sees the section that contains them.
     permission: 'fees.voucher.read',
+    // Five screens, each a separate errand: billing a month, collecting on it,
+    // chasing what went unpaid, changing what a family pays, and the deposits
+    // held on the side. They were a tab strip until there were five of them —
+    // at which point a row of tabs stops reading as navigation and starts
+    // reading as clutter, and the sidebar is where people already look.
+    children: [
+      {
+        // First, because it is where anyone opening "Fees" actually wants to
+        // be: what has been billed, and what is owed.
+        href: '/fees/vouchers',
+        label: 'Fee vouchers',
+        icon: 'FeesIcon',
+        permission: 'fees.voucher.read',
+      },
+      {
+        href: '/fees/generate',
+        label: 'Generate fee',
+        icon: 'CreateIcon',
+        permission: 'fees.voucher.generate',
+      },
+      {
+        href: '/fees/defaulters',
+        label: 'Defaulters',
+        icon: 'OverdueIcon',
+        permission: 'fees.defaulter.read',
+      },
+      {
+        href: '/fees/increments',
+        label: 'Fee increment',
+        icon: 'TrendUpIcon',
+        // Reading the list is the plan-read permission; changing an amount is
+        // `fees.increment.generate` and is checked on the server. Somebody who
+        // may look up what a family pays still sees the screen.
+        permission: 'fees.plan.read',
+      },
+      {
+        href: '/fees/security-deposits',
+        label: 'Security deposits',
+        icon: 'DepositIcon',
+        permission: 'fees.deposit.read',
+      },
+    ],
   },
   {
     href: '/attendance',
@@ -184,11 +226,11 @@ function prune(items: readonly NavItem[], held: ReadonlySet<string>): readonly N
 /**
  * A section that is only a container — no page of its own worth landing on.
  *
- * `/attendance` redirects, so an item pointing at it with nothing under it
- * would be a dead heading.
+ * `/attendance` and `/fees` both redirect to their first child, so an item
+ * pointing at either with nothing under it would be a dead heading.
  */
 function hasOnlyChildren(item: NavItem): boolean {
   return CONTAINER_ONLY.has(item.href);
 }
 
-const CONTAINER_ONLY: ReadonlySet<string> = new Set(['/attendance']);
+const CONTAINER_ONLY: ReadonlySet<string> = new Set(['/attendance', '/fees']);

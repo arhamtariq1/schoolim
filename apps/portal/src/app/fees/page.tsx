@@ -1,10 +1,16 @@
-import { EmptyState } from '@ilm/ui';
+import { redirect } from 'next/navigation';
 
-export default function FeesPage() {
-  return (
-    <EmptyState
-      title="Fees is not built yet"
-      description="The foundations are in place — tenant isolation, authentication and the permission model. This module arrives with its phase in docs/14."
-    />
-  );
+import { tenantHref } from '@/lib/tenant-server';
+
+/**
+ * Fees has no landing page of its own.
+ *
+ * The section is five screens and none of them is a summary, so an index
+ * listing the same five links the sidebar already shows would be a page whose
+ * only purpose is to be clicked through. The voucher list is where anyone
+ * opening "Fees" actually means to go — what has been billed, and what is owed
+ * — so they go straight there.
+ */
+export default async function FeesPage() {
+  redirect(await tenantHref('/fees/vouchers'));
 }
