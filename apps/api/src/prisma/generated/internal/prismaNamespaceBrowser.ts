@@ -87,7 +87,9 @@ export const ModelName = {
   FeePayment: 'FeePayment',
   FeePaymentAllocation: 'FeePaymentAllocation',
   AttendanceRecord: 'AttendanceRecord',
-  StaffAttendanceRecord: 'StaffAttendanceRecord'
+  StaffAttendanceRecord: 'StaffAttendanceRecord',
+  SecurityDeposit: 'SecurityDeposit',
+  SecurityDepositRefund: 'SecurityDepositRefund'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -575,6 +577,7 @@ export const StudentFeeScalarFieldEnum = {
   amount: 'amount',
   discountedAmount: 'discountedAmount',
   discountReason: 'discountReason',
+  effectiveFrom: 'effectiveFrom',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -758,6 +761,36 @@ export const StaffAttendanceRecordScalarFieldEnum = {
 } as const
 
 export type StaffAttendanceRecordScalarFieldEnum = (typeof StaffAttendanceRecordScalarFieldEnum)[keyof typeof StaffAttendanceRecordScalarFieldEnum]
+
+
+export const SecurityDepositScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  studentId: 'studentId',
+  voucherId: 'voucherId',
+  amount: 'amount',
+  receivedOn: 'receivedOn',
+  note: 'note',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SecurityDepositScalarFieldEnum = (typeof SecurityDepositScalarFieldEnum)[keyof typeof SecurityDepositScalarFieldEnum]
+
+
+export const SecurityDepositRefundScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  depositId: 'depositId',
+  amount: 'amount',
+  reason: 'reason',
+  refundedOn: 'refundedOn',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt'
+} as const
+
+export type SecurityDepositRefundScalarFieldEnum = (typeof SecurityDepositRefundScalarFieldEnum)[keyof typeof SecurityDepositRefundScalarFieldEnum]
 
 
 export const SortOrder = {

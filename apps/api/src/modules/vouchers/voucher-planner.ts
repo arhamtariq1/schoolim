@@ -67,8 +67,16 @@ interface PlanInput {
     firstName: string;
     lastName: string;
     grNo: string;
+    /**
+     * Every agreed amount for this child, newest first.
+     *
+     * A timeline rather than one figure per head: a school that raises tuition
+     * from October must bill September at the old price and October at the new
+     * one, and a voucher covering both months carries both.
+     */
     fees: {
       feeHeadId: string;
+      effectiveFrom: Date;
       amount: { toFixed: (n: number) => string };
       discountedAmount: { toFixed: (n: number) => string } | null;
     }[];
@@ -78,6 +86,12 @@ interface PlanInput {
   readonly overrides: ReadonlyMap<string, number>;
   /** `YYYY-MM` keys chosen on the screen. */
   readonly billMonths: readonly string[];
+  /**
+   * The date a head with no month of its own is priced at — an admission or an
+   * annual charge, which belong to the voucher rather than to a month. The
+   * issue date, so the figure is the one in force when the challan was cut.
+   */
+  readonly asOf: Date;
   readonly sessionId: string;
   readonly alreadyBilled: readonly { studentId: string; feeHeadId: string; periodKey: string }[];
   readonly arrears: readonly ArrearSource[];
@@ -87,7 +101,22 @@ export function buildStudentPlan(input: PlanInput): StudentPlan {
   const { student, heads, overrides, billMonths, sessionId } = input;
 
   const name = `${student.firstName} ${student.lastName}`.trim();
-  const agreed = new Map(student.fees.map((fee) => [fee.feeHeadId, fee]));
+
+  // Head → its amounts, newest first. Built here rather than trusting the
+  // query's order, because "whichever row came back last" is not a price.
+  const history = new Map<string, PlanInput['student']['fees']>();
+  for (const fee of student.fees) {
+    const rows = history.get(fee.feeHeadId) ?? [];
+    rows.push(fee);
+    history.set(fee.feeHeadId, rows);
+  }
+  for (const rows of history.values()) {
+    rows.sort((a, b) => b.effectiveFrom.getTime() - a.effectiveFrom.getTime());
+  }
+
+  /** The amount in force for a head on a given day: the newest row not after it. */
+  const agreedOn = (headId: string, on: Date) =>
+    history.get(headId)?.find((fee) => fee.effectiveFrom.getTime() <= on.getTime());
   const billed = new Set(
     input.alreadyBilled
       .filter((row) => row.studentId === student.id)
@@ -105,27 +134,40 @@ export function buildStudentPlan(input: PlanInput): StudentPlan {
 
   for (const head of ordered) {
     const override = overrides.get(head.id);
-    const own = agreed.get(head.id);
 
-    if (override === undefined && own === undefined) {
+    if (override === undefined && !history.has(head.id)) {
       sawHeadWithoutAmount = true;
       continue;
     }
-
-    const grossMinor =
-      override ?? fromDecimalString((own as NonNullable<typeof own>).amount.toFixed(2));
-    // A discount agreed for this child. An override is a deliberate figure for
-    // this run and is taken at face value, discount included.
-    const discountMinor =
-      override !== undefined || own === undefined || own.discountedAmount === null
-        ? 0
-        : Math.max(0, grossMinor - fromDecimalString(own.discountedAmount.toFixed(2)));
 
     for (const period of periodsFor(head, billMonths, sessionId)) {
       const claimKey = `${head.id}:${period.key}`;
       if (billed.has(claimKey)) {
         continue;
       }
+
+      // Priced per period, not per voucher. `period.month` is null for a head
+      // that is charged once rather than monthly, and those are priced at the
+      // issue date.
+      const own = override === undefined ? agreedOn(head.id, period.month ?? input.asOf) : undefined;
+
+      // The child has a fee for this head, but not one that had started yet
+      // when this month was billed — an increment dated after the month it is
+      // being applied to. Nothing to charge, and worth reporting rather than
+      // silently skipping.
+      if (override === undefined && own === undefined) {
+        sawHeadWithoutAmount = true;
+        continue;
+      }
+
+      const grossMinor =
+        override ?? fromDecimalString((own as NonNullable<typeof own>).amount.toFixed(2));
+      // A discount agreed for this child. An override is a deliberate figure for
+      // this run and is taken at face value, discount included.
+      const discountMinor =
+        override !== undefined || own === undefined || own.discountedAmount === null
+          ? 0
+          : Math.max(0, grossMinor - fromDecimalString(own.discountedAmount.toFixed(2)));
       lines.push({
         feeHeadId: head.id,
         label: period.label === null ? head.name : `${head.name} - ${period.label}`,

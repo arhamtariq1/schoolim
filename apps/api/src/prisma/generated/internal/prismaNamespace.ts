@@ -433,7 +433,9 @@ export const ModelName = {
   FeePayment: 'FeePayment',
   FeePaymentAllocation: 'FeePaymentAllocation',
   AttendanceRecord: 'AttendanceRecord',
-  StaffAttendanceRecord: 'StaffAttendanceRecord'
+  StaffAttendanceRecord: 'StaffAttendanceRecord',
+  SecurityDeposit: 'SecurityDeposit',
+  SecurityDepositRefund: 'SecurityDepositRefund'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -449,7 +451,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "platformUser" | "platformSession" | "schoolGroup" | "school" | "schoolDomain" | "user" | "userRole" | "session" | "invitation" | "passwordReset" | "authHandoff" | "emailVerification" | "schoolAgreement" | "auditLog" | "academicSession" | "classLevel" | "section" | "student" | "guardian" | "studentGuardian" | "enrollment" | "staff" | "expenseCategory" | "expense" | "holiday" | "feeHead" | "studentFee" | "numberSequence" | "jobRun" | "feeVoucher" | "feeVoucherLine" | "feeVoucherPeriod" | "feeVoucherArrear" | "feePayment" | "feePaymentAllocation" | "attendanceRecord" | "staffAttendanceRecord"
+    modelProps: "platformUser" | "platformSession" | "schoolGroup" | "school" | "schoolDomain" | "user" | "userRole" | "session" | "invitation" | "passwordReset" | "authHandoff" | "emailVerification" | "schoolAgreement" | "auditLog" | "academicSession" | "classLevel" | "section" | "student" | "guardian" | "studentGuardian" | "enrollment" | "staff" | "expenseCategory" | "expense" | "holiday" | "feeHead" | "studentFee" | "numberSequence" | "jobRun" | "feeVoucher" | "feeVoucherLine" | "feeVoucherPeriod" | "feeVoucherArrear" | "feePayment" | "feePaymentAllocation" | "attendanceRecord" | "staffAttendanceRecord" | "securityDeposit" | "securityDepositRefund"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -3191,6 +3193,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    SecurityDeposit: {
+      payload: Prisma.$SecurityDepositPayload<ExtArgs>
+      fields: Prisma.SecurityDepositFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SecurityDepositFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SecurityDepositFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositPayload>
+        }
+        findFirst: {
+          args: Prisma.SecurityDepositFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SecurityDepositFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositPayload>
+        }
+        findMany: {
+          args: Prisma.SecurityDepositFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositPayload>[]
+        }
+        create: {
+          args: Prisma.SecurityDepositCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositPayload>
+        }
+        createMany: {
+          args: Prisma.SecurityDepositCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SecurityDepositCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositPayload>[]
+        }
+        delete: {
+          args: Prisma.SecurityDepositDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositPayload>
+        }
+        update: {
+          args: Prisma.SecurityDepositUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositPayload>
+        }
+        deleteMany: {
+          args: Prisma.SecurityDepositDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SecurityDepositUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SecurityDepositUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositPayload>[]
+        }
+        upsert: {
+          args: Prisma.SecurityDepositUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositPayload>
+        }
+        aggregate: {
+          args: Prisma.SecurityDepositAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSecurityDeposit>
+        }
+        groupBy: {
+          args: Prisma.SecurityDepositGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SecurityDepositGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SecurityDepositCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SecurityDepositCountAggregateOutputType> | number
+        }
+      }
+    }
+    SecurityDepositRefund: {
+      payload: Prisma.$SecurityDepositRefundPayload<ExtArgs>
+      fields: Prisma.SecurityDepositRefundFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SecurityDepositRefundFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositRefundPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SecurityDepositRefundFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositRefundPayload>
+        }
+        findFirst: {
+          args: Prisma.SecurityDepositRefundFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositRefundPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SecurityDepositRefundFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositRefundPayload>
+        }
+        findMany: {
+          args: Prisma.SecurityDepositRefundFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositRefundPayload>[]
+        }
+        create: {
+          args: Prisma.SecurityDepositRefundCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositRefundPayload>
+        }
+        createMany: {
+          args: Prisma.SecurityDepositRefundCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SecurityDepositRefundCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositRefundPayload>[]
+        }
+        delete: {
+          args: Prisma.SecurityDepositRefundDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositRefundPayload>
+        }
+        update: {
+          args: Prisma.SecurityDepositRefundUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositRefundPayload>
+        }
+        deleteMany: {
+          args: Prisma.SecurityDepositRefundDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SecurityDepositRefundUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SecurityDepositRefundUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositRefundPayload>[]
+        }
+        upsert: {
+          args: Prisma.SecurityDepositRefundUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SecurityDepositRefundPayload>
+        }
+        aggregate: {
+          args: Prisma.SecurityDepositRefundAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSecurityDepositRefund>
+        }
+        groupBy: {
+          args: Prisma.SecurityDepositRefundGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SecurityDepositRefundGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SecurityDepositRefundCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SecurityDepositRefundCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -3699,6 +3849,7 @@ export const StudentFeeScalarFieldEnum = {
   amount: 'amount',
   discountedAmount: 'discountedAmount',
   discountReason: 'discountReason',
+  effectiveFrom: 'effectiveFrom',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -3882,6 +4033,36 @@ export const StaffAttendanceRecordScalarFieldEnum = {
 } as const
 
 export type StaffAttendanceRecordScalarFieldEnum = (typeof StaffAttendanceRecordScalarFieldEnum)[keyof typeof StaffAttendanceRecordScalarFieldEnum]
+
+
+export const SecurityDepositScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  studentId: 'studentId',
+  voucherId: 'voucherId',
+  amount: 'amount',
+  receivedOn: 'receivedOn',
+  note: 'note',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SecurityDepositScalarFieldEnum = (typeof SecurityDepositScalarFieldEnum)[keyof typeof SecurityDepositScalarFieldEnum]
+
+
+export const SecurityDepositRefundScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  depositId: 'depositId',
+  amount: 'amount',
+  reason: 'reason',
+  refundedOn: 'refundedOn',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt'
+} as const
+
+export type SecurityDepositRefundScalarFieldEnum = (typeof SecurityDepositRefundScalarFieldEnum)[keyof typeof SecurityDepositRefundScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -4566,6 +4747,8 @@ export type GlobalOmitConfig = {
   feePaymentAllocation?: Prisma.FeePaymentAllocationOmit
   attendanceRecord?: Prisma.AttendanceRecordOmit
   staffAttendanceRecord?: Prisma.StaffAttendanceRecordOmit
+  securityDeposit?: Prisma.SecurityDepositOmit
+  securityDepositRefund?: Prisma.SecurityDepositRefundOmit
 }
 
 /* Types for Logging */

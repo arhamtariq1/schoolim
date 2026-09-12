@@ -336,3 +336,23 @@ export type AttendanceRecord = Prisma.AttendanceRecordModel
  * The same engine, a different subject and a different set of statuses.
  */
 export type StaffAttendanceRecord = Prisma.StaffAttendanceRecordModel
+/**
+ * Model SecurityDeposit
+ * Money the school is holding on a parent's behalf, not money it has earned.
+ * 
+ * A fee is income the moment it is collected. A deposit is a liability: the
+ * school owes it back, less whatever the child broke. Keeping the two in one
+ * table would overstate a year's collection by the whole float, which is the
+ * kind of error an accountant finds and never quite trusts you about again.
+ */
+export type SecurityDeposit = Prisma.SecurityDepositModel
+/**
+ * Model SecurityDepositRefund
+ * One repayment out of a deposit. Append-only (R4).
+ * 
+ * Refunding happens in pieces — 2,000 withheld for a broken window, 3,000
+ * returned when the child leaves — so what is left is arithmetic over these
+ * rows, never a counter updated in place. A counter loses the answer to "who
+ * returned what, when, and why", which is the only question anybody asks.
+ */
+export type SecurityDepositRefund = Prisma.SecurityDepositRefundModel

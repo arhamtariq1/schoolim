@@ -405,6 +405,7 @@ export type FeeVoucherWhereInput = {
   allocations?: Prisma.FeePaymentAllocationListRelationFilter
   arrears?: Prisma.FeeVoucherArrearListRelationFilter
   carriedInto?: Prisma.FeeVoucherArrearListRelationFilter
+  securityDeposits?: Prisma.SecurityDepositListRelationFilter
 }
 
 export type FeeVoucherOrderByWithRelationInput = {
@@ -442,6 +443,7 @@ export type FeeVoucherOrderByWithRelationInput = {
   allocations?: Prisma.FeePaymentAllocationOrderByRelationAggregateInput
   arrears?: Prisma.FeeVoucherArrearOrderByRelationAggregateInput
   carriedInto?: Prisma.FeeVoucherArrearOrderByRelationAggregateInput
+  securityDeposits?: Prisma.SecurityDepositOrderByRelationAggregateInput
 }
 
 export type FeeVoucherWhereUniqueInput = Prisma.AtLeast<{
@@ -483,6 +485,7 @@ export type FeeVoucherWhereUniqueInput = Prisma.AtLeast<{
   allocations?: Prisma.FeePaymentAllocationListRelationFilter
   arrears?: Prisma.FeeVoucherArrearListRelationFilter
   carriedInto?: Prisma.FeeVoucherArrearListRelationFilter
+  securityDeposits?: Prisma.SecurityDepositListRelationFilter
 }, "id" | "schoolId_voucherNo">
 
 export type FeeVoucherOrderByWithAggregationInput = {
@@ -580,6 +583,7 @@ export type FeeVoucherCreateInput = {
   allocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherUncheckedCreateInput = {
@@ -613,6 +617,7 @@ export type FeeVoucherUncheckedCreateInput = {
   allocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherUpdateInput = {
@@ -646,6 +651,7 @@ export type FeeVoucherUpdateInput = {
   allocations?: Prisma.FeePaymentAllocationUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUncheckedUpdateInput = {
@@ -679,6 +685,7 @@ export type FeeVoucherUncheckedUpdateInput = {
   allocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherCreateManyInput = {
@@ -889,6 +896,11 @@ export type FeeVoucherSumOrderByAggregateInput = {
 export type FeeVoucherScalarRelationFilter = {
   is?: Prisma.FeeVoucherWhereInput
   isNot?: Prisma.FeeVoucherWhereInput
+}
+
+export type FeeVoucherNullableScalarRelationFilter = {
+  is?: Prisma.FeeVoucherWhereInput | null
+  isNot?: Prisma.FeeVoucherWhereInput | null
 }
 
 export type FeeVoucherCreateNestedManyWithoutSchoolInput = {
@@ -1142,6 +1154,22 @@ export type FeeVoucherUpdateOneRequiredWithoutAllocationsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.FeeVoucherUpdateToOneWithWhereWithoutAllocationsInput, Prisma.FeeVoucherUpdateWithoutAllocationsInput>, Prisma.FeeVoucherUncheckedUpdateWithoutAllocationsInput>
 }
 
+export type FeeVoucherCreateNestedOneWithoutSecurityDepositsInput = {
+  create?: Prisma.XOR<Prisma.FeeVoucherCreateWithoutSecurityDepositsInput, Prisma.FeeVoucherUncheckedCreateWithoutSecurityDepositsInput>
+  connectOrCreate?: Prisma.FeeVoucherCreateOrConnectWithoutSecurityDepositsInput
+  connect?: Prisma.FeeVoucherWhereUniqueInput
+}
+
+export type FeeVoucherUpdateOneWithoutSecurityDepositsNestedInput = {
+  create?: Prisma.XOR<Prisma.FeeVoucherCreateWithoutSecurityDepositsInput, Prisma.FeeVoucherUncheckedCreateWithoutSecurityDepositsInput>
+  connectOrCreate?: Prisma.FeeVoucherCreateOrConnectWithoutSecurityDepositsInput
+  upsert?: Prisma.FeeVoucherUpsertWithoutSecurityDepositsInput
+  disconnect?: Prisma.FeeVoucherWhereInput | boolean
+  delete?: Prisma.FeeVoucherWhereInput | boolean
+  connect?: Prisma.FeeVoucherWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.FeeVoucherUpdateToOneWithWhereWithoutSecurityDepositsInput, Prisma.FeeVoucherUpdateWithoutSecurityDepositsInput>, Prisma.FeeVoucherUncheckedUpdateWithoutSecurityDepositsInput>
+}
+
 export type FeeVoucherCreateWithoutSchoolInput = {
   id?: string
   voucherNo: string
@@ -1172,6 +1200,7 @@ export type FeeVoucherCreateWithoutSchoolInput = {
   allocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherUncheckedCreateWithoutSchoolInput = {
@@ -1204,6 +1233,7 @@ export type FeeVoucherUncheckedCreateWithoutSchoolInput = {
   allocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherCreateOrConnectWithoutSchoolInput = {
@@ -1293,6 +1323,7 @@ export type FeeVoucherCreateWithoutSessionInput = {
   allocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherUncheckedCreateWithoutSessionInput = {
@@ -1325,6 +1356,7 @@ export type FeeVoucherUncheckedCreateWithoutSessionInput = {
   allocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherCreateOrConnectWithoutSessionInput = {
@@ -1383,6 +1415,7 @@ export type FeeVoucherCreateWithoutStudentInput = {
   allocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherUncheckedCreateWithoutStudentInput = {
@@ -1415,6 +1448,7 @@ export type FeeVoucherUncheckedCreateWithoutStudentInput = {
   allocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherCreateOrConnectWithoutStudentInput = {
@@ -1473,6 +1507,7 @@ export type FeeVoucherCreateWithoutJobRunInput = {
   allocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherUncheckedCreateWithoutJobRunInput = {
@@ -1505,6 +1540,7 @@ export type FeeVoucherUncheckedCreateWithoutJobRunInput = {
   allocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherCreateOrConnectWithoutJobRunInput = {
@@ -1563,6 +1599,7 @@ export type FeeVoucherCreateWithoutLinesInput = {
   allocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherUncheckedCreateWithoutLinesInput = {
@@ -1595,6 +1632,7 @@ export type FeeVoucherUncheckedCreateWithoutLinesInput = {
   allocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherCreateOrConnectWithoutLinesInput = {
@@ -1643,6 +1681,7 @@ export type FeeVoucherUpdateWithoutLinesInput = {
   allocations?: Prisma.FeePaymentAllocationUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUncheckedUpdateWithoutLinesInput = {
@@ -1675,6 +1714,7 @@ export type FeeVoucherUncheckedUpdateWithoutLinesInput = {
   allocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherCreateWithoutPeriodsInput = {
@@ -1707,6 +1747,7 @@ export type FeeVoucherCreateWithoutPeriodsInput = {
   allocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherUncheckedCreateWithoutPeriodsInput = {
@@ -1739,6 +1780,7 @@ export type FeeVoucherUncheckedCreateWithoutPeriodsInput = {
   allocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherCreateOrConnectWithoutPeriodsInput = {
@@ -1787,6 +1829,7 @@ export type FeeVoucherUpdateWithoutPeriodsInput = {
   allocations?: Prisma.FeePaymentAllocationUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUncheckedUpdateWithoutPeriodsInput = {
@@ -1819,6 +1862,7 @@ export type FeeVoucherUncheckedUpdateWithoutPeriodsInput = {
   allocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherCreateWithoutArrearsInput = {
@@ -1851,6 +1895,7 @@ export type FeeVoucherCreateWithoutArrearsInput = {
   periods?: Prisma.FeeVoucherPeriodCreateNestedManyWithoutVoucherInput
   allocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherUncheckedCreateWithoutArrearsInput = {
@@ -1883,6 +1928,7 @@ export type FeeVoucherUncheckedCreateWithoutArrearsInput = {
   periods?: Prisma.FeeVoucherPeriodUncheckedCreateNestedManyWithoutVoucherInput
   allocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherCreateOrConnectWithoutArrearsInput = {
@@ -1920,6 +1966,7 @@ export type FeeVoucherCreateWithoutCarriedIntoInput = {
   periods?: Prisma.FeeVoucherPeriodCreateNestedManyWithoutVoucherInput
   allocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutVoucherInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherUncheckedCreateWithoutCarriedIntoInput = {
@@ -1952,6 +1999,7 @@ export type FeeVoucherUncheckedCreateWithoutCarriedIntoInput = {
   periods?: Prisma.FeeVoucherPeriodUncheckedCreateNestedManyWithoutVoucherInput
   allocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutVoucherInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherCreateOrConnectWithoutCarriedIntoInput = {
@@ -2000,6 +2048,7 @@ export type FeeVoucherUpdateWithoutArrearsInput = {
   periods?: Prisma.FeeVoucherPeriodUpdateManyWithoutVoucherNestedInput
   allocations?: Prisma.FeePaymentAllocationUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUncheckedUpdateWithoutArrearsInput = {
@@ -2032,6 +2081,7 @@ export type FeeVoucherUncheckedUpdateWithoutArrearsInput = {
   periods?: Prisma.FeeVoucherPeriodUncheckedUpdateManyWithoutVoucherNestedInput
   allocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUpsertWithoutCarriedIntoInput = {
@@ -2075,6 +2125,7 @@ export type FeeVoucherUpdateWithoutCarriedIntoInput = {
   periods?: Prisma.FeeVoucherPeriodUpdateManyWithoutVoucherNestedInput
   allocations?: Prisma.FeePaymentAllocationUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUpdateManyWithoutVoucherNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUncheckedUpdateWithoutCarriedIntoInput = {
@@ -2107,6 +2158,7 @@ export type FeeVoucherUncheckedUpdateWithoutCarriedIntoInput = {
   periods?: Prisma.FeeVoucherPeriodUncheckedUpdateManyWithoutVoucherNestedInput
   allocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutVoucherNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherCreateWithoutAllocationsInput = {
@@ -2139,6 +2191,7 @@ export type FeeVoucherCreateWithoutAllocationsInput = {
   periods?: Prisma.FeeVoucherPeriodCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherUncheckedCreateWithoutAllocationsInput = {
@@ -2171,6 +2224,7 @@ export type FeeVoucherUncheckedCreateWithoutAllocationsInput = {
   periods?: Prisma.FeeVoucherPeriodUncheckedCreateNestedManyWithoutVoucherInput
   arrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutVoucherInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSourceInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutVoucherInput
 }
 
 export type FeeVoucherCreateOrConnectWithoutAllocationsInput = {
@@ -2219,6 +2273,7 @@ export type FeeVoucherUpdateWithoutAllocationsInput = {
   periods?: Prisma.FeeVoucherPeriodUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUncheckedUpdateWithoutAllocationsInput = {
@@ -2249,6 +2304,155 @@ export type FeeVoucherUncheckedUpdateWithoutAllocationsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lines?: Prisma.FeeVoucherLineUncheckedUpdateManyWithoutVoucherNestedInput
   periods?: Prisma.FeeVoucherPeriodUncheckedUpdateManyWithoutVoucherNestedInput
+  arrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutVoucherNestedInput
+  carriedInto?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutVoucherNestedInput
+}
+
+export type FeeVoucherCreateWithoutSecurityDepositsInput = {
+  id?: string
+  voucherNo: string
+  status?: $Enums.VoucherStatus
+  issueDate: Date | string
+  dueDate: Date | string
+  validTill: Date | string
+  billMonths?: Prisma.FeeVoucherCreatebillMonthsInput | Date[] | string[]
+  grossAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  waiverAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  arrearsAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  netPayable?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeAuto?: boolean
+  paidAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  paidOn?: Date | string | null
+  cancelledAt?: Date | string | null
+  cancelReason?: string | null
+  createdBy?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  school: Prisma.SchoolCreateNestedOneWithoutFeeVouchersInput
+  session: Prisma.AcademicSessionCreateNestedOneWithoutFeeVouchersInput
+  student: Prisma.StudentCreateNestedOneWithoutFeeVouchersInput
+  jobRun?: Prisma.JobRunCreateNestedOneWithoutVouchersInput
+  lines?: Prisma.FeeVoucherLineCreateNestedManyWithoutVoucherInput
+  periods?: Prisma.FeeVoucherPeriodCreateNestedManyWithoutVoucherInput
+  allocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutVoucherInput
+  arrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutVoucherInput
+  carriedInto?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSourceInput
+}
+
+export type FeeVoucherUncheckedCreateWithoutSecurityDepositsInput = {
+  id?: string
+  schoolId: string
+  sessionId: string
+  studentId: string
+  voucherNo: string
+  status?: $Enums.VoucherStatus
+  issueDate: Date | string
+  dueDate: Date | string
+  validTill: Date | string
+  billMonths?: Prisma.FeeVoucherCreatebillMonthsInput | Date[] | string[]
+  grossAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  waiverAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  arrearsAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  netPayable?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeAuto?: boolean
+  paidAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  paidOn?: Date | string | null
+  cancelledAt?: Date | string | null
+  cancelReason?: string | null
+  jobRunId?: string | null
+  createdBy?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  lines?: Prisma.FeeVoucherLineUncheckedCreateNestedManyWithoutVoucherInput
+  periods?: Prisma.FeeVoucherPeriodUncheckedCreateNestedManyWithoutVoucherInput
+  allocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutVoucherInput
+  arrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutVoucherInput
+  carriedInto?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSourceInput
+}
+
+export type FeeVoucherCreateOrConnectWithoutSecurityDepositsInput = {
+  where: Prisma.FeeVoucherWhereUniqueInput
+  create: Prisma.XOR<Prisma.FeeVoucherCreateWithoutSecurityDepositsInput, Prisma.FeeVoucherUncheckedCreateWithoutSecurityDepositsInput>
+}
+
+export type FeeVoucherUpsertWithoutSecurityDepositsInput = {
+  update: Prisma.XOR<Prisma.FeeVoucherUpdateWithoutSecurityDepositsInput, Prisma.FeeVoucherUncheckedUpdateWithoutSecurityDepositsInput>
+  create: Prisma.XOR<Prisma.FeeVoucherCreateWithoutSecurityDepositsInput, Prisma.FeeVoucherUncheckedCreateWithoutSecurityDepositsInput>
+  where?: Prisma.FeeVoucherWhereInput
+}
+
+export type FeeVoucherUpdateToOneWithWhereWithoutSecurityDepositsInput = {
+  where?: Prisma.FeeVoucherWhereInput
+  data: Prisma.XOR<Prisma.FeeVoucherUpdateWithoutSecurityDepositsInput, Prisma.FeeVoucherUncheckedUpdateWithoutSecurityDepositsInput>
+}
+
+export type FeeVoucherUpdateWithoutSecurityDepositsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  voucherNo?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumVoucherStatusFieldUpdateOperationsInput | $Enums.VoucherStatus
+  issueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  validTill?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  billMonths?: Prisma.FeeVoucherUpdatebillMonthsInput | Date[] | string[]
+  grossAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  waiverAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  arrearsAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  netPayable?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeAuto?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  paidAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  paidOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancelReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  school?: Prisma.SchoolUpdateOneRequiredWithoutFeeVouchersNestedInput
+  session?: Prisma.AcademicSessionUpdateOneRequiredWithoutFeeVouchersNestedInput
+  student?: Prisma.StudentUpdateOneRequiredWithoutFeeVouchersNestedInput
+  jobRun?: Prisma.JobRunUpdateOneWithoutVouchersNestedInput
+  lines?: Prisma.FeeVoucherLineUpdateManyWithoutVoucherNestedInput
+  periods?: Prisma.FeeVoucherPeriodUpdateManyWithoutVoucherNestedInput
+  allocations?: Prisma.FeePaymentAllocationUpdateManyWithoutVoucherNestedInput
+  arrears?: Prisma.FeeVoucherArrearUpdateManyWithoutVoucherNestedInput
+  carriedInto?: Prisma.FeeVoucherArrearUpdateManyWithoutSourceNestedInput
+}
+
+export type FeeVoucherUncheckedUpdateWithoutSecurityDepositsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  studentId?: Prisma.StringFieldUpdateOperationsInput | string
+  voucherNo?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumVoucherStatusFieldUpdateOperationsInput | $Enums.VoucherStatus
+  issueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  validTill?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  billMonths?: Prisma.FeeVoucherUpdatebillMonthsInput | Date[] | string[]
+  grossAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  waiverAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  arrearsAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  netPayable?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeAuto?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  paidAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  paidOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancelReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobRunId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lines?: Prisma.FeeVoucherLineUncheckedUpdateManyWithoutVoucherNestedInput
+  periods?: Prisma.FeeVoucherPeriodUncheckedUpdateManyWithoutVoucherNestedInput
+  allocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSourceNestedInput
 }
@@ -2310,6 +2514,7 @@ export type FeeVoucherUpdateWithoutSchoolInput = {
   allocations?: Prisma.FeePaymentAllocationUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUncheckedUpdateWithoutSchoolInput = {
@@ -2342,6 +2547,7 @@ export type FeeVoucherUncheckedUpdateWithoutSchoolInput = {
   allocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUncheckedUpdateManyWithoutSchoolInput = {
@@ -2428,6 +2634,7 @@ export type FeeVoucherUpdateWithoutSessionInput = {
   allocations?: Prisma.FeePaymentAllocationUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUncheckedUpdateWithoutSessionInput = {
@@ -2460,6 +2667,7 @@ export type FeeVoucherUncheckedUpdateWithoutSessionInput = {
   allocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUncheckedUpdateManyWithoutSessionInput = {
@@ -2546,6 +2754,7 @@ export type FeeVoucherUpdateWithoutStudentInput = {
   allocations?: Prisma.FeePaymentAllocationUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUncheckedUpdateWithoutStudentInput = {
@@ -2578,6 +2787,7 @@ export type FeeVoucherUncheckedUpdateWithoutStudentInput = {
   allocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUncheckedUpdateManyWithoutStudentInput = {
@@ -2664,6 +2874,7 @@ export type FeeVoucherUpdateWithoutJobRunInput = {
   allocations?: Prisma.FeePaymentAllocationUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUncheckedUpdateWithoutJobRunInput = {
@@ -2696,6 +2907,7 @@ export type FeeVoucherUncheckedUpdateWithoutJobRunInput = {
   allocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutVoucherNestedInput
   arrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutVoucherNestedInput
   carriedInto?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSourceNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutVoucherNestedInput
 }
 
 export type FeeVoucherUncheckedUpdateManyWithoutJobRunInput = {
@@ -2736,6 +2948,7 @@ export type FeeVoucherCountOutputType = {
   allocations: number
   arrears: number
   carriedInto: number
+  securityDeposits: number
 }
 
 export type FeeVoucherCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2744,6 +2957,7 @@ export type FeeVoucherCountOutputTypeSelect<ExtArgs extends runtime.Types.Extens
   allocations?: boolean | FeeVoucherCountOutputTypeCountAllocationsArgs
   arrears?: boolean | FeeVoucherCountOutputTypeCountArrearsArgs
   carriedInto?: boolean | FeeVoucherCountOutputTypeCountCarriedIntoArgs
+  securityDeposits?: boolean | FeeVoucherCountOutputTypeCountSecurityDepositsArgs
 }
 
 /**
@@ -2791,6 +3005,13 @@ export type FeeVoucherCountOutputTypeCountCarriedIntoArgs<ExtArgs extends runtim
   where?: Prisma.FeeVoucherArrearWhereInput
 }
 
+/**
+ * FeeVoucherCountOutputType without action
+ */
+export type FeeVoucherCountOutputTypeCountSecurityDepositsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SecurityDepositWhereInput
+}
+
 
 export type FeeVoucherSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2827,6 +3048,7 @@ export type FeeVoucherSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   allocations?: boolean | Prisma.FeeVoucher$allocationsArgs<ExtArgs>
   arrears?: boolean | Prisma.FeeVoucher$arrearsArgs<ExtArgs>
   carriedInto?: boolean | Prisma.FeeVoucher$carriedIntoArgs<ExtArgs>
+  securityDeposits?: boolean | Prisma.FeeVoucher$securityDepositsArgs<ExtArgs>
   _count?: boolean | Prisma.FeeVoucherCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["feeVoucher"]>
 
@@ -2933,6 +3155,7 @@ export type FeeVoucherInclude<ExtArgs extends runtime.Types.Extensions.InternalA
   allocations?: boolean | Prisma.FeeVoucher$allocationsArgs<ExtArgs>
   arrears?: boolean | Prisma.FeeVoucher$arrearsArgs<ExtArgs>
   carriedInto?: boolean | Prisma.FeeVoucher$carriedIntoArgs<ExtArgs>
+  securityDeposits?: boolean | Prisma.FeeVoucher$securityDepositsArgs<ExtArgs>
   _count?: boolean | Prisma.FeeVoucherCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type FeeVoucherIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2966,6 +3189,13 @@ export type $FeeVoucherPayload<ExtArgs extends runtime.Types.Extensions.Internal
      * The later vouchers carrying this one.
      */
     carriedInto: Prisma.$FeeVoucherArrearPayload<ExtArgs>[]
+    /**
+     * The deposit this voucher collected. At most one — enforced by the unique
+     * index on (school, voucher) rather than by a 1-1 relation, because Prisma's
+     * 1-1 needs the foreign key unique on its own and every index on a tenant
+     * table leads with `school_id` (CLAUDE.md).
+     */
+    securityDeposits: Prisma.$SecurityDepositPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -3410,6 +3640,7 @@ export interface Prisma__FeeVoucherClient<T, Null = never, ExtArgs extends runti
   allocations<T extends Prisma.FeeVoucher$allocationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FeeVoucher$allocationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FeePaymentAllocationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   arrears<T extends Prisma.FeeVoucher$arrearsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FeeVoucher$arrearsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FeeVoucherArrearPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   carriedInto<T extends Prisma.FeeVoucher$carriedIntoArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FeeVoucher$carriedIntoArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FeeVoucherArrearPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  securityDeposits<T extends Prisma.FeeVoucher$securityDepositsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FeeVoucher$securityDepositsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SecurityDepositPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4001,6 +4232,30 @@ export type FeeVoucher$carriedIntoArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.FeeVoucherArrearScalarFieldEnum | Prisma.FeeVoucherArrearScalarFieldEnum[]
+}
+
+/**
+ * FeeVoucher.securityDeposits
+ */
+export type FeeVoucher$securityDepositsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SecurityDeposit
+   */
+  select?: Prisma.SecurityDepositSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SecurityDeposit
+   */
+  omit?: Prisma.SecurityDepositOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SecurityDepositInclude<ExtArgs> | null
+  where?: Prisma.SecurityDepositWhereInput
+  orderBy?: Prisma.SecurityDepositOrderByWithRelationInput | Prisma.SecurityDepositOrderByWithRelationInput[]
+  cursor?: Prisma.SecurityDepositWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SecurityDepositScalarFieldEnum | Prisma.SecurityDepositScalarFieldEnum[]
 }
 
 /**

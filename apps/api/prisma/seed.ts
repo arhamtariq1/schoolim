@@ -36,6 +36,16 @@ if (process.env['NODE_ENV'] === 'production') {
  */
 const PASSWORD = 'demo-password-1234';
 
+/**
+ * When the seeded school year begins.
+ *
+ * The session, every admission and every agreed fee all start here. Three
+ * literals that must agree is three chances for them to stop agreeing, and a
+ * student admitted before their own fee starts is a voucher run that finds no
+ * amount to bill.
+ */
+const SESSION_START = new Date('2026-04-01');
+
 /** The one platform-console account. Development only, same guard as above. */
 const PLATFORM_EMAIL = 'platform@platform.test';
 
@@ -161,7 +171,7 @@ async function seedSchool(
     create: {
       schoolId: school.id,
       name: '2026-2027',
-      startDate: new Date('2026-04-01'),
+      startDate: SESSION_START,
       endDate: new Date('2027-03-31'),
       status: 'ACTIVE',
       isCurrent: true,
@@ -290,7 +300,7 @@ async function seedSchool(
           ),
           city: spec.city,
           status: 'ACTIVE',
-          admittedOn: new Date('2026-04-01'),
+          admittedOn: SESSION_START,
         },
       });
 
@@ -416,15 +426,26 @@ async function seedFees(
             ? '10000.00'
             : null;
 
+      // A fee is now "this amount, from this date". Seeded students are all
+      // admitted on the session start, so that is when their agreed amount
+      // begins — and pinning it to a constant rather than `new Date()` keeps
+      // the seed idempotent: re-running it hits the same row instead of laying
+      // down a second one a day later.
       await db.studentFee.upsert({
         where: {
-          schoolId_studentId_feeHeadId: { schoolId, studentId, feeHeadId: head.id },
+          schoolId_studentId_feeHeadId_effectiveFrom: {
+            schoolId,
+            studentId,
+            feeHeadId: head.id,
+            effectiveFrom: SESSION_START,
+          },
         },
         update: {},
         create: {
           schoolId,
           studentId,
           feeHeadId: head.id,
+          effectiveFrom: SESSION_START,
           amount: head.defaultAmount,
           ...(discounted === null
             ? {}

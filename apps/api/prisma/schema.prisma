@@ -196,6 +196,8 @@ model School {
   staffAttendance       StaffAttendanceRecord[]
   studentFees           StudentFee[]
   numberSequences       NumberSequence[]
+  securityDeposits       SecurityDeposit[]
+  securityDepositRefunds SecurityDepositRefund[]
 
   @@index([schoolGroupId])
   @@index([status])
@@ -706,6 +708,7 @@ model Student {
   feeVoucherPeriods FeeVoucherPeriod[]
   feePayments       FeePayment[]
   attendanceRecords AttendanceRecord[]
+  securityDeposits  SecurityDeposit[]
 
   @@unique([schoolId, studentCode])
   @@unique([schoolId, grNo])
@@ -1119,6 +1122,14 @@ model StudentFee {
   /// Why the school gave it. Blank is allowed; unanswerable is not.
   discountReason   String?  @map("discount_reason")
 
+  /// The day this amount starts applying.
+  ///
+  /// The amount in force on any date is the newest row not in the future, so a
+  /// fee rise scheduled for next month sits here harmlessly until then. Old
+  /// rows stay: overwriting one would rewrite what a parent was charged in a
+  /// month that has already been billed and receipted.
+  effectiveFrom DateTime @default(now()) @map("effective_from") @db.Date
+
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -1126,7 +1137,11 @@ model StudentFee {
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   feeHead FeeHead @relation(fields: [feeHeadId], references: [id], onDelete: Restrict)
 
-  @@unique([schoolId, studentId, feeHeadId])
+  /// One amount per head per day. A double-clicked Submit is an upsert, not a
+  /// second row.
+  @@unique([schoolId, studentId, feeHeadId, effectiveFrom])
+  /// Walks backwards from the billing date and stops at the first hit per head.
+  @@index([schoolId, studentId, feeHeadId, effectiveFrom(sort: Desc)])
   @@index([schoolId, studentId])
   @@index([schoolId, feeHeadId])
   @@map("student_fees")
@@ -1286,6 +1301,11 @@ model FeeVoucher {
   arrears     FeeVoucherArrear[]     @relation("VoucherArrears")
   /// The later vouchers carrying this one.
   carriedInto FeeVoucherArrear[]     @relation("ArrearSource")
+  /// The deposit this voucher collected. At most one — enforced by the unique
+  /// index on (school, voucher) rather than by a 1-1 relation, because Prisma's
+  /// 1-1 needs the foreign key unique on its own and every index on a tenant
+  /// table leads with `school_id` (CLAUDE.md).
+  securityDeposits SecurityDeposit[]
 
   @@unique([schoolId, voucherNo])
   @@index([schoolId, sessionId, issueDate(sort: Desc)])
@@ -1496,4 +1516,66 @@ model StaffAttendanceRecord {
   @@index([schoolId, date], map: "staff_attendance_records_school_date_idx")
   @@index([schoolId, staffId, date(sort: Desc)], map: "staff_attendance_records_school_staff_date_idx")
   @@map("staff_attendance_records")
+}
+
+/// Money the school is holding on a parent's behalf, not money it has earned.
+///
+/// A fee is income the moment it is collected. A deposit is a liability: the
+/// school owes it back, less whatever the child broke. Keeping the two in one
+/// table would overstate a year's collection by the whole float, which is the
+/// kind of error an accountant finds and never quite trusts you about again.
+model SecurityDeposit {
+  id        String  @id @default(uuid(7)) @db.Uuid
+  schoolId  String  @map("school_id") @db.Uuid
+  studentId String  @map("student_id") @db.Uuid
+  /// The voucher that collected it, when it arrived on one. Null for a deposit
+  /// taken at the counter outside a billing run.
+  voucherId String? @map("voucher_id") @db.Uuid
+
+  /// Rupees, `numeric(14,2)`. Read as integer paisa above the service layer.
+  amount     Decimal  @db.Decimal(14, 2)
+  receivedOn DateTime @map("received_on") @db.Date
+  note       String?
+  createdBy  String?  @map("created_by") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school  School                  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student Student                 @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  voucher FeeVoucher?             @relation(fields: [voucherId], references: [id], onDelete: Restrict)
+  refunds SecurityDepositRefund[]
+
+  /// A retried payment must not book the float twice.
+  @@unique([schoolId, voucherId])
+  @@index([schoolId, receivedOn(sort: Desc)])
+  @@index([schoolId, studentId])
+  @@map("security_deposits")
+}
+
+/// One repayment out of a deposit. Append-only (R4).
+///
+/// Refunding happens in pieces — 2,000 withheld for a broken window, 3,000
+/// returned when the child leaves — so what is left is arithmetic over these
+/// rows, never a counter updated in place. A counter loses the answer to "who
+/// returned what, when, and why", which is the only question anybody asks.
+model SecurityDepositRefund {
+  id        String @id @default(uuid(7)) @db.Uuid
+  schoolId  String @map("school_id") @db.Uuid
+  depositId String @map("deposit_id") @db.Uuid
+
+  amount Decimal @db.Decimal(14, 2)
+  /// Never blank. "Broken window, Class V" is the difference between a refund
+  /// and an unexplained withdrawal when somebody asks in two years.
+  reason String
+
+  refundedOn DateTime @map("refunded_on") @db.Date
+  createdBy  String?  @map("created_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school  School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  deposit SecurityDeposit @relation(fields: [depositId], references: [id], onDelete: Restrict)
+
+  @@index([schoolId, depositId])
+  @@map("security_deposit_refunds")
 }

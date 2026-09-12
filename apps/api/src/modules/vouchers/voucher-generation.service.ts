@@ -29,6 +29,7 @@ import {
   loadArrearSources,
   loadHeadCatalogue,
   type HeadCatalogue,
+  firstOfMonth,
 } from './voucher-planner';
 
 /**
@@ -268,6 +269,18 @@ export class VoucherGenerationService {
   ): AsyncGenerator<StudentPlan[]> {
     let cursor: string | undefined;
 
+    // A head charged once — admission, an annual charge — belongs to the
+    // voucher rather than to a month, so it is priced at the issue date.
+    const issuedOn = firstOfDay(input.issueDate);
+
+    // The latest day this run can price anything at: the last month it bills,
+    // or the issue date if that is later. Everything after it is a rise that
+    // has not started.
+    const latestPricingDate = input.billMonths.reduce<Date>((latest, month) => {
+      const start = firstOfMonth(month);
+      return start.getTime() > latest.getTime() ? start : latest;
+    }, issuedOn);
+
     for (;;) {
       const batch = await this.prisma.tenant(async (tx) => {
         const students = await tx.student.findMany({
@@ -282,9 +295,28 @@ export class VoucherGenerationService {
             firstName: true,
             lastName: true,
             grNo: true,
+            // The whole agreed history, newest first, up to the last date this
+            // run could price at — a fee dated after that is a rise that has
+            // not started and must not reach these vouchers.
+            //
+            // Bounded by date rather than by row count because there is no
+            // per-group limit in SQL, and bounded at all because a school ten
+            // years in has a decade of amendments behind every head. Fee
+            // changes are rare — once or twice a year — so in practice this is
+            // a handful of rows per head, read through the
+            // (school, student, head, effective_from DESC) index.
             fees: {
-              where: { feeHeadId: { in: [...context.heads.keys()] } },
-              select: { feeHeadId: true, amount: true, discountedAmount: true },
+              where: {
+                feeHeadId: { in: [...context.heads.keys()] },
+                effectiveFrom: { lte: latestPricingDate },
+              },
+              orderBy: { effectiveFrom: 'desc' },
+              select: {
+                feeHeadId: true,
+                effectiveFrom: true,
+                amount: true,
+                discountedAmount: true,
+              },
             },
           },
         });
@@ -307,6 +339,7 @@ export class VoucherGenerationService {
           buildStudentPlan({
             student,
             heads: context.heads,
+            asOf: issuedOn,
             overrides: new Map(
               input.heads
                 .filter((head) => head.amountMinor !== undefined)
@@ -783,3 +816,14 @@ function buildWarnings(willCreate: number, skips: Map<SkipReason, number>): stri
 }
 
 export type { PlannedLine, StudentPlan };
+
+/**
+ * A `YYYY-MM-DD` string as a UTC midnight `Date`.
+ *
+ * UTC for the same reason `firstOfMonth` is: parsed in Asia/Karachi and
+ * compared against a `date` column, a local-midnight Date is the previous day,
+ * which would price a voucher at yesterday's fee on the day one changes.
+ */
+function firstOfDay(day: string): Date {
+  return new Date(`${day}T00:00:00.000Z`);
+}

@@ -157,15 +157,15 @@ async function seed(): Promise<void> {
   // Aasia pays the full 5,000. Bilal agreed 5,000 with a 1,500 discount, so he
   // owes 3,500. Same class, same head, different money.
   await admin.$executeRawUnsafe(
-    `INSERT INTO student_fees (id, school_id, student_id, fee_head_id, amount, created_at, updated_at)
-     VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, '5000.00'::numeric, now(), now())`,
+    `INSERT INTO student_fees (id, school_id, student_id, fee_head_id, amount, effective_from, created_at, updated_at)
+     VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, '5000.00'::numeric, '2026-01-01'::date, now(), now())`,
     SCHOOL_A,
     AASIA,
     HEAD_TUITION,
   );
   await admin.$executeRawUnsafe(
-    `INSERT INTO student_fees (id, school_id, student_id, fee_head_id, amount, discounted_amount, discount_reason, created_at, updated_at)
-     VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, '5000.00'::numeric, '3500.00'::numeric, 'Sibling', now(), now())`,
+    `INSERT INTO student_fees (id, school_id, student_id, fee_head_id, amount, discounted_amount, discount_reason, effective_from, created_at, updated_at)
+     VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, '5000.00'::numeric, '3500.00'::numeric, 'Sibling', '2026-01-01'::date, now(), now())`,
     SCHOOL_A,
     BILAL,
     HEAD_TUITION,
@@ -173,8 +173,8 @@ async function seed(): Promise<void> {
   // Only Aasia has an annual charge agreed, so Bilal is the "no agreed amount"
   // case when Annual is billed on its own.
   await admin.$executeRawUnsafe(
-    `INSERT INTO student_fees (id, school_id, student_id, fee_head_id, amount, created_at, updated_at)
-     VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, '6000.00'::numeric, now(), now())`,
+    `INSERT INTO student_fees (id, school_id, student_id, fee_head_id, amount, effective_from, created_at, updated_at)
+     VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, '6000.00'::numeric, '2026-01-01'::date, now(), now())`,
     SCHOOL_A,
     AASIA,
     HEAD_ANNUAL,
@@ -357,8 +357,8 @@ describe('every student is billed their own agreed amount', () => {
 describe('frequency decides how often a head repeats', () => {
   it('bills three months of tuition but only one admission fee', async () => {
     await admin.$executeRawUnsafe(
-      `INSERT INTO student_fees (id, school_id, student_id, fee_head_id, amount, created_at, updated_at)
-       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, '25000.00'::numeric, now(), now())`,
+      `INSERT INTO student_fees (id, school_id, student_id, fee_head_id, amount, effective_from, created_at, updated_at)
+       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, '25000.00'::numeric, '2026-01-01'::date, now(), now())`,
       SCHOOL_A,
       AASIA,
       HEAD_ADMISSION,

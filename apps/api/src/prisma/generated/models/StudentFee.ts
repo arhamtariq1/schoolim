@@ -57,6 +57,7 @@ export type StudentFeeMinAggregateOutputType = {
   amount: runtime.Decimal | null
   discountedAmount: runtime.Decimal | null
   discountReason: string | null
+  effectiveFrom: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -69,6 +70,7 @@ export type StudentFeeMaxAggregateOutputType = {
   amount: runtime.Decimal | null
   discountedAmount: runtime.Decimal | null
   discountReason: string | null
+  effectiveFrom: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -81,6 +83,7 @@ export type StudentFeeCountAggregateOutputType = {
   amount: number
   discountedAmount: number
   discountReason: number
+  effectiveFrom: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -105,6 +108,7 @@ export type StudentFeeMinAggregateInputType = {
   amount?: true
   discountedAmount?: true
   discountReason?: true
+  effectiveFrom?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -117,6 +121,7 @@ export type StudentFeeMaxAggregateInputType = {
   amount?: true
   discountedAmount?: true
   discountReason?: true
+  effectiveFrom?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -129,6 +134,7 @@ export type StudentFeeCountAggregateInputType = {
   amount?: true
   discountedAmount?: true
   discountReason?: true
+  effectiveFrom?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -228,6 +234,7 @@ export type StudentFeeGroupByOutputType = {
   amount: runtime.Decimal
   discountedAmount: runtime.Decimal | null
   discountReason: string | null
+  effectiveFrom: Date
   createdAt: Date
   updatedAt: Date
   _count: StudentFeeCountAggregateOutputType | null
@@ -263,6 +270,7 @@ export type StudentFeeWhereInput = {
   amount?: Prisma.DecimalFilter<"StudentFee"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.DecimalNullableFilter<"StudentFee"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.StringNullableFilter<"StudentFee"> | string | null
+  effectiveFrom?: Prisma.DateTimeFilter<"StudentFee"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"StudentFee"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"StudentFee"> | Date | string
   school?: Prisma.XOR<Prisma.SchoolScalarRelationFilter, Prisma.SchoolWhereInput>
@@ -278,6 +286,7 @@ export type StudentFeeOrderByWithRelationInput = {
   amount?: Prisma.SortOrder
   discountedAmount?: Prisma.SortOrderInput | Prisma.SortOrder
   discountReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   school?: Prisma.SchoolOrderByWithRelationInput
@@ -287,7 +296,7 @@ export type StudentFeeOrderByWithRelationInput = {
 
 export type StudentFeeWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  schoolId_studentId_feeHeadId?: Prisma.StudentFeeSchoolIdStudentIdFeeHeadIdCompoundUniqueInput
+  schoolId_studentId_feeHeadId_effectiveFrom?: Prisma.StudentFeeSchoolIdStudentIdFeeHeadIdEffectiveFromCompoundUniqueInput
   AND?: Prisma.StudentFeeWhereInput | Prisma.StudentFeeWhereInput[]
   OR?: Prisma.StudentFeeWhereInput[]
   NOT?: Prisma.StudentFeeWhereInput | Prisma.StudentFeeWhereInput[]
@@ -297,12 +306,13 @@ export type StudentFeeWhereUniqueInput = Prisma.AtLeast<{
   amount?: Prisma.DecimalFilter<"StudentFee"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.DecimalNullableFilter<"StudentFee"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.StringNullableFilter<"StudentFee"> | string | null
+  effectiveFrom?: Prisma.DateTimeFilter<"StudentFee"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"StudentFee"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"StudentFee"> | Date | string
   school?: Prisma.XOR<Prisma.SchoolScalarRelationFilter, Prisma.SchoolWhereInput>
   student?: Prisma.XOR<Prisma.StudentScalarRelationFilter, Prisma.StudentWhereInput>
   feeHead?: Prisma.XOR<Prisma.FeeHeadScalarRelationFilter, Prisma.FeeHeadWhereInput>
-}, "id" | "schoolId_studentId_feeHeadId">
+}, "id" | "schoolId_studentId_feeHeadId_effectiveFrom">
 
 export type StudentFeeOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -312,6 +322,7 @@ export type StudentFeeOrderByWithAggregationInput = {
   amount?: Prisma.SortOrder
   discountedAmount?: Prisma.SortOrderInput | Prisma.SortOrder
   discountReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.StudentFeeCountOrderByAggregateInput
@@ -332,6 +343,7 @@ export type StudentFeeScalarWhereWithAggregatesInput = {
   amount?: Prisma.DecimalWithAggregatesFilter<"StudentFee"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.DecimalNullableWithAggregatesFilter<"StudentFee"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.StringNullableWithAggregatesFilter<"StudentFee"> | string | null
+  effectiveFrom?: Prisma.DateTimeWithAggregatesFilter<"StudentFee"> | Date | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"StudentFee"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"StudentFee"> | Date | string
 }
@@ -341,6 +353,7 @@ export type StudentFeeCreateInput = {
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: string | null
+  effectiveFrom?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
   school: Prisma.SchoolCreateNestedOneWithoutStudentFeesInput
@@ -356,6 +369,7 @@ export type StudentFeeUncheckedCreateInput = {
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: string | null
+  effectiveFrom?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -365,6 +379,7 @@ export type StudentFeeUpdateInput = {
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   school?: Prisma.SchoolUpdateOneRequiredWithoutStudentFeesNestedInput
@@ -380,6 +395,7 @@ export type StudentFeeUncheckedUpdateInput = {
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -392,6 +408,7 @@ export type StudentFeeCreateManyInput = {
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: string | null
+  effectiveFrom?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -401,6 +418,7 @@ export type StudentFeeUpdateManyMutationInput = {
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -413,6 +431,7 @@ export type StudentFeeUncheckedUpdateManyInput = {
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -427,10 +446,11 @@ export type StudentFeeOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type StudentFeeSchoolIdStudentIdFeeHeadIdCompoundUniqueInput = {
+export type StudentFeeSchoolIdStudentIdFeeHeadIdEffectiveFromCompoundUniqueInput = {
   schoolId: string
   studentId: string
   feeHeadId: string
+  effectiveFrom: Date | string
 }
 
 export type StudentFeeCountOrderByAggregateInput = {
@@ -441,6 +461,7 @@ export type StudentFeeCountOrderByAggregateInput = {
   amount?: Prisma.SortOrder
   discountedAmount?: Prisma.SortOrder
   discountReason?: Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -458,6 +479,7 @@ export type StudentFeeMaxOrderByAggregateInput = {
   amount?: Prisma.SortOrder
   discountedAmount?: Prisma.SortOrder
   discountReason?: Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -470,6 +492,7 @@ export type StudentFeeMinOrderByAggregateInput = {
   amount?: Prisma.SortOrder
   discountedAmount?: Prisma.SortOrder
   discountReason?: Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -618,6 +641,7 @@ export type StudentFeeCreateWithoutSchoolInput = {
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: string | null
+  effectiveFrom?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
   student: Prisma.StudentCreateNestedOneWithoutFeesInput
@@ -631,6 +655,7 @@ export type StudentFeeUncheckedCreateWithoutSchoolInput = {
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: string | null
+  effectiveFrom?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -672,6 +697,7 @@ export type StudentFeeScalarWhereInput = {
   amount?: Prisma.DecimalFilter<"StudentFee"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.DecimalNullableFilter<"StudentFee"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.StringNullableFilter<"StudentFee"> | string | null
+  effectiveFrom?: Prisma.DateTimeFilter<"StudentFee"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"StudentFee"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"StudentFee"> | Date | string
 }
@@ -681,6 +707,7 @@ export type StudentFeeCreateWithoutStudentInput = {
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: string | null
+  effectiveFrom?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
   school: Prisma.SchoolCreateNestedOneWithoutStudentFeesInput
@@ -694,6 +721,7 @@ export type StudentFeeUncheckedCreateWithoutStudentInput = {
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: string | null
+  effectiveFrom?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -729,6 +757,7 @@ export type StudentFeeCreateWithoutFeeHeadInput = {
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: string | null
+  effectiveFrom?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
   school: Prisma.SchoolCreateNestedOneWithoutStudentFeesInput
@@ -742,6 +771,7 @@ export type StudentFeeUncheckedCreateWithoutFeeHeadInput = {
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: string | null
+  effectiveFrom?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -779,6 +809,7 @@ export type StudentFeeCreateManySchoolInput = {
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: string | null
+  effectiveFrom?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -788,6 +819,7 @@ export type StudentFeeUpdateWithoutSchoolInput = {
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   student?: Prisma.StudentUpdateOneRequiredWithoutFeesNestedInput
@@ -801,6 +833,7 @@ export type StudentFeeUncheckedUpdateWithoutSchoolInput = {
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -812,6 +845,7 @@ export type StudentFeeUncheckedUpdateManyWithoutSchoolInput = {
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -823,6 +857,7 @@ export type StudentFeeCreateManyStudentInput = {
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: string | null
+  effectiveFrom?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -832,6 +867,7 @@ export type StudentFeeUpdateWithoutStudentInput = {
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   school?: Prisma.SchoolUpdateOneRequiredWithoutStudentFeesNestedInput
@@ -845,6 +881,7 @@ export type StudentFeeUncheckedUpdateWithoutStudentInput = {
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -856,6 +893,7 @@ export type StudentFeeUncheckedUpdateManyWithoutStudentInput = {
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -867,6 +905,7 @@ export type StudentFeeCreateManyFeeHeadInput = {
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: string | null
+  effectiveFrom?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -876,6 +915,7 @@ export type StudentFeeUpdateWithoutFeeHeadInput = {
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   school?: Prisma.SchoolUpdateOneRequiredWithoutStudentFeesNestedInput
@@ -889,6 +929,7 @@ export type StudentFeeUncheckedUpdateWithoutFeeHeadInput = {
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -900,6 +941,7 @@ export type StudentFeeUncheckedUpdateManyWithoutFeeHeadInput = {
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountedAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   discountReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -914,6 +956,7 @@ export type StudentFeeSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   amount?: boolean
   discountedAmount?: boolean
   discountReason?: boolean
+  effectiveFrom?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
@@ -929,6 +972,7 @@ export type StudentFeeSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   amount?: boolean
   discountedAmount?: boolean
   discountReason?: boolean
+  effectiveFrom?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
@@ -944,6 +988,7 @@ export type StudentFeeSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   amount?: boolean
   discountedAmount?: boolean
   discountReason?: boolean
+  effectiveFrom?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
@@ -959,11 +1004,12 @@ export type StudentFeeSelectScalar = {
   amount?: boolean
   discountedAmount?: boolean
   discountReason?: boolean
+  effectiveFrom?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type StudentFeeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "studentId" | "feeHeadId" | "amount" | "discountedAmount" | "discountReason" | "createdAt" | "updatedAt", ExtArgs["result"]["studentFee"]>
+export type StudentFeeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "studentId" | "feeHeadId" | "amount" | "discountedAmount" | "discountReason" | "effectiveFrom" | "createdAt" | "updatedAt", ExtArgs["result"]["studentFee"]>
 export type StudentFeeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   student?: boolean | Prisma.StudentDefaultArgs<ExtArgs>
@@ -1004,6 +1050,15 @@ export type $StudentFeePayload<ExtArgs extends runtime.Types.Extensions.Internal
      * Why the school gave it. Blank is allowed; unanswerable is not.
      */
     discountReason: string | null
+    /**
+     * The day this amount starts applying.
+     * 
+     * The amount in force on any date is the newest row not in the future, so a
+     * fee rise scheduled for next month sits here harmlessly until then. Old
+     * rows stay: overwriting one would rewrite what a parent was charged in a
+     * month that has already been billed and receipted.
+     */
+    effectiveFrom: Date
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["studentFee"]>
@@ -1439,6 +1494,7 @@ export interface StudentFeeFieldRefs {
   readonly amount: Prisma.FieldRef<"StudentFee", 'Decimal'>
   readonly discountedAmount: Prisma.FieldRef<"StudentFee", 'Decimal'>
   readonly discountReason: Prisma.FieldRef<"StudentFee", 'String'>
+  readonly effectiveFrom: Prisma.FieldRef<"StudentFee", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"StudentFee", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"StudentFee", 'DateTime'>
 }

@@ -51,6 +51,9 @@ export const TENANT_MODELS = [
   // carries its own RLS, checked by the gate suite.
   'AttendanceRecord',
   'StaffAttendanceRecord',
+  // Money the school holds rather than earns, and the repayments out of it.
+  'SecurityDeposit',
+  'SecurityDepositRefund',
   'NumberSequence',
 ] as const;
 
