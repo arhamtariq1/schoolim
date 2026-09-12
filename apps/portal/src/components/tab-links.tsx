@@ -4,11 +4,14 @@ import { cn } from '@ilm/ui';
 import {
   ClassIcon,
   CreateIcon,
+  DepositIcon,
   ExpenseIcon,
   FeesIcon,
   HolidayIcon,
   ICON_SIZE,
+  OverdueIcon,
   SessionIcon,
+  TrendUpIcon,
 } from '@ilm/ui/icons';
 import Link from 'next/link';
 import type { ComponentType } from 'react';
@@ -102,6 +105,9 @@ const ACADEMICS: readonly TabLinkItem[] = [
 const FEES: readonly TabLinkItem[] = [
   { href: '/fees/vouchers', label: 'Fee vouchers', icon: FeesIcon },
   { href: '/fees/generate', label: 'Generate fee', icon: CreateIcon },
+  { href: '/fees/defaulters', label: 'Defaulters', icon: OverdueIcon },
+  { href: '/fees/increments', label: 'Fee increment', icon: TrendUpIcon },
+  { href: '/fees/security-deposits', label: 'Security deposits', icon: DepositIcon },
 ];
 
 const FINANCE: readonly TabLinkItem[] = [

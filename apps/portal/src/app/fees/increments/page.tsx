@@ -3,41 +3,42 @@ import {
   ROUTES,
   type AcademicSession,
   type ClassLevel,
-  type VoucherSummary,
-  type VoucherTotals,
+  type FeeIncrementList,
 } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
 import { AppShell } from '@/components/app-shell';
+import { FeeIncrementsView } from '@/components/fee-increments-view';
 import { FeesTabs } from '@/components/tab-links';
-import { VouchersView } from '@/components/vouchers-view';
 import { apiFetch } from '@/lib/api';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
 
 /**
- * Fees › Vouchers.
+ * Fees › Fee increment.
  *
- * Filters and paging live in the query string, so "unpaid vouchers for Grade 5"
- * is a link, and the server does the filtering — this screen must stay fast on
- * a school with four years of history behind it.
+ * Every filter is in the query string, so "Grade 5, GR 1–200" is a link and the
+ * filtering happens in the database. A school four years in has thousands of
+ * students, and a screen that fetched them all to filter in the browser would
+ * be the one that stops opening.
  */
-export const metadata: Metadata = { title: 'Fee vouchers' };
+export const metadata: Metadata = { title: 'Fee increment' };
 
-export default async function VouchersPage({
+export default async function FeeIncrementsPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+
   const filters = {
     q: readParam(params, 'q'),
-    grNo: readParam(params, 'grNo'),
-    sessionId: readParam(params, 'sessionId'),
     classLevelId: readParam(params, 'classLevelId'),
+    sessionId: readParam(params, 'sessionId'),
     status: readParam(params, 'status'),
-    from: readParam(params, 'from'),
-    to: readParam(params, 'to'),
+    gender: readParam(params, 'gender'),
+    grFrom: readParam(params, 'grFrom'),
+    grTo: readParam(params, 'grTo'),
   };
 
   const limit = clampInt(params['limit'], 25, 1, MAX_PAGE_LIMIT);
@@ -52,22 +53,23 @@ export default async function VouchersPage({
 
   const [session, listResult, sessionsResult, academicsResult] = await Promise.all([
     getSession(),
-    apiFetch<{
-      data: VoucherSummary[];
-      meta: { page: { total: number; limit: number; offset: number }; totals: VoucherTotals };
-    }>(`${ROUTES.vouchers.list}?${query.toString()}`),
+    apiFetch<{ data: FeeIncrementList; meta: { page: { total: number } } }>(
+      `${ROUTES.feeIncrements.list}?${query.toString()}`,
+    ),
     apiFetch<{ data: AcademicSession[] }>(ROUTES.academics.sessions),
     apiFetch<{ data: { session: { id: string } | null; classes: ClassLevel[] } }>(
       ROUTES.academics.setup,
     ),
   ]);
 
-  const emptyTotals: VoucherTotals = {
-    count: 0,
-    netPayableMinor: 0,
-    paidMinor: 0,
-    outstandingMinor: 0,
+  // A failed list still renders the screen, with the reason on it — a blank page
+  // and a console error is the outcome docs/16 §7 exists to prevent.
+  const empty: FeeIncrementList = {
+    rows: [],
+    total: 0,
+    feeHead: { id: '', name: 'Tuition fee' },
   };
+  const page = listResult.ok ? listResult.data.data : empty;
 
   return (
     <AppShell
@@ -78,22 +80,18 @@ export default async function VouchersPage({
     >
       <div className="space-y-6">
         <FeesTabs />
-        <VouchersView
-          rows={listResult.ok ? listResult.data.data : []}
+        <FeeIncrementsView
+          page={page}
           sessions={sessionsResult.ok ? sessionsResult.data.data : []}
           classes={academicsResult.ok ? academicsResult.data.data.classes : []}
-          totals={listResult.ok ? listResult.data.meta.totals : emptyTotals}
-          total={listResult.ok ? listResult.data.meta.page.total : 0}
-          limit={listResult.ok ? listResult.data.meta.page.limit : limit}
-          offset={listResult.ok ? listResult.data.meta.page.offset : offset}
+          total={page.total}
+          limit={limit}
+          offset={offset}
           filters={filters}
-          school={{ name: session?.school.name ?? '' }}
           error={listResult.ok ? undefined : listResult.message}
-          canCollect={session?.permissions.includes('fees.payment.create') ?? false}
-          canCancel={session?.permissions.includes('fees.voucher.cancel') ?? false}
+          canApply={session?.permissions.includes('fees.increment.generate') ?? false}
         />
       </div>
     </AppShell>
   );
 }
-

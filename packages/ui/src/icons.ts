@@ -65,6 +65,16 @@ export {
   CalendarOff as HolidayIcon,
   Receipt as ExpenseIcon,
 
+  // --- Fees -----------------------------------------------------------------
+  /** A fee's timeline: what it was, from when. */
+  History as HistoryIcon,
+  /** Money going back to a family, which is not the same act as an undo. */
+  HandCoins as RefundIcon,
+  /** Money the school holds but has not earned. */
+  PiggyBank as DepositIcon,
+  /** Somebody who has not paid by the day it was due. */
+  AlarmClock as OverdueIcon,
+
   // --- Dates ----------------------------------------------------------------
   Calendar as CalendarIcon,
   CalendarDays as DateRangeIcon,
