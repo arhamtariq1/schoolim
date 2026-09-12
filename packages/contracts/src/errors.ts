@@ -50,6 +50,21 @@ export const ERROR_CODES = [
   'FEES_RUN_NOT_REVERSIBLE',
   'FEES_NO_FEE_PLAN',
   'FEES_PERIOD_CLOSED',
+  /** No active tuition head, so there is nothing an increment could raise. */
+  'FEES_NO_TUITION_HEAD',
+  /** The only agreed amount for a head; removing it would leave it unbillable. */
+  'FEES_LAST_AMOUNT',
+  /** A refund larger than what is left of the deposit. */
+  'FEES_REFUND_EXCEEDS_DEPOSIT',
+  /** A second deposit against a voucher that already has one. */
+  'FEES_DEPOSIT_ALREADY_RECORDED',
+  /**
+   * Somebody else changed one of these fees while the batch was deciding.
+   *
+   * The whole batch rolls back rather than applying to some of the selection,
+   * because a half-applied increment leaves nothing on screen to say which half.
+   */
+  'FEES_INCREMENT_RACED',
 
   // --- Attendance -----------------------------------------------------------
   'ATTENDANCE_ALREADY_MARKED',
@@ -112,6 +127,11 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, number>> = {
   FEES_RUN_NOT_REVERSIBLE: 422,
   FEES_NO_FEE_PLAN: 422,
   FEES_PERIOD_CLOSED: 422,
+  FEES_NO_TUITION_HEAD: 422,
+  FEES_LAST_AMOUNT: 422,
+  FEES_REFUND_EXCEEDS_DEPOSIT: 422,
+  FEES_DEPOSIT_ALREADY_RECORDED: 409,
+  FEES_INCREMENT_RACED: 409,
 
   ATTENDANCE_ALREADY_MARKED: 409,
   ATTENDANCE_WINDOW_CLOSED: 422,

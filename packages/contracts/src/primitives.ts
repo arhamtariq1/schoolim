@@ -32,6 +32,21 @@ export const positiveMinorUnitsSchema = z
   .min(0, 'This cannot be negative.')
   .max(MAX_MINOR_UNITS, 'That amount is too large.');
 
+/**
+ * Money that must actually be an amount — strictly greater than zero.
+ *
+ * `positiveMinorUnitsSchema` above permits zero, which is right for a balance
+ * or a total but wrong for anything a person types into an amount box: a
+ * zero-rupee deposit, refund or fee increase is not a small transaction, it is
+ * a mistake. The database says `CHECK (amount > 0)` for exactly those columns,
+ * so without this the request passes validation and fails at the constraint —
+ * a 500 for what is plainly a 400.
+ */
+export const nonZeroMinorUnitsSchema = positiveMinorUnitsSchema.min(
+  1,
+  'Enter an amount greater than zero.',
+);
+
 /** A percentage in basis points. 10,000 bps is 100%; keeps floats off the wire. */
 export const basisPointsSchema = z.int().min(0).max(10_000);
 

@@ -82,6 +82,40 @@ export const ROUTES = {
     /** Deactivate rather than delete, once a head is in use. */
     studentFees: (studentId: string) => `${API_PREFIX}/students/${studentId}/fees`,
   },
+
+  /**
+   * Raising and lowering fees.
+   *
+   * `apply` is a POST rather than a PATCH on each student: it is one decision
+   * the school made about a group, it is idempotent and keyed, and five hundred
+   * PATCHes is five hundred chances to half-finish.
+   */
+  feeIncrements: {
+    list: `${API_PREFIX}/fees/increments`,
+    apply: `${API_PREFIX}/fees/increments/apply`,
+    /** One child's whole fee timeline, for the history dialog. */
+    history: (studentId: string) => `${API_PREFIX}/students/${studentId}/fee-history`,
+    /** Remove one row from that timeline. A typo is not a financial event. */
+    historyEntry: (id: string) => `${API_PREFIX}/fees/student-fees/${id}`,
+  },
+
+  /** Who has not paid by the day it was due. */
+  defaulters: {
+    list: `${API_PREFIX}/fees/defaulters`,
+  },
+
+  /**
+   * Money the school is holding rather than money it has earned.
+   *
+   * `refund` is an action endpoint, not a PATCH of a balance: it takes a reason,
+   * it checks the remainder under a lock, and it writes an audit entry that says
+   * what left and why (docs/11 §1).
+   */
+  securityDeposits: {
+    list: `${API_PREFIX}/fees/security-deposits`,
+    create: `${API_PREFIX}/fees/security-deposits`,
+    refund: (id: string) => `${API_PREFIX}/fees/security-deposits/${id}/refunds`,
+  },
   /**
    * Vouchers.
    *
