@@ -1,24 +1,45 @@
 'use client';
 
-
 import {
   ROUTES,
   VOUCHER_STATUSES,
   VOUCHER_STATUS_LABELS,
   type AcademicSession,
   type ClassLevel,
+  type FeeHead,
   type VoucherDetail,
   type VoucherStatus,
   type VoucherSummary,
   type VoucherTotals,
 } from '@ilm/contracts';
-import { Button, DataTable, DateDisplay, DatePicker, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Field, Input, Money, Pagination, SimpleSelect, StatusBadge, type Column, useToast } from '@ilm/ui';
-import { DeleteIcon, ICON_SIZE, PrintIcon, SearchIcon, SpinnerIcon } from '@ilm/ui/icons';
+import {
+  Button,
+  DataTable,
+  DateDisplay,
+  DatePicker,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Field,
+  Input,
+  Money,
+  Pagination,
+  SimpleSelect,
+  StatusBadge,
+  type Column,
+  useToast,
+} from '@ilm/ui';
+import { DeleteIcon, EditIcon, ICON_SIZE, PrintIcon, SearchIcon, SpinnerIcon } from '@ilm/ui/icons';
 import { systemClock } from '@ilm/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
 import { VoucherChallan } from './voucher-challan';
+import { VoucherEditDialog } from './voucher-edit-dialog';
 
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
@@ -46,6 +67,7 @@ export interface VouchersViewProps {
   rows: VoucherSummary[];
   sessions: AcademicSession[];
   classes: ClassLevel[];
+  heads: FeeHead[];
   totals: VoucherTotals;
   total: number;
   limit: number;
@@ -63,12 +85,14 @@ export interface VouchersViewProps {
   error?: string | undefined;
   canCollect: boolean;
   canCancel: boolean;
+  canEdit: boolean;
 }
 
 export function VouchersView({
   rows,
   sessions,
   classes,
+  heads,
   totals,
   total,
   limit,
@@ -78,6 +102,7 @@ export function VouchersView({
   error,
   canCollect,
   canCancel,
+  canEdit,
 }: VouchersViewProps) {
   const router = useRouter();
   const tenantHref = useTenantHref();
@@ -91,6 +116,7 @@ export function VouchersView({
   const [paying, setPaying] = useState<VoucherSummary | undefined>(undefined);
   const [previewing, setPreviewing] = useState<VoucherDetail | undefined>(undefined);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [editing, setEditing] = useState<VoucherSummary | undefined>(undefined);
 
   function apply(next: Partial<typeof filters>, resetPage = true) {
     const merged = { ...draft, ...next };
@@ -221,6 +247,21 @@ export function VouchersView({
       align: 'end',
       render: (row) => (
         <div className="flex items-center justify-end gap-1">
+          {/* Absent on a cancelled voucher: there is nothing left to correct,
+              and the server refuses. */}
+          {canEdit && row.status !== 'CANCELLED' && row.status !== 'PAID' ? (
+            <Button
+              tone="ghost"
+              size="sm"
+              aria-label={`Edit ${row.voucherNo}`}
+              disabled={busyId !== undefined}
+              onClick={() => {
+                setEditing(row);
+              }}
+            >
+              <EditIcon className={ICON_SIZE.inline} aria-hidden />
+            </Button>
+          ) : null}
           {canCollect && row.balanceMinor > 0 && row.status !== 'CANCELLED' ? (
             <Button
               tone="ghost"
@@ -412,6 +453,17 @@ export function VouchersView({
           }}
         />
       )}
+
+      <VoucherEditDialog
+        voucher={editing}
+        heads={heads}
+        onClose={() => {
+          setEditing(undefined);
+        }}
+        onSaved={() => {
+          router.refresh();
+        }}
+      />
 
       {/* A reason is mandatory, so this is a form rather than a ConfirmDialog —
           that component takes no children, and a confirmation whose reason box
@@ -629,10 +681,7 @@ function CollectDialog({
                 />
               </Field>
               <Field label="Paid on" required>
-                <DatePicker
-                  value={paidOn}
-                  onChange={setPaidOn}
-                />
+                <DatePicker value={paidOn} onChange={setPaidOn} />
               </Field>
             </div>
 

@@ -18,17 +18,29 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
 
 import { computeLateFee } from './voucher-generation.service';
+import { firstOfMonth, monthLabel } from './voucher-planner';
 
 /**
  * Reading vouchers, and the three things that can happen to one.
  *
- * ## What may change on an issued voucher, and what may not
+ * ## What may change on an issued voucher, and when
  *
- * Dates and the late-fee switch may change. **Amounts may not.** A voucher is
- * frozen at generation (docs/modules/fees-and-finance §1), so the ways to
- * change what is owed are to cancel and regenerate, or to waive — and both
- * leave a record of who did it and why. An editable amount box is precisely how
- * a school's totals stop reconciling, which §4.3 calls out by name.
+ * Dates and the late-fee switch may change at any time before the voucher is
+ * paid. They do not alter what is owed.
+ *
+ * The **lines** may change only while nothing has been received against the
+ * voucher — `UNPAID`, nothing paid, nothing waived. That is where R4 draws its
+ * line, and it draws it at the receipt rather than at generation: a challan
+ * raised this morning with the lab fee left off is a mistake to correct, while
+ * one a parent has paid against is a record that a receipt already agrees with.
+ * After the first rupee the ways to change the number are a further payment, a
+ * waiver, or a cancellation — each of which leaves a trail of itself.
+ *
+ * There is deliberately **no way to set the status** and no editable paid
+ * amount. Status is what the payment ledger adds up to; a dropdown offering
+ * `PAID` would be money with no receipt behind it, and `WAIVED` set that way
+ * would skip the reason and the ledger entry — the "Fee Waived Off as a direct
+ * edit" that §4.3 names as how a school's totals stop reconciling.
  *
  * ## Delete is cancel
  *
@@ -241,12 +253,35 @@ export class VouchersService {
   /** Dates and the late-fee switch only. See the class comment. */
   async update(id: string, input: UpdateVoucher): Promise<VoucherDetail> {
     await this.prisma.tenant(async (tx) => {
+      // Locked for the whole edit.
+      //
+      // Without this, a payment arriving between the check below and the write
+      // would be paid against a total this method is about to change — the
+      // receipt and the voucher would then disagree by exactly the line that
+      // was added. `FOR UPDATE` makes the payment wait, and it then re-reads a
+      // voucher whose lines are already settled.
+      const locked = await tx.$queryRawUnsafe<{ id: string }[]>(
+        `SELECT id FROM fee_vouchers WHERE id = $1::uuid FOR UPDATE`,
+        id,
+      );
+      if (locked.length === 0) {
+        throw new NotFoundError('That voucher does not exist.');
+      }
+
       const voucher = await tx.feeVoucher.findUnique({
         where: { id },
         select: {
           id: true,
           status: true,
+          studentId: true,
+          sessionId: true,
+          billMonths: true,
+          grossAmount: true,
+          discountAmount: true,
+          waiverAmount: true,
+          arrearsAmount: true,
           netPayable: true,
+          paidAmount: true,
           issueDate: true,
           dueDate: true,
           validTill: true,
@@ -261,7 +296,7 @@ export class VouchersService {
       if (voucher.status === 'PAID') {
         throw new BusinessRuleError(
           'FEES_VOUCHER_ALREADY_PAID',
-          'That voucher is paid. Its dates can no longer be changed.',
+          'That voucher is paid. It can no longer be changed — record a refund or a further payment instead.',
         );
       }
 
@@ -280,10 +315,32 @@ export class VouchersService {
         );
       }
 
-      const lateFee =
-        input.applyLateFee === false
-          ? 0
-          : await recomputeLateFee(tx, decimalToMinor(voucher.netPayable));
+      const removals = input.removeLineIds ?? [];
+      const additions = input.addHeads ?? [];
+      const changesLines = removals.length > 0 || additions.length > 0;
+
+      let gross = decimalToMinor(voucher.grossAmount);
+      let discount = decimalToMinor(voucher.discountAmount);
+
+      if (changesLines) {
+        await this.editLines(tx, { id, voucher, removals, additions, issueDate });
+
+        // Re-summed from the rows rather than adjusted by the delta. Arithmetic
+        // that tracks a running total drifts the first time a path forgets to
+        // update it; the lines are the truth, so this asks them.
+        const totals = await tx.feeVoucherLine.aggregate({
+          where: { voucherId: id, kind: 'FEE' },
+          _sum: { amount: true, discount: true },
+        });
+        gross = decimalToMinor(totals._sum.amount);
+        discount = decimalToMinor(totals._sum.discount);
+      }
+
+      const arrears = decimalToMinor(voucher.arrearsAmount);
+      const waiver = decimalToMinor(voucher.waiverAmount);
+      const net = gross - discount - waiver + arrears;
+
+      const lateFee = input.applyLateFee === false ? 0 : await recomputeLateFee(tx, net);
 
       await tx.feeVoucher.update({
         where: { id },
@@ -293,11 +350,221 @@ export class VouchersService {
           validTill,
           ...(input.applyLateFee === undefined ? {} : { lateFeeAuto: input.applyLateFee }),
           lateFeeAmount: toDecimalString(minorUnits(lateFee)),
+          ...(changesLines
+            ? {
+                grossAmount: toDecimalString(minorUnits(gross)),
+                discountAmount: toDecimalString(minorUnits(discount)),
+                netPayable: toDecimalString(minorUnits(net)),
+              }
+            : {}),
         },
       });
     });
 
     return this.detail(id);
+  }
+
+  /**
+   * Taking lines off a voucher and putting lines on.
+   *
+   * ## Only while nothing has been received
+   *
+   * A voucher nobody has paid against is a bill that has not yet become a
+   * financial record — fixing the lab fee somebody forgot is a correction, not
+   * a rewrite of history. The moment a rupee arrives there is a receipt naming
+   * a total, and changing the voucher makes the two disagree, so R4 closes the
+   * door: from then on the paths are a payment, a waiver or a cancellation.
+   *
+   * A waiver closes it too. A waiver was a decision about *this* total, and
+   * moving the total under it silently changes what was forgiven.
+   *
+   * ## Why the period claims move with the lines
+   *
+   * `fee_voucher_periods` is what stops a student being billed twice for
+   * September. A line added without its claim is a month that can be billed
+   * again next week; a line removed without releasing its claim is a month that
+   * can never be billed again at all — and neither shows up until somebody runs
+   * generation and finds the wrong answer.
+   */
+  private async editLines(
+    tx: TransactionClient,
+    context: {
+      id: string;
+      voucher: {
+        status: string;
+        studentId: string;
+        sessionId: string;
+        billMonths: Date[];
+        paidAmount: unknown;
+        waiverAmount: unknown;
+      };
+      removals: readonly string[];
+      additions: readonly { feeHeadId: string; amountMinor?: number | undefined }[];
+      issueDate: Date;
+    },
+  ): Promise<void> {
+    const { id, voucher, removals, additions, issueDate } = context;
+
+    if (decimalToMinor(voucher.paidAmount) > 0 || voucher.status !== 'UNPAID') {
+      throw new BusinessRuleError(
+        'FEES_VOUCHER_ALREADY_PAID',
+        'Money has already been received against this voucher, so its fees can no longer be changed. Record a further payment, waive the balance, or cancel it and issue a new one.',
+      );
+    }
+    if (decimalToMinor(voucher.waiverAmount) > 0) {
+      throw new BusinessRuleError(
+        'BUSINESS_RULE_VIOLATION',
+        'Part of this voucher has been waived, so its fees can no longer be changed. Cancel it and issue a new one instead.',
+      );
+    }
+
+    // --- Removals ----------------------------------------------------------
+    if (removals.length > 0) {
+      const lines = await tx.feeVoucherLine.findMany({
+        where: { id: { in: [...removals] }, voucherId: id },
+        select: {
+          id: true,
+          kind: true,
+          feeHeadId: true,
+          billMonth: true,
+          label: true,
+          // The frequency decides which claim this line holds, and only the
+          // head knows it.
+          feeHead: { select: { frequency: true } },
+        },
+      });
+
+      if (lines.length !== removals.length) {
+        // Scoped to this voucher above, so a missing row is either another
+        // voucher's line or one already gone. Either way the request describes
+        // a voucher that is not the one in front of the person sending it.
+        throw new BusinessRuleError(
+          'BUSINESS_RULE_VIOLATION',
+          'Some of those lines are no longer on this voucher. Reload it and try again.',
+        );
+      }
+
+      const notFee = lines.find((line) => line.kind !== 'FEE');
+      if (notFee !== undefined) {
+        throw new BusinessRuleError(
+          'BUSINESS_RULE_VIOLATION',
+          notFee.kind === 'ARREAR'
+            ? `"${notFee.label}" is an unpaid balance carried from an earlier voucher. Removing it here would forgive that voucher without any record of it — cancel or waive the original instead.`
+            : `"${notFee.label}" records a decision that was already made, so it cannot be removed.`,
+        );
+      }
+
+      // The claims go first, so a failure leaves claims without lines rather
+      // than lines without claims — the former blocks a re-bill loudly, the
+      // latter allows a double-bill silently.
+      for (const line of lines) {
+        if (line.feeHeadId === null || line.feeHead === null) {
+          continue;
+        }
+        await tx.feeVoucherPeriod.deleteMany({
+          where: {
+            voucherId: id,
+            feeHeadId: line.feeHeadId,
+            periodKey: periodKeyFor(line.feeHead.frequency, line.billMonth, voucher.sessionId),
+          },
+        });
+      }
+
+      await tx.feeVoucherLine.deleteMany({ where: { id: { in: lines.map((l) => l.id) } } });
+    }
+
+    // --- Additions ---------------------------------------------------------
+    for (const addition of additions) {
+      const head = await tx.feeHead.findFirst({
+        where: { id: addition.feeHeadId },
+        select: { id: true, name: true, frequency: true, defaultAmount: true, isActive: true },
+      });
+      if (head === null) {
+        throw new NotFoundError('That fee head does not exist.');
+      }
+      if (!head.isActive) {
+        throw new BusinessRuleError(
+          'BUSINESS_RULE_VIOLATION',
+          `${head.name} is no longer offered, so it cannot be added to a voucher.`,
+        );
+      }
+
+      const months = voucher.billMonths.map((month) => isoDate(month).slice(0, 7));
+      if (head.frequency === 'MONTHLY' && months.length === 0) {
+        throw new BusinessRuleError(
+          'BUSINESS_RULE_VIOLATION',
+          `${head.name} is charged monthly, and this voucher bills no month. Add it to a voucher for a month instead.`,
+        );
+      }
+
+      // The same rule generation uses, so adding tuition to a three-month
+      // challan produces three lines and adding an admission fee produces one.
+      const periods =
+        head.frequency === 'ONE_TIME'
+          ? [{ key: 'once', month: null as Date | null, label: null as string | null }]
+          : head.frequency === 'ANNUAL'
+            ? [{ key: `session:${voucher.sessionId}`, month: null, label: null }]
+            : [...new Set(months)].sort().map((month) => ({
+                key: month,
+                month: firstOfMonth(month),
+                label: monthLabel(month),
+              }));
+
+      const agreed = await agreedAmountFor(tx, voucher.studentId, head.id, issueDate);
+      const amount = addition.amountMinor ?? agreed?.amountMinor ?? decimalToMinor(head.defaultAmount);
+      // An override is a decision about the money, not about the concession, so
+      // it replaces the agreed amount outright rather than being discounted
+      // again — otherwise typing "5000" bills 3,500 and nobody can see why.
+      const lineDiscount = addition.amountMinor === undefined ? (agreed?.discountMinor ?? 0) : 0;
+
+      for (const period of periods) {
+        const claimed = await tx.feeVoucherPeriod.findFirst({
+          where: { studentId: voucher.studentId, feeHeadId: head.id, periodKey: period.key },
+          select: { voucherId: true, voucher: { select: { voucherNo: true } } },
+        });
+
+        if (claimed !== null) {
+          throw new BusinessRuleError(
+            'FEES_ALREADY_BILLED',
+            claimed.voucherId === id
+              ? `${head.name}${period.label === null ? '' : ` for ${period.label}`} is already on this voucher.`
+              : `${head.name}${period.label === null ? '' : ` for ${period.label}`} was already billed on voucher ${claimed.voucher.voucherNo}.`,
+          );
+        }
+
+        await tx.feeVoucherLine.create({
+          data: {
+            voucherId: id,
+            feeHeadId: head.id,
+            kind: 'FEE',
+            label: period.label === null ? head.name : `${head.name} - ${period.label}`,
+            ...(period.month === null ? {} : { billMonth: period.month }),
+            amount: toDecimalString(minorUnits(amount)),
+            discount: toDecimalString(minorUnits(lineDiscount)),
+            sortOrder: 100,
+          } as never,
+        });
+
+        await tx.feeVoucherPeriod.create({
+          data: {
+            voucherId: id,
+            studentId: voucher.studentId,
+            feeHeadId: head.id,
+            periodKey: period.key,
+          } as never,
+        });
+      }
+    }
+
+    // A voucher with nothing on it is not a bill. Cancelling is the act that
+    // was meant, and it releases the months and records a reason.
+    const remaining = await tx.feeVoucherLine.count({ where: { voucherId: id, kind: 'FEE' } });
+    if (remaining === 0) {
+      throw new BusinessRuleError(
+        'BUSINESS_RULE_VIOLATION',
+        'That would leave the voucher with no fees on it. Cancel the voucher instead — it keeps the record and frees the months to be billed again.',
+      );
+    }
   }
 
   /**
@@ -792,6 +1059,68 @@ function orderFor(sort: string, order: 'asc' | 'desc'): Record<string, unknown> 
     default:
       return { issueDate: order };
   }
+}
+
+/**
+ * The claim key a line occupies.
+ *
+ * Mirrors `periodsFor` in the planner, and takes the **frequency** rather than
+ * inferring it. A one-time head and an annual head both leave `billMonth` null,
+ * so a version of this that read only the line could not tell `once` from
+ * `session:…` — and picking the wrong one means the claim is not released when
+ * the line is removed, leaving a head that can never be billed to that student
+ * again with nothing on screen to explain why.
+ */
+function periodKeyFor(
+  frequency: string,
+  billMonth: Date | null,
+  sessionId: string,
+): string {
+  if (frequency === 'ONE_TIME') {
+    return 'once';
+  }
+  if (frequency === 'ANNUAL') {
+    return `session:${sessionId}`;
+  }
+  return billMonth === null ? `session:${sessionId}` : isoDate(billMonth).slice(0, 7);
+}
+
+/**
+ * What this student had agreed to pay for a head on a given day.
+ *
+ * The same slowly-changing lookup the rest of fees uses: the newest row whose
+ * `effective_from` is on or before the date. A line added to a voucher issued
+ * in September must carry September's agreed amount, not whatever the fee
+ * happens to be by the time somebody notices it was missing.
+ */
+async function agreedAmountFor(
+  tx: TransactionClient,
+  studentId: string,
+  feeHeadId: string,
+  on: Date,
+): Promise<{ amountMinor: number; discountMinor: number } | undefined> {
+  const rows = await tx.$queryRawUnsafe<{ amount: string; discounted_amount: string | null }[]>(
+    `SELECT amount::text, discounted_amount::text
+       FROM student_fees
+      WHERE student_id = $1::uuid AND fee_head_id = $2::uuid AND effective_from <= $3::date
+      ORDER BY effective_from DESC
+      LIMIT 1`,
+    studentId,
+    feeHeadId,
+    isoDate(on),
+  );
+
+  const row = rows[0];
+  if (row === undefined) {
+    return undefined;
+  }
+
+  const amountMinor = fromDecimalString(row.amount);
+  return {
+    amountMinor,
+    discountMinor:
+      row.discounted_amount === null ? 0 : amountMinor - fromDecimalString(row.discounted_amount),
+  };
 }
 
 async function recomputeLateFee(tx: TransactionClient, netMinor: number): Promise<number> {

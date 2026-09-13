@@ -65,6 +65,13 @@ export const ERROR_CODES = [
    * because a half-applied increment leaves nothing on screen to say which half.
    */
   'FEES_INCREMENT_RACED',
+  /**
+   * That head and period are already billed — on this voucher or another one.
+   *
+   * The period claim is what stops a family being charged September twice, so
+   * hitting it is the system working rather than failing.
+   */
+  'FEES_ALREADY_BILLED',
 
   // --- Attendance -----------------------------------------------------------
   'ATTENDANCE_ALREADY_MARKED',
@@ -132,6 +139,7 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, number>> = {
   FEES_REFUND_EXCEEDS_DEPOSIT: 422,
   FEES_DEPOSIT_ALREADY_RECORDED: 409,
   FEES_INCREMENT_RACED: 409,
+  FEES_ALREADY_BILLED: 409,
 
   ATTENDANCE_ALREADY_MARKED: 409,
   ATTENDANCE_WINDOW_CLOSED: 422,

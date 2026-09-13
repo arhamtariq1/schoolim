@@ -3,6 +3,7 @@ import {
   ROUTES,
   type AcademicSession,
   type ClassLevel,
+  type FeeHead,
   type VoucherSummary,
   type VoucherTotals,
 } from '@ilm/contracts';
@@ -49,7 +50,7 @@ export default async function VouchersPage({
     }
   }
 
-  const [session, listResult, sessionsResult, academicsResult] = await Promise.all([
+  const [session, listResult, sessionsResult, academicsResult, headsResult] = await Promise.all([
     getSession(),
     apiFetch<{
       data: VoucherSummary[];
@@ -59,6 +60,10 @@ export default async function VouchersPage({
     apiFetch<{ data: { session: { id: string } | null; classes: ClassLevel[] } }>(
       ROUTES.academics.setup,
     ),
+    // The fee catalogue, for the "add a fee" picker in the edit dialog. Fetched
+    // with the page rather than when the dialog opens: it is small, it is the
+    // same for every row, and a request per dialog is a request per row edited.
+    apiFetch<{ data: FeeHead[] }>(ROUTES.fees.heads),
   ]);
 
   const emptyTotals: VoucherTotals = {
@@ -79,6 +84,7 @@ export default async function VouchersPage({
         rows={listResult.ok ? listResult.data.data : []}
         sessions={sessionsResult.ok ? sessionsResult.data.data : []}
         classes={academicsResult.ok ? academicsResult.data.data.classes : []}
+        heads={headsResult.ok ? headsResult.data.data : []}
         totals={listResult.ok ? listResult.data.meta.totals : emptyTotals}
         total={listResult.ok ? listResult.data.meta.page.total : 0}
         limit={listResult.ok ? listResult.data.meta.page.limit : limit}
@@ -88,6 +94,7 @@ export default async function VouchersPage({
         error={listResult.ok ? undefined : listResult.message}
         canCollect={session?.permissions.includes('fees.payment.create') ?? false}
         canCancel={session?.permissions.includes('fees.voucher.cancel') ?? false}
+        canEdit={session?.permissions.includes('fees.voucher.generate') ?? false}
       />
     </AppShell>
   );

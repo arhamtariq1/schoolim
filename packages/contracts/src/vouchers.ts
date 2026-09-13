@@ -346,10 +346,36 @@ export type VoucherTotals = z.infer<typeof voucherTotalsSchema>;
 /**
  * Editing an issued voucher.
  *
- * Only dates and the late-fee switch. Amounts are deliberately absent: a
- * voucher is frozen at generation (docs §1), and the way to change what is
- * owed is to cancel and regenerate, or to waive — both of which leave a trail.
- * An editable amount field is how a total stops reconciling.
+ * ## Two different things, with two different rules
+ *
+ * **Dates and the late-fee switch** can move while a voucher is live. Pushing a
+ * due date out is the single most common thing an office does to a challan —
+ * a family asks for a week — and it changes nothing about what is owed.
+ *
+ * **The lines** change what is owed, and may be edited only while *nothing has
+ * been received*: status `UNPAID` with a zero paid amount and no waiver against
+ * it. That is the line R4 draws. Once a rupee has arrived, a receipt exists
+ * that names a total, and editing the voucher makes the two disagree — so from
+ * that moment the ways to change the number are a further payment, a waiver, or
+ * a cancellation, each of which leaves a record of itself.
+ *
+ * This is deliberately not "the voucher is frozen at generation". A voucher
+ * raised this morning with the lab fee left off is a mistake, not a financial
+ * record, and cancelling and regenerating to fix it burns a voucher number and
+ * loses the challan the parent may already be holding.
+ *
+ * ## What is not here, and why
+ *
+ * **No status field.** Status is derived from the payment ledger: a voucher is
+ * PAID because payments add up to it, not because somebody chose PAID from a
+ * list. A dropdown here would create money with no receipt behind it, and
+ * `WAIVED` set this way would bypass the waiver's reason and its ledger entry —
+ * which is exactly the "Fee Waived Off as a direct edit" that docs §4.3 names
+ * as how numbers stop reconciling. Pay, Waive and Cancel are the real paths and
+ * each already exists.
+ *
+ * **No payment date.** That belongs to the payment that was received, not to
+ * the voucher it settled; it is set when the money is recorded.
  */
 export const updateVoucherSchema = z
   .object({
@@ -357,6 +383,41 @@ export const updateVoucherSchema = z
     dueDate: calendarDateSchema.optional(),
     validTill: calendarDateSchema.optional(),
     applyLateFee: z.boolean().optional(),
+
+    /**
+     * Fee lines to take off, by id.
+     *
+     * Only `FEE` lines. An arrear is another voucher's unpaid balance being
+     * carried, and deleting it here would quietly forgive that voucher without
+     * touching it; a waiver and a late fee are records of decisions already
+     * made.
+     */
+    removeLineIds: z.array(idSchema).max(50).optional(),
+
+    /**
+     * Fee heads to add — the "add the lab fee I forgot" case.
+     *
+     * `amountMinor` is optional and almost always omitted: left out, the
+     * student's own agreed amount for that head is used, with their discount,
+     * exactly as generation would have. Supplied, it overrides for this voucher
+     * only and does not touch what the family has agreed to pay in future.
+     *
+     * A monthly head produces one line per month the voucher bills, an annual
+     * head one per session and a one-time head one ever — the same rule as
+     * generation, so adding tuition to a three-month challan cannot produce one
+     * month's charge or three admission fees.
+     */
+    addHeads: z
+      .array(
+        z
+          .object({
+            feeHeadId: idSchema,
+            amountMinor: positiveMinorUnitsSchema.optional(),
+          })
+          .strict(),
+      )
+      .max(20)
+      .optional(),
   })
   .strict();
 

@@ -126,6 +126,8 @@ export const ROUTES = {
   vouchers: {
     list: `${API_PREFIX}/fee-vouchers`,
     detail: (id: string) => `${API_PREFIX}/fee-vouchers/${id}`,
+    /** Dates, the late-fee switch, and the lines while nothing has been paid. */
+    update: (id: string) => `${API_PREFIX}/fee-vouchers/${id}`,
     preview: `${API_PREFIX}/fee-vouchers/preview`,
     generate: `${API_PREFIX}/fee-vouchers/generate`,
     cancel: (id: string) => `${API_PREFIX}/fee-vouchers/${id}/cancel`,

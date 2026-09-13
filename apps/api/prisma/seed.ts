@@ -386,13 +386,58 @@ async function seedFees(
   schoolId: string,
   studentIds: readonly string[],
 ): Promise<void> {
+  // Frequency is stated on every head, never left to the column default.
+  //
+  // It is the field that stops three months of billing charging three admission
+  // fees, so a catalogue that leaves it out seeds a school where the rule
+  // appears not to work — an admission fee labelled "September 2026", and a
+  // second one in October.
   const catalogue = [
-    { type: 'ADMISSION' as const, name: 'Admission Fee', amount: '25000.00', sortOrder: 0 },
-    { type: 'TUITION' as const, name: 'Tuition Fee', amount: '6000.00', sortOrder: 1 },
-    { type: 'ANNUAL' as const, name: 'Annual Charges', amount: '6000.00', sortOrder: 2 },
-    { type: 'STATIONERY' as const, name: 'Stationery Charges', amount: '1500.00', sortOrder: 3 },
-    { type: 'LAB' as const, name: 'Lab Fee', amount: '1000.00', sortOrder: 4 },
-    { type: 'SECURITY' as const, name: 'Security Deposit', amount: '15000.00', sortOrder: 5 },
+    {
+      type: 'ADMISSION' as const,
+      name: 'Admission Fee',
+      amount: '25000.00',
+      // Once in a child's life, whatever is ticked on the generate screen.
+      frequency: 'ONE_TIME' as const,
+      sortOrder: 0,
+    },
+    {
+      type: 'TUITION' as const,
+      name: 'Tuition Fee',
+      amount: '6000.00',
+      frequency: 'MONTHLY' as const,
+      sortOrder: 1,
+    },
+    {
+      type: 'ANNUAL' as const,
+      name: 'Annual Charges',
+      amount: '6000.00',
+      frequency: 'ANNUAL' as const,
+      sortOrder: 2,
+    },
+    {
+      type: 'STATIONERY' as const,
+      name: 'Stationery Charges',
+      amount: '1500.00',
+      frequency: 'ANNUAL' as const,
+      sortOrder: 3,
+    },
+    {
+      type: 'LAB' as const,
+      name: 'Lab Fee',
+      amount: '1000.00',
+      frequency: 'MONTHLY' as const,
+      sortOrder: 4,
+    },
+    {
+      type: 'SECURITY' as const,
+      name: 'Security Deposit',
+      amount: '15000.00',
+      // Refundable, taken once. It is a deposit rather than a fee at all, which
+      // is why it has a ledger of its own.
+      frequency: 'ONE_TIME' as const,
+      sortOrder: 5,
+    },
   ];
 
   const heads = [];
@@ -401,13 +446,21 @@ async function seedFees(
     heads.push(
       await db.feeHead.upsert({
         where: { id },
-        update: { defaultAmount: entry.amount, sortOrder: entry.sortOrder },
+        // Frequency is corrected on re-seed, not only on create: a database
+        // seeded before this was set would otherwise keep charging admission
+        // every month forever.
+        update: {
+          defaultAmount: entry.amount,
+          sortOrder: entry.sortOrder,
+          frequency: entry.frequency,
+        },
         create: {
           id,
           schoolId,
           type: entry.type,
           name: entry.name,
           defaultAmount: entry.amount,
+          frequency: entry.frequency,
           sortOrder: entry.sortOrder,
         },
       }),
