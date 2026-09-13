@@ -35,14 +35,38 @@ export interface AuthLayoutProps {
   readonly footer?: ReactNode;
   /** A warning or status message above the form. */
   readonly notice?: ReactNode;
+  /**
+   * How much room the form gets.
+   *
+   * `narrow` is sign-in: two fields, and a 700px-wide pair of boxes looks like
+   * a mistake. `wide` is sign-up, where docs/16 §5's `max-w-2xl` is enough to
+   * put two fields on a row instead of nine in a column.
+   */
+  readonly width?: 'narrow' | 'wide';
 }
 
-export function AuthLayout({ title, subtitle, children, footer, notice }: AuthLayoutProps) {
+export function AuthLayout({
+  title,
+  subtitle,
+  children,
+  footer,
+  notice,
+  width = 'narrow',
+}: AuthLayoutProps) {
   return (
-    <main className="flex min-h-dvh bg-background p-3 sm:p-4 lg:p-6">
-      <div className="mx-auto flex w-full max-w-6xl overflow-hidden rounded-xl border border-border bg-card shadow-overlay">
-        {/* --- The form ------------------------------------------------- */}
-        <div className="flex w-full flex-col px-5 py-8 sm:px-10 sm:py-12 lg:w-[46%] lg:shrink-0">
+    // `h-dvh` with `overflow-hidden`, and the scrolling happens *inside* the
+    // form column.
+    //
+    // The page scrolled as one before, which dragged the art panel up and out
+    // of view the moment somebody reached the fourth field — so the half of the
+    // screen that is meant to be looked at was the half that left. The panel now
+    // stays put and only the form moves, which is also why the form fills the
+    // screen rather than sitting in a letterboxed card: on a wide monitor that
+    // card was a strip of form floating in a margin.
+    <main className="flex h-dvh overflow-hidden bg-background">
+      {/* --- The form. Scrolls on its own. --------------------------------- */}
+      <div className="flex w-full flex-col overflow-y-auto lg:w-[52%] lg:shrink-0">
+        <div className="flex min-h-full w-full flex-col px-5 py-8 sm:px-10 sm:py-10">
           <Link
             href="/"
             className="inline-flex items-center gap-2 self-start rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
@@ -51,7 +75,7 @@ export function AuthLayout({ title, subtitle, children, footer, notice }: AuthLa
           </Link>
 
           <div className="flex flex-1 flex-col justify-center py-8">
-            <div className="mx-auto w-full max-w-md">
+            <div className={`mx-auto w-full ${width === 'wide' ? 'max-w-2xl' : 'max-w-md'}`}>
               <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
               <p className="mt-1.5 text-sm text-balance text-muted-foreground">{subtitle}</p>
 
@@ -65,19 +89,22 @@ export function AuthLayout({ title, subtitle, children, footer, notice }: AuthLa
             </div>
           </div>
 
-          <p className="text-center text-xs text-muted-foreground">
+          <p className="mt-8 text-center text-xs text-muted-foreground">
             © {BRAND.name}. Your school’s data stays yours.
           </p>
         </div>
+      </div>
 
-        {/* --- The showcase. Decoration, so it is hidden from assistive
-                technology rather than read out as a wall of stray numbers. --- */}
-        <div
-          aria-hidden="true"
-          className="relative hidden overflow-hidden bg-brand-gradient lg:block lg:flex-1"
-        >
-          <AuthShowcase />
-        </div>
+      {/* --- The showcase.
+              Decoration, so it is hidden from assistive technology rather than
+              read out as a wall of stray numbers — and `overflow-hidden` rather
+              than scrollable, because it is a picture and a picture does not
+              have a second page. --- */}
+      <div
+        aria-hidden="true"
+        className="relative hidden h-full overflow-hidden bg-brand-gradient lg:block lg:flex-1"
+      >
+        <AuthShowcase />
       </div>
     </main>
   );

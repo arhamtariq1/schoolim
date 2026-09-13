@@ -27,6 +27,7 @@ export default function SignupPage() {
   return (
     <AuthLayout
       title="Set up your school"
+      width="wide"
       subtitle={`Two minutes, and you are inside. ${String(TRIAL_DAYS)} days free — no card, no sales call.`}
       footer={
         <>

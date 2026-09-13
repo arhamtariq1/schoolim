@@ -27,7 +27,11 @@ export function AuthShowcase() {
           surface rather than a swatch. */}
       <div className="pointer-events-none absolute -top-24 -left-24 size-96 rounded-full bg-white/10 blur-3xl" />
 
-      <div className="relative flex flex-1 items-center justify-center">
+      {/* `min-h-0` so this shrinks rather than pushing the headline out of a
+          panel that no longer scrolls. On a short laptop screen the cards lose
+          room first, which is the right thing to lose: the sentence underneath
+          is what the panel is actually for. */}
+      <div className="relative flex min-h-0 flex-1 items-center justify-center">
         <div className="w-full max-w-sm space-y-4">
           <CollectionCard />
           <div className="flex gap-4">

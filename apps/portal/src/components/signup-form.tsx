@@ -1,6 +1,5 @@
 'use client';
 
-
 import {
   CURRENT_TERMS_VERSION,
   ROUTES,
@@ -233,35 +232,41 @@ export function SignupForm() {
           )}
         </p>
 
-        <Field label="City" error={fieldErrors['school.city']} required>
-          <Input
-            name="city"
-            autoComplete="address-level2"
-            value={city}
-            onChange={(event) => {
-              setCity(event.target.value);
-            }}
-          />
-        </Field>
+        {/* Paired, because both are short and neither needs the full width.
+            The long ones above — the name and the address that becomes a
+            hostname — keep a row each: a subdomain field with a live
+            availability check beside it is not a half-width control. */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="City" error={fieldErrors['school.city']} required>
+            <Input
+              name="city"
+              autoComplete="address-level2"
+              value={city}
+              onChange={(event) => {
+                setCity(event.target.value);
+              }}
+            />
+          </Field>
 
-        <Field
-          label="School phone"
-          error={fieldErrors['school.phone']}
-          hint="Include the country code, or start with 0 and we will add +92."
-          required
-        >
-          <Input
-            name="schoolPhone"
-            type="tel"
-            autoComplete="tel"
-            inputMode="tel"
-            placeholder="+92 300 1234567"
-            value={schoolPhone}
-            onChange={(event) => {
-              setSchoolPhone(event.target.value);
-            }}
-          />
-        </Field>
+          <Field
+            label="School phone"
+            error={fieldErrors['school.phone']}
+            hint="Include the country code, or start with 0 and we will add +92."
+            required
+          >
+            <Input
+              name="schoolPhone"
+              type="tel"
+              autoComplete="tel"
+              inputMode="tel"
+              placeholder="+92 300 1234567"
+              value={schoolPhone}
+              onChange={(event) => {
+                setSchoolPhone(event.target.value);
+              }}
+            />
+          </Field>
+        </div>
 
         <Field
           label="School email"
@@ -299,28 +304,30 @@ export function SignupForm() {
           else.
         </p>
 
-        <Field label="Your name" error={fieldErrors['owner.name']} required>
-          <Input
-            name="ownerName"
-            autoComplete="name"
-            value={ownerName}
-            onChange={(event) => {
-              setOwnerName(event.target.value);
-            }}
-          />
-        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Your name" error={fieldErrors['owner.name']} required>
+            <Input
+              name="ownerName"
+              autoComplete="name"
+              value={ownerName}
+              onChange={(event) => {
+                setOwnerName(event.target.value);
+              }}
+            />
+          </Field>
 
-        <Field label="Your email" error={fieldErrors['owner.email']} required>
-          <Input
-            name="ownerEmail"
-            type="email"
-            autoComplete="email"
-            value={ownerEmail}
-            onChange={(event) => {
-              setOwnerEmail(event.target.value);
-            }}
-          />
-        </Field>
+          <Field label="Your email" error={fieldErrors['owner.email']} required>
+            <Input
+              name="ownerEmail"
+              type="email"
+              autoComplete="email"
+              value={ownerEmail}
+              onChange={(event) => {
+                setOwnerEmail(event.target.value);
+              }}
+            />
+          </Field>
+        </div>
 
         <Field
           label="Password"
