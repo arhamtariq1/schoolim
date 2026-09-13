@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 
+import { AppSearch } from '@/components/app-search';
 import { NAV_ICONS } from '@/components/nav-icons';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { VerifyEmailBanner } from '@/components/verify-email-banner';
@@ -100,10 +101,10 @@ export function AppShell({ user, school, permissions, unverifiedEmail, children 
               onClick={() => {
                 setDrawerOpen(false);
               }}
-              className="absolute inset-0 bg-foreground/40 animate-in fade-in-0"
+              className="absolute inset-0 animate-in bg-foreground/40 fade-in-0"
             />
             <Sidebar
-              className="animate-in slide-in-from-left-2 fade-in-0 relative flex h-full"
+              className="relative flex h-full animate-in fade-in-0 slide-in-from-left-2"
               items={items}
               school={school}
               user={user}
@@ -129,21 +130,24 @@ export function AppShell({ user, school, permissions, unverifiedEmail, children 
 
             <span className="truncate text-sm font-semibold md:hidden">{school.name}</span>
 
-            {/* ⌘K replaces the twenty-item menu (docs/00 §6). Wired in Phase 1,
-                when there are students and vouchers worth searching. Disabled
-                and labelled as such rather than hidden: people look for it. */}
-            <button
-              type="button"
-              disabled
-              title="Search arrives with the command palette"
-              className="hidden h-9 w-full max-w-sm items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm text-muted-foreground transition-colors hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-70 md:flex"
-            >
-              <SearchIcon className="size-4 shrink-0" aria-hidden="true" />
-              <span>Search students, vouchers…</span>
-              <kbd className="ms-auto rounded border border-border bg-muted px-1.5 font-mono text-xs text-muted-foreground">
-                ⌘K
-              </kbd>
-            </button>
+            {/* ⌘K replaces the twenty-item menu (docs/00 §6). The palette owns
+                its own open state and the keyboard shortcut; this is only the
+                thing you click when you would rather not use the keyboard. */}
+            <AppSearch permissions={permissions}>
+              {(openSearch) => (
+                <button
+                  type="button"
+                  onClick={openSearch}
+                  className="hidden h-9 w-full max-w-sm items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm text-muted-foreground transition-colors hover:border-input hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:flex"
+                >
+                  <SearchIcon className="size-4 shrink-0" aria-hidden="true" />
+                  <span>Search pages, students…</span>
+                  <kbd className="ms-auto rounded border border-border bg-muted px-1.5 font-mono text-xs text-muted-foreground">
+                    ⌘K
+                  </kbd>
+                </button>
+              )}
+            </AppSearch>
 
             <div className="ms-auto flex items-center gap-1">
               <ThemeToggle />
@@ -164,9 +168,7 @@ export function AppShell({ user, school, permissions, unverifiedEmail, children 
               {/* Above the page content on every screen, not only the
                   dashboard: a person who lands deep in the app from a link must
                   still see it. */}
-              {unverifiedEmail === undefined ? null : (
-                <VerifyEmailBanner email={unverifiedEmail} />
-              )}
+              {unverifiedEmail === undefined ? null : <VerifyEmailBanner email={unverifiedEmail} />}
               {children}
             </div>
           </main>
@@ -399,9 +401,7 @@ function NavLink({ item, compact = false }: { item: NavItem; compact?: boolean }
           className="absolute inset-y-1.5 start-0 w-0.5 rounded-full bg-primary"
         />
       ) : null}
-      {Icon === undefined ? null : (
-        <Icon className={'size-5 shrink-0'} />
-      )}
+      {Icon === undefined ? null : <Icon className={'size-5 shrink-0'} />}
       <span className={compact ? 'truncate' : undefined}>{item.label}</span>
     </Link>
   );
@@ -494,7 +494,8 @@ function isCurrent(href: string, pathname: string): boolean {
 /** Does this item, or anything under it, cover the current page? */
 function isWithin(item: NavItem, pathname: string): boolean {
   return (
-    isCurrent(item.href, pathname) || (item.children ?? []).some((child) => isWithin(child, pathname))
+    isCurrent(item.href, pathname) ||
+    (item.children ?? []).some((child) => isWithin(child, pathname))
   );
 }
 

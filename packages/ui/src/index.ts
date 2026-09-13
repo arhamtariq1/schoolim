@@ -1,6 +1,7 @@
 export * from './components/button';
 export * from './components/calendar';
 export * from './components/card';
+export * from './components/command-palette';
 export * from './components/checkbox';
 export * from './components/confirm-dialog';
 export * from './components/data-table';

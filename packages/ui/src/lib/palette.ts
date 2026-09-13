@@ -47,11 +47,18 @@ export function oklchToRgb({ l, c, h }: Oklch): Rgb {
   ];
 }
 
-/** `#rrggbb`, for asserting that a token is the colour somebody asked for. */
+/**
+ * `#rrggbb`, for asserting that a token is the colour somebody asked for.
+ *
+ * `Math.trunc(x + 0.5)` rather than `Math.round`, which ADR-0007 bans outright
+ * so that no rounding decision anywhere can quietly find its way onto money.
+ * These are colour channels, but the rule does not carve out exceptions and a
+ * lint suppression here would be one more place to check the next time it fires.
+ */
 export function toHex(rgb: Rgb): string {
   return `#${rgb
     .map((channel) =>
-      Math.round(channel * 255)
+      Math.trunc(channel * 255 + 0.5)
         .toString(16)
         .padStart(2, '0'),
     )
