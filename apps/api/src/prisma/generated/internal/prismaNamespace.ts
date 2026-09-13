@@ -435,7 +435,8 @@ export const ModelName = {
   AttendanceRecord: 'AttendanceRecord',
   StaffAttendanceRecord: 'StaffAttendanceRecord',
   SecurityDeposit: 'SecurityDeposit',
-  SecurityDepositRefund: 'SecurityDepositRefund'
+  SecurityDepositRefund: 'SecurityDepositRefund',
+  SchoolLogo: 'SchoolLogo'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -451,7 +452,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "platformUser" | "platformSession" | "schoolGroup" | "school" | "schoolDomain" | "user" | "userRole" | "session" | "invitation" | "passwordReset" | "authHandoff" | "emailVerification" | "schoolAgreement" | "auditLog" | "academicSession" | "classLevel" | "section" | "student" | "guardian" | "studentGuardian" | "enrollment" | "staff" | "expenseCategory" | "expense" | "holiday" | "feeHead" | "studentFee" | "numberSequence" | "jobRun" | "feeVoucher" | "feeVoucherLine" | "feeVoucherPeriod" | "feeVoucherArrear" | "feePayment" | "feePaymentAllocation" | "attendanceRecord" | "staffAttendanceRecord" | "securityDeposit" | "securityDepositRefund"
+    modelProps: "platformUser" | "platformSession" | "schoolGroup" | "school" | "schoolDomain" | "user" | "userRole" | "session" | "invitation" | "passwordReset" | "authHandoff" | "emailVerification" | "schoolAgreement" | "auditLog" | "academicSession" | "classLevel" | "section" | "student" | "guardian" | "studentGuardian" | "enrollment" | "staff" | "expenseCategory" | "expense" | "holiday" | "feeHead" | "studentFee" | "numberSequence" | "jobRun" | "feeVoucher" | "feeVoucherLine" | "feeVoucherPeriod" | "feeVoucherArrear" | "feePayment" | "feePaymentAllocation" | "attendanceRecord" | "staffAttendanceRecord" | "securityDeposit" | "securityDepositRefund" | "schoolLogo"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -3341,6 +3342,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    SchoolLogo: {
+      payload: Prisma.$SchoolLogoPayload<ExtArgs>
+      fields: Prisma.SchoolLogoFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SchoolLogoFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolLogoPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SchoolLogoFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolLogoPayload>
+        }
+        findFirst: {
+          args: Prisma.SchoolLogoFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolLogoPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SchoolLogoFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolLogoPayload>
+        }
+        findMany: {
+          args: Prisma.SchoolLogoFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolLogoPayload>[]
+        }
+        create: {
+          args: Prisma.SchoolLogoCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolLogoPayload>
+        }
+        createMany: {
+          args: Prisma.SchoolLogoCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SchoolLogoCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolLogoPayload>[]
+        }
+        delete: {
+          args: Prisma.SchoolLogoDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolLogoPayload>
+        }
+        update: {
+          args: Prisma.SchoolLogoUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolLogoPayload>
+        }
+        deleteMany: {
+          args: Prisma.SchoolLogoDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SchoolLogoUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SchoolLogoUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolLogoPayload>[]
+        }
+        upsert: {
+          args: Prisma.SchoolLogoUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolLogoPayload>
+        }
+        aggregate: {
+          args: Prisma.SchoolLogoAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSchoolLogo>
+        }
+        groupBy: {
+          args: Prisma.SchoolLogoGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SchoolLogoGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SchoolLogoCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SchoolLogoCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -4065,6 +4140,21 @@ export const SecurityDepositRefundScalarFieldEnum = {
 export type SecurityDepositRefundScalarFieldEnum = (typeof SecurityDepositRefundScalarFieldEnum)[keyof typeof SecurityDepositRefundScalarFieldEnum]
 
 
+export const SchoolLogoScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  bytes: 'bytes',
+  mimeType: 'mimeType',
+  etag: 'etag',
+  byteSize: 'byteSize',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SchoolLogoScalarFieldEnum = (typeof SchoolLogoScalarFieldEnum)[keyof typeof SchoolLogoScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -4547,6 +4637,20 @@ export type ListEnumStaffAttendanceStatusFieldRefInput<$PrismaModel> = FieldRefI
 
 
 /**
+ * Reference to a field of type 'Bytes'
+ */
+export type BytesFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Bytes'>
+    
+
+
+/**
+ * Reference to a field of type 'Bytes[]'
+ */
+export type ListBytesFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Bytes[]'>
+    
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -4749,6 +4853,7 @@ export type GlobalOmitConfig = {
   staffAttendanceRecord?: Prisma.StaffAttendanceRecordOmit
   securityDeposit?: Prisma.SecurityDepositOmit
   securityDepositRefund?: Prisma.SecurityDepositRefundOmit
+  schoolLogo?: Prisma.SchoolLogoOmit
 }
 
 /* Types for Logging */

@@ -1,7 +1,8 @@
-import { BRAND, schoolSlugFromHost } from '@ilm/utils';
+import { schoolSlugFromHost } from '@ilm/utils';
 import { headers } from 'next/headers';
 import Link from 'next/link';
 
+import { AuthLayout } from '@/components/auth-layout';
 import { LoginForm } from '@/components/login-form';
 
 /**
@@ -48,35 +49,31 @@ export default async function LoginPage({
         : undefined;
 
   return (
-    <main className="flex min-h-dvh items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <h1 className="text-xl font-semibold text-foreground">{BRAND.name}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {slug === undefined ? 'Sign in to your school' : `Sign in to ${slug}`}
-          </p>
-        </div>
-
-        {notice === undefined ? null : (
+    <AuthLayout
+      title="Welcome back"
+      subtitle={slug === undefined ? 'Sign in to your school’s portal.' : `Sign in to ${slug}.`}
+      notice={
+        notice === undefined ? undefined : (
           <div
             role="status"
-            className="mb-4 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm"
+            className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm"
           >
             {notice}
           </div>
-        )}
-
-        <LoginForm />
-
-        {slug === undefined ? (
-          <p className="mt-8 text-center text-sm text-muted-foreground">
+        )
+      }
+      footer={
+        slug === undefined ? (
+          <>
             New here?{' '}
             <Link href="/signup" className="font-medium text-primary hover:underline">
               Set up your school
             </Link>
-          </p>
-        ) : null}
-      </div>
-    </main>
+          </>
+        ) : undefined
+      }
+    >
+      <LoginForm />
+    </AuthLayout>
   );
 }

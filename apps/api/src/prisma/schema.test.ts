@@ -64,7 +64,14 @@ describe('tenant model registry', () => {
 
   it('gives every registered tenant model a non-nullable school_id', () => {
     for (const model of TENANT_MODELS) {
-      expect(modelBlock(model)).toMatch(/schoolId\s+String\s+@map\("school_id"\)/);
+      // `String` and not `String?` is the whole assertion: a nullable school_id
+      // is a row that belongs to nobody, which RLS cannot scope and the tenant
+      // extension cannot stamp.
+      //
+      // Attributes may sit between the type and the `@map` — `SchoolLogo` has
+      // `@unique` there, because a school has one logo rather than a table of
+      // them — so the gap is matched rather than assumed to be empty.
+      expect(modelBlock(model)).toMatch(/schoolId\s+String\s+[^?\n]*@map\("school_id"\)/);
     }
   });
 

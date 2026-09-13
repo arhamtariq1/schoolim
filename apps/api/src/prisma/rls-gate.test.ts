@@ -59,6 +59,7 @@ const MODEL_TO_TABLE: Readonly<Record<string, string>> = {
   StaffAttendanceRecord: 'staff_attendance_records',
   SecurityDeposit: 'security_deposits',
   SecurityDepositRefund: 'security_deposit_refunds',
+  SchoolLogo: 'school_logos',
   NumberSequence: 'number_sequences',
 };
 

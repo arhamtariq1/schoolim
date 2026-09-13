@@ -8,10 +8,13 @@ import {
   TRIAL_DAYS,
   type SignupResult,
   type SlugAvailability,
+  type UploadSchoolLogo,
 } from '@ilm/contracts';
 import { Button, CheckboxField, Field, Input } from '@ilm/ui';
 import { ErrorIcon, ICON_SIZE, SpinnerIcon, SuccessIcon } from '@ilm/ui/icons';
 import { useEffect, useState, type FormEvent } from 'react';
+
+import { LogoPicker } from './logo-picker';
 
 import { TENANT_MODE } from '@/lib/tenant-mode';
 
@@ -48,6 +51,7 @@ export function SignupForm() {
   const [checkingSlug, setCheckingSlug] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | undefined>(undefined);
+  const [logo, setLogo] = useState<UploadSchoolLogo | undefined>(undefined);
   const [isPending, setIsPending] = useState(false);
 
   // The short name follows the school name until someone edits it themselves,
@@ -112,6 +116,9 @@ export function SignupForm() {
       owner: { name: ownerName, email: ownerEmail, password },
       acceptedTerms: accepted,
       termsVersion: CURRENT_TERMS_VERSION,
+      // Omitted rather than sent as undefined: the schema is `.strict()`, and
+      // an explicit `logo: undefined` is a key that is present.
+      ...(logo === undefined ? {} : { logo }),
     });
 
     if (!parsed.success) {
@@ -273,9 +280,15 @@ export function SignupForm() {
           />
         </Field>
 
+        <Field label="School logo" hint="Optional — you can add or change it later in Settings.">
+          <div>
+            <LogoPicker value={logo} onChange={setLogo} disabled={isPending} />
+          </div>
+        </Field>
+
         <p className="text-xs text-muted-foreground">
-          Your logo, address and branding are added in Settings once you are inside. Nothing here is
-          final.
+          Your address and the rest of your branding are added in Settings once you are inside.
+          Nothing here is final.
         </p>
       </fieldset>
 

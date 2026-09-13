@@ -91,6 +91,19 @@ export const ROUTES = {
   },
 
   /**
+   * The school's own mark.
+   *
+   * One path for all three verbs. `GET` returns the image itself — not JSON
+   * around it — so it can be the `src` of an `<img>`, which is the only way a
+   * logo is ever actually used. A `?v=` carrying the version busts the cache
+   * when it is replaced.
+   */
+  schoolLogo: {
+    image: `${API_PREFIX}/schools/logo`,
+    info: `${API_PREFIX}/schools/logo/info`,
+  },
+
+  /**
    * Raising and lowering fees.
    *
    * `apply` is a POST rather than a PATCH on each student: it is one decision

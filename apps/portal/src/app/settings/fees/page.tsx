@@ -1,8 +1,9 @@
-import { ROUTES, type FeeHead, type LateFeePolicy } from '@ilm/contracts';
+import { ROUTES, type FeeHead, type LateFeePolicy, type SchoolLogoInfo } from '@ilm/contracts';
 
 import { AppShell } from '@/components/app-shell';
 import { FeeHeadsManager } from '@/components/fee-heads-manager';
 import { LateFeePolicyCard } from '@/components/late-fee-policy-card';
+import { SchoolLogoCard } from '@/components/school-logo-card';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -22,10 +23,11 @@ import { getSession } from '@/lib/session';
  * data that was one query away (docs/16 §7).
  */
 export default async function FeeSettingsPage() {
-  const [session, result, lateFeeResult] = await Promise.all([
+  const [session, result, lateFeeResult, logoResult] = await Promise.all([
     getSession(),
     apiFetch<{ data: FeeHead[] }>(ROUTES.fees.heads),
     apiFetch<{ data: LateFeePolicy }>(ROUTES.fees.lateFeePolicy),
+    apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info),
   ]);
 
   // A school that has never set one charges nothing, which is also what the
@@ -54,6 +56,15 @@ export default async function FeeSettingsPage() {
           policy={policy}
           canConfigure={canConfigure}
           error={lateFeeResult.ok ? undefined : lateFeeResult.message}
+        />
+        <SchoolLogoCard
+          info={
+            logoResult.ok
+              ? logoResult.data.data
+              : { present: false, mimeType: null, byteSize: null, version: null }
+          }
+          canConfigure={session?.permissions.includes('settings.school.configure') ?? false}
+          error={logoResult.ok ? undefined : logoResult.message}
         />
       </div>
     </AppShell>

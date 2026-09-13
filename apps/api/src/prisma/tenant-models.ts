@@ -54,6 +54,7 @@ export const TENANT_MODELS = [
   // Money the school holds rather than earns, and the repayments out of it.
   'SecurityDeposit',
   'SecurityDepositRefund',
+  'SchoolLogo',
   'NumberSequence',
 ] as const;
 

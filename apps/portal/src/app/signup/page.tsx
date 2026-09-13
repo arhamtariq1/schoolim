@@ -3,6 +3,7 @@ import { BRAND } from '@ilm/utils';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { AuthLayout } from '@/components/auth-layout';
 import { SignupForm } from '@/components/signup-form';
 
 /**
@@ -12,8 +13,10 @@ import { SignupForm } from '@/components/signup-form';
  * because someone already inside their portal has no use for a form that makes
  * them a second one.
  *
- * The form is `max-w-2xl` per docs/16 §5. A signup form that stretches to
- * 1,600px is unreadable, and this one is nine fields.
+ * It shares the split frame with signing in, so arriving from one to the other
+ * does not feel like landing on a different product — and because the panel
+ * beside it is doing real work here: this is the screen where somebody decides
+ * whether to type their school's name into a stranger's form.
  */
 export const metadata: Metadata = {
   title: `Set up your school — ${BRAND.name}`,
@@ -22,28 +25,19 @@ export const metadata: Metadata = {
 
 export default function SignupPage() {
   return (
-    <main className="mx-auto min-h-dvh max-w-2xl px-4 py-12">
-      <div className="mb-8">
-        <Link
-          href="/"
-          className="text-sm text-muted-foreground hover:text-foreground hover:underline"
-        >
-          {BRAND.name}
-        </Link>
-        <h1 className="mt-6 text-xl font-semibold text-foreground">Set up your school</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Two minutes, and you are inside. {TRIAL_DAYS} days free — no card, no sales call.
-        </p>
-      </div>
-
+    <AuthLayout
+      title="Set up your school"
+      subtitle={`Two minutes, and you are inside. ${String(TRIAL_DAYS)} days free — no card, no sales call.`}
+      footer={
+        <>
+          Already have an account?{' '}
+          <Link href="/login" className="font-medium text-primary hover:underline">
+            Sign in
+          </Link>
+        </>
+      }
+    >
       <SignupForm />
-
-      <p className="mt-10 text-center text-sm text-muted-foreground">
-        Already have an account?{' '}
-        <Link href="/login" className="font-medium text-primary hover:underline">
-          Sign in
-        </Link>
-      </p>
-    </main>
+    </AuthLayout>
   );
 }

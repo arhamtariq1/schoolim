@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { passwordSchema, schoolChoiceSchema } from './auth';
+import { uploadSchoolLogoSchema } from './school-logo';
 import {
   emailSchema,
   phoneSchema,
@@ -60,6 +61,21 @@ export const signupRequestSchema = z
      */
     acceptedTerms: z.literal(true),
     termsVersion: z.string().trim().min(1).max(32),
+
+    /**
+     * The school's logo, optional.
+     *
+     * It travels with signup rather than being uploaded afterwards because
+     * there is nowhere to upload it to yet: this request is answered with a
+     * handoff to the school's own hostname, so the apex never holds a session
+     * that could authenticate a second call. The alternative is to make a
+     * school pick their logo again on a settings page they have not seen, for
+     * a file they already chose.
+     *
+     * Being optional is the point. A school that has no file to hand, or is
+     * signing up from a phone, skips it and adds it later from Settings.
+     */
+    logo: uploadSchoolLogoSchema.optional(),
   })
   .strict();
 

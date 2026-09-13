@@ -89,7 +89,8 @@ export const ModelName = {
   AttendanceRecord: 'AttendanceRecord',
   StaffAttendanceRecord: 'StaffAttendanceRecord',
   SecurityDeposit: 'SecurityDeposit',
-  SecurityDepositRefund: 'SecurityDepositRefund'
+  SecurityDepositRefund: 'SecurityDepositRefund',
+  SchoolLogo: 'SchoolLogo'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -791,6 +792,21 @@ export const SecurityDepositRefundScalarFieldEnum = {
 } as const
 
 export type SecurityDepositRefundScalarFieldEnum = (typeof SecurityDepositRefundScalarFieldEnum)[keyof typeof SecurityDepositRefundScalarFieldEnum]
+
+
+export const SchoolLogoScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  bytes: 'bytes',
+  mimeType: 'mimeType',
+  etag: 'etag',
+  byteSize: 'byteSize',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SchoolLogoScalarFieldEnum = (typeof SchoolLogoScalarFieldEnum)[keyof typeof SchoolLogoScalarFieldEnum]
 
 
 export const SortOrder = {

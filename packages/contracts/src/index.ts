@@ -13,6 +13,7 @@ export * from './platform';
 export * from './primitives';
 export * from './roles';
 export * from './routes';
+export * from './school-logo';
 export * from './security-deposits';
 export * from './signup';
 export * from './staff';

@@ -198,6 +198,7 @@ model School {
   numberSequences       NumberSequence[]
   securityDeposits       SecurityDeposit[]
   securityDepositRefunds SecurityDepositRefund[]
+  logo                   SchoolLogo?
 
   @@index([schoolGroupId])
   @@index([status])
@@ -1578,4 +1579,27 @@ model SecurityDepositRefund {
 
   @@index([schoolId, depositId])
   @@map("security_deposit_refunds")
+}
+
+/// A school's logo, kept out of `schools` so its bytes never ride along with a
+/// tenant lookup. See the migration for why the bytes are in Postgres at all,
+/// and what moving them out would cost.
+model SchoolLogo {
+  id       String @id @default(uuid(7)) @db.Uuid
+  schoolId String @unique @map("school_id") @db.Uuid
+
+  bytes    Bytes
+  mimeType String @map("mime_type")
+  /// Served as the HTTP ETag, so a logo shown on every page is fetched once.
+  etag     String
+  byteSize Int    @map("byte_size")
+
+  createdBy String?  @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+  @@map("school_logos")
 }

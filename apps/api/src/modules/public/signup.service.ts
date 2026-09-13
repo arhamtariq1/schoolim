@@ -14,6 +14,7 @@ import { ConflictError } from '../../shared/errors/domain-error';
 import { schoolOrigin } from '../../shared/tenancy/school-origin';
 import { EmailVerificationService } from '../auth/email-verification.service';
 import { HandoffService } from '../auth/handoff.service';
+import { decodeAndVerify } from '../schools/school-logo.service';
 
 /**
  * Self-serve signup — ADR-0010.
@@ -143,6 +144,30 @@ export class SignupService {
         await tx.userRole.create({
           data: { schoolId: school.id, userId: owner.id, role: 'OWNER' },
         });
+
+        // The logo, if one came with the form.
+        //
+        // Inside the same transaction as the school, so a rejected image is a
+        // signup that did not happen rather than a school with a broken one —
+        // and the same `decodeAndVerify` the settings page uses, because "what
+        // counts as an image" must not have two answers.
+        //
+        // `prisma.admin` bypasses the tenant extension, which is the only way
+        // to write a row for a school that did not exist a moment ago. The
+        // school id is the one just created, never anything from the request.
+        if (input.logo !== undefined) {
+          const { bytes, etag } = decodeAndVerify(input.logo);
+          await tx.schoolLogo.create({
+            data: {
+              schoolId: school.id,
+              bytes: new Uint8Array(bytes),
+              mimeType: input.logo.mimeType,
+              etag,
+              byteSize: bytes.byteLength,
+              createdBy: owner.id,
+            },
+          });
+        }
 
         await tx.schoolAgreement.create({
           data: {

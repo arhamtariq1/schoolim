@@ -12,12 +12,17 @@ import { useEffect, useState } from 'react';
  * every dark value in the palette was dead code and the product had one theme.
  * This is the switch that makes the other half real.
  *
- * ## Three states, not two
+ * ## Two states, and light is the default
  *
- * `system` is the default and it is not the same as "light". Someone whose
- * phone flips to dark at sunset expects this to follow; only an explicit choice
- * pins it. The stored value is therefore `'light' | 'dark' | null`, where null
- * means "keep following the OS".
+ * The device's `prefers-color-scheme` is deliberately not consulted. This is a
+ * school's accounts — printed, projected, read over somebody's shoulder — and
+ * it has one default appearance on every machine that opens it, rather than
+ * one appearance in the office and another on a teacher's laptop that flips
+ * dark at sunset. Dark is a choice a person makes here.
+ *
+ * So the stored value is `'light' | 'dark' | null`, where null means light.
+ * `layout.tsx` reads the same key and makes the same assumption; the two have
+ * to agree or the first paint and the icon disagree.
  *
  * ## The flash
  *
@@ -37,10 +42,6 @@ export const THEME_STORAGE_KEY = 'ilm_theme';
 
 type Choice = 'light' | 'dark';
 
-function systemPrefersDark(): boolean {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
-}
-
 function apply(choice: Choice): void {
   document.documentElement.classList.toggle('dark', choice === 'dark');
   document.documentElement.style.colorScheme = choice;
@@ -56,12 +57,13 @@ export function ThemeToggle() {
     try {
       stored = window.localStorage.getItem(THEME_STORAGE_KEY);
     } catch {
-      // Private mode, or storage blocked. Falling back to the OS preference is
-      // strictly better than not rendering the control at all.
+      // Private mode, or storage blocked. The app still opens light, which is
+      // the default anyway — only the memory of a choice is lost.
     }
 
-    const resolved: Choice =
-      stored === 'light' || stored === 'dark' ? stored : systemPrefersDark() ? 'dark' : 'light';
+    // Anything other than a stored 'dark' is light, matching the blocking
+    // script in layout.tsx exactly.
+    const resolved: Choice = stored === 'dark' ? 'dark' : 'light';
 
     setChoice(resolved);
 

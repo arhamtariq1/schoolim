@@ -11,6 +11,7 @@ import { FeesModule } from './modules/fees/fees.module';
 import { HealthModule } from './modules/health/health.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { PublicModule } from './modules/public/public.module';
+import { SchoolsModule } from './modules/schools/schools.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { StudentsModule } from './modules/students/students.module';
 import { VouchersModule } from './modules/vouchers/vouchers.module';
@@ -56,6 +57,7 @@ import { TenantGuard } from './shared/tenancy/tenant.guard';
     VouchersModule,
     AttendanceModule,
     FeesModule,
+    SchoolsModule,
     PlatformModule,
     PublicModule,
     StaffModule,

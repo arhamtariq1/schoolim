@@ -43,12 +43,27 @@ const FORWARD_REQUEST_HEADERS = [
   'content-type',
   'cookie',
   'idempotency-key',
+  // Without this a conditional request is not conditional: the API can never
+  // answer 304, so an image the browser already holds is downloaded again on
+  // every navigation that shows it.
+  'if-none-match',
   'user-agent',
   'x-csrf-token',
 ] as const;
 
 /** Response headers the browser is allowed to see. `set-cookie` is separate. */
-const FORWARD_RESPONSE_HEADERS = ['content-type', 'cache-control', 'x-request-id'] as const;
+const FORWARD_RESPONSE_HEADERS = [
+  'content-type',
+  'cache-control',
+  // The other half of `if-none-match`. A validator the browser never receives
+  // is a validator it can never send back.
+  'etag',
+  // Matters most on the one endpoint that answers with bytes a school
+  // uploaded. The API sets it; dropping it here would mean the protection
+  // exists on a path no browser actually takes.
+  'x-content-type-options',
+  'x-request-id',
+] as const;
 
 interface RouteContext {
   readonly params: Promise<{ path?: string[] }>;
@@ -210,7 +225,18 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
   }
 
   // A tenant-scoped response must never sit in a shared cache.
-  responseHeaders.set('cache-control', 'no-store');
+  //
+  // `no-store` unless the API explicitly said `private`, which is a narrower
+  // statement of the same rule — it already forbids a shared cache, and it
+  // allows the browser's own. The one response that says it is the school's
+  // logo, which appears on every page and changes about once a year; forcing
+  // `no-store` there would re-download an image on every navigation to protect
+  // it from a cache that `private` has already ruled out.
+  const upstreamCaching = upstream.headers.get('cache-control');
+  responseHeaders.set(
+    'cache-control',
+    upstreamCaching !== null && upstreamCaching.includes('private') ? upstreamCaching : 'no-store',
+  );
 
   return new Response(upstream.body === null ? null : await upstream.arrayBuffer(), {
     status: upstream.status,
