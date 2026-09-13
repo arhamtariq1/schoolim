@@ -1,6 +1,5 @@
 'use client';
 
-
 import {
   FEE_FREQUENCY_LABELS,
   ROUTES,
@@ -13,7 +12,20 @@ import {
   type VoucherPreview,
   type VoucherScope,
 } from '@ilm/contracts';
-import { Button, CheckboxField, cn, DatePicker, Field, Input, Money, MonthPicker, SimpleSelect, StatusBadge, useToast } from '@ilm/ui';
+import {
+  Button,
+  CheckboxField,
+  cn,
+  DateDisplay,
+  DatePicker,
+  Field,
+  Input,
+  Money,
+  MonthPicker,
+  SimpleSelect,
+  StatusBadge,
+  useToast,
+} from '@ilm/ui';
 import {
   CloseIcon,
   CreateIcon,
@@ -319,20 +331,14 @@ export function GenerateFee({
 
           <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Issue date" required>
-              <DatePicker
-                value={issueDate}
-                onChange={setIssueDate}
-              />
+              <DatePicker value={issueDate} onChange={setIssueDate} />
             </Field>
             <Field
               label="Due date"
               required
               error={dueDate < issueDate ? 'Cannot be before the issue date.' : undefined}
             >
-              <DatePicker
-                value={dueDate}
-                onChange={setDueDate}
-              />
+              <DatePicker value={dueDate} onChange={setDueDate} />
             </Field>
             <Field
               label="Valid till"
@@ -340,10 +346,7 @@ export function GenerateFee({
               hint="Printed on the challan. Banks refuse an expired one."
               error={validTill < dueDate ? 'Cannot be before the due date.' : undefined}
             >
-              <DatePicker
-                value={validTill}
-                onChange={setValidTill}
-              />
+              <DatePicker value={validTill} onChange={setValidTill} />
             </Field>
           </div>
 
@@ -395,6 +398,7 @@ export function GenerateFee({
             isLoading={isPreviewing}
             ready={ready}
             singleStudent={scopeKind === 'STUDENT'}
+            issueDate={issueDate}
           />
 
           {canGenerate ? (
@@ -630,10 +634,7 @@ function BillMonthsField({
         hint="Monthly fees are charged once per month chosen. Annual and one-time fees are charged once, whatever you pick."
       >
         <div className="flex gap-2">
-          <MonthPicker
-            value={draft}
-            onChange={onDraft}
-          />
+          <MonthPicker value={draft} onChange={onDraft} />
           <Button type="button" tone="outline" onClick={onAdd} aria-label="Add this month">
             <CreateIcon className={ICON_SIZE.inline} aria-hidden />
           </Button>
@@ -776,12 +777,15 @@ function PreviewPanel({
   isLoading,
   ready,
   singleStudent,
+  issueDate,
 }: {
   preview: VoucherPreview | undefined;
   error: string | undefined;
   isLoading: boolean;
   ready: boolean;
   singleStudent: boolean;
+  /** The day arrears are measured against — see the note beside the total. */
+  issueDate: string;
 }) {
   if (!ready) {
     return (
@@ -811,6 +815,10 @@ function PreviewPanel({
       </div>
     );
   }
+
+  // Not "is the scope one student": a class of one, or a class where everybody
+  // else was skipped, is equally not a sample of anything.
+  const isWholeResult = preview.samples.length >= preview.willCreate;
 
   return (
     <div className="rounded-xl border border-border bg-card">
@@ -876,7 +884,20 @@ function PreviewPanel({
             discounts are still visible where they mean something — against the
             individual children, under "Check a few students". */}
         {preview.arrearsMinor > 0 ? (
-          <Row label="Arrears carried" value={preview.arrearsMinor} muted />
+          <>
+            <Row label="Arrears carried" value={preview.arrearsMinor} muted />
+            {/* This figure is routinely smaller than the "already owes" on the
+                student card above, and the difference is not an error: only
+                vouchers whose due date has already passed are carried. A
+                challan issued last week and due next week is owed but not yet
+                late, so it is not arrears. Said here because two different
+                totals for the same family, a few inches apart and unexplained,
+                is how a school stops trusting both of them. */}
+            <p className="pt-1 text-xs text-muted-foreground">
+              Only what was already past its due date on <DateDisplay value={issueDate} />. A
+              voucher that is owed but not yet due is not carried.
+            </p>
+          </>
         ) : null}
         <div className="flex items-baseline justify-between border-t border-border pt-2">
           <dt className="font-medium text-foreground">Total</dt>
@@ -897,10 +918,22 @@ function PreviewPanel({
         </ul>
       ) : null}
 
+      {/* Everything above this point is an aggregate, and an aggregate can be
+          exactly right in total while being wrong for every child in it — a
+          class flattened onto one figure sums to the same number as a class on
+          thirty agreed rates. So a handful of real vouchers are shown line by
+          line, to be read before hundreds of rows are written (docs/16 §11).
+
+          When the run is a single student there is nothing to sample: this is
+          the whole result, so it says so and opens itself. Calling it "a few"
+          and hiding it behind a disclosure would be asking somebody to go
+          looking for the one thing they came to check. */}
       {preview.samples.length > 0 ? (
-        <details className="border-t border-border px-4 py-3">
+        <details className="border-t border-border px-4 py-3" open={isWholeResult}>
           <summary className="cursor-pointer text-sm font-medium text-foreground">
-            Check a few students
+            {isWholeResult
+              ? 'What will be billed'
+              : `Check a few students (${String(preview.samples.length)} of ${String(preview.willCreate)})`}
           </summary>
           <ul className="mt-3 space-y-3">
             {preview.samples.map((sample) => (
