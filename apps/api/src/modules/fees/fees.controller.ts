@@ -3,8 +3,10 @@ import {
   ROUTES,
   setStudentFeesSchema,
   updateFeeHeadSchema,
+  updateLateFeePolicySchema,
   type FeeHead,
   type FeeTotals,
+  type LateFeePolicy,
   type StudentFee,
 } from '@ilm/contracts';
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common';
@@ -12,6 +14,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/
 import { RequirePermission } from '../../shared/rbac/rbac.guard';
 
 import { FeeHeadsService } from './fee-heads.service';
+import { LateFeePolicyService } from './late-fee-policy.service';
 import { StudentFeesService } from './student-fees.service';
 
 /**
@@ -34,7 +37,27 @@ export class FeesController {
   constructor(
     private readonly heads: FeeHeadsService,
     private readonly studentFees: StudentFeesService,
+    private readonly lateFee: LateFeePolicyService,
   ) {}
+
+  /**
+   * The late-fee policy.
+   *
+   * Read with `fees.plan.read` because the generate screen shows what will be
+   * charged; written with `fees.plan.configure` because it is a decision about
+   * the school's prices, which is the same authority as the catalogue itself.
+   */
+  @Get(ROUTES.fees.lateFeePolicy)
+  @RequirePermission('fees.plan.read')
+  async getLateFeePolicy(): Promise<{ data: LateFeePolicy }> {
+    return { data: await this.lateFee.get() };
+  }
+
+  @Put(ROUTES.fees.lateFeePolicy)
+  @RequirePermission('fees.plan.configure')
+  async setLateFeePolicy(@Body() body: unknown): Promise<{ data: LateFeePolicy }> {
+    return { data: await this.lateFee.set(updateLateFeePolicySchema.parse(body)) };
+  }
 
   @Get(ROUTES.fees.heads)
   @RequirePermission('fees.plan.read')

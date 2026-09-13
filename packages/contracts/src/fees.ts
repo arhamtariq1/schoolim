@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
-import { idSchema, positiveMinorUnitsSchema, textSchema } from './primitives';
+import {
+  basisPointsSchema,
+  idSchema,
+  positiveMinorUnitsSchema,
+  textSchema,
+} from './primitives';
 import { feeFrequencySchema } from './vouchers';
 
 /**
@@ -174,3 +179,57 @@ export const feeTotalsSchema = z.object({
 });
 
 export type FeeTotals = z.infer<typeof feeTotalsSchema>;
+
+// --- The late fee -----------------------------------------------------------
+
+/**
+ * What a school adds when a challan is paid after its due date.
+ *
+ * ## Why this is not a fee head
+ *
+ * Every other charge in this file is something a student is *assigned* — a
+ * tuition, a lab fee, a transport charge — and billed for whether or not
+ * anything else happens. A late fee is not assigned to anybody. It is a
+ * consequence of a date passing, computed per voucher at the moment it is
+ * printed or paid, and it applies to a family that has never been late exactly
+ * as much as it applies to one that always is: not at all, until they are.
+ *
+ * Putting `LATE_FEE` in the fee-head catalogue would let somebody add it to a
+ * child's permanent fee structure, where it would be billed every month
+ * regardless of when that family paid — which is the opposite of a late fee. So
+ * it lives here, once per school, and appears on a voucher as a
+ * `LATE_FEE` line rather than as a head anybody can assign.
+ *
+ * ## Percent *and* flat, not either
+ *
+ * Schools charge both shapes and some charge both at once — "2% or 200,
+ * whichever we said" is a real policy. They are added, so a school that wants
+ * only one leaves the other at zero, which is also the default: a school that
+ * has never configured this charges nothing, and the challan says so.
+ */
+export const lateFeePolicySchema = z.object({
+  /**
+   * A percentage of what was payable within the due date, in basis points.
+   *
+   * 10,000 is 100%, so 2% is 200. Basis points rather than a decimal because
+   * money must not meet a float on the wire (ADR-0007) — and because "2.5%" is
+   * exactly representable as 250 and not as 0.025.
+   */
+  percentBasisPoints: basisPointsSchema,
+  /** A fixed amount, added on top of the percentage. */
+  flatMinor: positiveMinorUnitsSchema,
+});
+
+export type LateFeePolicy = z.infer<typeof lateFeePolicySchema>;
+
+/**
+ * Changing the policy.
+ *
+ * It applies to vouchers generated or edited **from now on**. A voucher already
+ * issued keeps the late fee printed on the challan a parent is holding: the
+ * figure on paper and the figure in the system have to agree, and silently
+ * re-rating last month's challans is how they stop.
+ */
+export const updateLateFeePolicySchema = lateFeePolicySchema.strict();
+
+export type UpdateLateFeePolicy = z.infer<typeof updateLateFeePolicySchema>;

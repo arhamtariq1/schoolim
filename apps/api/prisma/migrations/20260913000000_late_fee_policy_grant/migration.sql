@@ -1,0 +1,23 @@
+-- The app role may set its own school's late fee, and nothing else about it.
+--
+-- `schools` carries two very different kinds of column. Some are the tenant's
+-- own configuration — the late fee below, and whatever settings follow it.
+-- Others are the platform's view of the tenant: the slug it is reached at, the
+-- plan it is on, whether it is suspended. A request handled as `ilm_app` must
+-- be able to change the first kind and must never be able to change the second.
+--
+-- So this is a column-level grant rather than `GRANT UPDATE ON schools`. RLS
+-- already confines any update to the caller's own row (`tenant_isolation`, on
+-- `id = current_school_id()`), which stops one school editing another's — but
+-- it says nothing about *which columns*, and a blanket grant would leave a bug
+-- or a compromised path able to move a school onto a different plan or take
+-- over another school's slug.
+--
+-- `updated_at` is in the list because Prisma stamps it on every update
+-- (`@updatedAt`), so without it the whole statement is refused and the reason
+-- given names the table rather than the column — which is a confusing afternoon
+-- for whoever adds the next setting here.
+--
+-- As more school settings become editable from inside the tenant, they are
+-- added here deliberately, one column at a time.
+GRANT UPDATE (late_fee_percent, late_fee_flat, updated_at) ON "schools" TO ilm_app;

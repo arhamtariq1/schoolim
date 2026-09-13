@@ -81,6 +81,13 @@ export const ROUTES = {
     head: (id: string) => `${API_PREFIX}/fees/heads/${id}`,
     /** Deactivate rather than delete, once a head is in use. */
     studentFees: (studentId: string) => `${API_PREFIX}/students/${studentId}/fees`,
+    /**
+     * What the school adds after a due date passes. One per school, not a head.
+     *
+     * GET and PUT the same path: it is a single setting with two numbers, and
+     * "the policy" is what a person changes, never one half of it.
+     */
+    lateFeePolicy: `${API_PREFIX}/fees/late-fee-policy`,
   },
 
   /**
