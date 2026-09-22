@@ -53,6 +53,7 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   PlatformUser: 'PlatformUser',
   PlatformSession: 'PlatformSession',
+  SignupIntent: 'SignupIntent',
   SchoolGroup: 'SchoolGroup',
   School: 'School',
   SchoolDomain: 'SchoolDomain',
@@ -142,6 +143,29 @@ export const PlatformSessionScalarFieldEnum = {
 } as const
 
 export type PlatformSessionScalarFieldEnum = (typeof PlatformSessionScalarFieldEnum)[keyof typeof PlatformSessionScalarFieldEnum]
+
+
+export const SignupIntentScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  name: 'name',
+  passwordHash: 'passwordHash',
+  termsVersion: 'termsVersion',
+  otpHash: 'otpHash',
+  otpExpiresAt: 'otpExpiresAt',
+  otpSentAt: 'otpSentAt',
+  otpAttempts: 'otpAttempts',
+  emailVerifiedAt: 'emailVerifiedAt',
+  sessionTokenHash: 'sessionTokenHash',
+  expiresAt: 'expiresAt',
+  completedAt: 'completedAt',
+  ip: 'ip',
+  userAgent: 'userAgent',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SignupIntentScalarFieldEnum = (typeof SignupIntentScalarFieldEnum)[keyof typeof SignupIntentScalarFieldEnum]
 
 
 export const SchoolGroupScalarFieldEnum = {

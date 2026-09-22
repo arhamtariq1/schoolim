@@ -11,23 +11,16 @@ import {
 } from './primitives';
 
 /**
- * Self-serve signup — ADR-0010.
+ * Self-serve signup — ADR-0010, three steps.
  *
- * A school creates its own tenant from the marketing site and starts a trial,
- * with no operator in the loop. That is a business-model change as much as a
- * technical one (docs/19 §6 previously described a sales-led motion), and it
- * moves two obligations onto this request:
+ * 1. **Credentials** — name, email, password. Terms accepted. An OTP is mailed.
+ * 2. **OTP** — proves the address before a tenant exists.
+ * 3. **School** — name, slug, city, phone, school email, optional logo. Creates
+ *    the tenant and signs the owner in via handoff (ADR-0009).
  *
- * 1. **Terms acceptance is recorded here or nowhere.** With an operator in the
- *    loop there was a person who could attest to it afterwards. There is not
- *    one now, so `acceptedTerms` is a literal `true` — not a boolean with a
- *    default — and the version is captured with it (docs/17 §3).
- * 2. **The subdomain is chosen by a stranger.** Hence `schoolSlugSchema`, which
- *    refuses the reserved names, and a uniqueness check on the server.
- *
- * Everything optional here is genuinely optional: a school signing up at 11pm
- * should not be blocked on its logo or its postal address. Those belong to the
- * onboarding checklist (docs/09 §2), which is a better place to ask.
+ * Progress is an opaque httpOnly cookie (`COOKIES.signupToken`), not a school
+ * session: there is no school yet. The password is hashed on step 1 and never
+ * returns to the browser.
  */
 
 /** The version of the terms the signup form displayed. Bump on every change. */
@@ -36,16 +29,134 @@ export const CURRENT_TERMS_VERSION = '2026-09-01' as const;
 /** How long a self-serve trial runs. "One month", stated as days so it is exact. */
 export const TRIAL_DAYS = 30;
 
+/** Six digits. Typed by a person reading their mail, not pasted from a URL. */
+export const signupOtpSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{6}$/, 'Enter the 6-digit code from your email.');
+
+/**
+ * Step 1 — create the signup intent and send the OTP.
+ *
+ * `confirmPassword` is validated here so the browser and the API agree; only
+ * `password` is stored (hashed). `acceptedTerms` is a literal `true` — a
+ * defaulted tick is not an acceptance (docs/17 §3).
+ */
+export const signupStartRequestSchema = z
+  .object({
+    name: textSchema(120),
+    email: emailSchema,
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, 'Confirm your password.'),
+    acceptedTerms: z.literal(true),
+    termsVersion: z.string().trim().min(1).max(32),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.password !== value.confirmPassword) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['confirmPassword'],
+        message: 'Passwords do not match.',
+      });
+    }
+  });
+
+export type SignupStartRequest = z.infer<typeof signupStartRequestSchema>;
+
+export const signupStartResultSchema = z.object({
+  email: emailSchema,
+  /** When the current OTP stops working. ISO datetime. */
+  otpExpiresAt: z.iso.datetime(),
+});
+
+export type SignupStartResult = z.infer<typeof signupStartResultSchema>;
+
+export const signupVerifyOtpRequestSchema = z
+  .object({
+    code: signupOtpSchema,
+  })
+  .strict();
+
+export type SignupVerifyOtpRequest = z.infer<typeof signupVerifyOtpRequestSchema>;
+
+export const signupVerifyOtpResultSchema = z.object({
+  email: emailSchema,
+  verified: z.literal(true),
+});
+
+export type SignupVerifyOtpResult = z.infer<typeof signupVerifyOtpResultSchema>;
+
+export const signupResendOtpResultSchema = z.object({
+  sent: z.boolean(),
+  otpExpiresAt: z.iso.datetime().optional(),
+  retryAfterSeconds: z.number().int().min(0).optional(),
+});
+
+export type SignupResendOtpResult = z.infer<typeof signupResendOtpResultSchema>;
+
+/**
+ * Step 3 — the school itself.
+ *
+ * Owner identity comes from the verified intent; it is not re-submitted.
+ */
+export const signupCompleteRequestSchema = z
+  .object({
+    school: z.object({
+      name: textSchema(160),
+      slug: schoolSlugSchema,
+      city: textSchema(80),
+      phone: phoneSchema,
+      email: emailSchema,
+      timezone: timeZoneSchema.default('Asia/Karachi'),
+      locale: z.enum(['en', 'ur']).default('en'),
+    }),
+    logo: uploadSchoolLogoSchema.optional(),
+  })
+  .strict();
+
+export type SignupCompleteRequest = z.infer<typeof signupCompleteRequestSchema>;
+
+export const signupResultSchema = z.object({
+  school: z.object({ id: z.uuid(), name: z.string(), slug: z.string() }),
+  trialEndsAt: z.iso.datetime(),
+  continueTo: schoolChoiceSchema,
+});
+
+export type SignupResult = z.infer<typeof signupResultSchema>;
+
+/**
+ * Where the browser should send someone who already holds a signup cookie.
+ *
+ * `otp` — email not yet confirmed. `school` — confirmed, school form next.
+ */
+export const signupStatusSchema = z.object({
+  email: emailSchema,
+  step: z.enum(['otp', 'school']),
+});
+
+export type SignupStatus = z.infer<typeof signupStatusSchema>;
+
+/** Live availability check behind the subdomain field. */
+export const slugAvailabilitySchema = z.object({
+  slug: z.string(),
+  available: z.boolean(),
+  reason: z.enum(['taken', 'reserved', 'invalid']).optional(),
+});
+
+export type SlugAvailability = z.infer<typeof slugAvailabilitySchema>;
+
+/**
+ * @deprecated One-shot signup body. Kept only so older e2e helpers typecheck
+ * during the cutover; the public route no longer accepts it.
+ */
 export const signupRequestSchema = z
   .object({
     school: z.object({
       name: textSchema(160),
-      /** Becomes `{slug}.<domain>`. Permanent in practice — say so in the UI. */
       slug: schoolSlugSchema,
-      /** Where the school is. One free-text line; not an address parser. */
       city: textSchema(80),
       phone: phoneSchema,
-      /** The school's public address, not the owner's login. They often differ. */
       email: emailSchema,
       timezone: timeZoneSchema.default('Asia/Karachi'),
       locale: z.enum(['en', 'ur']).default('en'),
@@ -55,53 +166,10 @@ export const signupRequestSchema = z
       email: emailSchema,
       password: passwordSchema,
     }),
-    /**
-     * Literal `true`. A checkbox that can be false is a checkbox that gets a
-     * default, and a defaulted acceptance is not an acceptance.
-     */
     acceptedTerms: z.literal(true),
     termsVersion: z.string().trim().min(1).max(32),
-
-    /**
-     * The school's logo, optional.
-     *
-     * It travels with signup rather than being uploaded afterwards because
-     * there is nowhere to upload it to yet: this request is answered with a
-     * handoff to the school's own hostname, so the apex never holds a session
-     * that could authenticate a second call. The alternative is to make a
-     * school pick their logo again on a settings page they have not seen, for
-     * a file they already chose.
-     *
-     * Being optional is the point. A school that has no file to hand, or is
-     * signing up from a phone, skips it and adds it later from Settings.
-     */
     logo: uploadSchoolLogoSchema.optional(),
   })
   .strict();
 
 export type SignupRequest = z.infer<typeof signupRequestSchema>;
-
-/**
- * Signup returns a handoff, not a session.
- *
- * Same reason as sign-in on the apex: the school's cookies belong on the
- * school's hostname, and this request arrived on the marketing one. The person
- * lands signed in on their own address without typing the password again.
- */
-export const signupResultSchema = z.object({
-  school: z.object({ id: z.uuid(), name: z.string(), slug: z.string() }),
-  trialEndsAt: z.iso.datetime(),
-  continueTo: schoolChoiceSchema,
-});
-
-export type SignupResult = z.infer<typeof signupResultSchema>;
-
-/** Live availability check behind the subdomain field. */
-export const slugAvailabilitySchema = z.object({
-  slug: z.string(),
-  available: z.boolean(),
-  /** Why not, when not — "reserved" and "taken" need different copy. */
-  reason: z.enum(['taken', 'reserved', 'invalid']).optional(),
-});
-
-export type SlugAvailability = z.infer<typeof slugAvailabilitySchema>;

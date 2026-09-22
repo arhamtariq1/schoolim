@@ -6,25 +6,16 @@ import { Toaster as SonnerToaster, toast as sonner } from 'sonner';
 /**
  * Toasts, on **sonner** — the library docs/16 §2 locks in.
  *
- * This was a hand-rolled provider with its own reducer, portal and animation.
- * It worked, and it was still the wrong call: the design system names sonner,
- * and a bespoke reimplementation of a locked library is exactly how a component
- * set stops being one. sonner also brings the things a hand-rolled version gets
- * to last — stacking, swipe-to-dismiss, hover-to-pause, screen-reader
- * announcement, reduced-motion.
+ * ## Placement and surface
  *
- * The **`useToast()` shape is unchanged** so no call site had to move. That is
- * the point of having wrapped it: thirty call sites across thirteen files kept
- * working, and swapping the implementation was one file.
+ * **Top right**, minimal card: white (`bg-card`), thin border, soft shadow,
+ * status icon on the left, dismiss circle on the right. Keeps the centre of
+ * auth and work screens clear.
  *
- * ## Two decisions worth keeping
+ * ## Errors do not auto-dismiss
  *
- * **Top right.** Where this product's users expect it, and out of the way of
- * the primary action, which on nearly every screen here sits bottom-right.
- *
- * **Errors do not auto-dismiss.** A success may disappear — the change is
- * visible in the list behind it. A failure must not, because it is the only
- * evidence the thing did not happen.
+ * A success may disappear — the change is visible behind it. A failure must
+ * not, because it is the only evidence the thing did not happen.
  */
 
 export type ToastTone = 'success' | 'error' | 'warning';
@@ -58,7 +49,6 @@ const TOAST: ToastApi = {
     if (tone === 'success') {
       sonner.success(title, options);
     } else if (tone === 'error') {
-      // `duration: Infinity` — see the note above. It stays until dismissed.
       sonner.error(title, { ...options, duration: Infinity });
     } else {
       sonner.warning(title, options);
@@ -79,30 +69,58 @@ const TOAST: ToastApi = {
  * Mounted once at the root.
  *
  * Kept named `ToastProvider` so `app/layout.tsx` did not have to change, and
- * because it still is one conceptually — it just no longer carries state. It
- * accepts children so the existing `<ToastProvider>{children}</ToastProvider>`
- * shape still reads naturally.
+ * because it still is one conceptually — it just no longer carries state.
  */
 export function ToastProvider({ children }: { children?: ReactNode }) {
   return (
     <>
       {children}
+      {/* Sonner pins the dismiss control top-left by default; the reference
+          puts a circular X on the right, vertically centred. */}
+      <style>{`
+        [data-sonner-toaster][data-x-position=right] [data-close-button] {
+          left: auto !important;
+          right: 0.75rem !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
+          width: 1.5rem !important;
+          height: 1.5rem !important;
+          border-radius: 9999px !important;
+          border: 1px solid var(--border) !important;
+          background: var(--muted) !important;
+          color: var(--muted-fg) !important;
+        }
+        [data-sonner-toaster][data-x-position=right] [data-close-button]:hover {
+          background: var(--muted) !important;
+          color: var(--fg) !important;
+        }
+        [data-sonner-toaster][data-x-position=right] [data-icon] {
+          width: 1.25rem;
+          height: 1.25rem;
+        }
+        [data-sonner-toast][data-type=success] [data-icon] {
+          color: var(--success);
+        }
+        [data-sonner-toast][data-type=error] [data-icon] {
+          color: var(--danger);
+        }
+        [data-sonner-toast][data-type=warning] [data-icon] {
+          color: var(--warning);
+        }
+      `}</style>
       <SonnerToaster
         position="top-right"
         closeButton
-        // Semantic tokens, never raw colour (docs/16 §6), so toasts follow the
-        // school's branding and dark mode along with everything else.
+        offset={16}
+        gap={10}
         toastOptions={{
           classNames: {
-            toast: 'group rounded-xl border border-border bg-card text-foreground shadow-lg gap-3',
-            title: 'text-sm font-medium',
+            toast:
+              'group flex w-auto min-w-80 max-w-sm items-center gap-3 rounded-lg border border-border bg-card py-3.5 pr-12 pl-4 text-foreground shadow-md',
+            title: 'text-sm font-normal text-foreground',
             description: 'text-sm text-muted-foreground',
-            actionButton: 'bg-primary text-primary-foreground',
-            cancelButton: 'bg-muted text-muted-foreground',
-            closeButton: 'bg-card border-border text-muted-foreground hover:text-foreground',
-            success: 'border-success/40 [&_[data-icon]]:text-success',
-            error: 'border-danger/40 [&_[data-icon]]:text-danger',
-            warning: 'border-warning/40 [&_[data-icon]]:text-warning',
+            icon: 'mt-0 shrink-0',
+            content: 'flex-1 gap-0.5',
           },
         }}
       />

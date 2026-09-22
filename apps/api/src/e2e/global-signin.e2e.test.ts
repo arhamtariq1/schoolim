@@ -1,4 +1,4 @@
-import { COOKIES, CURRENT_TERMS_VERSION, ROUTES, TRIAL_DAYS } from '@ilm/contracts';
+﻿import { COOKIES, CURRENT_TERMS_VERSION, ROUTES, TRIAL_DAYS } from '@ilm/contracts';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -6,12 +6,15 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AppModule } from '../app.module';
 import { createAdminClient, type PrismaClient } from '../prisma';
 import { PasswordService } from '../shared/auth/password.service';
+import { MAIL } from '../shared/mail/mail.port';
+
+import { RecordingMailer, runSignupFlow } from './signup-flow';
 
 /**
  * Sign in with email and password alone (ADR-0009), and self-serve signup
  * (ADR-0010).
  *
- * The property under test is not "does the happy path work" — it is that **the
+ * The property under test is not "does the happy path work" â€” it is that **the
  * apex discloses nothing about which schools exist until a password has been
  * verified**. That is the rule the old "type your school's short name" field
  * was protecting, and removing the field must not have removed the rule.
@@ -19,7 +22,7 @@ import { PasswordService } from '../shared/auth/password.service';
  * The fixture is two schools that share one email address with the same
  * password, which is the case that makes global sign-in hard: a parent with
  * children at two schools, or a teacher at two campuses. `UNIQUE(school_id,
- * email)` permits it by design (docs/07 §2).
+ * email)` permits it by design (docs/07 Â§2).
  */
 
 const SCHOOL_ONE = '33333333-3333-4333-8333-333333333341';
@@ -41,6 +44,7 @@ const NEW_SLUG = 'signup-e2e-school';
 
 let app: NestFastifyApplication;
 let admin: PrismaClient;
+let mailer: RecordingMailer;
 
 const SCHOOL_IDS = [SCHOOL_ONE, SCHOOL_TWO];
 
@@ -63,6 +67,7 @@ async function wipe(): Promise<void> {
     await admin.$executeRawUnsafe(`DELETE FROM "${table}" WHERE school_id = ANY($1::uuid[])`, ids);
   }
   await admin.$executeRawUnsafe(`DELETE FROM schools WHERE id = ANY($1::uuid[])`, ids);
+  await admin.$executeRaw`DELETE FROM signup_intents WHERE email LIKE '%signup-e2e%' OR email LIKE '%two-schools-e2e%' OR email LIKE '%shared-one-e2e%'`;
 }
 
 beforeAll(async () => {
@@ -94,7 +99,10 @@ beforeAll(async () => {
       (gen_random_uuid(), ${SCHOOL_ONE}::uuid, ${USER_SOLO}::uuid, 'OWNER', now())
   `;
 
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+    .overrideProvider(MAIL)
+    .useValue((mailer = new RecordingMailer()))
+    .compile();
   app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
 
   const { default: cookie } = await import('@fastify/cookie');
@@ -197,7 +205,7 @@ describe('signing in with no school in the address', () => {
 });
 
 describe('the handoff', () => {
-  it('exchanges a token for a session on the school’s own host', async () => {
+  it('exchanges a token for a session on the schoolâ€™s own host', async () => {
     const { choices } = await signInAtApex(SOLO_EMAIL, PASSWORD);
     const token = tokenFrom(choices[0]?.continueUrl ?? '');
 
@@ -244,7 +252,7 @@ describe('the handoff', () => {
     expect(second.statusCode).toBe(401);
   });
 
-  it('cannot be redeemed at another school’s address', async () => {
+  it('cannot be redeemed at another schoolâ€™s address', async () => {
     // The school comes from the request host and is matched against the row, so
     // this endpoint is not a way to pick a tenant.
     const { choices } = await signInAtApex(SHARED_EMAIL, PASSWORD);
@@ -287,33 +295,23 @@ describe('the handoff', () => {
   });
 });
 
+
 describe('self-serve signup', () => {
-  const payload = {
+  const flow = {
+    name: 'Founder',
+    email: 'founder@signup-e2e.test',
+    password: 'a-long-enough-passphrase',
     school: {
       name: 'Signup E2E School',
       slug: NEW_SLUG,
       city: 'Lahore',
       phone: '+923001234567',
       email: 'office@signup-e2e.test',
-      timezone: 'Asia/Karachi',
-      locale: 'en' as const,
     },
-    owner: {
-      name: 'Founder',
-      email: 'founder@signup-e2e.test',
-      password: 'a-long-enough-passphrase',
-    },
-    acceptedTerms: true as const,
-    termsVersion: CURRENT_TERMS_VERSION,
   };
 
-  it('creates the school, the owner, the trial and the agreement in one go', async () => {
-    const response = await app.inject({
-      method: 'POST',
-      url: ROUTES.public.signup,
-      headers: { host: APEX },
-      payload,
-    });
+  it('creates the school after credentials, OTP and school details', async () => {
+    const response = await runSignupFlow(app, mailer, flow, APEX);
 
     expect(response.statusCode).toBe(201);
 
@@ -324,8 +322,6 @@ describe('self-serve signup', () => {
     expect(body.school.slug).toBe(NEW_SLUG);
     expect(body.continueTo.continueUrl).toContain(`${NEW_SLUG}.localhost`);
 
-    // A month, not "about a month". Asserted as a narrow window rather than an
-    // exact value because the endpoint stamped `now` a moment before this line.
     const daysAway = (new Date(body.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000);
     expect(daysAway).toBeLessThanOrEqual(TRIAL_DAYS);
     expect(daysAway).toBeGreaterThan(TRIAL_DAYS - 0.01);
@@ -336,22 +332,23 @@ describe('self-serve signup', () => {
     expect(school[0]?.status).toBe('TRIAL');
     expect(school[0]?.trial_ends_at).not.toBeNull();
 
-    // A school with no owner is a tenant nobody can sign into, and the only way
-    // to find out is a support call.
     const roles = await admin.$queryRaw<{ role: string }[]>`
       SELECT role::text FROM user_roles WHERE school_id = ${body.school.id}::uuid
     `;
     expect(roles.map((row) => row.role)).toEqual(['OWNER']);
 
-    // Nobody countersigned this, so the record made at the moment of acceptance
-    // is the only evidence there will ever be (docs/17 §3).
     const agreements = await admin.$queryRaw<{ version: string; accepted_by_email: string }[]>`
       SELECT version, accepted_by_email FROM school_agreements
       WHERE school_id = ${body.school.id}::uuid
     `;
     expect(agreements).toHaveLength(1);
     expect(agreements[0]?.version).toBe(CURRENT_TERMS_VERSION);
-    expect(agreements[0]?.accepted_by_email).toBe(payload.owner.email);
+    expect(agreements[0]?.accepted_by_email).toBe(flow.email);
+
+    const users = await admin.$queryRaw<{ email_verified_at: Date | null }[]>`
+      SELECT email_verified_at FROM users WHERE school_id = ${body.school.id}::uuid
+    `;
+    expect(users[0]?.email_verified_at).not.toBeNull();
   });
 
   it('signs the new owner in through the same handoff', async () => {
@@ -360,9 +357,7 @@ describe('self-serve signup', () => {
     `;
     expect(created).toHaveLength(1);
 
-    // The school exists from the previous test; sign in at the apex to get a
-    // fresh handoff rather than reusing a consumed one.
-    const { choices } = await signInAtApex(payload.owner.email, payload.owner.password);
+    const { choices } = await signInAtApex(flow.email, flow.password);
     expect(choices).toHaveLength(1);
 
     const response = await app.inject({
@@ -373,58 +368,60 @@ describe('self-serve signup', () => {
     });
 
     expect(response.statusCode).toBe(201);
-
-    // They chose the password themselves thirty seconds ago; there is no
-    // operator-issued temporary one to replace.
     expect(response.json<{ data: { mustChangePassword: boolean } }>().data.mustChangePassword).toBe(
       false,
     );
   });
 
   it('refuses a slug another school already holds', async () => {
-    const response = await app.inject({
-      method: 'POST',
-      url: ROUTES.public.signup,
-      headers: { host: APEX },
-      payload: { ...payload, owner: { ...payload.owner, email: 'other@signup-e2e.test' } },
-    });
+    const response = await runSignupFlow(
+      app,
+      mailer,
+      { ...flow, email: 'other@signup-e2e.test', school: { ...flow.school } },
+      APEX,
+    );
 
     expect(response.statusCode).toBe(409);
   });
 
   it('refuses a reserved slug', async () => {
-    // `api.<domain>` and `admin.<domain>` are real hosts. A school claiming one
-    // would shadow them, and the person choosing is now a stranger.
-    const response = await app.inject({
-      method: 'POST',
-      url: ROUTES.public.signup,
-      headers: { host: APEX },
-      payload: { ...payload, school: { ...payload.school, slug: 'api' } },
-    });
+    const response = await runSignupFlow(
+      app,
+      mailer,
+      {
+        name: 'Nobody',
+        email: 'reserved@signup-e2e.test',
+        password: flow.password,
+        school: {
+          name: 'Nope',
+          slug: 'api',
+          city: 'Lahore',
+          phone: '+923001234567',
+          email: 'office@reserved-signup.test',
+        },
+      },
+      APEX,
+    );
 
     expect(response.statusCode).toBeGreaterThanOrEqual(400);
   });
 
-  it('refuses to create a school without an accepted agreement', async () => {
-    // A literal `true`, not a boolean: a checkbox that can be false is a
-    // checkbox that gets a default, and a defaulted acceptance is not one.
+  it('refuses to start without accepted terms', async () => {
     const response = await app.inject({
       method: 'POST',
-      url: ROUTES.public.signup,
+      url: ROUTES.public.signupStart,
       headers: { host: APEX },
       payload: {
-        ...payload,
-        school: { ...payload.school, slug: 'never-created-e2e' },
+        name: 'Founder',
+        email: 'terms@signup-e2e.test',
+        password: flow.password,
+        confirmPassword: flow.password,
         acceptedTerms: false,
+        termsVersion: CURRENT_TERMS_VERSION,
       },
     });
 
     expect(response.statusCode).toBe(400);
-
-    const orphan = await admin.$queryRaw<{ id: string }[]>`
-      SELECT id FROM schools WHERE slug = 'never-created-e2e'
-    `;
-    expect(orphan).toHaveLength(0);
   });
 
   it('answers slug availability without revealing anything else', async () => {
@@ -451,8 +448,6 @@ describe('self-serve signup', () => {
     });
     expect(free.json<{ data: { available: boolean } }>().data.available).toBe(true);
     expect(reserved.json<{ data: { reason?: string } }>().data.reason).toBe('reserved');
-
-    // Yes or no and a reason. No name, no status, no creation date.
     expect(taken.body).not.toContain('Signup E2E School');
   });
 });

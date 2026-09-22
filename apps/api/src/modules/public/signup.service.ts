@@ -1,8 +1,15 @@
+import { createHash, randomBytes, randomInt } from 'node:crypto';
+
 import {
   RESERVED_SLUGS,
   TRIAL_DAYS,
-  type SignupRequest,
+  type SignupCompleteRequest,
+  type SignupResendOtpResult,
   type SignupResult,
+  type SignupStartRequest,
+  type SignupStartResult,
+  type SignupStatus,
+  type SignupVerifyOtpResult,
   type SlugAvailability,
 } from '@ilm/contracts';
 import { Inject, Injectable, Logger } from '@nestjs/common';
@@ -10,35 +17,38 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ENV, type Env } from '../../config/env';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from '../../shared/auth/password.service';
-import { ConflictError } from '../../shared/errors/domain-error';
+import { BusinessRuleError, ConflictError } from '../../shared/errors/domain-error';
+import { MAIL, type MailPort } from '../../shared/mail/mail.port';
+import { signupOtpTemplate } from '../../shared/mail/templates/signup-otp.template';
 import { schoolOrigin } from '../../shared/tenancy/school-origin';
-import { EmailVerificationService } from '../auth/email-verification.service';
 import { HandoffService } from '../auth/handoff.service';
 import { decodeAndVerify } from '../schools/school-logo.service';
 
 /**
- * Self-serve signup — ADR-0010.
+ * Self-serve signup in three steps — credentials → OTP → school.
  *
- * A stranger creates a tenant. That sentence is the whole reason this file
- * reads the way it does, and it is worth being blunt about what it changes:
- * until now every school in the database was created by an operator who had
- * already spoken to someone. Now the first contact the business has with a
- * school may be a row this method wrote at 2am.
- *
- * Three things follow, and all three are in the transaction below rather than
- * in a follow-up job:
- *
- * 1. **A school with no owner is a tenant nobody can sign into**, and the only
- *    way to find out is a support ticket. School, owner, role: one transaction
- *    or none of it.
- * 2. **Terms acceptance is recorded at the moment it is given.** There is no
- *    operator to attest to it afterwards (docs/17 §3).
- * 3. **The creation is audited**, because "where did this school come from" is
- *    the first question anyone will ask about an unexpected row.
- *
- * Like `SchoolsService`, this runs on the **admin** connection — it creates the
- * tenant, so by definition there is no tenant to be scoped to yet.
+ * Runs on the **admin** connection: there is no tenant until step 3 commits.
  */
+
+/** Overall intent lifetime. Restart from /signup after this. */
+const INTENT_TTL_HOURS = 24;
+/** OTP window — short; resend is free. */
+const OTP_TTL_MINUTES = 10;
+const RESEND_COOLDOWN_SECONDS = 60;
+const MAX_OTP_ATTEMPTS = 5;
+
+export interface SignupCookieContext {
+  readonly ip?: string | undefined;
+  readonly userAgent?: string | undefined;
+}
+
+export interface SignupStartOutcome {
+  readonly result: SignupStartResult;
+  /** Cleartext cookie value. Never logged. */
+  readonly sessionToken: string;
+  readonly expiresAt: Date;
+}
+
 @Injectable()
 export class SignupService {
   private readonly logger = new Logger(SignupService.name);
@@ -47,22 +57,10 @@ export class SignupService {
     private readonly prisma: PrismaService,
     private readonly passwords: PasswordService,
     private readonly handoffs: HandoffService,
-    private readonly verification: EmailVerificationService,
+    @Inject(MAIL) private readonly mail: MailPort,
     @Inject(ENV) private readonly env: Env,
   ) {}
 
-  /**
-   * Is this subdomain free?
-   *
-   * This is an enumeration oracle and there is no way for it not to be: a
-   * signup form that cannot say "taken" before submission is a signup form
-   * people abandon. Every SaaS with a subdomain has the same endpoint, and what
-   * it discloses — that a school with a given short name exists — is the same
-   * thing anyone learns by loading that address and seeing a login page.
-   *
-   * It is rate limited, and it returns nothing beyond yes/no: no school name,
-   * no status, no creation date.
-   */
   async checkSlug(slug: string): Promise<SlugAvailability> {
     const normalised = slug.trim().toLowerCase();
 
@@ -85,28 +83,211 @@ export class SignupService {
   }
 
   /**
-   * Create the school, its owner and its trial, and sign the owner in.
-   *
-   * The return value is a handoff, not a session: this request arrived on the
-   * marketing hostname and the school's cookies belong on the school's
-   * hostname (ADR-0009). The person lands inside their own portal without
-   * typing the password they chose thirty seconds ago.
+   * Step 1 — store credentials, mail a 6-digit OTP, return a cookie token.
    */
-  async signup(
-    input: SignupRequest,
+  async start(
+    input: SignupStartRequest,
     now: Date,
-    context: { ip?: string; userAgent?: string },
+    context: SignupCookieContext,
+  ): Promise<SignupStartOutcome> {
+    const passwordHash = await this.passwords.hash(input.password);
+    const sessionToken = randomBytes(32).toString('base64url');
+    const code = formatOtp(randomInt(0, 1_000_000));
+    const otpExpiresAt = addMinutes(now, OTP_TTL_MINUTES);
+    const expiresAt = addHours(now, INTENT_TTL_HOURS);
+
+    // One active intent per email: replace any open attempt so a mistyped
+    // password on the first try does not leave a stranded row forever.
+    await this.prisma.admin.signupIntent.deleteMany({
+      where: {
+        email: input.email,
+        completedAt: null,
+      },
+    });
+
+    await this.prisma.admin.signupIntent.create({
+      data: {
+        email: input.email,
+        name: input.name,
+        passwordHash,
+        termsVersion: input.termsVersion,
+        otpHash: hashToken(code),
+        otpExpiresAt,
+        otpSentAt: now,
+        otpAttempts: 0,
+        sessionTokenHash: hashToken(sessionToken),
+        expiresAt,
+        ip: context.ip ?? null,
+        userAgent: context.userAgent ?? null,
+      },
+    });
+
+    const sent = await this.mail.send(
+      signupOtpTemplate({
+        to: input.email,
+        recipientName: input.name,
+        code,
+        expiresInMinutes: OTP_TTL_MINUTES,
+      }),
+    );
+
+    if (!sent.sent) {
+      this.logger.warn(
+        { email: input.email, error: sent.error },
+        'Signup OTP email did not go out; the person can resend',
+      );
+    }
+
+    return {
+      sessionToken,
+      expiresAt,
+      result: {
+        email: input.email,
+        otpExpiresAt: otpExpiresAt.toISOString(),
+      },
+    };
+  }
+
+  async status(sessionToken: string | undefined, now: Date): Promise<SignupStatus> {
+    const intent = await this.requireIntent(sessionToken, now);
+    return {
+      email: intent.email,
+      step: intent.emailVerifiedAt === null ? 'otp' : 'school',
+    };
+  }
+
+  async verifyOtp(
+    sessionToken: string | undefined,
+    code: string,
+    now: Date,
+  ): Promise<SignupVerifyOtpResult> {
+    const intent = await this.requireIntent(sessionToken, now);
+
+    if (intent.emailVerifiedAt !== null) {
+      return { email: intent.email, verified: true };
+    }
+
+    if (intent.otpHash === null || intent.otpExpiresAt === null) {
+      throw new BusinessRuleError(
+        'SIGNUP_OTP_EXPIRED',
+        'That code has expired. Ask for a new one.',
+      );
+    }
+
+    if (intent.otpExpiresAt.getTime() <= now.getTime()) {
+      throw new BusinessRuleError(
+        'SIGNUP_OTP_EXPIRED',
+        'That code has expired. Ask for a new one.',
+      );
+    }
+
+    if (intent.otpAttempts >= MAX_OTP_ATTEMPTS) {
+      throw new BusinessRuleError(
+        'SIGNUP_OTP_INVALID',
+        'Too many incorrect attempts. Ask for a new code.',
+      );
+    }
+
+    if (hashToken(code) !== intent.otpHash) {
+      await this.prisma.admin.signupIntent.update({
+        where: { id: intent.id },
+        data: { otpAttempts: { increment: 1 } },
+      });
+      throw new BusinessRuleError(
+        'SIGNUP_OTP_INVALID',
+        'That code is not correct. Check the email and try again.',
+      );
+    }
+
+    await this.prisma.admin.signupIntent.update({
+      where: { id: intent.id },
+      data: {
+        emailVerifiedAt: now,
+        otpHash: null,
+        otpExpiresAt: null,
+        otpAttempts: 0,
+      },
+    });
+
+    return { email: intent.email, verified: true };
+  }
+
+  async resendOtp(
+    sessionToken: string | undefined,
+    now: Date,
+  ): Promise<SignupResendOtpResult> {
+    const intent = await this.requireIntent(sessionToken, now);
+
+    if (intent.emailVerifiedAt !== null) {
+      return { sent: false };
+    }
+
+    if (intent.otpSentAt !== null) {
+      const elapsed = (now.getTime() - intent.otpSentAt.getTime()) / 1000;
+      if (elapsed < RESEND_COOLDOWN_SECONDS) {
+        return {
+          sent: false,
+          retryAfterSeconds: Math.ceil(RESEND_COOLDOWN_SECONDS - elapsed),
+        };
+      }
+    }
+
+    const code = formatOtp(randomInt(0, 1_000_000));
+    const otpExpiresAt = addMinutes(now, OTP_TTL_MINUTES);
+
+    const sent = await this.mail.send(
+      signupOtpTemplate({
+        to: intent.email,
+        recipientName: intent.name,
+        code,
+        expiresInMinutes: OTP_TTL_MINUTES,
+      }),
+    );
+
+    if (!sent.sent) {
+      // Keep the previous OTP alive — same rule as email-verification.service.
+      return { sent: false };
+    }
+
+    await this.prisma.admin.signupIntent.update({
+      where: { id: intent.id },
+      data: {
+        otpHash: hashToken(code),
+        otpExpiresAt,
+        otpSentAt: now,
+        otpAttempts: 0,
+      },
+    });
+
+    return { sent: true, otpExpiresAt: otpExpiresAt.toISOString() };
+  }
+
+  /**
+   * Step 3 — create the school and owner, then hand off onto the school host.
+   *
+   * `emailVerifiedAt` is set on the user because the OTP already proved the
+   * address. The intent row is marked completed and is no longer usable.
+   */
+  async complete(
+    sessionToken: string | undefined,
+    input: SignupCompleteRequest,
+    now: Date,
+    context: SignupCookieContext,
   ): Promise<SignupResult> {
-    // `schoolSlugSchema` already refused the reserved names at the contract
-    // boundary. Repeated here because this method is also what any future
-    // import or migration path would call, and "the caller validated it" is the
-    // assumption that eventually turns out to be false.
+    const intent = await this.requireIntent(sessionToken, now);
+
+    if (intent.emailVerifiedAt === null) {
+      throw new BusinessRuleError(
+        'SIGNUP_EMAIL_UNVERIFIED',
+        'Confirm the code we emailed you before setting up the school.',
+      );
+    }
+
     if (RESERVED_SLUGS.has(input.school.slug)) {
       throw new ConflictError(`"${input.school.slug}" is reserved. Choose another short name.`);
     }
 
-    const trialEndsAt = new Date(now.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
-    const passwordHash = await this.passwords.hash(input.owner.password);
+    const trialEndsAt = addDays(now, TRIAL_DAYS);
 
     const created = await this.prisma.admin
       .$transaction(async (tx) => {
@@ -129,14 +310,13 @@ export class SignupService {
         const owner = await tx.user.create({
           data: {
             schoolId: school.id,
-            email: input.owner.email,
-            name: input.owner.name,
-            passwordHash,
+            email: intent.email,
+            name: intent.name,
+            passwordHash: intent.passwordHash,
             status: 'ACTIVE',
-            // They chose this password themselves, thirty seconds ago. Forcing
-            // an immediate change is the ritual that follows an operator
-            // handing over a temporary one, and there was no operator.
             mustChangePassword: false,
+            // OTP already proved this address.
+            emailVerifiedAt: intent.emailVerifiedAt,
           },
           select: { id: true },
         });
@@ -145,16 +325,6 @@ export class SignupService {
           data: { schoolId: school.id, userId: owner.id, role: 'OWNER' },
         });
 
-        // The logo, if one came with the form.
-        //
-        // Inside the same transaction as the school, so a rejected image is a
-        // signup that did not happen rather than a school with a broken one —
-        // and the same `decodeAndVerify` the settings page uses, because "what
-        // counts as an image" must not have two answers.
-        //
-        // `prisma.admin` bypasses the tenant extension, which is the only way
-        // to write a row for a school that did not exist a moment ago. The
-        // school id is the one just created, never anything from the request.
         if (input.logo !== undefined) {
           const { bytes, etag } = decodeAndVerify(input.logo);
           await tx.schoolLogo.create({
@@ -173,13 +343,11 @@ export class SignupService {
           data: {
             schoolId: school.id,
             documentType: 'TERMS_OF_SERVICE',
-            version: input.termsVersion,
+            version: intent.termsVersion,
             acceptedAt: now,
             acceptedByUserId: owner.id,
-            // Copied, not joined. This record has to still say who signed after
-            // the user has been renamed, reassigned or erased.
-            acceptedByName: input.owner.name,
-            acceptedByEmail: input.owner.email,
+            acceptedByName: intent.name,
+            acceptedByEmail: intent.email,
             ip: context.ip ?? null,
             userAgent: context.userAgent ?? null,
           },
@@ -205,11 +373,14 @@ export class SignupService {
           },
         });
 
+        await tx.signupIntent.update({
+          where: { id: intent.id },
+          data: { completedAt: now },
+        });
+
         return { school, ownerId: owner.id };
       })
       .catch((error: unknown) => {
-        // Two people can reach for the same short name in the same second, and
-        // the loser must read "that name is taken", not a 500.
         if (isUniqueViolation(error)) {
           throw new ConflictError(
             `A school already uses the short name "${input.school.slug}". Try another.`,
@@ -222,37 +393,6 @@ export class SignupService {
       { schoolId: created.school.id, slug: created.school.slug },
       'School signed up self-serve',
     );
-
-    // Outside the transaction, and deliberately after it. Sending mail inside a
-    // transaction holds a database connection open for the length of an SMTP
-    // conversation, and a relay that hangs would roll back a school that is
-    // otherwise perfectly created.
-    //
-    // **Everything past this point is caught**, and that is the important part.
-    // The school is already committed. Anything that throws from here would
-    // surface as "could not create your school" to somebody whose school does
-    // exist and whose slug is now taken — so their retry answers "that name is
-    // taken" and they are stuck with no way forward. `mail.send` resolves
-    // rather than throwing (ADR-0011), but `sendVerification` also writes rows,
-    // and those can fail like any other write.
-    //
-    // A missing confirmation email is recoverable from inside the portal. An
-    // unreachable school is not.
-    try {
-      const verification = await this.verification.sendVerification(created.ownerId, now);
-
-      if (!verification.sent) {
-        this.logger.warn(
-          { schoolId: created.school.id },
-          'School created but the verification email did not go out; the owner can resend from the portal',
-        );
-      }
-    } catch (error: unknown) {
-      this.logger.error(
-        { err: error, schoolId: created.school.id },
-        'School created but issuing the verification token failed; the owner can resend from the portal',
-      );
-    }
 
     const token = await this.handoffs.mint(created.school.id, created.ownerId, now, context);
     const origin = schoolOrigin(
@@ -273,10 +413,55 @@ export class SignupService {
       },
     };
   }
+
+  private async requireIntent(sessionToken: string | undefined, now: Date) {
+    if (sessionToken === undefined || sessionToken === '') {
+      throw new BusinessRuleError(
+        'SIGNUP_SESSION_REQUIRED',
+        'Your signup session has ended. Start again from the beginning.',
+      );
+    }
+
+    const intent = await this.prisma.admin.signupIntent.findUnique({
+      where: { sessionTokenHash: hashToken(sessionToken) },
+    });
+
+    if (
+      intent === null ||
+      intent.completedAt !== null ||
+      intent.expiresAt.getTime() <= now.getTime()
+    ) {
+      throw new BusinessRuleError(
+        'SIGNUP_SESSION_REQUIRED',
+        'Your signup session has ended. Start again from the beginning.',
+      );
+    }
+
+    return intent;
+  }
 }
 
-/** Same shape as `slugSchema` in the contracts, applied to a raw query string. */
 const SLUG_SHAPE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+function formatOtp(value: number): string {
+  return value.toString().padStart(6, '0');
+}
+
+function addMinutes(now: Date, minutes: number): Date {
+  return new Date(now.getTime() + minutes * 60 * 1000);
+}
+
+function addHours(now: Date, hours: number): Date {
+  return new Date(now.getTime() + hours * 60 * 60 * 1000);
+}
+
+function addDays(now: Date, days: number): Date {
+  return new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+}
 
 function isUniqueViolation(error: unknown): boolean {
   return (

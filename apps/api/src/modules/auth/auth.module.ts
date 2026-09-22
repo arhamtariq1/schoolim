@@ -10,6 +10,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { EmailVerificationService } from './email-verification.service';
 import { HandoffService } from './handoff.service';
+import { PasswordResetService } from './password-reset.service';
 import { SessionService } from './session.service';
 
 @Module({
@@ -19,6 +20,7 @@ import { SessionService } from './session.service';
     SessionService,
     HandoffService,
     EmailVerificationService,
+    PasswordResetService,
     {
       provide: AuthService,
       // The apex domain is back, and for one reason: sign-in at the apex has to

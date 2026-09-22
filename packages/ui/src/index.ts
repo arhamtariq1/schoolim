@@ -11,6 +11,8 @@ export * from './components/dialog';
 export * from './components/dropdown-menu';
 export * from './components/field';
 export * from './components/input';
+export * from './components/otp-input';
+export * from './components/password-input';
 export * from './components/money';
 export * from './components/pagination';
 export * from './components/popover';

@@ -23,6 +23,8 @@ export const ROUTES = {
     refresh: `${API_PREFIX}/auth/refresh`,
     session: `${API_PREFIX}/auth/session`,
     forgotPassword: `${API_PREFIX}/auth/forgot-password`,
+    forgotPasswordVerifyOtp: `${API_PREFIX}/auth/forgot-password/verify-otp`,
+    forgotPasswordResendOtp: `${API_PREFIX}/auth/forgot-password/resend-otp`,
     resetPassword: `${API_PREFIX}/auth/reset-password`,
     acceptInvite: `${API_PREFIX}/auth/accept-invite`,
     /**
@@ -52,6 +54,11 @@ export const ROUTES = {
    */
   public: {
     signup: `${API_PREFIX}/public/signup`,
+    signupStart: `${API_PREFIX}/public/signup/start`,
+    signupVerifyOtp: `${API_PREFIX}/public/signup/verify-otp`,
+    signupResendOtp: `${API_PREFIX}/public/signup/resend-otp`,
+    signupComplete: `${API_PREFIX}/public/signup/complete`,
+    signupStatus: `${API_PREFIX}/public/signup/status`,
     slugAvailable: `${API_PREFIX}/public/slug-available`,
   },
   students: {
@@ -255,6 +262,13 @@ export const COOKIES = {
    * docs/SINGLE-HOST-MODE.md.
    */
   school: 'ilm_school',
+  /**
+   * In-progress self-serve signup (credentials → OTP → school).
+   *
+   * Opaque, httpOnly, host-only. Not a session: no school exists yet. Cleared
+   * when the school is created or the intent expires.
+   */
+  signupToken: 'ilm_su',
   /** Platform console tokens. Separate names so the two can never be confused. */
   platformAccessToken: 'ilm_pat',
   platformRefreshToken: 'ilm_prt',

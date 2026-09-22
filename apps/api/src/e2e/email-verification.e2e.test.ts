@@ -1,24 +1,26 @@
-import { COOKIES, CURRENT_TERMS_VERSION, ROUTES } from '@ilm/contracts';
+import { COOKIES, ROUTES } from '@ilm/contracts';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../app.module';
+import { EmailVerificationService } from '../modules/auth/email-verification.service';
 import { createAdminClient, type PrismaClient } from '../prisma';
-import { MAIL, type MailMessage, type MailPort, type MailResult } from '../shared/mail/mail.port';
+import { MAIL } from '../shared/mail/mail.port';
+
+import { RecordingMailer, runSignupFlow } from './signup-flow';
 
 /**
  * Email verification — ADR-0012.
  *
- * ADR-0010 shipped self-serve signup with this listed as a known gap: the
- * owner's address is the only route back into a tenant nobody has an operator
- * for, and an unproved address is a school one forgotten password from being
- * lost.
+ * Signup now proves the address with an OTP before the school is created, so
+ * the owner lands verified. Link-based `/auth/verify-email` remains for nag /
+ * resend flows (address change, forgotten confirmation, etc.).
  *
- * What is under test is mostly the *negative* space — the link cannot be
- * replayed, cannot be used against another school, and cannot quietly verify an
- * address that changed after it was sent. The happy path is one assertion; the
- * ways a token must fail are six.
+ * What is under test for the link path is mostly the *negative* space — the
+ * link cannot be replayed, cannot be used against another school, and cannot
+ * quietly verify an address that changed after it was sent. The happy path is
+ * one assertion; the ways a token must fail are six.
  *
  * ## The mailer is replaced, not disabled
  *
@@ -46,42 +48,7 @@ const RESEND_EMAIL = `owner@${RESEND_SLUG}.test`;
 const PASSWORD = 'a-long-enough-passphrase';
 
 const ALL_SLUGS = [SLUG, OTHER_SLUG, RESEND_SLUG];
-
-/**
- * A mailer that keeps what it was given, and can be told to fail once.
- *
- * `failNext` is what makes the "a failed send must not strand the recipient"
- * regression expressible at all.
- */
-class RecordingMailer implements MailPort {
-  readonly driver = 'recording';
-  readonly delivered: MailMessage[] = [];
-  failNext = false;
-
-  send(message: MailMessage): Promise<MailResult> {
-    if (this.failNext) {
-      this.failNext = false;
-      return Promise.resolve({ sent: false, error: 'simulated relay failure' });
-    }
-    this.delivered.push(message);
-    return Promise.resolve({ sent: true, id: `test-${String(this.delivered.length)}` });
-  }
-
-  /** The token out of the most recent message to this address, as a person would. */
-  tokenFor(email: string): string | undefined {
-    for (let index = this.delivered.length - 1; index >= 0; index -= 1) {
-      const message = this.delivered[index];
-      if (message?.to === email) {
-        return /\/verify-email\?t=([A-Za-z0-9_-]+)/.exec(message.text)?.[1];
-      }
-    }
-    return undefined;
-  }
-
-  countTo(email: string): number {
-    return this.delivered.filter((message) => message.to === email).length;
-  }
-}
+const ALL_EMAILS = [OWNER_EMAIL, OTHER_EMAIL, RESEND_EMAIL];
 
 let app: NestFastifyApplication;
 let admin: PrismaClient;
@@ -92,39 +59,24 @@ async function wipe(): Promise<void> {
     SELECT id FROM schools WHERE slug = ANY(${ALL_SLUGS})
   `;
   const ids = rows.map((row) => row.id);
-  if (ids.length === 0) {
-    return;
+  if (ids.length > 0) {
+    for (const table of [
+      'email_verifications',
+      'auth_handoffs',
+      'school_agreements',
+      'sessions',
+      'audit_logs',
+      'user_roles',
+      'users',
+    ]) {
+      await admin.$executeRawUnsafe(`DELETE FROM "${table}" WHERE school_id = ANY($1::uuid[])`, ids);
+    }
+    await admin.$executeRawUnsafe(`DELETE FROM schools WHERE id = ANY($1::uuid[])`, ids);
   }
 
-  for (const table of [
-    'email_verifications',
-    'auth_handoffs',
-    'school_agreements',
-    'sessions',
-    'audit_logs',
-    'user_roles',
-    'users',
-  ]) {
-    await admin.$executeRawUnsafe(`DELETE FROM "${table}" WHERE school_id = ANY($1::uuid[])`, ids);
-  }
-  await admin.$executeRawUnsafe(`DELETE FROM schools WHERE id = ANY($1::uuid[])`, ids);
-}
-
-function signupPayload(slug: string, email: string) {
-  return {
-    school: {
-      name: `Verify ${slug}`,
-      slug,
-      city: 'Lahore',
-      phone: '+923001234567',
-      email: `office@${slug}.test`,
-      timezone: 'Asia/Karachi',
-      locale: 'en' as const,
-    },
-    owner: { name: 'Founder', email, password: PASSWORD },
-    acceptedTerms: true as const,
-    termsVersion: CURRENT_TERMS_VERSION,
-  };
+  await admin.$executeRaw`
+    DELETE FROM signup_intents WHERE email = ANY(${ALL_EMAILS})
+  `;
 }
 
 /** Sign in and return the access-token cookie value. */
@@ -171,6 +123,23 @@ function verifyWith(host: string, token: string) {
   });
 }
 
+/** Clear OTP-proved verification and issue a nag/resend link for each owner. */
+async function seedLinkVerification(): Promise<void> {
+  const verification = app.get(EmailVerificationService);
+  const owners = await admin.$queryRaw<{ id: string; email: string }[]>`
+    SELECT id, email FROM users WHERE email = ANY(${ALL_EMAILS})
+  `;
+  expect(owners).toHaveLength(ALL_EMAILS.length);
+
+  for (const owner of owners) {
+    await admin.$executeRaw`
+      UPDATE users SET email_verified_at = NULL WHERE id = ${owner.id}::uuid
+    `;
+    const result = await verification.sendVerification(owner.id, new Date());
+    expect(result.sent).toBe(true);
+  }
+}
+
 beforeAll(async () => {
   process.env['APP_DOMAIN'] = 'localhost';
 
@@ -196,12 +165,25 @@ beforeAll(async () => {
     [OTHER_SLUG, OTHER_EMAIL],
     [RESEND_SLUG, RESEND_EMAIL],
   ] as const) {
-    const response = await app.inject({
-      method: 'POST',
-      url: ROUTES.public.signup,
-      headers: { host: APEX },
-      payload: signupPayload(slug, email),
-    });
+    const response = await runSignupFlow(
+      app,
+      mailer,
+      {
+        name: 'Founder',
+        email,
+        password: PASSWORD,
+        school: {
+          name: `Verify ${slug}`,
+          slug,
+          city: 'Lahore',
+          phone: '+923001234567',
+          email: `office@${slug}.test`,
+          timezone: 'Asia/Karachi',
+          locale: 'en',
+        },
+      },
+      APEX,
+    );
     expect(response.statusCode).toBe(201);
   }
 }, 60_000);
@@ -212,32 +194,23 @@ afterAll(async () => {
   await admin.$disconnect();
 });
 
-describe('signup sends a confirmation message', () => {
-  it('emails the owner a link carrying a usable token', () => {
+describe('OTP signup verifies the owner email', () => {
+  it('emails the owner a six-digit OTP during signup', () => {
+    // One OTP message per school created in beforeAll.
     expect(mailer.countTo(OWNER_EMAIL)).toBe(1);
-
-    const message = mailer.delivered.find((entry) => entry.to === OWNER_EMAIL);
-    expect(message?.subject).toContain('Confirm your email');
-    // Both parts, always: some people read the text one, and every spam filter
-    // does — an HTML-only message scores badly before anyone sees it.
-    expect(message?.text).toContain('/verify-email?t=');
-    expect(message?.html).toContain('/verify-email?t=');
-    // The link must point at the school's own hostname, never the apex.
-    expect(message?.text).toContain(`${SLUG}.localhost`);
-
-    expect(mailer.tokenFor(OWNER_EMAIL)).toBeTruthy();
+    expect(mailer.otpFor(OWNER_EMAIL)).toMatch(/^\d{6}$/);
   });
 
-  it('creates the owner unverified', async () => {
+  it('creates the owner already verified', async () => {
     const users = await admin.$queryRaw<{ email_verified_at: Date | null }[]>`
       SELECT email_verified_at FROM users WHERE email = ${OWNER_EMAIL}
     `;
     expect(users).toHaveLength(1);
-    // Signing up is a claim about an address, not proof of it.
-    expect(users[0]?.email_verified_at).toBeNull();
+    // The OTP step proved the address before the school existed.
+    expect(users[0]?.email_verified_at).not.toBeNull();
   });
 
-  it('reports the owner as unverified in the session, so the shell can nag', async () => {
+  it('reports the owner as verified in the session', async () => {
     const signIn = await app.inject({
       method: 'POST',
       url: ROUTES.auth.login,
@@ -248,7 +221,7 @@ describe('signup sends a confirmation message', () => {
     expect(signIn.statusCode).toBe(201);
     const body = signIn.json<{ data: { kind: string; user: { emailVerified: boolean } } }>();
     expect(body.data.kind).toBe('session');
-    expect(body.data.user.emailVerified).toBe(false);
+    expect(body.data.user.emailVerified).toBe(true);
   });
 
   it('does not block sign-in', async () => {
@@ -264,177 +237,198 @@ describe('signup sends a confirmation message', () => {
   });
 });
 
-describe('following the link', () => {
-  it('cannot be redeemed at another school’s address', async () => {
-    // Checked before the happy path so the token is still unspent. The token
-    // belongs to OTHER_SLUG; present it at SLUG.
-    const token = mailer.tokenFor(OTHER_EMAIL) ?? '';
-    expect(await verifyWith(HOST, token).then((r) => r.statusCode)).toBe(401);
-
-    // And it must still work where it belongs — a failed attempt elsewhere must
-    // not burn it.
-    expect(await verifyWith(OTHER_HOST, token).then((r) => r.statusCode)).toBe(201);
+describe('link-based email verification (nag / resend)', () => {
+  beforeAll(async () => {
+    // OTP signup left everyone verified. Link-based nag/resend needs an
+    // unverified owner plus a token the RecordingMailer can surface.
+    await seedLinkVerification();
   });
 
-  it('is refused at the apex, where there is no school to scope it to', async () => {
-    const token = mailer.tokenFor(OWNER_EMAIL) ?? '';
-    const response = await verifyWith(APEX, token);
-    expect(response.statusCode).toBe(401);
-  });
+  describe('following the link', () => {
+    it('emails the owner a link carrying a usable token', () => {
+      const message = [...mailer.delivered].reverse().find((entry) => entry.to === OWNER_EMAIL);
+      expect(message?.subject).toContain('Confirm your email');
+      // Both parts, always: some people read the text one, and every spam filter
+      // does — an HTML-only message scores badly before anyone sees it.
+      expect(message?.text).toContain('/verify-email?t=');
+      expect(message?.html).toContain('/verify-email?t=');
+      // The link must point at the school's own hostname, never the apex.
+      expect(message?.text).toContain(`${SLUG}.localhost`);
 
-  it('rejects a made-up token', async () => {
-    const response = await verifyWith(HOST, 'not-a-real-token');
-    expect(response.statusCode).toBe(401);
-  });
-
-  it('confirms the address', async () => {
-    const token = mailer.tokenFor(OWNER_EMAIL) ?? '';
-    const response = await verifyWith(HOST, token);
-
-    expect(response.statusCode).toBe(201);
-    expect(response.json<{ data: { email: string } }>().data.email).toBe(OWNER_EMAIL);
-
-    const users = await admin.$queryRaw<{ email_verified_at: Date | null }[]>`
-      SELECT email_verified_at FROM users WHERE email = ${OWNER_EMAIL}
-    `;
-    expect(users[0]?.email_verified_at).not.toBeNull();
-  });
-
-  it('shows the session as verified afterwards', async () => {
-    const response = await app.inject({
-      method: 'POST',
-      url: ROUTES.auth.login,
-      headers: { host: HOST },
-      payload: { identifier: OWNER_EMAIL, password: PASSWORD },
-    });
-    expect(
-      response.json<{ data: { user: { emailVerified: boolean } } }>().data.user.emailVerified,
-    ).toBe(true);
-  });
-
-  it('cannot be followed twice', async () => {
-    const token = mailer.tokenFor(OWNER_EMAIL) ?? '';
-    const response = await verifyWith(HOST, token);
-    expect(response.statusCode).toBe(401);
-  });
-
-  it('will not verify an address that changed after the link was sent', async () => {
-    // OTHER_EMAIL was verified above, so start it over with a fresh unverified
-    // state and a fresh link.
-    await admin.$executeRaw`
-      UPDATE users SET email_verified_at = NULL WHERE email = ${OTHER_EMAIL}
-    `;
-    await stepPastCooldown(OTHER_EMAIL);
-
-    const token = await accessTokenFor(OTHER_HOST, OTHER_EMAIL);
-    const resend = await app.inject({
-      method: 'POST',
-      url: ROUTES.auth.resendVerification,
-      headers: { host: OTHER_HOST, cookie: `${COOKIES.accessToken}=${token}` },
-    });
-    expect(resend.statusCode).toBe(201);
-
-    const link = mailer.tokenFor(OTHER_EMAIL) ?? '';
-
-    // The person changes their address between the link being sent and clicked.
-    // The token proved control of the old one, which is not the claim the
-    // account would be recording.
-    await admin.$executeRaw`
-      UPDATE users SET email = ${`changed-${OTHER_EMAIL}`} WHERE email = ${OTHER_EMAIL}
-    `;
-
-    expect(await verifyWith(OTHER_HOST, link).then((r) => r.statusCode)).toBe(401);
-
-    const users = await admin.$queryRaw<{ email_verified_at: Date | null }[]>`
-      SELECT email_verified_at FROM users WHERE email = ${`changed-${OTHER_EMAIL}`}
-    `;
-    expect(users[0]?.email_verified_at).toBeNull();
-  });
-});
-
-describe('asking for another message', () => {
-  it('refuses without a session, so it cannot mail strangers', async () => {
-    const response = await app.inject({
-      method: 'POST',
-      url: ROUTES.auth.resendVerification,
-      headers: { host: RESEND_HOST },
-    });
-    expect(response.statusCode).toBe(401);
-  });
-
-  it('takes no email address at all', async () => {
-    // The endpoint's signature is the defence: there is no field to put someone
-    // else's address in, so it cannot become an existence oracle.
-    const token = await accessTokenFor(HOST, OWNER_EMAIL);
-    const before = mailer.delivered.length;
-
-    const response = await app.inject({
-      method: 'POST',
-      url: ROUTES.auth.resendVerification,
-      headers: { host: HOST, cookie: `${COOKIES.accessToken}=${token}` },
-      payload: { email: 'somebody-else@example.test' },
+      expect(mailer.tokenFor(OWNER_EMAIL)).toBeTruthy();
     });
 
-    // This owner is verified by now, so nothing is sent — and certainly nothing
-    // to the address in the body.
-    expect(response.statusCode).toBe(201);
-    expect(response.json<{ data: { sent: boolean } }>().data.sent).toBe(false);
-    expect(mailer.delivered.length).toBe(before);
-  });
+    it('cannot be redeemed at another school’s address', async () => {
+      // Checked before the happy path so the token is still unspent. The token
+      // belongs to OTHER_SLUG; present it at SLUG.
+      const token = mailer.tokenFor(OTHER_EMAIL) ?? '';
+      expect(await verifyWith(HOST, token).then((r) => r.statusCode)).toBe(401);
 
-  it('holds off a second message inside the cooldown', async () => {
-    const token = await accessTokenFor(RESEND_HOST, RESEND_EMAIL);
-
-    const response = await app.inject({
-      method: 'POST',
-      url: ROUTES.auth.resendVerification,
-      headers: { host: RESEND_HOST, cookie: `${COOKIES.accessToken}=${token}` },
+      // And it must still work where it belongs — a failed attempt elsewhere must
+      // not burn it.
+      expect(await verifyWith(OTHER_HOST, token).then((r) => r.statusCode)).toBe(201);
     });
 
-    const body = response.json<{ data: { sent: boolean; retryAfterSeconds?: number } }>().data;
-    expect(body.sent).toBe(false);
-    // "Wait 43 seconds" is actionable; "could not send" invites another click.
-    expect(body.retryAfterSeconds).toBeGreaterThan(0);
-  });
-
-  /**
-   * The regression that motivated reordering `sendVerification`.
-   *
-   * Superseding earlier tokens *before* attempting the send meant a relay
-   * failure left the person with nothing: the link they already had was dead
-   * and its replacement had never arrived. The recovery was to click "Send
-   * again" and hope — on a path they reach precisely because sending is
-   * already failing.
-   */
-  it('leaves the earlier link working when the replacement cannot be sent', async () => {
-    const original = mailer.tokenFor(RESEND_EMAIL) ?? '';
-    expect(original).toBeTruthy();
-
-    // Step past the cooldown without sleeping for a minute.
-    await stepPastCooldown(RESEND_EMAIL);
-
-    mailer.failNext = true;
-    const token = await accessTokenFor(RESEND_HOST, RESEND_EMAIL);
-
-    const resend = await app.inject({
-      method: 'POST',
-      url: ROUTES.auth.resendVerification,
-      headers: { host: RESEND_HOST, cookie: `${COOKIES.accessToken}=${token}` },
+    it('is refused at the apex, where there is no school to scope it to', async () => {
+      const token = mailer.tokenFor(OWNER_EMAIL) ?? '';
+      const response = await verifyWith(APEX, token);
+      expect(response.statusCode).toBe(401);
     });
 
-    expect(resend.statusCode).toBe(201);
+    it('rejects a made-up token', async () => {
+      const response = await verifyWith(HOST, 'not-a-real-token');
+      expect(response.statusCode).toBe(401);
+    });
 
-    const body = resend.json<{ data: { sent: boolean; retryAfterSeconds?: number } }>().data;
-    expect(body.sent).toBe(false);
-    // It must have failed *at the relay*, not been turned away by the cooldown.
-    // Without this the test passes for the wrong reason: a cooldown block never
-    // reaches the supersede, so the earlier link survives either way.
-    expect(body.retryAfterSeconds).toBeUndefined();
-    expect(mailer.failNext).toBe(false);
+    it('confirms the address', async () => {
+      const token = mailer.tokenFor(OWNER_EMAIL) ?? '';
+      const response = await verifyWith(HOST, token);
 
-    // The point of the whole test: the link they are holding still works.
-    const response = await verifyWith(RESEND_HOST, original);
-    expect(response.statusCode).toBe(201);
-    expect(response.json<{ data: { email: string } }>().data.email).toBe(RESEND_EMAIL);
+      expect(response.statusCode).toBe(201);
+      expect(response.json<{ data: { email: string } }>().data.email).toBe(OWNER_EMAIL);
+
+      const users = await admin.$queryRaw<{ email_verified_at: Date | null }[]>`
+        SELECT email_verified_at FROM users WHERE email = ${OWNER_EMAIL}
+      `;
+      expect(users[0]?.email_verified_at).not.toBeNull();
+    });
+
+    it('shows the session as verified afterwards', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: ROUTES.auth.login,
+        headers: { host: HOST },
+        payload: { identifier: OWNER_EMAIL, password: PASSWORD },
+      });
+      expect(
+        response.json<{ data: { user: { emailVerified: boolean } } }>().data.user.emailVerified,
+      ).toBe(true);
+    });
+
+    it('cannot be followed twice', async () => {
+      const token = mailer.tokenFor(OWNER_EMAIL) ?? '';
+      const response = await verifyWith(HOST, token);
+      expect(response.statusCode).toBe(401);
+    });
+
+    it('will not verify an address that changed after the link was sent', async () => {
+      // OTHER_EMAIL was verified above, so start it over with a fresh unverified
+      // state and a fresh link.
+      await admin.$executeRaw`
+        UPDATE users SET email_verified_at = NULL WHERE email = ${OTHER_EMAIL}
+      `;
+      await stepPastCooldown(OTHER_EMAIL);
+
+      const token = await accessTokenFor(OTHER_HOST, OTHER_EMAIL);
+      const resend = await app.inject({
+        method: 'POST',
+        url: ROUTES.auth.resendVerification,
+        headers: { host: OTHER_HOST, cookie: `${COOKIES.accessToken}=${token}` },
+      });
+      expect(resend.statusCode).toBe(201);
+
+      const link = mailer.tokenFor(OTHER_EMAIL) ?? '';
+
+      // The person changes their address between the link being sent and clicked.
+      // The token proved control of the old one, which is not the claim the
+      // account would be recording.
+      await admin.$executeRaw`
+        UPDATE users SET email = ${`changed-${OTHER_EMAIL}`} WHERE email = ${OTHER_EMAIL}
+      `;
+
+      expect(await verifyWith(OTHER_HOST, link).then((r) => r.statusCode)).toBe(401);
+
+      const users = await admin.$queryRaw<{ email_verified_at: Date | null }[]>`
+        SELECT email_verified_at FROM users WHERE email = ${`changed-${OTHER_EMAIL}`}
+      `;
+      expect(users[0]?.email_verified_at).toBeNull();
+    });
+  });
+
+  describe('asking for another message', () => {
+    it('refuses without a session, so it cannot mail strangers', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: ROUTES.auth.resendVerification,
+        headers: { host: RESEND_HOST },
+      });
+      expect(response.statusCode).toBe(401);
+    });
+
+    it('takes no email address at all', async () => {
+      // The endpoint's signature is the defence: there is no field to put someone
+      // else's address in, so it cannot become an existence oracle.
+      const token = await accessTokenFor(HOST, OWNER_EMAIL);
+      const before = mailer.delivered.length;
+
+      const response = await app.inject({
+        method: 'POST',
+        url: ROUTES.auth.resendVerification,
+        headers: { host: HOST, cookie: `${COOKIES.accessToken}=${token}` },
+        payload: { email: 'somebody-else@example.test' },
+      });
+
+      // This owner is verified by now, so nothing is sent — and certainly nothing
+      // to the address in the body.
+      expect(response.statusCode).toBe(201);
+      expect(response.json<{ data: { sent: boolean } }>().data.sent).toBe(false);
+      expect(mailer.delivered.length).toBe(before);
+    });
+
+    it('holds off a second message inside the cooldown', async () => {
+      const token = await accessTokenFor(RESEND_HOST, RESEND_EMAIL);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: ROUTES.auth.resendVerification,
+        headers: { host: RESEND_HOST, cookie: `${COOKIES.accessToken}=${token}` },
+      });
+
+      const body = response.json<{ data: { sent: boolean; retryAfterSeconds?: number } }>().data;
+      expect(body.sent).toBe(false);
+      // "Wait 43 seconds" is actionable; "could not send" invites another click.
+      expect(body.retryAfterSeconds).toBeGreaterThan(0);
+    });
+
+    /**
+     * The regression that motivated reordering `sendVerification`.
+     *
+     * Superseding earlier tokens *before* attempting the send meant a relay
+     * failure left the person with nothing: the link they already had was dead
+     * and its replacement had never arrived. The recovery was to click "Send
+     * again" and hope — on a path they reach precisely because sending is
+     * already failing.
+     */
+    it('leaves the earlier link working when the replacement cannot be sent', async () => {
+      const original = mailer.tokenFor(RESEND_EMAIL) ?? '';
+      expect(original).toBeTruthy();
+
+      // Step past the cooldown without sleeping for a minute.
+      await stepPastCooldown(RESEND_EMAIL);
+
+      mailer.failNext = true;
+      const token = await accessTokenFor(RESEND_HOST, RESEND_EMAIL);
+
+      const resend = await app.inject({
+        method: 'POST',
+        url: ROUTES.auth.resendVerification,
+        headers: { host: RESEND_HOST, cookie: `${COOKIES.accessToken}=${token}` },
+      });
+
+      expect(resend.statusCode).toBe(201);
+
+      const body = resend.json<{ data: { sent: boolean; retryAfterSeconds?: number } }>().data;
+      expect(body.sent).toBe(false);
+      // It must have failed *at the relay*, not been turned away by the cooldown.
+      // Without this the test passes for the wrong reason: a cooldown block never
+      // reaches the supersede, so the earlier link survives either way.
+      expect(body.retryAfterSeconds).toBeUndefined();
+      expect(mailer.failNext).toBe(false);
+
+      // The point of the whole test: the link they are holding still works.
+      const response = await verifyWith(RESEND_HOST, original);
+      expect(response.statusCode).toBe(201);
+      expect(response.json<{ data: { email: string } }>().data.email).toBe(RESEND_EMAIL);
+    });
   });
 });

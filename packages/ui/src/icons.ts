@@ -57,6 +57,8 @@ export {
   // --- Account and session --------------------------------------------------
   LogOut as SignOutIcon,
   User as AccountIcon,
+  Eye as ShowPasswordIcon,
+  EyeOff as HidePasswordIcon,
 
   // --- Academic structure ---------------------------------------------------
   GraduationCap as ClassIcon,

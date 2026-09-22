@@ -22,6 +22,7 @@ import {
   DialogTitle,
   Field,
   Input,
+  PasswordInput,
   Money,
   Pagination,
   SimpleSelect,
@@ -571,8 +572,7 @@ function StaffDialog({
                     : 'Leave blank to keep the current one. Setting it signs them out everywhere.'
                 }
               >
-                <Input
-                  type="password"
+                <PasswordInput
                   autoComplete="new-password"
                   value={password}
                   onChange={(event) => {

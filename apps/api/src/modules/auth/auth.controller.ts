@@ -1,15 +1,22 @@
 import {
   continueRequestSchema,
   COOKIES,
+  forgotPasswordRequestSchema,
+  forgotPasswordResendOtpRequestSchema,
+  forgotPasswordVerifyOtpRequestSchema,
   loginRequestSchema,
+  resetPasswordRequestSchema,
   ROUTES,
+  type ForgotPasswordResult,
+  type ForgotPasswordResendOtpResult,
+  type ForgotPasswordVerifyOtpResult,
   type LoginOutcome,
   verifyEmailRequestSchema,
   type LoginRequest,
   type ResendVerificationResult,
   type SessionUser,
 } from '@ilm/contracts';
-import { Body, Controller, Get, Inject, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import { type FastifyReply, type FastifyRequest } from 'fastify';
 
 import { ENV, type Env } from '../../config/env';
@@ -21,6 +28,7 @@ import { CLOCK, type Clock } from '../../shared/time/clock.provider';
 
 import { AuthService, type LoginResult } from './auth.service';
 import { EmailVerificationService } from './email-verification.service';
+import { PasswordResetService } from './password-reset.service';
 
 /**
  * Authentication endpoints.
@@ -38,6 +46,7 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly verification: EmailVerificationService,
+    private readonly passwordResets: PasswordResetService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ENV) private readonly env: Env,
   ) {}
@@ -219,6 +228,67 @@ export class AuthController {
     }
 
     return { data: await this.verification.resend(claims.sub, this.clock.now()) };
+  }
+
+  /**
+   * Start a password reset — email a 6-digit OTP.
+   *
+   * On a school host only that school's account is considered. Unknown emails
+   * are refused outright so the person knows to correct a typo (product choice
+   * for this surface; sign-in itself still never enumerates).
+   */
+  @Public()
+  @RateLimit({ limit: 10, windowSeconds: 3600 })
+  @HttpCode(200)
+  @Post(ROUTES.auth.forgotPassword)
+  async forgotPassword(
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+  ): Promise<{ data: ForgotPasswordResult }> {
+    const input = forgotPasswordRequestSchema.parse(body);
+    const slug = resolveTenantSlug(request, this.env.APP_DOMAIN);
+    return {
+      data: await this.passwordResets.request(input.email, this.clock.now(), slug),
+    };
+  }
+
+  @Public()
+  @RateLimit({ limit: 30, windowSeconds: 300 })
+  @Post(ROUTES.auth.forgotPasswordVerifyOtp)
+  async forgotPasswordVerifyOtp(
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+  ): Promise<{ data: ForgotPasswordVerifyOtpResult }> {
+    const input = forgotPasswordVerifyOtpRequestSchema.parse(body);
+    const slug = resolveTenantSlug(request, this.env.APP_DOMAIN);
+    return {
+      data: await this.passwordResets.verifyOtp(input.email, input.code, this.clock.now(), slug),
+    };
+  }
+
+  @Public()
+  @RateLimit({ limit: 10, windowSeconds: 300 })
+  @Post(ROUTES.auth.forgotPasswordResendOtp)
+  async forgotPasswordResendOtp(
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+  ): Promise<{ data: ForgotPasswordResendOtpResult }> {
+    const input = forgotPasswordResendOtpRequestSchema.parse(body);
+    const slug = resolveTenantSlug(request, this.env.APP_DOMAIN);
+    return {
+      data: await this.passwordResets.resend(input.email, this.clock.now(), slug),
+    };
+  }
+
+  @Public()
+  @RateLimit({ limit: 10, windowSeconds: 3600 })
+  @HttpCode(200)
+  @Post(ROUTES.auth.resetPassword)
+  async resetPassword(@Body() body: unknown): Promise<{ data: { email: string } }> {
+    const input = resetPasswordRequestSchema.parse(body);
+    return {
+      data: await this.passwordResets.reset(input.token, input.password, this.clock.now()),
+    };
   }
 
   /**

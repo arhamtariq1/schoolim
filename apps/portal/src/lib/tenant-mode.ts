@@ -50,7 +50,16 @@ export const TENANT_MODE: TenantMode =
  * dashboard. So it is public *as an address* and still takes a prefix *as a
  * link*.
  */
-const PUBLIC_PATHS: ReadonlySet<string> = new Set(['/', '/welcome', '/signup', '/login']);
+const PUBLIC_PATHS: ReadonlySet<string> = new Set([
+  '/',
+  '/welcome',
+  '/signup',
+  '/signup/school',
+  '/login',
+  '/forgot-password',
+  '/otp-verification',
+  '/new-password',
+]);
 
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.has(pathname);
@@ -64,7 +73,15 @@ export function isPublicPath(pathname: string): boolean {
  * would mean needing to know your school in order to find out which schools you
  * belong to.
  */
-const UNPREFIXED_PATHS: ReadonlySet<string> = new Set(['/welcome', '/signup', '/login']);
+const UNPREFIXED_PATHS: ReadonlySet<string> = new Set([
+  '/welcome',
+  '/signup',
+  '/signup/school',
+  '/login',
+  '/forgot-password',
+  '/otp-verification',
+  '/new-password',
+]);
 
 /**
  * The first path segments the portal's own routes occupy.
@@ -89,7 +106,10 @@ const APP_ROUTE_SEGMENTS: ReadonlySet<string> = new Set([
   'auth',
   'fees',
   'finance',
+  'forgot-password',
   'login',
+  'new-password',
+  'otp-verification',
   'requests',
   'settings',
   'signup',

@@ -1,12 +1,22 @@
 import {
+  COOKIES,
   ROUTES,
-  signupRequestSchema,
+  signupCompleteRequestSchema,
+  signupStartRequestSchema,
+  signupVerifyOtpRequestSchema,
+  type SignupCompleteRequest,
+  type SignupResendOtpResult,
   type SignupResult,
+  type SignupStartRequest,
+  type SignupStartResult,
+  type SignupStatus,
+  type SignupVerifyOtpResult,
   type SlugAvailability,
 } from '@ilm/contracts';
-import { Body, Controller, Get, Inject, Post, Query, Req } from '@nestjs/common';
-import { type FastifyRequest } from 'fastify';
+import { Body, Controller, Get, HttpCode, Inject, Post, Query, Req, Res } from '@nestjs/common';
+import { type FastifyReply, type FastifyRequest } from 'fastify';
 
+import { ENV, type Env } from '../../config/env';
 import { Public } from '../../shared/auth/auth.guard';
 import { RateLimit } from '../../shared/http/rate-limit.guard';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
@@ -14,61 +24,116 @@ import { CLOCK, type Clock } from '../../shared/time/clock.provider';
 import { SignupService } from './signup.service';
 
 /**
- * The unauthenticated surface — ADR-0010.
+ * Unauthenticated signup surface — three steps, one cookie.
  *
- * Two endpoints, and the count is deliberate. This is the only part of the API
- * anyone on the internet can call without a session, so it is kept small enough
- * to hold in your head: one that creates a tenant, one that answers yes or no
- * about a name. Anything else that wants to live here should be asked twice.
- *
- * Both are rate limited (see `RateLimitGuard` for what that limit is and is
- * not), and neither has a tenant — they run before one exists, which is why
- * they are `@Public()` and why `TenantGuard` steps aside.
+ * The cookie is the only credential between steps. Tokens never appear in JSON
+ * bodies (docs/11 §8).
  */
 @Controller()
 export class PublicController {
   constructor(
     private readonly signups: SignupService,
     @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ENV) private readonly env: Env,
   ) {}
 
-  /**
-   * Create a school and start its trial.
-   *
-   * Ten per hour per address. A school signs up once; a person retrying a
-   * failed form does it three or four times, and a rejected attempt costs a
-   * slot too because the limit runs before validation. Anything beyond that is
-   * not a school, and each attempt that got through would be a tenant row and a
-   * subdomain claimed.
-   */
   @Public()
   @RateLimit({ limit: 10, windowSeconds: 3600 })
-  @Post(ROUTES.public.signup)
-  async signup(
+  @HttpCode(201)
+  @Post(ROUTES.public.signupStart)
+  async start(
     @Body() body: unknown,
     @Req() request: FastifyRequest,
-  ): Promise<{ data: SignupResult }> {
-    const input = signupRequestSchema.parse(body);
-
-    const result = await this.signups.signup(input, this.clock.now(), {
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<{ data: SignupStartResult }> {
+    const input: SignupStartRequest = signupStartRequestSchema.parse(body);
+    const outcome = await this.signups.start(input, this.clock.now(), {
       ip: request.ip,
       userAgent: request.headers['user-agent'],
     });
 
+    this.setSignupCookie(reply, outcome.sessionToken, outcome.expiresAt);
+    return { data: outcome.result };
+  }
+
+  @Public()
+  @RateLimit({ limit: 60, windowSeconds: 300 })
+  @Get(ROUTES.public.signupStatus)
+  async status(@Req() request: FastifyRequest): Promise<{ data: SignupStatus }> {
+    const token = this.readSignupCookie(request);
+    return { data: await this.signups.status(token, this.clock.now()) };
+  }
+
+  @Public()
+  @RateLimit({ limit: 30, windowSeconds: 300 })
+  @Post(ROUTES.public.signupVerifyOtp)
+  async verifyOtp(
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+  ): Promise<{ data: SignupVerifyOtpResult }> {
+    const input = signupVerifyOtpRequestSchema.parse(body);
+    return {
+      data: await this.signups.verifyOtp(this.readSignupCookie(request), input.code, this.clock.now()),
+    };
+  }
+
+  @Public()
+  @RateLimit({ limit: 10, windowSeconds: 300 })
+  @Post(ROUTES.public.signupResendOtp)
+  async resendOtp(@Req() request: FastifyRequest): Promise<{ data: SignupResendOtpResult }> {
+    return {
+      data: await this.signups.resendOtp(this.readSignupCookie(request), this.clock.now()),
+    };
+  }
+
+  @Public()
+  @RateLimit({ limit: 10, windowSeconds: 3600 })
+  @HttpCode(201)
+  @Post(ROUTES.public.signupComplete)
+  async complete(
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<{ data: SignupResult }> {
+    const input: SignupCompleteRequest = signupCompleteRequestSchema.parse(body);
+    const result = await this.signups.complete(this.readSignupCookie(request), input, this.clock.now(), {
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+    });
+
+    this.clearSignupCookie(reply);
     return { data: result };
   }
 
-  /**
-   * Is this subdomain available?
-   *
-   * Generous, because it fires while someone types. Tight enough that it is not
-   * a convenient way to enumerate every school on the platform at speed — which
-   * it can do slowly regardless, and which is discussed honestly in the service.
-   */
   @Public()
   @RateLimit({ limit: 60, windowSeconds: 60 })
   @Get(ROUTES.public.slugAvailable)
   async slugAvailable(@Query('slug') slug?: string): Promise<{ data: SlugAvailability }> {
     return { data: await this.signups.checkSlug(slug ?? '') };
+  }
+
+  private readSignupCookie(request: FastifyRequest): string | undefined {
+    const cookies = request.cookies as Record<string, string | undefined> | undefined;
+    const value = cookies?.[COOKIES.signupToken];
+    return value === undefined || value === '' ? undefined : value;
+  }
+
+  private cookieScope(): { domain?: string } {
+    return this.env.COOKIE_DOMAIN === undefined ? {} : { domain: this.env.COOKIE_DOMAIN };
+  }
+
+  private setSignupCookie(reply: FastifyReply, token: string, expiresAt: Date): void {
+    void reply.setCookie(COOKIES.signupToken, token, {
+      httpOnly: true,
+      secure: this.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      expires: expiresAt,
+      ...this.cookieScope(),
+    });
+  }
+
+  private clearSignupCookie(reply: FastifyReply): void {
+    void reply.clearCookie(COOKIES.signupToken, { path: '/', ...this.cookieScope() });
   }
 }

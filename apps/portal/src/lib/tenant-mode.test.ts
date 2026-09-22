@@ -105,6 +105,9 @@ describe('reading the school out of a path', () => {
       '/requests',
       '/login',
       '/signup',
+      '/forgot-password',
+      '/otp-verification',
+      '/new-password',
       '/welcome',
       '/auth/continue',
       '/verify-email',
@@ -174,6 +177,9 @@ describe('prefixing a link', () => {
 
     expect(withTenantPrefix('/login', 'beacon')).toBe('/login');
     expect(withTenantPrefix('/signup', 'beacon')).toBe('/signup');
+    expect(withTenantPrefix('/forgot-password', 'beacon')).toBe('/forgot-password');
+    expect(withTenantPrefix('/otp-verification', 'beacon')).toBe('/otp-verification');
+    expect(withTenantPrefix('/new-password', 'beacon')).toBe('/new-password');
     expect(withTenantPrefix('/welcome', 'beacon')).toBe('/welcome');
   });
 

@@ -399,6 +399,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   PlatformUser: 'PlatformUser',
   PlatformSession: 'PlatformSession',
+  SignupIntent: 'SignupIntent',
   SchoolGroup: 'SchoolGroup',
   School: 'School',
   SchoolDomain: 'SchoolDomain',
@@ -452,7 +453,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "platformUser" | "platformSession" | "schoolGroup" | "school" | "schoolDomain" | "user" | "userRole" | "session" | "invitation" | "passwordReset" | "authHandoff" | "emailVerification" | "schoolAgreement" | "auditLog" | "academicSession" | "classLevel" | "section" | "student" | "guardian" | "studentGuardian" | "enrollment" | "staff" | "expenseCategory" | "expense" | "holiday" | "feeHead" | "studentFee" | "numberSequence" | "jobRun" | "feeVoucher" | "feeVoucherLine" | "feeVoucherPeriod" | "feeVoucherArrear" | "feePayment" | "feePaymentAllocation" | "attendanceRecord" | "staffAttendanceRecord" | "securityDeposit" | "securityDepositRefund" | "schoolLogo"
+    modelProps: "platformUser" | "platformSession" | "signupIntent" | "schoolGroup" | "school" | "schoolDomain" | "user" | "userRole" | "session" | "invitation" | "passwordReset" | "authHandoff" | "emailVerification" | "schoolAgreement" | "auditLog" | "academicSession" | "classLevel" | "section" | "student" | "guardian" | "studentGuardian" | "enrollment" | "staff" | "expenseCategory" | "expense" | "holiday" | "feeHead" | "studentFee" | "numberSequence" | "jobRun" | "feeVoucher" | "feeVoucherLine" | "feeVoucherPeriod" | "feeVoucherArrear" | "feePayment" | "feePaymentAllocation" | "attendanceRecord" | "staffAttendanceRecord" | "securityDeposit" | "securityDepositRefund" | "schoolLogo"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -601,6 +602,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.PlatformSessionCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.PlatformSessionCountAggregateOutputType> | number
+        }
+      }
+    }
+    SignupIntent: {
+      payload: Prisma.$SignupIntentPayload<ExtArgs>
+      fields: Prisma.SignupIntentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SignupIntentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SignupIntentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SignupIntentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SignupIntentPayload>
+        }
+        findFirst: {
+          args: Prisma.SignupIntentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SignupIntentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SignupIntentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SignupIntentPayload>
+        }
+        findMany: {
+          args: Prisma.SignupIntentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SignupIntentPayload>[]
+        }
+        create: {
+          args: Prisma.SignupIntentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SignupIntentPayload>
+        }
+        createMany: {
+          args: Prisma.SignupIntentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SignupIntentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SignupIntentPayload>[]
+        }
+        delete: {
+          args: Prisma.SignupIntentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SignupIntentPayload>
+        }
+        update: {
+          args: Prisma.SignupIntentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SignupIntentPayload>
+        }
+        deleteMany: {
+          args: Prisma.SignupIntentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SignupIntentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SignupIntentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SignupIntentPayload>[]
+        }
+        upsert: {
+          args: Prisma.SignupIntentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SignupIntentPayload>
+        }
+        aggregate: {
+          args: Prisma.SignupIntentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSignupIntent>
+        }
+        groupBy: {
+          args: Prisma.SignupIntentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SignupIntentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SignupIntentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SignupIntentCountAggregateOutputType> | number
         }
       }
     }
@@ -3490,6 +3565,29 @@ export const PlatformSessionScalarFieldEnum = {
 export type PlatformSessionScalarFieldEnum = (typeof PlatformSessionScalarFieldEnum)[keyof typeof PlatformSessionScalarFieldEnum]
 
 
+export const SignupIntentScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  name: 'name',
+  passwordHash: 'passwordHash',
+  termsVersion: 'termsVersion',
+  otpHash: 'otpHash',
+  otpExpiresAt: 'otpExpiresAt',
+  otpSentAt: 'otpSentAt',
+  otpAttempts: 'otpAttempts',
+  emailVerifiedAt: 'emailVerifiedAt',
+  sessionTokenHash: 'sessionTokenHash',
+  expiresAt: 'expiresAt',
+  completedAt: 'completedAt',
+  ip: 'ip',
+  userAgent: 'userAgent',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SignupIntentScalarFieldEnum = (typeof SignupIntentScalarFieldEnum)[keyof typeof SignupIntentScalarFieldEnum]
+
+
 export const SchoolGroupScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -4816,6 +4914,7 @@ export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaC
 export type GlobalOmitConfig = {
   platformUser?: Prisma.PlatformUserOmit
   platformSession?: Prisma.PlatformSessionOmit
+  signupIntent?: Prisma.SignupIntentOmit
   schoolGroup?: Prisma.SchoolGroupOmit
   school?: Prisma.SchoolOmit
   schoolDomain?: Prisma.SchoolDomainOmit

@@ -22,6 +22,26 @@ export const ERROR_CODES = [
   /** The JWT tenant claim and the request host disagree (docs/04 section 2). */
   'AUTH_TENANT_MISMATCH',
 
+  // --- Self-serve signup ----------------------------------------------------
+  /** No (or expired) signup cookie; start again from /signup. */
+  'SIGNUP_SESSION_REQUIRED',
+  /** Wrong OTP, or too many attempts. */
+  'SIGNUP_OTP_INVALID',
+  /** OTP past its short window; ask for another. */
+  'SIGNUP_OTP_EXPIRED',
+  /** School step called before the email OTP succeeded. */
+  'SIGNUP_EMAIL_UNVERIFIED',
+
+  // --- Password reset -------------------------------------------------------
+  /** No active account for that email (in this school, or anywhere on the apex). */
+  'AUTH_EMAIL_NOT_FOUND',
+  /** Wrong reset OTP. */
+  'AUTH_OTP_INVALID',
+  /** Reset OTP past its window; ask for another. */
+  'AUTH_OTP_EXPIRED',
+  /** Reset token missing, used, or expired. */
+  'AUTH_RESET_TOKEN_INVALID',
+
   // --- Request shape --------------------------------------------------------
   'VALIDATION_FAILED',
   'NOT_FOUND',
@@ -110,6 +130,16 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, number>> = {
   AUTH_MFA_REQUIRED: 401,
   AUTH_PERMISSION_DENIED: 403,
   AUTH_TENANT_MISMATCH: 401,
+
+  SIGNUP_SESSION_REQUIRED: 401,
+  SIGNUP_OTP_INVALID: 400,
+  SIGNUP_OTP_EXPIRED: 400,
+  SIGNUP_EMAIL_UNVERIFIED: 400,
+
+  AUTH_EMAIL_NOT_FOUND: 404,
+  AUTH_OTP_INVALID: 400,
+  AUTH_OTP_EXPIRED: 400,
+  AUTH_RESET_TOKEN_INVALID: 400,
 
   VALIDATION_FAILED: 400,
   NOT_FOUND: 404,

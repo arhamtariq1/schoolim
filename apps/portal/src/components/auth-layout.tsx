@@ -2,28 +2,26 @@ import { BRAND } from '@ilm/utils';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-import { AuthShowcase } from './auth-showcase';
+import { AuthScrollLock } from './auth-scroll-lock';
+import { AuthSlideshow } from './auth-slideshow';
 
 /**
- * The frame around signing in and signing up.
+ * Shared frame for every pre-session screen: sign-in, sign-up, OTP, forgot
+ * password and new password.
  *
- * ## Two panels, and only one of them is load-bearing
+ * ## Layout
  *
- * The form is on the left and it is the whole product on this screen: it is
- * first in the DOM, it is what a screen reader reaches first, and it is the
- * only thing that renders below `lg`. The panel on the right is decoration
- * with a job — it says what this is and who it is for, to somebody who has
- * arrived from a link and may not know — and it is `hidden` on a phone rather
- * than stacked above the form, because nobody signs in by scrolling past a
- * marketing panel on a 360px screen.
+ * Desktop is a 50 / 50 split — slideshow on the left, form on the right — so
+ * the product is visible before anyone types. The logo sits at the **top-right**
+ * of the form column. Below `lg` the slideshow is hidden and the form takes the
+ * full width; nobody signs in by scrolling past marketing on a phone.
  *
- * ## Why the art is DOM and not an image
+ * ## Scrolling
  *
- * The showcase is real markup: real type, real numbers, the same tokens as the
- * rest of the product. A PNG would be a second place the brand colour lives, it
- * would be wrong the day the palette moves, it would be four hundred kilobytes
- * on a 4G connection, and it would be a screenshot of an app rather than the
- * app. This costs nothing to ship and is sharp on any display.
+ * The document never scrolls (`fixed` frame + `AuthScrollLock`). The only
+ * scroller is the form column. Its inner wrapper is `min-h-full` so short forms
+ * stay vertically centred, and tall forms (school setup) scroll inside that
+ * column alone — never the window.
  */
 
 export interface AuthLayoutProps {
@@ -38,9 +36,8 @@ export interface AuthLayoutProps {
   /**
    * How much room the form gets.
    *
-   * `narrow` is sign-in: two fields, and a 700px-wide pair of boxes looks like
-   * a mistake. `wide` is sign-up, where docs/16 §5's `max-w-2xl` is enough to
-   * put two fields on a row instead of nine in a column.
+   * `narrow` is sign-in and password flows. `wide` is sign-up, where
+   * docs/16 §5's `max-w-2xl` is enough for two fields on a row.
    */
   readonly width?: 'narrow' | 'wide';
 }
@@ -54,25 +51,35 @@ export function AuthLayout({
   width = 'narrow',
 }: AuthLayoutProps) {
   return (
-    // `h-dvh` with `overflow-hidden`, and the scrolling happens *inside* the
-    // form column.
-    //
-    // The page scrolled as one before, which dragged the art panel up and out
-    // of view the moment somebody reached the fourth field — so the half of the
-    // screen that is meant to be looked at was the half that left. The panel now
-    // stays put and only the form moves, which is also why the form fills the
-    // screen rather than sitting in a letterboxed card: on a wide monitor that
-    // card was a strip of form floating in a margin.
-    <main className="flex h-dvh overflow-hidden bg-background">
-      {/* --- The form. Scrolls on its own. --------------------------------- */}
-      <div className="flex w-full flex-col overflow-y-auto lg:w-[52%] lg:shrink-0">
-        <div className="flex min-h-full w-full flex-col px-5 py-8 sm:px-10 sm:py-10">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 self-start rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            <Wordmark />
-          </Link>
+    <main className="fixed inset-0 flex overflow-hidden bg-background">
+      {/* Applied before paint — do not wait for a client effect, or the
+          document scrollbar flashes next to the form column on first load.
+          The theme’s global `::-webkit-scrollbar { width: 10px }` still paints
+          a trough on `html`/`body` even when overflow is hidden, which is the
+          second bar people see beside the form column. */}
+      <style>
+        {`html,body{overflow:hidden!important;height:100%!important;overscroll-behavior:none;scrollbar-width:none!important}
+html::-webkit-scrollbar,body::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}`}
+      </style>
+      <AuthScrollLock />
+
+      <div
+        aria-hidden="true"
+        className="relative hidden h-full w-1/2 shrink-0 overflow-hidden lg:block"
+      >
+        <AuthSlideshow />
+      </div>
+
+      <div className="h-full min-h-0 w-full overflow-y-auto overscroll-y-contain lg:w-1/2">
+        <div className="flex min-h-full flex-col px-5 py-8 sm:px-10 sm:py-10">
+          <div className="flex shrink-0 justify-end">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <Wordmark />
+            </Link>
+          </div>
 
           <div className="flex flex-1 flex-col justify-center py-8">
             <div className={`mx-auto w-full ${width === 'wide' ? 'max-w-2xl' : 'max-w-md'}`}>
@@ -89,22 +96,10 @@ export function AuthLayout({
             </div>
           </div>
 
-          <p className="mt-8 text-center text-xs text-muted-foreground">
+          <p className="shrink-0 text-center text-xs text-muted-foreground">
             © {BRAND.name}. Your school’s data stays yours.
           </p>
         </div>
-      </div>
-
-      {/* --- The showcase.
-              Decoration, so it is hidden from assistive technology rather than
-              read out as a wall of stray numbers — and `overflow-hidden` rather
-              than scrollable, because it is a picture and a picture does not
-              have a second page. --- */}
-      <div
-        aria-hidden="true"
-        className="relative hidden h-full overflow-hidden bg-brand-gradient lg:block lg:flex-1"
-      >
-        <AuthShowcase />
       </div>
     </main>
   );
@@ -113,9 +108,8 @@ export function AuthLayout({
 /**
  * The mark.
  *
- * Drawn rather than imported: three strokes stepping up, which is the only
- * thing this product does for a school — the term's collection, week by week.
- * `currentColor` so it inverts on the gradient panel without a second asset.
+ * Drawn rather than imported: three strokes stepping up — collection over the
+ * term. `currentColor` so it follows the primary token without a second asset.
  */
 function Wordmark() {
   return (

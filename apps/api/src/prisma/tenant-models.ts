@@ -75,6 +75,11 @@ export const PLATFORM_TABLES = [
   'platform_users',
   /** Refresh tokens for platform staff. Belongs to no school, by definition. */
   'platform_sessions',
+  /**
+   * In-progress self-serve signup. Exists before a school does, so it cannot
+   * carry `school_id` or tenant RLS. Admin connection only.
+   */
+  'signup_intents',
   'school_groups',
   'school_domains',
 ] as const;

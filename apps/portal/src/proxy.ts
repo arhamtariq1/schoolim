@@ -66,7 +66,14 @@ export const TENANT_PREFIX_HEADER = 'x-tenant-prefix';
  * definition — they are how one starts. Redirecting them to `/login` would
  * break the two flows that exist to get somebody signed in.
  */
-const SCHOOL_ANONYMOUS_PATHS = new Set(['/login', '/auth/continue', '/verify-email']);
+const SCHOOL_ANONYMOUS_PATHS = new Set([
+  '/login',
+  '/forgot-password',
+  '/otp-verification',
+  '/new-password',
+  '/auth/continue',
+  '/verify-email',
+]);
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
@@ -135,7 +142,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // On a school's own address, the marketing site does not exist. Somebody
   // following a signup link from an email while already inside their portal
   // should land in their portal, not on a form offering them a second school.
-  if (inner === '/welcome' || inner === '/signup') {
+  if (inner === '/welcome' || inner === '/signup' || inner === '/signup/school') {
     return NextResponse.redirect(new URL(prefixed('/', slug), request.url));
   }
 

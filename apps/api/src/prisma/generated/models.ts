@@ -10,6 +10,7 @@
  */
 export type * from './models/PlatformUser.js'
 export type * from './models/PlatformSession.js'
+export type * from './models/SignupIntent.js'
 export type * from './models/SchoolGroup.js'
 export type * from './models/School.js'
 export type * from './models/SchoolDomain.js'

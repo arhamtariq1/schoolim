@@ -89,6 +89,39 @@ model PlatformSession {
   @@map("platform_sessions")
 }
 
+/// In-progress self-serve signup: credentials → email OTP → school details.
+///
+/// Lives outside tenancy because the school does not exist yet. The opaque
+/// `session_token_hash` is what the `ilm_su` cookie proves; the password is
+/// hashed here and only materialised into `users` on complete. Retention: rows
+/// expire within a day and are deleted by a sweeper; completing clears the row
+/// after the school exists. The application role holds no grant.
+model SignupIntent {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  email            String
+  name             String
+  passwordHash     String    @map("password_hash")
+  termsVersion     String    @map("terms_version")
+  /// SHA-256 of the 6-digit OTP. Cleared once verified.
+  otpHash          String?   @map("otp_hash")
+  otpExpiresAt     DateTime? @map("otp_expires_at") @db.Timestamptz(6)
+  otpSentAt        DateTime? @map("otp_sent_at") @db.Timestamptz(6)
+  otpAttempts      Int       @default(0) @map("otp_attempts")
+  emailVerifiedAt  DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  /// Opaque cookie value, hashed like a refresh token.
+  sessionTokenHash String    @unique @map("session_token_hash")
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(6)
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz(6)
+  ip               String?
+  userAgent        String?   @map("user_agent")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("signup_intents")
+}
+
 enum SchoolStatus {
   TRIAL
   ACTIVE

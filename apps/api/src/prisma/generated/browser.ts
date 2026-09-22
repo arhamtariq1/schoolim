@@ -35,6 +35,17 @@ export type PlatformUser = Prisma.PlatformUserModel
  */
 export type PlatformSession = Prisma.PlatformSessionModel
 /**
+ * Model SignupIntent
+ * In-progress self-serve signup: credentials → email OTP → school details.
+ * 
+ * Lives outside tenancy because the school does not exist yet. The opaque
+ * `session_token_hash` is what the `ilm_su` cookie proves; the password is
+ * hashed here and only materialised into `users` on complete. Retention: rows
+ * expire within a day and are deleted by a sweeper; completing clears the row
+ * after the school exists. The application role holds no grant.
+ */
+export type SignupIntent = Prisma.SignupIntentModel
+/**
  * Model SchoolGroup
  * Reserved by the first migration, unused until Phase 9. See ADR-0008.
  * Present now because adding a parent above `schools` later is a far more

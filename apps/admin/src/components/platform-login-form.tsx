@@ -1,7 +1,7 @@
 'use client';
 
 import { platformLoginSchema, ROUTES } from '@ilm/contracts';
-import { Button, Field, Input } from '@ilm/ui';
+import { Button, Field, Input, PasswordInput } from '@ilm/ui';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -93,8 +93,7 @@ export function PlatformLoginForm() {
       </Field>
 
       <Field label="Password" error={fieldErrors['password']} required>
-        <Input
-          type="password"
+        <PasswordInput
           name="password"
           autoComplete="current-password"
           value={password}

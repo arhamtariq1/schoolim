@@ -70,6 +70,40 @@ export type SessionUser = z.infer<typeof sessionUserSchema>;
 export const forgotPasswordRequestSchema = z.object({ email: emailSchema }).strict();
 export type ForgotPasswordRequest = z.infer<typeof forgotPasswordRequestSchema>;
 
+export const forgotPasswordResultSchema = z.object({
+  email: emailSchema,
+  otpExpiresAt: z.iso.datetime(),
+});
+export type ForgotPasswordResult = z.infer<typeof forgotPasswordResultSchema>;
+
+export const forgotPasswordVerifyOtpRequestSchema = z
+  .object({
+    email: emailSchema,
+    code: z
+      .string()
+      .trim()
+      .regex(/^\d{6}$/, 'Enter the 6-digit code from your email.'),
+  })
+  .strict();
+export type ForgotPasswordVerifyOtpRequest = z.infer<typeof forgotPasswordVerifyOtpRequestSchema>;
+
+export const forgotPasswordVerifyOtpResultSchema = z.object({
+  email: emailSchema,
+  /** Opaque one-time token for `/new-password`. Never log it. */
+  resetToken: z.string().min(1),
+});
+export type ForgotPasswordVerifyOtpResult = z.infer<typeof forgotPasswordVerifyOtpResultSchema>;
+
+export const forgotPasswordResendOtpRequestSchema = z.object({ email: emailSchema }).strict();
+export type ForgotPasswordResendOtpRequest = z.infer<typeof forgotPasswordResendOtpRequestSchema>;
+
+export const forgotPasswordResendOtpResultSchema = z.object({
+  sent: z.boolean(),
+  otpExpiresAt: z.iso.datetime().optional(),
+  retryAfterSeconds: z.number().int().min(0).optional(),
+});
+export type ForgotPasswordResendOtpResult = z.infer<typeof forgotPasswordResendOtpResultSchema>;
+
 /**
  * Password rules.
  *
@@ -86,8 +120,18 @@ export const resetPasswordRequestSchema = z
   .object({
     token: nonEmptyString,
     password: passwordSchema,
+    confirmPassword: z.string().min(1, 'Confirm your password.'),
   })
-  .strict();
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.password !== value.confirmPassword) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['confirmPassword'],
+        message: 'Passwords do not match.',
+      });
+    }
+  });
 
 export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
 
