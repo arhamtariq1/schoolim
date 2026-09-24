@@ -75,9 +75,10 @@ export default async function VouchersPage({
 
   return (
     <AppShell
-      user={{ name: session?.name ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
+      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
       school={{ name: session?.school.name ?? '' }}
       permissions={session?.permissions ?? []}
+      profileCompleted={session?.profileCompleted ?? true}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
     >
       <VouchersView

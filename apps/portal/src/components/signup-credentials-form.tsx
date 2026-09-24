@@ -12,11 +12,14 @@ import { useEffect, useState, type FormEvent } from 'react';
 
 import { SIGNUP_CONTEXT } from './signup-step-gate';
 
+import { readSignupDraft, saveSignupDraft } from '@/lib/signup-draft';
+
 /**
  * Signup step 1 — credentials and terms.
  *
  * School details wait until the email OTP succeeds. The API sets an httpOnly
- * signup cookie; this form never stores the password in the browser.
+ * signup cookie. A sessionStorage draft restores the fields when the person
+ * uses Back from the OTP screen.
  */
 export function SignupCredentialsForm() {
   const toast = useToast();
@@ -28,9 +31,27 @@ export function SignupCredentialsForm() {
   const [accepted, setAccepted] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isPending, setIsPending] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Restore draft after mount (SSR has no sessionStorage), then maybe resume.
+  useEffect(() => {
+    const stored = readSignupDraft();
+    if (stored !== undefined) {
+      setName(stored.name);
+      setEmail(stored.email);
+      setPassword(stored.password);
+      setConfirmPassword(stored.confirmPassword);
+      setAccepted(stored.accepted);
+    }
+    setHydrated(true);
+  }, []);
 
   // Resume an in-flight signup if the cookie is still valid.
   useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
+
     let cancelled = false;
     void (async () => {
       try {
@@ -39,15 +60,13 @@ export function SignupCredentialsForm() {
           return;
         }
         const body = (await response.json()) as {
-          data: { email: string; step: 'otp' | 'school' };
+          data: { email: string; step: 'otp' };
         };
         if (cancelled) {
           return;
         }
         router.replace(
-          body.data.step === 'otp'
-            ? `/otp-verification?context=${SIGNUP_CONTEXT}&email=${encodeURIComponent(body.data.email)}`
-            : `/signup/school?email=${encodeURIComponent(body.data.email)}`,
+          `/otp-verification?context=${SIGNUP_CONTEXT}&email=${encodeURIComponent(body.data.email)}`,
         );
       } catch {
         // Cold start — stay on credentials.
@@ -56,7 +75,7 @@ export function SignupCredentialsForm() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [hydrated, router]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -108,6 +127,13 @@ export function SignupCredentialsForm() {
       }
 
       const body = (await response.json()) as { data: SignupStartResult };
+      saveSignupDraft({
+        name,
+        email,
+        password,
+        confirmPassword,
+        accepted,
+      });
       toast.success('Check your email', `We sent a code to ${body.data.email}.`);
       router.push(
         `/otp-verification?context=${SIGNUP_CONTEXT}&email=${encodeURIComponent(body.data.email)}`,

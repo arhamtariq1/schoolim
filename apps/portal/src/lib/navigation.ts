@@ -163,6 +163,26 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Academics',
     icon: 'AcademicsIcon',
     permission: 'academics.structure.read',
+    children: [
+      {
+        href: '/classes',
+        label: 'Classes',
+        icon: 'ClassIcon',
+        permission: 'academics.structure.read',
+      },
+      {
+        href: '/academics/sessions',
+        label: 'Sessions',
+        icon: 'SessionIcon',
+        permission: 'academics.structure.read',
+      },
+      {
+        href: '/academics/holidays',
+        label: 'Calendar',
+        icon: 'HolidayIcon',
+        permission: 'academics.structure.read',
+      },
+    ],
   },
   {
     href: '/staff',
@@ -233,4 +253,4 @@ function hasOnlyChildren(item: NavItem): boolean {
   return CONTAINER_ONLY.has(item.href);
 }
 
-const CONTAINER_ONLY: ReadonlySet<string> = new Set(['/attendance', '/fees']);
+const CONTAINER_ONLY: ReadonlySet<string> = new Set(['/attendance', '/fees', '/academics']);

@@ -237,6 +237,8 @@ export const UserScalarFieldEnum = {
   status: 'status',
   emailVerifiedAt: 'emailVerifiedAt',
   mustChangePassword: 'mustChangePassword',
+  profileCompletedAt: 'profileCompletedAt',
+  designation: 'designation',
   tokenVersion: 'tokenVersion',
   locale: 'locale',
   lastLoginAt: 'lastLoginAt',

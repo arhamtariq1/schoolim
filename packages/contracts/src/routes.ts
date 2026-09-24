@@ -59,6 +59,11 @@ export const ROUTES = {
     signupResendOtp: `${API_PREFIX}/public/signup/resend-otp`,
     signupComplete: `${API_PREFIX}/public/signup/complete`,
     signupStatus: `${API_PREFIX}/public/signup/status`,
+    /**
+     * Abandon an in-progress signup (wrong email, Start over, Back).
+     * Clears the `ilm_su` cookie and drops the open intent.
+     */
+    signupCancel: `${API_PREFIX}/public/signup/cancel`,
     slugAvailable: `${API_PREFIX}/public/slug-available`,
   },
   students: {
@@ -210,6 +215,18 @@ export const ROUTES = {
     remove: (id: string) => `${API_PREFIX}/staff/${id}`,
   },
   health: `${API_PREFIX}/health`,
+
+  /**
+   * The signed-in person's own profile.
+   *
+   * No `:id` — you can only read or write yourself. Completing the profile is
+   * what unlocks the rest of the portal after first login.
+   */
+  me: {
+    profile: `${API_PREFIX}/me/profile`,
+    /** First-login school + person form. Unlocks the portal when saved. */
+    onboarding: `${API_PREFIX}/me/onboarding`,
+  },
 
   /**
    * The platform console.

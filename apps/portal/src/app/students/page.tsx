@@ -74,9 +74,10 @@ export default async function StudentsPage({
 
   return (
     <AppShell
-      user={{ name: session.name, roleLabel: session.roles.join(', ') }}
+      user={{ name: session.name, email: session.email, roleLabel: session.roles.join(', ') }}
       school={{ name: session.school.name }}
       permissions={session.permissions}
+      profileCompleted={session.profileCompleted}
       unverifiedEmail={session.emailVerified ? undefined : session.email}
     >
       <StudentsTable

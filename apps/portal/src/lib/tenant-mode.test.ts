@@ -99,6 +99,7 @@ describe('reading the school out of a path', () => {
       '/fees/vouchers',
       '/attendance/mark/students',
       '/academics',
+      '/classes',
       '/staff',
       '/finance/expenses',
       '/settings/fees',

@@ -34,6 +34,11 @@ export interface AuthLayoutProps {
   /** A warning or status message above the form. */
   readonly notice?: ReactNode;
   /**
+   * Optional control above the form title (e.g. Back during signup OTP).
+   * Left-aligned in the form column so it is hard to miss.
+   */
+  readonly back?: ReactNode;
+  /**
    * How much room the form gets.
    *
    * `narrow` is sign-in and password flows. `wide` is sign-up, where
@@ -48,6 +53,7 @@ export function AuthLayout({
   children,
   footer,
   notice,
+  back,
   width = 'narrow',
 }: AuthLayoutProps) {
   return (
@@ -75,7 +81,7 @@ html::-webkit-scrollbar,body::-webkit-scrollbar{display:none!important;width:0!i
           <div className="flex shrink-0 justify-end">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="inline-flex shrink-0 items-center gap-2 rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <Wordmark />
             </Link>
@@ -83,6 +89,7 @@ html::-webkit-scrollbar,body::-webkit-scrollbar{display:none!important;width:0!i
 
           <div className="flex flex-1 flex-col justify-center py-8">
             <div className={`mx-auto w-full ${width === 'wide' ? 'max-w-2xl' : 'max-w-md'}`}>
+              {back === undefined ? null : <div className="mb-5">{back}</div>}
               <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
               <p className="mt-1.5 text-sm text-balance text-muted-foreground">{subtitle}</p>
 

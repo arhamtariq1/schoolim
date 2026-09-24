@@ -17,7 +17,9 @@ function Harness({ initial = '' }: { readonly initial?: string }) {
 }
 
 function boxes(): HTMLInputElement[] {
-  return screen.getAllByLabelText(/Digit \d of 6/) as HTMLInputElement[];
+  // No cast: testing-library already types this as HTMLInputElement[], and the
+  // redundant assertion was the one thing failing lint on the branch.
+  return screen.getAllByLabelText(/Digit \d of 6/);
 }
 
 describe('OtpInput', () => {

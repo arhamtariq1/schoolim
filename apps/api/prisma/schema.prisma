@@ -307,6 +307,14 @@ model User {
   /// the address changes, because the proof was about the old one (ADR-0012).
   emailVerifiedAt    DateTime?  @map("email_verified_at") @db.Timestamptz(6)
   mustChangePassword Boolean    @default(false) @map("must_change_password")
+  /// Null until the person has filled the first-login profile form.
+  ///
+  /// A timestamp rather than a boolean for the same reason as `emailVerifiedAt`:
+  /// "when did they complete it" matters in a dispute, and grandfathered rows
+  /// get `created_at` so existing schools are not bounced to `/profile/create`.
+  profileCompletedAt DateTime?  @map("profile_completed_at") @db.Timestamptz(6)
+  /// Optional job title shown on the profile card (e.g. Principal, Accountant).
+  designation        String?
   tokenVersion       Int        @default(0) @map("token_version")
   locale             String?
   lastLoginAt        DateTime?  @map("last_login_at") @db.Timestamptz(6)

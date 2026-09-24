@@ -201,6 +201,7 @@ export class StaffService {
                 passwordHash,
                 status: 'ACTIVE',
                 mustChangePassword: true,
+                profileCompletedAt: this.clock.now(),
               } as never,
               select: { id: true },
             });
@@ -356,6 +357,7 @@ export class StaffService {
         status: 'ACTIVE',
         // Somebody else chose this password and it was handed over out of band.
         mustChangePassword: true,
+        profileCompletedAt: this.clock.now(),
       } as never,
       select: { id: true },
     });

@@ -18,10 +18,10 @@ interface Problem {
  * errors stay under the inputs for assistive tech. `isPending` disables the
  * button so a double click cannot fire two sign-ins.
  */
-export function LoginForm() {
+export function LoginForm({ initialEmail = '' }: { initialEmail?: string }) {
   const router = useRouter();
   const toast = useToast();
-  const [identifier, setIdentifier] = useState('');
+  const [identifier, setIdentifier] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isPending, setIsPending] = useState(false);
@@ -68,7 +68,12 @@ export function LoginForm() {
 
       if (body.data.kind === 'session') {
         toast.success('Signed in');
-        router.replace(body.data.user.mustChangePassword ? '/settings/password' : '/');
+        const next = body.data.user.mustChangePassword
+          ? '/settings/password'
+          : body.data.user.profileCompleted
+            ? '/'
+            : '/profile/create';
+        router.replace(next);
         router.refresh();
         return;
       }

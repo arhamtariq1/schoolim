@@ -1,4 +1,5 @@
 import { COOKIES, ROUTES } from '@ilm/contracts';
+import { systemClock } from '@ilm/utils';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -33,30 +34,55 @@ import { RecordingMailer, runSignupFlow } from './signup-flow';
  * can never do — and there is a regression below that depends on it.
  */
 
-const SLUG = 'verify-e2e-school';
-const HOST = `${SLUG}.localhost`;
-const OTHER_SLUG = 'verify-e2e-other';
-const OTHER_HOST = `${OTHER_SLUG}.localhost`;
-/** Its own school, because the resend regression mutates timestamps. */
-const RESEND_SLUG = 'verify-e2e-resend';
-const RESEND_HOST = `${RESEND_SLUG}.localhost`;
 const APEX = 'localhost';
 
-const OWNER_EMAIL = 'founder@verify-e2e.test';
-const OTHER_EMAIL = `other@${OTHER_SLUG}.test`;
-const RESEND_EMAIL = `owner@${RESEND_SLUG}.test`;
+/**
+ * The three owners. **Email is the only fixed identity in this file.**
+ *
+ * Three-step signup allocates the school's slug itself — from the email's local
+ * part, with a collision suffix if that is taken — and the owner chooses the
+ * real one later during onboarding. So nothing here may assume a slug: the
+ * hosts below are discovered from the signup response, not declared.
+ *
+ * The local parts are distinctive rather than `founder` / `owner` so that the
+ * slug this suite ends up with is recognisably its own, and is unlikely to
+ * collide with a real school or another suite running beside it. That is for
+ * legibility only — the code still reads the slug back and never predicts it.
+ */
+const OWNER_EMAIL = 'verify-e2e-owner@verify-e2e.test';
+const OTHER_EMAIL = 'verify-e2e-other@verify-e2e.test';
+const RESEND_EMAIL = 'verify-e2e-resend@verify-e2e.test';
 const PASSWORD = 'a-long-enough-passphrase';
 
-const ALL_SLUGS = [SLUG, OTHER_SLUG, RESEND_SLUG];
 const ALL_EMAILS = [OWNER_EMAIL, OTHER_EMAIL, RESEND_EMAIL];
+
+/**
+ * Filled in by `beforeAll`, from each signup's `continueTo.slug`.
+ *
+ * `let`, and deliberately so: a `const` here would be a guess about what the
+ * server named the school, which is exactly the assumption that used to make
+ * every request in this file land on a hostname resolving to no school at all.
+ */
+let HOST = '';
+let OTHER_HOST = '';
+let RESEND_HOST = '';
 
 let app: NestFastifyApplication;
 let admin: PrismaClient;
 let mailer: RecordingMailer;
 
 async function wipe(): Promise<void> {
+  // Found by **owner email**, because the slug is not ours to know.
+  //
+  // This used to delete by three hard-coded slugs, and after signup began
+  // allocating its own it therefore deleted nothing: every run left its schools
+  // behind, the next run added three more users on the same addresses, and the
+  // suite failed counting rows it had created itself.
+  //
+  // The email is the one key this file fixes, so it is the one to clean by —
+  // and it works before signup has run, which a slug lookup could not.
   const rows = await admin.$queryRaw<{ id: string }[]>`
-    SELECT id FROM schools WHERE slug = ANY(${ALL_SLUGS})
+    SELECT DISTINCT school_id AS id FROM users WHERE email = ANY(${ALL_EMAILS})
   `;
   const ids = rows.map((row) => row.id);
   if (ids.length > 0) {
@@ -135,7 +161,7 @@ async function seedLinkVerification(): Promise<void> {
     await admin.$executeRaw`
       UPDATE users SET email_verified_at = NULL WHERE id = ${owner.id}::uuid
     `;
-    const result = await verification.sendVerification(owner.id, new Date());
+    const result = await verification.sendVerification(owner.id, systemClock.now());
     expect(result.sent).toBe(true);
   }
 }
@@ -160,32 +186,27 @@ beforeAll(async () => {
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
 
-  for (const [slug, email] of [
-    [SLUG, OWNER_EMAIL],
-    [OTHER_SLUG, OTHER_EMAIL],
-    [RESEND_SLUG, RESEND_EMAIL],
-  ] as const) {
-    const response = await runSignupFlow(
-      app,
-      mailer,
-      {
-        name: 'Founder',
-        email,
-        password: PASSWORD,
-        school: {
-          name: `Verify ${slug}`,
-          slug,
-          city: 'Lahore',
-          phone: '+923001234567',
-          email: `office@${slug}.test`,
-          timezone: 'Asia/Karachi',
-          locale: 'en',
-        },
-      },
-      APEX,
-    );
+  // Three schools, one per owner, each on its own host.
+  //
+  // The host comes back from signup rather than going into it: the server picks
+  // the slug, and the only way to address the school afterwards is to use the
+  // one it picked. The resend regression mutates timestamps, which is why it
+  // gets a school to itself rather than sharing one.
+  const hosts: string[] = [];
+
+  for (const email of ALL_EMAILS) {
+    const response = await runSignupFlow(app, mailer, { name: 'Founder', email, password: PASSWORD }, APEX);
     expect(response.statusCode).toBe(201);
+
+    const { continueTo } = response.json<{ data: { continueTo: { slug: string } } }>().data;
+    hosts.push(`${continueTo.slug}.localhost`);
   }
+
+  [HOST, OTHER_HOST, RESEND_HOST] = hosts as [string, string, string];
+
+  // A shared host would make "cannot be redeemed at another school's address"
+  // pass for the wrong reason, so fail loudly here rather than three files down.
+  expect(new Set(hosts).size).toBe(ALL_EMAILS.length);
 }, 60_000);
 
 afterAll(async () => {
@@ -253,14 +274,15 @@ describe('link-based email verification (nag / resend)', () => {
       expect(message?.text).toContain('/verify-email?t=');
       expect(message?.html).toContain('/verify-email?t=');
       // The link must point at the school's own hostname, never the apex.
-      expect(message?.text).toContain(`${SLUG}.localhost`);
+      // The school's own hostname, never the apex — whatever the server named it.
+      expect(message?.text).toContain(HOST);
 
       expect(mailer.tokenFor(OWNER_EMAIL)).toBeTruthy();
     });
 
     it('cannot be redeemed at another school’s address', async () => {
       // Checked before the happy path so the token is still unspent. The token
-      // belongs to OTHER_SLUG; present it at SLUG.
+      // belongs to the second school; it is presented at the first.
       const token = mailer.tokenFor(OTHER_EMAIL) ?? '';
       expect(await verifyWith(HOST, token).then((r) => r.statusCode)).toBe(401);
 

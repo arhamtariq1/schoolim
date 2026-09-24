@@ -81,6 +81,8 @@ export {
   Calendar as CalendarIcon,
   CalendarDays as DateRangeIcon,
 
+  Bell as NotificationsIcon,
+  MessageSquare as MessagesIcon,
   // --- Chrome ---------------------------------------------------------------
   Menu as MenuIcon,
   Command as CommandIcon,

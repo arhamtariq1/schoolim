@@ -32,6 +32,12 @@ export const ERROR_CODES = [
   /** School step called before the email OTP succeeded. */
   'SIGNUP_EMAIL_UNVERIFIED',
 
+  // --- Profile / first-login onboarding -------------------------------------
+  /** Owner tried a personal-only save while the school still needs setup. */
+  'PROFILE_ONBOARDING_REQUIRED',
+  /** Onboarding or create called when the gate is already open. */
+  'PROFILE_ALREADY_COMPLETE',
+
   // --- Password reset -------------------------------------------------------
   /** No active account for that email (in this school, or anywhere on the apex). */
   'AUTH_EMAIL_NOT_FOUND',
@@ -135,6 +141,9 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, number>> = {
   SIGNUP_OTP_INVALID: 400,
   SIGNUP_OTP_EXPIRED: 400,
   SIGNUP_EMAIL_UNVERIFIED: 400,
+
+  PROFILE_ONBOARDING_REQUIRED: 400,
+  PROFILE_ALREADY_COMPLETE: 409,
 
   AUTH_EMAIL_NOT_FOUND: 404,
   AUTH_OTP_INVALID: 400,

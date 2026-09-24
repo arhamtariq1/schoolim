@@ -57,6 +57,14 @@ export interface AccessTokenClaims extends JwtPayloadBase {
    * one can never satisfy the other's guard (docs/04 section 6).
    */
   typ: 'tenant' | 'platform';
+  /**
+   * Whether the person has finished the first-login profile form.
+   *
+   * Optional so older tokens still verify. The portal proxy reads this (without
+   * trusting it for authorisation — the API re-checks from the database) to
+   * bounce incomplete profiles to `/profile/create` before a page renders.
+   */
+  pc?: boolean;
 }
 
 @Injectable()

@@ -1,8 +1,7 @@
 import { ROUTES, type AcademicSession } from '@ilm/contracts';
 
-import { AppShell } from '@/components/app-shell';
+import { SchoolShell } from '@/components/school-shell';
 import { SessionsManager } from '@/components/sessions-manager';
-import { AcademicsTabs } from '@/components/tab-links';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -14,20 +13,12 @@ export default async function SessionsPage() {
   ]);
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-    >
-      <div className="space-y-6">
-        <AcademicsTabs />
-        <SessionsManager
-          sessions={result.ok ? result.data.data : []}
-          error={result.ok ? undefined : result.message}
-          canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
-        />
-      </div>
-    </AppShell>
+    <SchoolShell>
+      <SessionsManager
+        sessions={result.ok ? result.data.data : []}
+        error={result.ok ? undefined : result.message}
+        canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
+      />
+    </SchoolShell>
   );
 }

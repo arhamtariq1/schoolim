@@ -25,9 +25,10 @@ import { HandoffService } from '../auth/handoff.service';
 import { decodeAndVerify } from '../schools/school-logo.service';
 
 /**
- * Self-serve signup in three steps — credentials → OTP → school.
+ * Self-serve signup — credentials → OTP (creates tenant) → /profile onboarding.
  *
- * Runs on the **admin** connection: there is no tenant until step 3 commits.
+ * Runs on the **admin** connection until the school exists; after OTP the owner
+ * holds a real session on the school host.
  */
 
 /** Overall intent lifetime. Restart from /signup after this. */
@@ -152,64 +153,246 @@ export class SignupService {
     const intent = await this.requireIntent(sessionToken, now);
     return {
       email: intent.email,
-      step: intent.emailVerifiedAt === null ? 'otp' : 'school',
+      step: 'otp',
     };
+  }
+
+  /**
+   * Abandon the in-progress signup so the person can type a different email.
+   *
+   * Deletes the open intent and leaves the cookie for the controller to clear.
+   * No-op when there is nothing to cancel — Back / Start over must always land
+   * on a clean credentials form.
+   */
+  async cancel(sessionToken: string | undefined): Promise<void> {
+    if (sessionToken === undefined || sessionToken === '') {
+      return;
+    }
+
+    await this.prisma.admin.signupIntent.deleteMany({
+      where: {
+        sessionTokenHash: hashToken(sessionToken),
+        completedAt: null,
+      },
+    });
   }
 
   async verifyOtp(
     sessionToken: string | undefined,
     code: string,
     now: Date,
+    context: SignupCookieContext,
   ): Promise<SignupVerifyOtpResult> {
     const intent = await this.requireIntent(sessionToken, now);
 
-    if (intent.emailVerifiedAt !== null) {
-      return { email: intent.email, verified: true };
+    // OTP must still be valid unless we already stamped emailVerifiedAt in a
+    // prior attempt that created nothing (should not happen — verify + provision
+    // share one transaction). Requiring the code again keeps retries honest.
+    if (intent.emailVerifiedAt === null) {
+      if (intent.otpHash === null || intent.otpExpiresAt === null) {
+        throw new BusinessRuleError(
+          'SIGNUP_OTP_EXPIRED',
+          'That code has expired. Ask for a new one.',
+        );
+      }
+
+      if (intent.otpExpiresAt.getTime() <= now.getTime()) {
+        throw new BusinessRuleError(
+          'SIGNUP_OTP_EXPIRED',
+          'That code has expired. Ask for a new one.',
+        );
+      }
+
+      if (intent.otpAttempts >= MAX_OTP_ATTEMPTS) {
+        throw new BusinessRuleError(
+          'SIGNUP_OTP_INVALID',
+          'Too many incorrect attempts. Ask for a new code.',
+        );
+      }
+
+      if (hashToken(code) !== intent.otpHash) {
+        await this.prisma.admin.signupIntent.update({
+          where: { id: intent.id },
+          data: { otpAttempts: { increment: 1 } },
+        });
+        throw new BusinessRuleError(
+          'SIGNUP_OTP_INVALID',
+          'That code is not correct. Check the email and try again.',
+        );
+      }
     }
 
-    if (intent.otpHash === null || intent.otpExpiresAt === null) {
+    // Create the tenant and hand the browser onto the school host at /profile.
+    // Email verification is stamped in the same transaction as the school.
+    return this.provisionAfterOtp(intent.id, now, context);
+  }
+
+  /**
+   * Create the school + owner and mint a handoff onto `/profile`.
+   *
+   * School details are provisional — the owner finishes them inside the portal
+   * before `profileCompleted` unlocks navigation.
+   */
+  private async provisionAfterOtp(
+    intentId: string,
+    now: Date,
+    context: SignupCookieContext,
+  ): Promise<SignupVerifyOtpResult> {
+    const intent = await this.prisma.admin.signupIntent.findUnique({ where: { id: intentId } });
+    if (intent === null || intent.completedAt !== null) {
       throw new BusinessRuleError(
-        'SIGNUP_OTP_EXPIRED',
-        'That code has expired. Ask for a new one.',
+        'SIGNUP_SESSION_REQUIRED',
+        'Your signup session has ended. Start again from the beginning.',
       );
     }
 
-    if (intent.otpExpiresAt.getTime() <= now.getTime()) {
-      throw new BusinessRuleError(
-        'SIGNUP_OTP_EXPIRED',
-        'That code has expired. Ask for a new one.',
-      );
-    }
+    const trialEndsAt = addDays(now, TRIAL_DAYS);
+    const slug = await this.allocateProvisionalSlug(intent.email);
+    const emailVerifiedAt = intent.emailVerifiedAt ?? now;
 
-    if (intent.otpAttempts >= MAX_OTP_ATTEMPTS) {
-      throw new BusinessRuleError(
-        'SIGNUP_OTP_INVALID',
-        'Too many incorrect attempts. Ask for a new code.',
-      );
-    }
+    const created = await this.prisma.admin
+      .$transaction(async (tx) => {
+        // Claim the intent first so a double-submit cannot mint two schools.
+        const claimed = await tx.signupIntent.updateMany({
+          where: { id: intent.id, completedAt: null },
+          data: {
+            emailVerifiedAt,
+            otpHash: null,
+            otpExpiresAt: null,
+            otpAttempts: 0,
+            completedAt: now,
+          },
+        });
+        if (claimed.count !== 1) {
+          throw new BusinessRuleError(
+            'SIGNUP_SESSION_REQUIRED',
+            'Your signup session has ended. Start again from the beginning.',
+          );
+        }
 
-    if (hashToken(code) !== intent.otpHash) {
-      await this.prisma.admin.signupIntent.update({
-        where: { id: intent.id },
-        data: { otpAttempts: { increment: 1 } },
+        const school = await tx.school.create({
+          data: {
+            name: `${intent.name}'s School`,
+            slug,
+            email: intent.email,
+            timezone: 'Asia/Karachi',
+            locale: 'en',
+            status: 'TRIAL',
+            // Stays null until /profile onboarding saves real school details.
+            onboardedAt: null,
+            trialEndsAt,
+          },
+          select: { id: true, name: true, slug: true },
+        });
+
+        const owner = await tx.user.create({
+          data: {
+            schoolId: school.id,
+            email: intent.email,
+            name: intent.name,
+            passwordHash: intent.passwordHash,
+            status: 'ACTIVE',
+            mustChangePassword: false,
+            emailVerifiedAt,
+            profileCompletedAt: null,
+          },
+          select: { id: true },
+        });
+
+        await tx.userRole.create({
+          data: { schoolId: school.id, userId: owner.id, role: 'OWNER' },
+        });
+
+        await tx.schoolAgreement.create({
+          data: {
+            schoolId: school.id,
+            documentType: 'TERMS_OF_SERVICE',
+            version: intent.termsVersion,
+            acceptedAt: now,
+            acceptedByUserId: owner.id,
+            acceptedByName: intent.name,
+            acceptedByEmail: intent.email,
+            ip: context.ip ?? null,
+            userAgent: context.userAgent ?? null,
+          },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            schoolId: school.id,
+            action: 'school.signup',
+            entityType: 'School',
+            entityId: school.id,
+            actorType: 'USER',
+            actorUserId: owner.id,
+            after: {
+              name: school.name,
+              slug: school.slug,
+              status: 'TRIAL',
+              provisional: true,
+              trialEndsAt: trialEndsAt.toISOString(),
+            },
+            ip: context.ip ?? null,
+            userAgent: context.userAgent ?? null,
+            at: now,
+          },
+        });
+
+        return { school, ownerId: owner.id };
+      })
+      .catch((error: unknown) => {
+        if (isUniqueViolation(error)) {
+          throw new ConflictError(
+            'Could not reserve a web address for your school. Try signup again in a moment.',
+          );
+        }
+        throw error;
       });
-      throw new BusinessRuleError(
-        'SIGNUP_OTP_INVALID',
-        'That code is not correct. Check the email and try again.',
-      );
-    }
 
-    await this.prisma.admin.signupIntent.update({
-      where: { id: intent.id },
-      data: {
-        emailVerifiedAt: now,
-        otpHash: null,
-        otpExpiresAt: null,
-        otpAttempts: 0,
+    this.logger.log(
+      { schoolId: created.school.id, slug: created.school.slug },
+      'School provisioned after signup OTP',
+    );
+
+    const token = await this.handoffs.mint(created.school.id, created.ownerId, now, context);
+    const origin = schoolOrigin(
+      created.school.slug,
+      this.env.APP_DOMAIN,
+      this.env.WEB_URL,
+      this.env.PORTAL_TENANT_MODE,
+    );
+
+    return {
+      email: intent.email,
+      verified: true,
+      continueTo: {
+        schoolId: created.school.id,
+        name: created.school.name,
+        slug: created.school.slug,
+        // Land on /profile so onboarding is the first authenticated screen.
+        continueUrl: `${origin}/auth/continue?t=${token}&next=${encodeURIComponent('/profile/create')}`,
       },
-    });
+    };
+  }
 
-    return { email: intent.email, verified: true };
+  /** Unique slug from the email local-part; never a reserved name. */
+  private async allocateProvisionalSlug(email: string): Promise<string> {
+    const base = slugBaseFromEmail(email);
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      const candidate =
+        attempt === 0 ? base : `${base.slice(0, 40)}-${randomBytes(2).toString('hex')}`;
+      if (RESERVED_SLUGS.has(candidate) || !SLUG_SHAPE.test(candidate) || candidate.length < 2) {
+        continue;
+      }
+      const taken = await this.prisma.admin.school.findUnique({
+        where: { slug: candidate },
+        select: { id: true },
+      });
+      if (taken === null) {
+        return candidate;
+      }
+    }
+    return `school-${randomBytes(4).toString('hex')}`;
   }
 
   async resendOtp(
@@ -263,10 +446,14 @@ export class SignupService {
   }
 
   /**
-   * Step 3 — create the school and owner, then hand off onto the school host.
+   * Step 3 — create the school and owner, then send them to sign in.
    *
    * `emailVerifiedAt` is set on the user because the OTP already proved the
    * address. The intent row is marked completed and is no longer usable.
+   * Profile stays incomplete so the first real session lands on `/profile`.
+   *
+   * @deprecated Prefer OTP provision + `/me/onboarding`. Kept for older clients
+   * that still POST school details against a live signup cookie.
    */
   async complete(
     sessionToken: string | undefined,
@@ -317,6 +504,8 @@ export class SignupService {
             mustChangePassword: false,
             // OTP already proved this address.
             emailVerifiedAt: intent.emailVerifiedAt,
+            // First login must finish the profile form before the rest of the portal.
+            profileCompletedAt: null,
           },
           select: { id: true },
         });
@@ -394,7 +583,6 @@ export class SignupService {
       'School signed up self-serve',
     );
 
-    const token = await this.handoffs.mint(created.school.id, created.ownerId, now, context);
     const origin = schoolOrigin(
       created.school.slug,
       this.env.APP_DOMAIN,
@@ -405,12 +593,8 @@ export class SignupService {
     return {
       school: created.school,
       trialEndsAt: trialEndsAt.toISOString(),
-      continueTo: {
-        schoolId: created.school.id,
-        name: created.school.name,
-        slug: created.school.slug,
-        continueUrl: `${origin}/auth/continue?t=${token}`,
-      },
+      email: intent.email,
+      loginUrl: `${origin}/login?email=${encodeURIComponent(intent.email)}`,
     };
   }
 
@@ -461,6 +645,17 @@ function addHours(now: Date, hours: number): Date {
 
 function addDays(now: Date, days: number): Date {
   return new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
+function slugBaseFromEmail(email: string): string {
+  const local = email.split('@')[0] ?? 'school';
+  const cleaned = local
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '')
+    .slice(0, 40);
+  return cleaned.length >= 2 ? cleaned : 'school';
 }
 
 function isUniqueViolation(error: unknown): boolean {

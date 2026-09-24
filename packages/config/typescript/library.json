@@ -6,6 +6,19 @@
     "moduleResolution": "Bundler",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
-    "noEmit": false
+    /*
+     * This config is for editors and `typecheck` only — never for producing
+     * output. Every package that actually builds does so through
+     * `library-build.json`, which sets its own `outDir`.
+     *
+     * It said `false`, and the cost showed up as 96 stray `.js`/`.d.ts` files
+     * sitting beside the sources in `packages/contracts/src`: one bare `tsc`
+     * run in that folder picks up this config, finds no `outDir`, and emits in
+     * place. They are gitignored, so they never reach anybody else — they just
+     * quietly break `eslint`, which then cannot parse its own package.
+     *
+     * `true` makes that impossible rather than merely unlikely.
+     */
+    "noEmit": true
   }
 }

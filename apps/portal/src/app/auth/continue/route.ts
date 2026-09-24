@@ -77,10 +77,15 @@ export async function GET(request: NextRequest): Promise<Response> {
     return redirectTo('/login?expired=1');
   }
 
+  // Optional safe relative path from the minting side (e.g. `/profile` after
+  // signup). Absolute URLs and protocol-relative forms are refused so a forged
+  // handoff link cannot bounce the browser off-site with a live session cookie.
+  const next = safeInternalPath(request.nextUrl.searchParams.get('next'));
+  const destination =
+    TENANT_MODE === 'path' ? `/${slug}${next}` : next;
+
   const headers = new Headers({
-    // Into the school, not to the apex: in path mode `/` is the marketing page
-    // and `/beacon` is the workspace.
-    location: TENANT_MODE === 'path' ? `/${slug}` : '/',
+    location: destination,
     'cache-control': 'no-store',
     // The token is still in this request's URL. Without this it would be sent
     // as the referrer of whatever the next page loads.
@@ -118,6 +123,17 @@ function redirectTo(path: string): Response {
     status: 303,
     headers: { location: path, 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' },
   });
+}
+
+/** Only same-origin relative paths — never `//evil` or `https:…`. */
+function safeInternalPath(raw: string | null): string {
+  if (raw === null || raw === '' || raw === '/') {
+    return '/';
+  }
+  if (!raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\') || raw.includes('://')) {
+    return '/';
+  }
+  return raw;
 }
 
 /** Nothing here is static, and a cached handoff would be a shared session. */

@@ -12,9 +12,8 @@ import { PublicController } from './public.controller';
 import { SignupService } from './signup.service';
 
 /**
- * `AuthModule` is imported for `HandoffService` rather than re-providing it:
- * signup finishes by signing the new owner in, and it must mint the same kind
- * of handoff that sign-in does.
+ * Apex-only public surface. Imports AuthModule for HandoffService: after OTP
+ * the new owner is handed onto the school host the same way apex sign-in is.
  */
 @Module({
   imports: [AuthModule],

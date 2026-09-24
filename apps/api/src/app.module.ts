@@ -10,6 +10,7 @@ import { ExpensesModule } from './modules/expenses/expenses.module';
 import { FeesModule } from './modules/fees/fees.module';
 import { HealthModule } from './modules/health/health.module';
 import { PlatformModule } from './modules/platform/platform.module';
+import { ProfileModule } from './modules/profile/profile.module';
 import { PublicModule } from './modules/public/public.module';
 import { SchoolsModule } from './modules/schools/schools.module';
 import { StaffModule } from './modules/staff/staff.module';
@@ -59,6 +60,7 @@ import { TenantGuard } from './shared/tenancy/tenant.guard';
     FeesModule,
     SchoolsModule,
     PlatformModule,
+    ProfileModule,
     PublicModule,
     StaffModule,
     StudentsModule,

@@ -1,8 +1,7 @@
 import { ROUTES, type AcademicSession, type Holiday } from '@ilm/contracts';
 
-import { AppShell } from '@/components/app-shell';
 import { HolidaysManager } from '@/components/holidays-manager';
-import { AcademicsTabs } from '@/components/tab-links';
+import { SchoolShell } from '@/components/school-shell';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -32,24 +31,16 @@ export default async function HolidaysPage({
         );
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-    >
-      <div className="space-y-6">
-        <AcademicsTabs />
-        <HolidaysManager
-          holidays={holidaysResult?.ok === true ? holidaysResult.data.data : []}
-          sessions={sessions}
-          activeSessionId={activeSessionId}
-          error={
-            holidaysResult !== undefined && !holidaysResult.ok ? holidaysResult.message : undefined
-          }
-          canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
-        />
-      </div>
-    </AppShell>
+    <SchoolShell>
+      <HolidaysManager
+        holidays={holidaysResult?.ok === true ? holidaysResult.data.data : []}
+        sessions={sessions}
+        activeSessionId={activeSessionId}
+        error={
+          holidaysResult !== undefined && !holidaysResult.ok ? holidaysResult.message : undefined
+        }
+        canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
+      />
+    </SchoolShell>
   );
 }

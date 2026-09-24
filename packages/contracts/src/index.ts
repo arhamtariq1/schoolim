@@ -11,6 +11,7 @@ export * from './pagination';
 export * from './permissions';
 export * from './platform';
 export * from './primitives';
+export * from './profile';
 export * from './roles';
 export * from './routes';
 export * from './school-logo';

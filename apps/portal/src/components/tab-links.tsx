@@ -70,8 +70,8 @@ export function TabLinks({ label, items, className }: TabLinksProps) {
     <nav aria-label={label} className={cn('border-b border-border', className)}>
       <ul className="-mb-px flex gap-1 overflow-x-auto">
         {items.map((item) => {
-          // Exact, not prefix. These are sibling routes and `/academics` is a
-          // prefix of `/academics/sessions` — a prefix match lights up two tabs
+          // Exact, not prefix. These are sibling routes and `/finance` is a
+          // prefix of `/finance/expenses` — a prefix match lights up two tabs
           // at once on every nested screen.
           const isActive = pathname === item.href;
 
@@ -101,7 +101,7 @@ export function TabLinks({ label, items, className }: TabLinksProps) {
 }
 
 const ACADEMICS: readonly TabLinkItem[] = [
-  { href: '/academics', label: 'Classes', icon: ClassIcon },
+  { href: '/classes', label: 'Classes', icon: ClassIcon },
   { href: '/academics/sessions', label: 'Sessions', icon: SessionIcon },
   { href: '/academics/holidays', label: 'Calendar', icon: HolidayIcon },
 ];

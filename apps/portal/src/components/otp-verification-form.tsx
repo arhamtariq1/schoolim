@@ -12,7 +12,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
+import { SignupAbandonControl } from './signup-abandon';
 import { SIGNUP_CONTEXT } from './signup-step-gate';
+
+import { clearSignupDraft } from '@/lib/signup-draft';
 
 /** Query `context` for the forgot-password OTP step. */
 export const PASSWORD_RESET_CONTEXT = 'password-reset';
@@ -157,11 +160,13 @@ export function OtpVerificationForm({
       }
 
       const body = (await response.json()) as { data: SignupVerifyOtpResult };
-      toast.success('Email confirmed');
-      router.push(`/signup/school?email=${encodeURIComponent(body.data.email)}`);
+      clearSignupDraft();
+      toast.success('Email confirmed', 'Opening your school portal…');
+      // Cross-host handoff (ADR-0009) — must be a full navigation so the
+      // session cookies land on the school host, not the apex.
+      window.location.assign(body.data.continueTo.continueUrl);
     } catch {
       toast.error('Could not reach the server. Check your connection and try again.');
-    } finally {
       setIsPending(false);
     }
   }
@@ -297,9 +302,19 @@ export function OtpVerificationForm({
           </button>
         )}
         {' · '}
-        <Link href={startOverHref} className="font-medium text-primary hover:underline">
-          Start over
-        </Link>
+        {isSignup ? (
+          <SignupAbandonControl
+            href="/signup"
+            keepDraft={false}
+            className="font-medium text-primary hover:underline disabled:opacity-50"
+          >
+            Start over
+          </SignupAbandonControl>
+        ) : (
+          <Link href={startOverHref} className="font-medium text-primary hover:underline">
+            Start over
+          </Link>
+        )}
       </p>
     </form>
   );

@@ -350,6 +350,7 @@ export class AuthService {
         tokenVersion: true,
         mustChangePassword: true,
         emailVerifiedAt: true,
+        profileCompletedAt: true,
         roles: { select: { role: true } },
         school: { select: { id: true, name: true, slug: true, timezone: true, locale: true } },
       },
@@ -368,6 +369,7 @@ export class AuthService {
       rol: roles,
       ver: user.tokenVersion,
       typ: 'tenant',
+      pc: user.profileCompletedAt !== null,
     });
 
     return {
@@ -382,6 +384,7 @@ export class AuthService {
         permissions: permissionsFor(roles),
         mustChangePassword: user.mustChangePassword,
         emailVerified: user.emailVerifiedAt !== null,
+        profileCompleted: user.profileCompletedAt !== null,
         school: user.school,
       },
     };
@@ -404,6 +407,7 @@ export class AuthService {
         status: true,
         mustChangePassword: true,
         emailVerifiedAt: true,
+        profileCompletedAt: true,
         roles: { select: { role: true } },
         school: { select: { id: true, name: true, slug: true, timezone: true, locale: true } },
       },
@@ -423,6 +427,7 @@ export class AuthService {
       permissions: permissionsFor(roles),
       mustChangePassword: user.mustChangePassword,
       emailVerified: user.emailVerifiedAt !== null,
+      profileCompleted: user.profileCompletedAt !== null,
       school: user.school,
     };
   }
@@ -437,9 +442,8 @@ export class AuthService {
   /**
    * Mint the session.
    *
-   * The last step of every way in — school-host sign-in, apex handoff, and the
-   * auto-sign-in that follows signup — so that "signed in" is defined in one
-   * place rather than in three that drift.
+   * The last step of every way in — school-host sign-in and apex handoff — so
+   * that "signed in" is defined in one place rather than in copies that drift.
    */
   private async issueFor(
     school: SchoolRow,
@@ -456,6 +460,7 @@ export class AuthService {
         tokenVersion: true,
         mustChangePassword: true,
         emailVerifiedAt: true,
+        profileCompletedAt: true,
         roles: { select: { role: true } },
       },
     });
@@ -473,6 +478,7 @@ export class AuthService {
       rol: roles,
       ver: user.tokenVersion,
       typ: 'tenant',
+      pc: user.profileCompletedAt !== null,
     });
 
     const refresh = await this.sessions.issue(school.id, user.id, now, context);
@@ -489,6 +495,7 @@ export class AuthService {
         permissions: permissionsFor(roles),
         mustChangePassword: user.mustChangePassword,
         emailVerified: user.emailVerifiedAt !== null,
+        profileCompleted: user.profileCompletedAt !== null,
         school: {
           id: school.id,
           name: school.name,

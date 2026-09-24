@@ -2,10 +2,13 @@ import {
   AcademicsIcon,
   AccountIcon,
   AttendanceIcon,
+  ClassIcon,
   DashboardIcon,
   FeesIcon,
   FinanceIcon,
+  HolidayIcon,
   RequestsIcon,
+  SessionIcon,
   SettingsIcon,
   StudentsIcon,
 } from '@ilm/ui/icons';
@@ -20,9 +23,9 @@ import type { ComponentType } from 'react';
  * the client bundle — the exact thing docs/16 §3 bans, just spelled differently
  * from `import * as Icons from 'lucide-react'`.
  *
- * Naming the nine the navigation actually uses keeps the other fifty out. An
- * icon name with no entry here renders nothing rather than crashing, which is
- * the right failure: a missing glyph beside a working link, not a blank screen.
+ * Naming the icons navigation actually uses keeps the rest out. An icon name
+ * with no entry here renders nothing rather than crashing, which is the right
+ * failure: a missing glyph beside a working link, not a blank screen.
  */
 // Annotated rather than inferred. An inferred type here names a path inside
 // another package's node_modules, which tsc rejects as not portable and which
@@ -33,6 +36,9 @@ export const NAV_ICONS: Record<string, ComponentType<{ className?: string }>> = 
   FeesIcon,
   AttendanceIcon,
   AcademicsIcon,
+  ClassIcon,
+  SessionIcon,
+  HolidayIcon,
   AccountIcon,
   FinanceIcon,
   RequestsIcon,

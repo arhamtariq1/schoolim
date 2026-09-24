@@ -1,10 +1,8 @@
-import { permissionsFor, type SchoolRole } from '@ilm/contracts';
-import { Card, EmptyState, Money, StatusBadge } from '@ilm/ui';
+import { Card, EmptyState, Money } from '@ilm/ui';
 import { minorUnits } from '@ilm/utils';
 
-import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
-import { getSession } from '@/lib/session';
+import { SchoolShell } from '@/components/school-shell';
 
 /**
  * Home is one route with a different workspace per role (docs/09 §3): the same
@@ -23,13 +21,7 @@ export default async function HomePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [session, query] = await Promise.all([getSession(), searchParams]);
-
-  // Without a session the API is the thing that says so; this page only decides
-  // what to render. Signing in is at /login.
-  const roles: readonly SchoolRole[] = session?.roles ?? ['OWNER'];
-  const permissions = session?.permissions ?? permissionsFor(roles);
-  const isPreview = session === undefined;
+  const query = await searchParams;
 
   // Set by /verify-email after following the link from the confirmation
   // message. Expired, already used and address-since-changed are one outcome —
@@ -37,12 +29,7 @@ export default async function HomePage({
   const verifyOutcome = typeof query['verify'] === 'string' ? query['verify'] : undefined;
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? 'Not signed in', roleLabel: roles.join(', ') }}
-      school={{ name: session?.school.name ?? 'Demo School' }}
-      permissions={permissions}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-    >
+    <SchoolShell>
       {verifyOutcome === undefined ? null : (
         <div
           role="status"
@@ -60,15 +47,7 @@ export default async function HomePage({
         </div>
       )}
 
-      <PageHeader
-        title="Today"
-        description={
-          isPreview
-            ? 'Preview — sign in to see your school’s real figures.'
-            : `Signed in as ${session.name}`
-        }
-        badge={isPreview ? <StatusBadge tone="warning">Preview</StatusBadge> : undefined}
-      />
+      <PageHeader title="Today" description="Your school workspace for the day." />
 
       <section aria-label="Collection" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Tile label="Collected this month" valueMinor={0} tone="success" />
@@ -81,7 +60,7 @@ export default async function HomePage({
         title="These figures are not wired up yet"
         description="Students, fees and attendance all record real data now, but there is no summary endpoint behind this screen — so every tile above reads zero whatever the school has done. Open Fees or Attendance for the real numbers."
       />
-    </AppShell>
+    </SchoolShell>
   );
 }
 

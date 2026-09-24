@@ -75,6 +75,18 @@ const SCHOOL_ANONYMOUS_PATHS = new Set([
   '/verify-email',
 ]);
 
+/**
+ * Paths a signed-in person may reach before finishing the first-login profile.
+ *
+ * Everything else redirects to `/profile/create`. Password change stays exempt
+ * because it is an earlier gate than profile.
+ */
+const PROFILE_INCOMPLETE_ALLOWED = new Set([
+  '/profile/create',
+  '/settings/password',
+  ...SCHOOL_ANONYMOUS_PATHS,
+]);
+
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
@@ -228,7 +240,7 @@ async function renewIfExpired(
   // needed it, and the next page render said "your session has ended" — with
   // the mutation that preceded it having returned 200.
   if (!isAccessTokenExpired(request.cookies.get(COOKIES.accessToken)?.value)) {
-    return proceed(request, inner, new Headers(request.headers));
+    return gateProfile(request, slug, inner, request.cookies.get(COOKIES.accessToken)?.value);
   }
 
   // The access token is gone or stale, so renewal is the only way forward.
@@ -260,7 +272,7 @@ async function renewIfExpired(
     headers.set('cookie', withCookie(cookieHeader, COOKIES.accessToken, renewed.accessToken));
   }
 
-  const response = proceed(request, inner, headers);
+  const response = gateProfile(request, slug, inner, renewed.accessToken ?? undefined, headers);
   for (const cookie of renewed.setCookies) {
     response.headers.append('set-cookie', cookie);
   }
@@ -269,15 +281,56 @@ async function renewIfExpired(
 }
 
 /**
+ * Keep incomplete profiles on `/profile/create` (and password change).
+ *
+ * Reads the access-token `pc` claim the same way expiry is read — without
+ * verifying the signature. A forged claim gains nothing: the API re-checks from
+ * the database, and the worst a lie achieves is one wasted redirect.
+ *
+ * Missing `pc` (tokens issued before this shipped) is treated as complete so
+ * existing sessions are not bounced to a form they never asked for.
+ */
+function gateProfile(
+  request: NextRequest,
+  slug: string,
+  inner: string,
+  accessToken: string | undefined,
+  headers: Headers = new Headers(request.headers),
+): NextResponse {
+  const incomplete = isProfileIncomplete(accessToken);
+
+  if (incomplete && !PROFILE_INCOMPLETE_ALLOWED.has(inner)) {
+    return NextResponse.redirect(new URL(prefixed('/profile/create', slug), request.url));
+  }
+
+  if (!incomplete && inner === '/profile/create') {
+    return NextResponse.redirect(new URL(prefixed('/profile', slug), request.url));
+  }
+
+  return proceed(request, inner, headers);
+}
+
+/** `pc === false` only — absent or true means the portal is unlocked. */
+function isProfileIncomplete(token: string | undefined): boolean {
+  if (token === undefined || token === '') {
+    return false;
+  }
+
+  const payload = token.split('.')[1];
+  if (payload === undefined) {
+    return false;
+  }
+
+  try {
+    const claims = JSON.parse(Buffer.from(payload, 'base64url').toString()) as { pc?: unknown };
+    return claims.pc === false;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * There is no session and no way to get one. Send them to sign in.
- *
- * The alternative is what the bug report showed: the shell renders with an
- * empty sidebar, a grey "N" where the avatar goes, and a red box quoting the
- * API's own words back at the person — "Your session has expired." That is a
- * broken-looking page, and it hides the one thing they can do about it.
- *
- * Anonymous paths are left alone, and that exemption is what stops this from
- * being a redirect loop: `/login` is reached without a session by definition.
  */
 function signedOut(request: NextRequest, inner: string): NextResponse {
   if (SCHOOL_ANONYMOUS_PATHS.has(inner)) {

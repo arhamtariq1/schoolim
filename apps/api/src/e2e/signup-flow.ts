@@ -46,15 +46,39 @@ export class RecordingMailer implements MailPort {
 
 export function cookieValue(response: { headers: Record<string, unknown> }, name: string): string {
   const raw = response.headers['set-cookie'];
-  const jar = (Array.isArray(raw) ? raw : [String(raw ?? '')]).join('\n');
-  return new RegExp(`${name}=([^;]+)`).exec(jar)?.[1] ?? '';
+
+  // Narrowed rather than stringified. `set-cookie` is `string | string[] |
+  // undefined`, but the header bag is typed `unknown` — and `String(raw)` on
+  // anything else yields the literal text `[object Object]`, which is then
+  // searched for a cookie as though it were a real header. Nothing matches, so
+  // the failure arrives later as an empty token and a puzzling 401 rather than
+  // as the malformed response it actually was.
+  const cookies = Array.isArray(raw)
+    ? raw.filter((entry): entry is string => typeof entry === 'string')
+    : typeof raw === 'string'
+      ? [raw]
+      : [];
+
+  return new RegExp(`${name}=([^;]+)`).exec(cookies.join('\n'))?.[1] ?? '';
 }
 
 export interface SignupFlowInput {
   readonly name: string;
   readonly email: string;
   readonly password: string;
-  readonly school: {
+  /**
+   * Deliberately **ignored**, and optional because of it.
+   *
+   * Credentials and OTP are the whole of signup now: the school is provisioned
+   * with a slug the server allocates, and its real details are filled in later
+   * at `/me/onboarding`. Nothing in this helper reads this field.
+   *
+   * It is kept because one test passes a *reserved* slug here to prove that
+   * doing so provisions anyway — the conflict belongs at onboarding, not at OTP.
+   * Omit it everywhere else: a school payload that looks like it is being used
+   * is what led a whole suite to address hosts the server had never created.
+   */
+  readonly school?: {
     readonly name: string;
     readonly slug: string;
     readonly city: string;
@@ -65,7 +89,12 @@ export interface SignupFlowInput {
   };
 }
 
-/** Walk credentials → OTP → school. Returns the complete response. */
+/**
+ * Walk credentials → OTP (provisions tenant + handoff).
+ *
+ * School details are finished later via `/me/onboarding` inside the portal.
+ * Returns the OTP verify response (includes `continueTo`).
+ */
 export async function runSignupFlow(
   app: NestFastifyApplication,
   mailer: RecordingMailer,
@@ -96,27 +125,10 @@ export async function runSignupFlow(
     throw new Error(`signup start did not yield a session/OTP (status ${String(start.statusCode)})`);
   }
 
-  const verify = await app.inject({
+  return app.inject({
     method: 'POST',
     url: ROUTES.public.signupVerifyOtp,
     headers: { host, cookie: `${COOKIES.signupToken}=${session}` },
     payload: { code },
-  });
-
-  if (verify.statusCode !== 201 && verify.statusCode !== 200) {
-    return verify;
-  }
-
-  return app.inject({
-    method: 'POST',
-    url: ROUTES.public.signupComplete,
-    headers: { host, cookie: `${COOKIES.signupToken}=${session}` },
-    payload: {
-      school: {
-        timezone: 'Asia/Karachi',
-        locale: 'en',
-        ...input.school,
-      },
-    },
   });
 }

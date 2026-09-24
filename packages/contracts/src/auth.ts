@@ -56,6 +56,14 @@ export const sessionUserSchema = z.object({
    * confirmation is an audit question, not a rendering one.
    */
   emailVerified: z.boolean(),
+  /**
+   * Has this person finished the first-login profile form?
+   *
+ * Until this is true the portal keeps them on `/profile/create` and disables
+ * every other nav item. Same shape as `emailVerified`: the shell only needs
+   * the yes/no; the timestamp lives on the user row for audit.
+   */
+  profileCompleted: z.boolean(),
   school: z.object({
     id: idSchema,
     name: z.string(),

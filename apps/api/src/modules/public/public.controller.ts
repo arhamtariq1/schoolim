@@ -64,17 +64,46 @@ export class PublicController {
     return { data: await this.signups.status(token, this.clock.now()) };
   }
 
+  /**
+   * Drop the in-progress signup (wrong email, Back, Start over).
+   *
+   * Without this, returning to `/signup` keeps `ilm_su` and the credentials
+   * form resumes the OTP step — which is exactly the bounce people hit.
+   */
+  @Public()
+  @RateLimit({ limit: 30, windowSeconds: 300 })
+  @HttpCode(200)
+  @Post(ROUTES.public.signupCancel)
+  async cancel(
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<{ data: { ok: true } }> {
+    await this.signups.cancel(this.readSignupCookie(request));
+    this.clearSignupCookie(reply);
+    return { data: { ok: true } };
+  }
+
   @Public()
   @RateLimit({ limit: 30, windowSeconds: 300 })
   @Post(ROUTES.public.signupVerifyOtp)
   async verifyOtp(
     @Body() body: unknown,
     @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<{ data: SignupVerifyOtpResult }> {
     const input = signupVerifyOtpRequestSchema.parse(body);
-    return {
-      data: await this.signups.verifyOtp(this.readSignupCookie(request), input.code, this.clock.now()),
-    };
+    const result = await this.signups.verifyOtp(
+      this.readSignupCookie(request),
+      input.code,
+      this.clock.now(),
+      {
+        ip: request.ip,
+        userAgent: request.headers['user-agent'],
+      },
+    );
+    // Tenant exists now — the signup cookie must not resume a dead intent.
+    this.clearSignupCookie(reply);
+    return { data: result };
   }
 
   @Public()

@@ -40,6 +40,7 @@ export default async function LoginPage({
   // Set by the proxy when a session could not be renewed. Its own sentence:
   // "that link has expired" reads as a mistake when you did not follow a link.
   const sessionEnded = query['session'] === 'expired';
+  const emailParam = typeof query['email'] === 'string' ? query['email'] : '';
   const notice = unreachable
     ? 'Could not reach the server. Try signing in again.'
     : expired
@@ -73,7 +74,7 @@ export default async function LoginPage({
         ) : undefined
       }
     >
-      <LoginForm />
+      <LoginForm initialEmail={emailParam} />
     </AuthLayout>
   );
 }

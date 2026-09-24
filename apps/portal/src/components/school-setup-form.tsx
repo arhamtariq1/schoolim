@@ -15,6 +15,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 
 import { LogoPicker } from './logo-picker';
 
+import { clearSignupDraft } from '@/lib/signup-draft';
 import { TENANT_MODE } from '@/lib/tenant-mode';
 
 /**
@@ -131,8 +132,9 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
       }
 
       const body = (await response.json()) as { data: SignupResult };
-      toast.success('School created', `Opening ${body.data.continueTo.name}…`);
-      window.location.assign(body.data.continueTo.continueUrl);
+      clearSignupDraft();
+      toast.success('School created', 'Sign in to open your portal.');
+      window.location.assign(body.data.loginUrl);
     } catch {
       toast.error('Could not reach the server. Check your connection and try again.');
       setIsPending(false);

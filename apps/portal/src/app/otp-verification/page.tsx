@@ -1,8 +1,10 @@
 import { BRAND } from '@ilm/utils';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { AuthLayout } from '@/components/auth-layout';
 import { OtpVerificationForm, PASSWORD_RESET_CONTEXT } from '@/components/otp-verification-form';
+import { SignupBackLink } from '@/components/signup-abandon';
 import { SIGNUP_CONTEXT, SignupStepGate } from '@/components/signup-step-gate';
 
 export const metadata: Metadata = {
@@ -20,18 +22,29 @@ export default async function OtpVerificationPage({
   const email = typeof emailRaw === 'string' ? emailRaw : undefined;
   const context = typeof contextRaw === 'string' ? contextRaw : undefined;
 
-  const isSignup = context === SIGNUP_CONTEXT || context === 'signup';
   const isPasswordReset = context === PASSWORD_RESET_CONTEXT;
+  // Signup is the default OTP flow. Links that omit `context` still get Back.
+  const isSignup = !isPasswordReset;
 
   return (
     <AuthLayout
-      title={isSignup ? 'Confirm your email' : 'Enter verification code'}
+      title="Enter verification code"
       subtitle={
-        isSignup
-          ? 'We sent a 6-digit code to your email. Enter it to continue setting up your school.'
-          : isPasswordReset
-            ? 'We sent a 6-digit code to your email. Enter it to choose a new password.'
-            : 'We sent a 6-digit code to your email. It expires in a few minutes.'
+        isPasswordReset
+          ? 'We sent a 6-digit code to your email. Enter it to choose a new password.'
+          : 'We sent a 6-digit code to your email. It expires in a few minutes.'
+      }
+      back={
+        isPasswordReset ? (
+          <Link
+            href="/forgot-password"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            ← Back
+          </Link>
+        ) : (
+          <SignupBackLink />
+        )
       }
     >
       {isSignup ? (
@@ -39,10 +52,7 @@ export default async function OtpVerificationPage({
           <OtpVerificationForm email={email} context={SIGNUP_CONTEXT} />
         </SignupStepGate>
       ) : (
-        <OtpVerificationForm
-          email={email}
-          context={isPasswordReset ? PASSWORD_RESET_CONTEXT : context}
-        />
+        <OtpVerificationForm email={email} context={PASSWORD_RESET_CONTEXT} />
       )}
     </AuthLayout>
   );

@@ -134,6 +134,9 @@ export class SchoolsService {
             // The temporary password is handed over out of band and is
             // single-use in practice: the first sign-in must replace it.
             mustChangePassword: true,
+            // Operator already collected identity out of band — do not bounce
+            // them through the self-serve first-login profile gate.
+            profileCompletedAt: now,
           },
           select: { id: true },
         });

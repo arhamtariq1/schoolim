@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 import { passwordSchema, schoolChoiceSchema } from './auth';
-import { uploadSchoolLogoSchema } from './school-logo';
 import {
   emailSchema,
   phoneSchema,
@@ -9,18 +8,18 @@ import {
   textSchema,
   timeZoneSchema,
 } from './primitives';
+import { uploadSchoolLogoSchema } from './school-logo';
 
 /**
- * Self-serve signup — ADR-0010, three steps.
+ * Self-serve signup — ADR-0010.
  *
  * 1. **Credentials** — name, email, password. Terms accepted. An OTP is mailed.
- * 2. **OTP** — proves the address before a tenant exists.
- * 3. **School** — name, slug, city, phone, school email, optional logo. Creates
- *    the tenant and signs the owner in via handoff (ADR-0009).
+ * 2. **OTP** — proves the address, creates the tenant, and hands the browser
+ *    onto the school host at `/profile` to finish school + owner details.
  *
- * Progress is an opaque httpOnly cookie (`COOKIES.signupToken`), not a school
- * session: there is no school yet. The password is hashed on step 1 and never
- * returns to the browser.
+ * Progress before OTP is an opaque httpOnly cookie (`COOKIES.signupToken`).
+ * After OTP there is a real school session; the rest of the portal stays locked
+ * until `profileCompleted` is set.
  */
 
 /** The version of the terms the signup form displayed. Bump on every change. */
@@ -83,6 +82,11 @@ export type SignupVerifyOtpRequest = z.infer<typeof signupVerifyOtpRequestSchema
 export const signupVerifyOtpResultSchema = z.object({
   email: emailSchema,
   verified: z.literal(true),
+  /**
+   * Absolute handoff URL onto the new school's host, landing at `/profile`.
+   * The browser must navigate here so session cookies are host-only (ADR-0009).
+   */
+  continueTo: schoolChoiceSchema,
 });
 
 export type SignupVerifyOtpResult = z.infer<typeof signupVerifyOtpResultSchema>;
@@ -120,7 +124,15 @@ export type SignupCompleteRequest = z.infer<typeof signupCompleteRequestSchema>;
 export const signupResultSchema = z.object({
   school: z.object({ id: z.uuid(), name: z.string(), slug: z.string() }),
   trialEndsAt: z.iso.datetime(),
-  continueTo: schoolChoiceSchema,
+  /** Owner email, so the login form can pre-fill after school creation. */
+  email: emailSchema,
+  /**
+   * Absolute URL of the school's sign-in page.
+   *
+   * Deliberately **not** a handoff: after signup the person signs in themselves
+   * so the first session, password prompt and profile gate all run in order.
+   */
+  loginUrl: z.url(),
 });
 
 export type SignupResult = z.infer<typeof signupResultSchema>;
@@ -132,7 +144,8 @@ export type SignupResult = z.infer<typeof signupResultSchema>;
  */
 export const signupStatusSchema = z.object({
   email: emailSchema,
-  step: z.enum(['otp', 'school']),
+  /** Only OTP remains before the tenant exists; school setup is in-portal. */
+  step: z.literal('otp'),
 });
 
 export type SignupStatus = z.infer<typeof signupStatusSchema>;
