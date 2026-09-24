@@ -1,10 +1,18 @@
-import { ROUTES, uploadSchoolLogoSchema, type SchoolLogoInfo } from '@ilm/contracts';
+import {
+  ROUTES,
+  updateSchoolSettingsSchema,
+  uploadSchoolLogoSchema,
+  type SchoolLogoInfo,
+  type SchoolSettings,
+} from '@ilm/contracts';
 import { Body, Controller, Delete, Get, Module, Put, Req, Res } from '@nestjs/common';
 import { type FastifyReply, type FastifyRequest } from 'fastify';
 
 import { RequirePermission } from '../../shared/rbac/rbac.guard';
+import { clockProvider } from '../../shared/time/clock.provider';
 
 import { SchoolLogoService } from './school-logo.service';
+import { SchoolSettingsService } from './school-settings.service';
 
 /**
  * The school's own settings — for now, its logo.
@@ -81,9 +89,34 @@ export class SchoolLogoController {
   }
 }
 
+/**
+ * The school's own details.
+ *
+ * Reading is open to anyone signed in — the name, address and phone are on the
+ * letterhead every member of staff prints, and a receptionist who cannot read
+ * the school's own address cannot check a challan against it. Writing needs
+ * `settings.school.configure`, which is the owner and the principal.
+ */
+@Controller()
+export class SchoolSettingsController {
+  constructor(private readonly settings: SchoolSettingsService) {}
+
+  @Get(ROUTES.school.settings)
+  @RequirePermission('dashboard.workspace.read')
+  async get(): Promise<{ data: SchoolSettings }> {
+    return { data: await this.settings.get() };
+  }
+
+  @Put(ROUTES.school.settings)
+  @RequirePermission('settings.school.configure')
+  async update(@Body() body: unknown): Promise<{ data: SchoolSettings }> {
+    return { data: await this.settings.update(updateSchoolSettingsSchema.parse(body)) };
+  }
+}
+
 @Module({
-  controllers: [SchoolLogoController],
-  providers: [SchoolLogoService],
+  controllers: [SchoolLogoController, SchoolSettingsController],
+  providers: [clockProvider, SchoolLogoService, SchoolSettingsService],
   exports: [SchoolLogoService],
 })
 export class SchoolsModule {}

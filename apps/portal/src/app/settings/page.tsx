@@ -1,4 +1,4 @@
-import { FeesIcon, ChevronRightIcon, ICON_SIZE } from '@ilm/ui/icons';
+import { FeesIcon, ChevronRightIcon, ICON_SIZE, SchoolIcon } from '@ilm/ui/icons';
 import Link from 'next/link';
 
 import { AppShell } from '@/components/app-shell';
@@ -13,6 +13,17 @@ import { getSession } from '@/lib/session';
  */
 
 const SECTIONS = [
+  {
+    href: '/settings/school',
+    label: 'School',
+    description: 'Name, address, contact details and logo — what is printed on every challan.',
+    icon: SchoolIcon,
+    // Read, not configure: the page shows the school's own name and phone,
+    // which is on its letterhead, and the form is what checks whether the
+    // viewer may change them. Listing it behind `configure` would hide the
+    // details from the office staff who read them off it all day.
+    permission: 'dashboard.workspace.read',
+  },
   {
     href: '/settings/fees',
     label: 'Fees',

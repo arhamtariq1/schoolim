@@ -116,6 +116,17 @@ export const ROUTES = {
   },
 
   /**
+   * The school's own details.
+   *
+   * GET and PUT the same path, for the same reason as the late-fee policy: it
+   * is one record a person edits as a whole, and there is no version of this
+   * screen that saves the city without the address beside it.
+   */
+  school: {
+    settings: `${API_PREFIX}/schools/settings`,
+  },
+
+  /**
    * Raising and lowering fees.
    *
    * `apply` is a POST rather than a PATCH on each student: it is one decision

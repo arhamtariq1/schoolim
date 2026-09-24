@@ -206,7 +206,27 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/settings',
     label: 'Settings',
     icon: 'SettingsIcon',
+    // The section opens for anyone who may configure *something* under it. The
+    // index filters itself by each entry's own permission, and every page
+    // behind it is checked again on the server.
     permission: 'settings.school.configure',
+    children: [
+      {
+        href: '/settings/school',
+        label: 'School',
+        icon: 'SchoolIcon',
+        // Reading the school's own name and phone number is not a privilege —
+        // it is on the letterhead. Changing them needs
+        // `settings.school.configure`, which the form and the API both check.
+        permission: 'dashboard.workspace.read',
+      },
+      {
+        href: '/settings/fees',
+        label: 'Fee types',
+        icon: 'FeesIcon',
+        permission: 'fees.plan.read',
+      },
+    ],
   },
 ];
 

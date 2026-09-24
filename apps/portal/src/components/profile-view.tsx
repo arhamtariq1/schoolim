@@ -52,10 +52,19 @@ export function ProfileView({ profile }: { profile: UserProfile }) {
             <h2 className="text-base font-semibold tracking-tight text-foreground">School</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">This campus</p>
           </div>
+          <Link
+            href="/settings/school"
+            className="ms-auto inline-flex h-9 shrink-0 cursor-pointer items-center rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            Manage
+          </Link>
         </header>
         <dl className="divide-y divide-border text-sm">
           <DetailRow label="Name" value={profile.school.name} />
-          <DetailRow label="Address" value={profile.school.slug} mono />
+          {/* Labelled "Address" until now, which read as the school's postal
+              address and is not what it is: this is the hostname everyone signs
+              in on. The street address lives on Settings › School. */}
+          <DetailRow label="Web address" value={profile.school.slug} mono />
           <DetailRow label="City" value={profile.school.city ?? '—'} />
           <DetailRow label="Phone" value={profile.school.phone ?? '—'} />
           <DetailRow label="Email" value={profile.school.email ?? '—'} />

@@ -54,8 +54,21 @@ interface SchoolSpec {
   readonly slug: string;
   readonly name: string;
   readonly city: string;
+  /**
+   * The rest of the letterhead.
+   *
+   * Seeded rather than left null because Settings › School now edits these and
+   * a form that opens with four empty fields cannot show whether it *reads*
+   * correctly — only whether it writes. Distinct per school for the same reason
+   * the family names are: a leak is then obvious on sight.
+   */
+  readonly address: string;
+  readonly phone: string;
+  readonly email: string;
   readonly ownerEmail: string;
   readonly ownerName: string;
+  readonly ownerPhone: string;
+  readonly ownerDesignation: string;
   /** Distinct per school, so a leak is obvious on sight rather than subtle. */
   readonly families: readonly (readonly [string, readonly string[]])[];
 }
@@ -66,8 +79,13 @@ const SCHOOLS: readonly SchoolSpec[] = [
     slug: 'demo',
     name: 'Demo Public School',
     city: 'Lahore',
+    address: '14-A Gulberg III, Main Boulevard',
+    phone: '+924235771400',
+    email: 'office@demopublic.edu.pk',
     ownerEmail: 'owner@demo.test',
     ownerName: 'Demo Owner',
+    ownerPhone: '+923001234567',
+    ownerDesignation: 'Principal',
     families: [
       ['Khan', ['Ahmed', 'Sara', 'Bilal']],
       ['Malik', ['Fatima', 'Usman']],
@@ -81,8 +99,13 @@ const SCHOOLS: readonly SchoolSpec[] = [
     slug: 'beacon',
     name: 'Beacon Model School',
     city: 'Karachi',
+    address: 'Plot 22, Block 6, PECHS, Shahrah-e-Faisal',
+    phone: '+922134528800',
+    email: 'office@beaconmodel.edu.pk',
     ownerEmail: 'owner@beacon.test',
     ownerName: 'Beacon Owner',
+    ownerPhone: '+923212345678',
+    ownerDesignation: 'Director',
     families: [
       ['Qureshi', ['Bilquis', 'Danish']],
       ['Siddiqui', ['Nida', 'Farhan', 'Sana']],
@@ -95,8 +118,13 @@ const SCHOOLS: readonly SchoolSpec[] = [
     slug: 'city',
     name: 'City Grammar School',
     city: 'Islamabad',
+    address: 'Street 9, Sector F-8/3',
+    phone: '+925122831900',
+    email: 'office@citygrammar.edu.pk',
     ownerEmail: 'owner@city.test',
     ownerName: 'City Owner',
+    ownerPhone: '+923335556677',
+    ownerDesignation: 'Head of School',
     families: [
       ['Abbasi', ['Tehmina', 'Waleed']],
       ['Gilani', ['Rabia', 'Shahzad', 'Noor']],
@@ -133,30 +161,47 @@ async function seedSchool(
 ): Promise<number> {
   const now = systemClock.now();
 
+  // The whole letterhead on both branches. `update` used to carry three fields
+  // while `create` carried five, so re-seeding an existing database left the
+  // newer columns at whatever they happened to hold — which is the one thing a
+  // seed exists to rule out.
+  const details = {
+    name: spec.name,
+    slug: spec.slug,
+    legalName: `${spec.name} (Pvt) Ltd`,
+    address: spec.address,
+    city: spec.city,
+    phone: spec.phone,
+    email: spec.email,
+    timezone: 'Asia/Karachi',
+    locale: 'en',
+  };
+
   const school = await db.school.upsert({
     where: { id: spec.id },
-    update: { name: spec.name, slug: spec.slug, city: spec.city },
-    create: {
-      id: spec.id,
-      name: spec.name,
-      slug: spec.slug,
-      legalName: `${spec.name} (Pvt) Ltd`,
-      city: spec.city,
-      status: 'ACTIVE',
-      onboardedAt: now,
-    },
+    update: details,
+    create: { id: spec.id, ...details, status: 'ACTIVE', onboardedAt: now },
   });
+
+  // `emailVerifiedAt` and `profileCompletedAt` are stamped deliberately.
+  // Without them a freshly seeded owner signs in, is bounced to
+  // `/profile/create` before they can reach a single seeded screen, and is then
+  // refused there because the school is already onboarded — a dead end that
+  // only a database edit gets out of.
+  const ownerDetails = {
+    name: spec.ownerName,
+    phone: spec.ownerPhone,
+    designation: spec.ownerDesignation,
+    passwordHash,
+    status: 'ACTIVE',
+    emailVerifiedAt: now,
+    profileCompletedAt: now,
+  } as const;
 
   const owner = await db.user.upsert({
     where: { schoolId_email: { schoolId: school.id, email: spec.ownerEmail } },
-    update: { passwordHash, status: 'ACTIVE' },
-    create: {
-      schoolId: school.id,
-      email: spec.ownerEmail,
-      name: spec.ownerName,
-      passwordHash,
-      status: 'ACTIVE',
-    },
+    update: ownerDetails,
+    create: { schoolId: school.id, email: spec.ownerEmail, ...ownerDetails },
   });
 
   await db.userRole.upsert({

@@ -111,8 +111,32 @@ export function textSchema(max: number) {
 /** A reason string attached to an audited or irreversible action. */
 export const reasonSchema = z.string().trim().min(3).max(500);
 
-/** IANA timezone. Schools operate in one; `Asia/Karachi` is the default. */
-export const timeZoneSchema = nonEmptyString.max(64);
+/**
+ * IANA timezone. Schools operate in one; `Asia/Karachi` is the default.
+ *
+ * Checked against the runtime's own zone database rather than by a regex. Every
+ * date this product shows — a due date, an attendance mark, a receipt time — is
+ * formatted in the school's zone, so a value the platform cannot resolve does
+ * not fail here. It throws a `RangeError` inside a page render, weeks later,
+ * for whoever happens to open a screen that formats a date.
+ *
+ * `Intl.DateTimeFormat` is the same lookup the formatting code does, which is
+ * the point: anything accepted here will be accepted there.
+ */
+export const timeZoneSchema = nonEmptyString
+  .max(64)
+  .refine(isResolvableTimeZone, 'That is not a time zone we recognise.');
+
+function isResolvableTimeZone(value: string): boolean {
+  try {
+    // Throws `RangeError` on an unknown or malformed identifier. Constructing
+    // the formatter is the whole check; nothing is formatted.
+    new Intl.DateTimeFormat('en', { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * A key that makes a non-idempotent POST safe to retry (docs/11 section 7).

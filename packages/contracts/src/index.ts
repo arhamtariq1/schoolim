@@ -15,6 +15,7 @@ export * from './profile';
 export * from './roles';
 export * from './routes';
 export * from './school-logo';
+export * from './school-settings';
 export * from './security-deposits';
 export * from './signup';
 export * from './staff';
