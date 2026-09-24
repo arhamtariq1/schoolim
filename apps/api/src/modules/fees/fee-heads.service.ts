@@ -122,7 +122,7 @@ export class FeeHeadsService {
       .tenant(async (tx) => {
         const existing = await tx.feeHead.findUnique({ where: { id }, select: { id: true } });
         if (existing === null) {
-          throw new NotFoundError('Fee');
+          throw new NotFoundError('fee head');
         }
 
         const updated = await tx.feeHead.update({
@@ -195,7 +195,7 @@ export class FeeHeadsService {
       });
 
       if (head === null) {
-        throw new NotFoundError('Fee');
+        throw new NotFoundError('fee head');
       }
 
       const removedStudentCharges = head._count.studentFees;

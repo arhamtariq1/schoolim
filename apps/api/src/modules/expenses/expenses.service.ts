@@ -95,7 +95,7 @@ export class ExpensesService {
           select: { id: true },
         });
         if (existing === null) {
-          throw new NotFoundError('Category');
+          throw new NotFoundError('category');
         }
 
         const updated = await tx.expenseCategory.update({
@@ -149,7 +149,7 @@ export class ExpensesService {
       });
 
       if (category === null) {
-        throw new NotFoundError('Category');
+        throw new NotFoundError('category');
       }
 
       if (category._count.expenses > 0) {
@@ -269,10 +269,10 @@ export class ExpensesService {
       ]);
 
       if (session === null) {
-        throw new NotFoundError('Session');
+        throw new NotFoundError('session');
       }
       if (category === null) {
-        throw new NotFoundError('Category');
+        throw new NotFoundError('category');
       }
       if (!category.isActive) {
         throw new BusinessRuleError(
@@ -320,7 +320,7 @@ export class ExpensesService {
     return this.prisma.tenant(async (tx) => {
       const existing = await tx.expense.findUnique({ where: { id }, select: { id: true } });
       if (existing === null) {
-        throw new NotFoundError('Expense');
+        throw new NotFoundError('expense');
       }
 
       const updated = await tx.expense.update({
@@ -361,7 +361,7 @@ export class ExpensesService {
     await this.prisma.tenant(async (tx) => {
       const existing = await tx.expense.findUnique({ where: { id }, select: { id: true } });
       if (existing === null) {
-        throw new NotFoundError('Expense');
+        throw new NotFoundError('expense');
       }
       await tx.expense.delete({ where: { id } });
     });

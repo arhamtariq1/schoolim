@@ -212,7 +212,7 @@ export class FeeIncrementsService {
         select: { id: true, name: true },
       });
       if (head === null) {
-        throw new NotFoundError('That fee head no longer exists.');
+        throw new NotFoundError('fee head');
       }
 
       const students = await tx.student.findMany({
@@ -396,7 +396,7 @@ export class FeeIncrementsService {
         schoolToday(tx),
       ]);
       if (student === null) {
-        throw new NotFoundError('That student is not in this school.');
+        throw new NotFoundError('student');
       }
 
       const rows = await tx.studentFee.findMany({
@@ -464,7 +464,7 @@ export class FeeIncrementsService {
         select: { id: true, studentId: true, feeHeadId: true },
       });
       if (row === null) {
-        throw new NotFoundError('That fee record no longer exists.');
+        throw new NotFoundError('fee record');
       }
 
       const remaining = await tx.studentFee.count({
@@ -494,7 +494,7 @@ export class FeeIncrementsService {
         select: { id: true, name: true },
       });
       if (chosen === null) {
-        throw new NotFoundError('That fee head no longer exists.');
+        throw new NotFoundError('fee head');
       }
       return chosen;
     }

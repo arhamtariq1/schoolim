@@ -224,12 +224,12 @@ export class VoucherGenerationService {
         select: { id: true, name: true },
       });
       if (session === null) {
-        throw new NotFoundError('That session does not exist.');
+        throw new NotFoundError('session');
       }
 
       const heads = await loadHeadCatalogue(tx, headIds);
       if (heads.size !== new Set(headIds).size) {
-        throw new NotFoundError('One of the chosen fees no longer exists.');
+        throw new NotFoundError('chosen fee');
       }
 
       const school = await tx.school.findFirstOrThrow({

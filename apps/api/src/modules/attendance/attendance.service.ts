@@ -134,7 +134,7 @@ export class AttendanceService {
         select: { id: true, name: true },
       });
       if (classLevel === null) {
-        throw new NotFoundError('That class does not exist.');
+        throw new NotFoundError('class');
       }
 
       const enrolments = await tx.enrollment.findMany({
@@ -290,7 +290,7 @@ export class AttendanceService {
         select: { name: true },
       });
       if (classLevel === null) {
-        throw new NotFoundError('That class does not exist.');
+        throw new NotFoundError('class');
       }
 
       const enrolments = await tx.enrollment.findMany({

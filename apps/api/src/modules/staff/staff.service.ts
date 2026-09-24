@@ -162,7 +162,7 @@ export class StaffService {
           select: { id: true, userId: true, email: true, role: true },
         });
         if (existing === null) {
-          throw new NotFoundError('Staff member');
+          throw new NotFoundError('staff member');
         }
 
         const nextRole = input.role ?? existing.role;
@@ -304,7 +304,7 @@ export class StaffService {
         select: { id: true, userId: true },
       });
       if (existing === null) {
-        throw new NotFoundError('Staff member');
+        throw new NotFoundError('staff member');
       }
 
       const now = this.clock.now();

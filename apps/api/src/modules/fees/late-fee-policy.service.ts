@@ -38,7 +38,7 @@ export class LateFeePolicyService {
         select: { lateFeePercent: true, lateFeeFlat: true },
       });
       if (school === null) {
-        throw new NotFoundError('That school does not exist.');
+        throw new NotFoundError('school');
       }
 
       return {
@@ -55,7 +55,7 @@ export class LateFeePolicyService {
     await this.prisma.tenant(async (tx) => {
       const school = await tx.school.findFirst({ select: { id: true } });
       if (school === null) {
-        throw new NotFoundError('That school does not exist.');
+        throw new NotFoundError('school');
       }
 
       await tx.school.update({

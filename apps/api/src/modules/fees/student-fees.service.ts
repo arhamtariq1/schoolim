@@ -24,7 +24,7 @@ export class StudentFeesService {
         select: { id: true },
       });
       if (student === null) {
-        throw new NotFoundError('Student');
+        throw new NotFoundError('student');
       }
 
       return readStructure(tx, studentId);
@@ -49,7 +49,7 @@ export class StudentFeesService {
         select: { id: true },
       });
       if (student === null) {
-        throw new NotFoundError('Student');
+        throw new NotFoundError('student');
       }
 
       await assertHeadsExist(tx, lines);

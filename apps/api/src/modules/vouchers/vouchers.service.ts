@@ -142,7 +142,7 @@ export class VouchersService {
       });
 
       if (row === null) {
-        throw new NotFoundError('That voucher does not exist.');
+        throw new NotFoundError('voucher');
       }
 
       return {
@@ -265,7 +265,7 @@ export class VouchersService {
         id,
       );
       if (locked.length === 0) {
-        throw new NotFoundError('That voucher does not exist.');
+        throw new NotFoundError('voucher');
       }
 
       const voucher = await tx.feeVoucher.findUnique({
@@ -288,7 +288,7 @@ export class VouchersService {
         },
       });
       if (voucher === null) {
-        throw new NotFoundError('That voucher does not exist.');
+        throw new NotFoundError('voucher');
       }
       if (voucher.status === 'CANCELLED') {
         throw new BusinessRuleError('FEES_VOUCHER_CANCELLED', 'That voucher was cancelled.');
@@ -480,7 +480,7 @@ export class VouchersService {
         select: { id: true, name: true, frequency: true, defaultAmount: true, isActive: true },
       });
       if (head === null) {
-        throw new NotFoundError('That fee head does not exist.');
+        throw new NotFoundError('fee head');
       }
       if (!head.isActive) {
         throw new BusinessRuleError(
@@ -581,7 +581,7 @@ export class VouchersService {
         select: { id: true, status: true, paidAmount: true },
       });
       if (voucher === null) {
-        throw new NotFoundError('That voucher does not exist.');
+        throw new NotFoundError('voucher');
       }
       if (voucher.status === 'CANCELLED') {
         throw new BusinessRuleError('FEES_VOUCHER_CANCELLED', 'That voucher is already cancelled.');
@@ -641,7 +641,7 @@ export class VouchersService {
         },
       });
       if (voucher === null) {
-        throw new NotFoundError('That voucher does not exist.');
+        throw new NotFoundError('voucher');
       }
       if (voucher.status === 'CANCELLED') {
         throw new BusinessRuleError(
@@ -790,7 +790,7 @@ export class VouchersService {
         },
       });
       if (voucher === null) {
-        throw new NotFoundError('That voucher does not exist.');
+        throw new NotFoundError('voucher');
       }
       if (voucher.status === 'CANCELLED') {
         throw new BusinessRuleError('FEES_VOUCHER_CANCELLED', 'That voucher was cancelled.');

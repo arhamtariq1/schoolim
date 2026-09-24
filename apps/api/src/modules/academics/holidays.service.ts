@@ -59,7 +59,7 @@ export class HolidaysService {
         select: { id: true, startDate: true, endDate: true, name: true },
       });
       if (session === null) {
-        throw new NotFoundError('Session');
+        throw new NotFoundError('session');
       }
 
       // A single day is the common case, so the form need not send an end date.
@@ -105,7 +105,7 @@ export class HolidaysService {
         },
       });
       if (existing === null) {
-        throw new NotFoundError('Holiday');
+        throw new NotFoundError('holiday');
       }
 
       // Either end may arrive alone, so the range is re-checked against what is
@@ -159,7 +159,7 @@ export class HolidaysService {
     await this.prisma.tenant(async (tx) => {
       const existing = await tx.holiday.findUnique({ where: { id }, select: { id: true } });
       if (existing === null) {
-        throw new NotFoundError('Holiday');
+        throw new NotFoundError('holiday');
       }
       await tx.holiday.delete({ where: { id } });
     });

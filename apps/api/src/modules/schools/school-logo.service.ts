@@ -72,7 +72,7 @@ export class SchoolLogoService {
         select: { bytes: true, mimeType: true, etag: true },
       });
       if (logo === null) {
-        throw new NotFoundError('That school has no logo.');
+        throw new NotFoundError('logo');
       }
       return { bytes: Buffer.from(logo.bytes), mimeType: logo.mimeType, etag: logo.etag };
     });

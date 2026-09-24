@@ -188,7 +188,7 @@ export class SecurityDepositsService {
         select: { id: true },
       });
       if (student === null) {
-        throw new NotFoundError('That student does not exist.');
+        throw new NotFoundError('student');
       }
 
       if (input.voucherId !== undefined) {
@@ -197,7 +197,7 @@ export class SecurityDepositsService {
           select: { id: true },
         });
         if (voucher === null) {
-          throw new NotFoundError('That voucher does not exist.');
+          throw new NotFoundError('voucher');
         }
       }
 
@@ -268,7 +268,7 @@ export class SecurityDepositsService {
 
       const deposit = locked[0];
       if (deposit === undefined) {
-        throw new NotFoundError('That deposit does not exist.');
+        throw new NotFoundError('deposit');
       }
 
       const refundedSoFar = await tx.$queryRawUnsafe<{ total: string }[]>(

@@ -114,7 +114,7 @@ export class StructureService {
           select: { startDate: true, endDate: true },
         });
         if (existing === null) {
-          throw new NotFoundError('Session');
+          throw new NotFoundError('session');
         }
 
         // Either date may arrive alone, so the ordering has to be checked
@@ -183,7 +183,7 @@ export class StructureService {
         select: { id: true, status: true },
       });
       if (target === null) {
-        throw new NotFoundError('Session');
+        throw new NotFoundError('session');
       }
 
       if (target.status === 'CLOSED') {
@@ -215,7 +215,7 @@ export class StructureService {
       });
 
       if (session === null) {
-        throw new NotFoundError('Session');
+        throw new NotFoundError('session');
       }
 
       if (session._count.enrollments > 0) {
@@ -329,7 +329,7 @@ export class StructureService {
       .tenant(async (tx) => {
         const existing = await tx.classLevel.findUnique({ where: { id }, select: { id: true } });
         if (existing === null) {
-          throw new NotFoundError('Class');
+          throw new NotFoundError('class');
         }
 
         await tx.classLevel.update({
@@ -343,7 +343,7 @@ export class StructureService {
 
         const [refreshed] = await this.listClassesWithin(tx, undefined, id);
         if (refreshed === undefined) {
-          throw new NotFoundError('Class');
+          throw new NotFoundError('class');
         }
         return refreshed;
       })
@@ -366,7 +366,7 @@ export class StructureService {
       });
 
       if (cls === null) {
-        throw new NotFoundError('Class');
+        throw new NotFoundError('class');
       }
 
       if (cls._count.enrollments > 0) {
@@ -394,10 +394,10 @@ export class StructureService {
         ]);
 
         if (cls === null) {
-          throw new NotFoundError('Class');
+          throw new NotFoundError('class');
         }
         if (session === null) {
-          throw new NotFoundError('Session');
+          throw new NotFoundError('session');
         }
 
         const created = await tx.section.create({
@@ -440,7 +440,7 @@ export class StructureService {
       .tenant(async (tx) => {
         const existing = await tx.section.findUnique({ where: { id }, select: { id: true } });
         if (existing === null) {
-          throw new NotFoundError('Section');
+          throw new NotFoundError('section');
         }
 
         const updated = await tx.section.update({
@@ -485,7 +485,7 @@ export class StructureService {
       });
 
       if (section === null) {
-        throw new NotFoundError('Section');
+        throw new NotFoundError('section');
       }
 
       if (section._count.enrollments > 0) {
