@@ -66,6 +66,7 @@ export function SelectContent({
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
+        data-slot="select-content"
         position={position}
         className={cn(
           'relative z-50 max-h-96 min-w-32 overflow-hidden rounded-md border border-border',

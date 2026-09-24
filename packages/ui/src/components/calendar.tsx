@@ -1,9 +1,16 @@
 'use client';
 
-import { DayPicker, type DayPickerProps } from 'react-day-picker';
+import { type ChangeEvent } from 'react';
+import {
+  DayPicker,
+  type DayPickerProps,
+  type DropdownProps,
+} from 'react-day-picker';
 
-import { ChevronLeftIcon, ChevronRightIcon } from '../icons';
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '../icons';
 import { cn } from '../lib/cn';
+
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
 
 /**
  * The calendar.
@@ -18,6 +25,10 @@ import { cn } from '../lib/cn';
  * `react-day-picker` is what shadcn/ui's Calendar is built on, so this is the
  * locked library set (docs/16 §2), not a new dependency of our own choosing.
  *
+ * Month/year captions use our Radix `Select`, not a native `<select>`. The OS
+ * list cannot be height-capped or themed — a hundred birth years becomes a
+ * full-screen sheet. The custom list is capped and matches every other select.
+ *
  * Every class below is a semantic token. Nothing here is a hex or an arbitrary
  * value, so a school's `primary_color` swap recolours the calendar too.
  */
@@ -27,26 +38,100 @@ export type CalendarProps = DayPickerProps & {
   className?: string;
 };
 
-export function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
+/**
+ * Month/year navigator for `captionLayout="dropdown"`.
+ *
+ * DayPicker still speaks native-select `onChange` events, so we synthesise one
+ * when Radix reports a value. The list is portalled and height-capped — without
+ * that a century of birth years paints the whole viewport.
+ */
+function CalendarCaptionDropdown({
+  options,
+  value,
+  onChange,
+  disabled,
+  'aria-label': ariaLabel,
+}: DropdownProps) {
+  function handleValueChange(next: string) {
+    if (onChange === undefined) return;
+    onChange({
+      target: { value: next },
+    } as ChangeEvent<HTMLSelectElement>);
+  }
+
+  return (
+    <Select
+      value={value === undefined ? undefined : String(value)}
+      onValueChange={handleValueChange}
+      disabled={disabled}
+    >
+      <SelectTrigger
+        aria-label={ariaLabel}
+        className={cn(
+          'h-8 w-auto min-w-0 gap-1 border-input px-2 text-sm font-medium shadow-none',
+          'focus:ring-2 focus:ring-ring focus:ring-offset-0',
+        )}
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent
+        // ~8 rows. Tall enough to scan, short enough not to cover the form.
+        className="max-h-60 min-w-[var(--radix-select-trigger-width)]"
+        position="popper"
+      >
+        {(options ?? []).map((option) => (
+          <SelectItem
+            key={option.value}
+            value={String(option.value)}
+            disabled={option.disabled}
+          >
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+export function Calendar({
+  className,
+  classNames,
+  showOutsideDays = true,
+  captionLayout = 'label',
+  formatters,
+  components,
+  ...props
+}: CalendarProps) {
+  const isDropdown = captionLayout.startsWith('dropdown');
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn('p-1', className)}
+      captionLayout={captionLayout}
+      className={cn('w-fit p-3', className)}
+      formatters={{
+        formatMonthDropdown: (date) => date.toLocaleString('default', { month: 'short' }),
+        ...formatters,
+      }}
       classNames={{
-        months: 'flex flex-col sm:flex-row gap-4',
-        month: 'space-y-3',
-        month_caption: 'flex h-9 items-center justify-center px-9',
-        caption_label: 'text-sm font-semibold text-foreground',
+        months: 'relative flex flex-col gap-4 sm:flex-row',
+        month: 'flex w-full flex-col gap-4',
+        month_caption: cn(
+          'relative flex h-8 w-full items-center justify-center',
+          // Room for the absolute prev/next buttons on either side.
+          isDropdown ? 'px-8' : 'px-9',
+        ),
+        caption_label: 'select-none text-sm font-semibold text-foreground',
 
-        nav: 'flex items-center justify-between absolute inset-x-1 top-1 h-9 pointer-events-none',
+        nav: 'absolute inset-x-0 top-0 flex h-8 w-full items-center justify-between',
         button_previous: cn(
-          'pointer-events-auto inline-flex size-8 items-center justify-center rounded-md',
+          'inline-flex size-8 items-center justify-center rounded-md',
           'text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
           'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
           'disabled:pointer-events-none disabled:opacity-30',
         ),
         button_next: cn(
-          'pointer-events-auto inline-flex size-8 items-center justify-center rounded-md',
+          'inline-flex size-8 items-center justify-center rounded-md',
           'text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
           'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
           'disabled:pointer-events-none disabled:opacity-30',
@@ -56,7 +141,7 @@ export function Calendar({ className, classNames, showOutsideDays = true, ...pro
         weekdays: 'flex',
         weekday: 'w-9 text-xs font-medium text-muted-foreground uppercase tracking-wide',
         weeks: '',
-        week: 'flex w-full mt-1',
+        week: 'mt-1 flex w-full',
 
         day: cn(
           'relative size-9 p-0 text-center text-sm',
@@ -84,22 +169,25 @@ export function Calendar({ className, classNames, showOutsideDays = true, ...pro
         disabled: 'text-muted-foreground/30',
         hidden: 'invisible',
 
-        dropdowns: 'flex items-center gap-1.5',
+        dropdowns: 'flex h-8 w-full items-center justify-center gap-1.5',
         dropdown_root: 'relative',
-        dropdown: cn(
-          'h-8 rounded-md border border-border bg-background px-2 text-sm',
-          'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-        ),
+        dropdown: '',
 
         ...classNames,
       }}
       components={{
-        Chevron: ({ orientation }) =>
-          orientation === 'left' ? (
-            <ChevronLeftIcon className="size-4" aria-hidden="true" />
-          ) : (
-            <ChevronRightIcon className="size-4" aria-hidden="true" />
-          ),
+        Chevron: ({ orientation, className: chevronClassName, ...chevronProps }) => {
+          const iconClass = cn('size-4', chevronClassName);
+          if (orientation === 'left') {
+            return <ChevronLeftIcon className={iconClass} aria-hidden="true" {...chevronProps} />;
+          }
+          if (orientation === 'right') {
+            return <ChevronRightIcon className={iconClass} aria-hidden="true" {...chevronProps} />;
+          }
+          return <ChevronDownIcon className={iconClass} aria-hidden="true" {...chevronProps} />;
+        },
+        Dropdown: CalendarCaptionDropdown,
+        ...components,
       }}
       {...props}
     />

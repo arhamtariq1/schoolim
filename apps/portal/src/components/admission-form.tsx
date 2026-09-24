@@ -248,6 +248,7 @@ export function AdmissionForm({
               <DatePicker
                 value={dateOfBirth}
                 onChange={setDateOfBirth}
+                max={today}
               />
             </Field>
             <Field
@@ -329,20 +330,24 @@ export function AdmissionForm({
             >
               <Input
                 type="tel"
-                inputMode="tel"
-                placeholder="0300 1234567"
+                inputMode="numeric"
+                autoComplete="tel"
+                placeholder="03001234567"
                 value={guardianPhone}
                 onChange={(event) => {
-                  setGuardianPhone(event.target.value);
+                  setGuardianPhone(digitsOnly(event.target.value, 15));
                 }}
               />
             </Field>
             <Field label="CNIC" error={fieldErrors['guardian.cnic']}>
               <Input
-                value={guardianCnic}
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
                 placeholder="35202-1234567-1"
+                value={guardianCnic}
                 onChange={(event) => {
-                  setGuardianCnic(event.target.value);
+                  setGuardianCnic(formatCnic(event.target.value));
                 }}
               />
             </Field>
@@ -695,4 +700,18 @@ function toE164(input: string): string {
     return `+92${digits.slice(1)}`;
   }
   return digits;
+}
+
+/** Strip everything that is not a digit. Letters never belong in these fields. */
+function digitsOnly(value: string, max?: number): string {
+  const digits = value.replace(/\D/g, '');
+  return max === undefined ? digits : digits.slice(0, max);
+}
+
+/** CNIC as people write it: `35202-1234567-1`. Digits only underneath. */
+function formatCnic(value: string): string {
+  const digits = digitsOnly(value, 13);
+  if (digits.length <= 5) return digits;
+  if (digits.length <= 12) return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  return `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`;
 }

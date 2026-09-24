@@ -32,6 +32,9 @@ import { Popover, PopoverContent, PopoverTrigger } from './popover';
  * next" — where a person is looking rather than transcribing. Both write the
  * same `YYYY-MM-DD` string.
  *
+ * Month and year dropdowns are on by default: birth dates, session starts and
+ * "valid till" all need a jump without stepping month by month.
+ *
  * ## The value on the wire
  *
  * `value` and `onChange` speak `YYYY-MM-DD`, exactly like the `type="date"`
@@ -51,7 +54,12 @@ export interface DatePickerProps {
   placeholder?: string;
   disabled?: boolean;
   required?: boolean;
-  /** Show a year dropdown — worth it for a date of birth, noise for "today". */
+  /**
+   * Month and year dropdowns in the calendar caption.
+   *
+   * On by default — turning it off is for the rare case where only adjacent
+   * months matter and the extra controls are noise.
+   */
   yearNavigation?: boolean;
   /** Renders an × once a date is set. Off where the field is mandatory. */
   clearable?: boolean;
@@ -98,6 +106,42 @@ function fromDisplay(text: string): string | undefined {
   return parsed === undefined ? undefined : formatPlainDate(parsed);
 }
 
+/**
+ * Month/year bounds passed through to the calendar.
+ *
+ * With `yearNavigation`, the caption becomes month and year `<select>`s — the
+ * whole point of the flag. Those selects need an explicit span; without one,
+ * setting only `max` would leave a single year in the list.
+ */
+function calendarNavigationProps(
+  yearNavigation: boolean,
+  minDate: Date | undefined,
+  maxDate: Date | undefined,
+): {
+  captionLayout?: 'dropdown';
+  reverseYears?: boolean;
+  startMonth?: Date;
+  endMonth?: Date;
+} {
+  if (!yearNavigation) {
+    return {
+      ...(minDate === undefined ? {} : { startMonth: minDate }),
+      ...(maxDate === undefined ? {} : { endMonth: maxDate }),
+    };
+  }
+
+  const thisYear = (parsePlainDate(todayPlainDate()) ?? new Date(Date.now())).getFullYear();
+  return {
+    captionLayout: 'dropdown',
+    // Newest years first — a clerk picking a birth year for a child in class 1
+    // should not scroll past 1926 to reach 2019.
+    reverseYears: true,
+    startMonth: minDate ?? new Date(thisYear - 100, 0),
+    // A decade ahead covers "valid till" and session ends without a `max`.
+    endMonth: maxDate ?? new Date(thisYear + 10, 11),
+  };
+}
+
 export function DatePicker({
   value,
   onChange,
@@ -106,7 +150,7 @@ export function DatePicker({
   placeholder = 'dd/mm/yyyy',
   disabled = false,
   required = false,
-  yearNavigation = false,
+  yearNavigation = true,
   clearable = true,
   className,
   id,
@@ -217,15 +261,37 @@ export function DatePicker({
               <CalendarIcon className="size-4" aria-hidden="true" />
             </button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="p-2">
+          <PopoverContent
+            align="end"
+            className="w-auto overflow-hidden p-0"
+            onPointerDownOutside={(event) => {
+              // Month/year use a portalled Radix Select. A click on that list is
+              // "outside" the calendar popover and would close it before a year
+              // can be chosen.
+              const target = event.target;
+              if (
+                target instanceof Element &&
+                target.closest('[data-slot="select-content"]') !== null
+              ) {
+                event.preventDefault();
+              }
+            }}
+            onFocusOutside={(event) => {
+              const target = event.target;
+              if (
+                target instanceof Element &&
+                target.closest('[data-slot="select-content"]') !== null
+              ) {
+                event.preventDefault();
+              }
+            }}
+          >
             <Calendar
               mode="single"
               selected={selected}
               defaultMonth={selected ?? maxDate ?? minDate}
               disabled={disabledDays}
-              {...(minDate === undefined ? {} : { startMonth: minDate })}
-              {...(maxDate === undefined ? {} : { endMonth: maxDate })}
-              {...(yearNavigation ? { captionLayout: 'dropdown' as const } : {})}
+              {...calendarNavigationProps(yearNavigation, minDate, maxDate)}
               onSelect={(day) => {
                 if (day === undefined) return;
                 commit(formatPlainDate(day));

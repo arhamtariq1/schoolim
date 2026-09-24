@@ -33,14 +33,36 @@ import {
 import { BRAND } from '@ilm/utils';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { AppSearch } from '@/components/app-search';
 import { NAV_ICONS } from '@/components/nav-icons';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { VerifyEmailBanner } from '@/components/verify-email-banner';
-import { visibleNavItems, type NavItem } from '@/lib/navigation';
+import { NAV_ITEMS, visibleNavItems, type NavItem } from '@/lib/navigation';
 import { useCanonicalPathname, useTenantHref } from '@/lib/use-tenant-href';
+
+/**
+ * Leaf destinations in the static nav.
+ *
+ * Used so a collection href like `/students` does not stay lit on a sibling
+ * first-class page like `/students/new`. Detail routes (`/students/:id`) are
+ * not leaves, so the collection item correctly stays active on them.
+ */
+const NAV_LEAF_HREFS: readonly string[] = (() => {
+  const hrefs: string[] = [];
+  const walk = (items: readonly NavItem[]): void => {
+    for (const item of items) {
+      if (item.children !== undefined && item.children.length > 0) {
+        walk(item.children);
+      } else {
+        hrefs.push(item.href);
+      }
+    }
+  };
+  walk(NAV_ITEMS);
+  return hrefs;
+})();
 
 /**
  * The application shell.
@@ -102,14 +124,41 @@ export function AppShell({
   const pathname = usePathname();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const scrollport = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setDrawerOpen(false);
+
+    // Next resets the *document's* scroll on navigation, and the document no
+    // longer scrolls — `main` does. Without this, opening a nav item from
+    // halfway down a long list lands on the next page already scrolled halfway
+    // down it, showing the middle of a screen the person has never seen.
+    scrollport.current?.scrollTo({ top: 0 });
   }, [pathname]);
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex h-dvh overflow-hidden bg-background">
+      {/*
+        Taken out of flow, deliberately.
+
+        `h-dvh overflow-hidden` alone was not enough, and the symptom is the one
+        already documented on `AuthScrollLock`: on Windows the document paints
+        its own scrollport anyway, so the page carried **two** scrollbars and the
+        whole shell — sidebar, header and all — slid up by the height of a
+        horizontal scrollbar. A shell that scrolls is not a shell.
+
+        `fixed` fixes it at the root rather than papering over it: an
+        out-of-flow box contributes nothing to the document's height, so there
+        is no second scrollport for anything to scroll. `main` below is then the
+        only thing on the page that moves, which is what the layout always
+        claimed to do.
+
+        `inset-x-0 top-0 h-dvh` rather than `inset-0`, which is what
+        `auth-layout` uses: `inset-0` resolves against the *layout* viewport, so
+        on a phone the bottom tab bar would sit behind the browser's URL bar.
+        Auth has nothing anchored to the bottom and does not care; this does.
+      */}
+      <div className="fixed inset-x-0 top-0 flex h-dvh overflow-hidden bg-background">
         <Sidebar
           className="hidden md:flex"
           items={items}
@@ -152,7 +201,7 @@ export function AppShell({
             }}
           />
 
-          <main className="min-w-0 flex-1 overflow-y-auto">
+          <main ref={scrollport} className="min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
             <div className="mx-auto w-full max-w-7xl space-y-6 p-4 pb-24 md:p-6 md:pb-6">
               {unverifiedEmail === undefined ? null : <VerifyEmailBanner email={unverifiedEmail} />}
               {children}
@@ -648,7 +697,17 @@ function isCurrent(href: string, pathname: string): boolean {
   if (href === '/') {
     return pathname === '/';
   }
-  return pathname === href || pathname.startsWith(`${href}/`);
+  if (pathname === href) {
+    return true;
+  }
+  if (!pathname.startsWith(`${href}/`)) {
+    return false;
+  }
+  // A more specific leaf owns this path (e.g. `/students/new` beside
+  // `/students`). Detail routes are not leaves, so the collection stays lit.
+  return !NAV_LEAF_HREFS.some(
+    (other) => other !== href && (pathname === other || pathname.startsWith(`${other}/`)),
+  );
 }
 
 function isWithin(item: NavItem, pathname: string): boolean {

@@ -51,10 +51,30 @@ export const NAV_ITEMS: readonly NavItem[] = [
     permission: 'dashboard.workspace.read',
   },
   {
+    href: '/students/new',
+    label: 'Add admission',
+    icon: 'CreateIcon',
+    permission: 'students.student.create',
+  },
+  {
     href: '/students',
     label: 'Students',
     icon: 'StudentsIcon',
     permission: 'students.student.read',
+    // children: [
+    //   {
+    //     href: '/students',
+    //     label: 'All students',
+    //     icon: 'StudentsIcon',
+    //     permission: 'students.student.read',
+    //   },
+    //   {
+    //     href: '/students/new',
+    //     label: 'Add admission',
+    //     icon: 'CreateIcon',
+    //     permission: 'students.student.create',
+    //   },
+    // ],
   },
   {
     href: '/fees',

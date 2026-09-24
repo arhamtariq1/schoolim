@@ -3,6 +3,7 @@ import {
   AccountIcon,
   AttendanceIcon,
   ClassIcon,
+  CreateIcon,
   DashboardIcon,
   FeesIcon,
   FinanceIcon,
@@ -33,6 +34,7 @@ import type { ComponentType } from 'react';
 export const NAV_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   DashboardIcon,
   StudentsIcon,
+  CreateIcon,
   FeesIcon,
   AttendanceIcon,
   AcademicsIcon,

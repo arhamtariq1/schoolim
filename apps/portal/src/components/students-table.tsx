@@ -1,6 +1,5 @@
 'use client';
 
-
 import { ROUTES, STUDENT_STATUSES, type StudentListItem } from '@ilm/contracts';
 import {
   Button,
@@ -31,6 +30,26 @@ import { EditStudentDialog } from './edit-student-dialog';
 
 import { mutateOrThrow } from '@/lib/mutate';
 import { useTenantHref } from '@/lib/use-tenant-href';
+
+/**
+ * Run a row-menu action without the leftover click navigating the row.
+ *
+ * Dropdown content is portaled. After an item is chosen the menu unmounts and
+ * the browser delivers `click` to whatever is now under the pointer — the
+ * table row — which would open the student detail on top of the confirm dialog.
+ * Capturing that one click stops it.
+ */
+function afterMenuAction(action: () => void): void {
+  action();
+  const swallow = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  document.addEventListener('click', swallow, true);
+  window.setTimeout(() => {
+    document.removeEventListener('click', swallow, true);
+  }, 100);
+}
 
 /**
  * The student list.
@@ -237,60 +256,80 @@ export function StudentsTable({
       align: 'end',
       render: (row) =>
         !can.update && !can.delete ? null : (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-              aria-label={`Actions for ${row.firstName} ${row.lastName}`}
-              onClick={(event) => {
-                event.stopPropagation();
-              }}
-            >
-              <MoreIcon className="size-4" aria-hidden="true" />
-            </DropdownMenuTrigger>
+          <div
+            data-stop-row-click=""
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+            onPointerDown={(event) => {
+              event.stopPropagation();
+            }}
+          >
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                aria-label={`Actions for ${row.firstName} ${row.lastName}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                }}
+              >
+                <MoreIcon className="size-4" aria-hidden="true" />
+              </DropdownMenuTrigger>
 
-            <DropdownMenuContent>
-              <DropdownMenuLabel>
-                {row.firstName} {row.lastName}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              <DropdownMenuContent
+                onCloseAutoFocus={(event) => {
+                  event.preventDefault();
+                }}
+              >
+                <DropdownMenuLabel>
+                  {row.firstName} {row.lastName}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
 
-              {can.update ? (
-                <DropdownMenuItem
-                  onSelect={() => {
-                    setEditing(row);
-                  }}
-                >
-                  <EditIcon aria-hidden="true" />
-                  Edit details
-                </DropdownMenuItem>
-              ) : null}
-
-              {can.update && row.status === 'ACTIVE' ? (
-                <DropdownMenuItem
-                  onSelect={() => {
-                    setLeaving(row);
-                  }}
-                >
-                  Mark as left
-                </DropdownMenuItem>
-              ) : null}
-
-              {can.delete ? (
-                <>
-                  <DropdownMenuSeparator />
+                {can.update ? (
                   <DropdownMenuItem
-                    destructive
                     onSelect={() => {
-                      setDeleting(row);
+                      afterMenuAction(() => {
+                        setEditing(row);
+                      });
                     }}
                   >
-                    <DeleteIcon aria-hidden="true" />
-                    Delete record
+                    <EditIcon aria-hidden="true" />
+                    Edit details
                   </DropdownMenuItem>
-                </>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                ) : null}
+
+                {can.update && row.status === 'ACTIVE' ? (
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      afterMenuAction(() => {
+                        setLeaving(row);
+                      });
+                    }}
+                  >
+                    Mark as left
+                  </DropdownMenuItem>
+                ) : null}
+
+                {can.delete ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      destructive
+                      onSelect={() => {
+                        afterMenuAction(() => {
+                          setDeleting(row);
+                        });
+                      }}
+                    >
+                      <DeleteIcon aria-hidden="true" />
+                      Delete record
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         ),
     },
   ];

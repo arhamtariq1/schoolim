@@ -205,7 +205,16 @@ export function DataTable<TRow>({
                     onClick={
                       onRowClick === undefined
                         ? undefined
-                        : () => {
+                        : (event) => {
+                            // Interactive cells opt out; a leftover click after a
+                            // portaled menu closes is handled by the menu action.
+                            if (
+                              (event.target as HTMLElement | null)?.closest(
+                                '[data-stop-row-click]',
+                              ) !== null
+                            ) {
+                              return;
+                            }
                             onRowClick(row);
                           }
                     }

@@ -81,6 +81,32 @@ describe('the fees section', () => {
   });
 });
 
+describe('admission', () => {
+  it('is its own top-level item, not a child of Students', () => {
+    const items = visibleNavItems(['students.student.read', 'students.student.create']);
+
+    // Admission is the most frequent errand at a front desk during intake, and
+    // burying it one disclosure deep cost a click on every single admission.
+    // Students is a leaf again: a section with one real child is a heading
+    // that does nothing.
+    expect(labels(items)).toContain('Add admission');
+    expect(find(items, 'Students')?.children).toBeUndefined();
+  });
+
+  it('points at the dedicated page, not a dialog', () => {
+    const items = visibleNavItems(['students.student.read', 'students.student.create']);
+
+    expect(find(items, 'Add admission')?.href).toBe('/students/new');
+  });
+
+  it('is hidden from somebody who may only read the roster', () => {
+    const items = visibleNavItems(['students.student.read']);
+
+    expect(labels(items)).toContain('Students');
+    expect(labels(items)).not.toContain('Add admission');
+  });
+});
+
 describe('the sidebar as a whole', () => {
   it('shows nothing at all to somebody holding no permissions', () => {
     expect(visibleNavItems([])).toEqual([]);
@@ -122,12 +148,18 @@ describe('the sidebar as a whole', () => {
     walk(NAV_ITEMS);
   });
 
-  it('has no duplicate destinations, which would light up two items at once', () => {
+  it('has no duplicate leaf destinations, which would light up two items at once', () => {
+    // Parents that expand may share an href with their first child (Students
+    // is both the section and the roster). Only leaves render as links, so
+    // duplicates among leaves are the bug that lights two items at once.
     const seen: string[] = [];
     const walk = (items: readonly NavItem[]): void => {
       for (const item of items) {
-        seen.push(item.href);
-        walk(item.children ?? []);
+        if (item.children !== undefined && item.children.length > 0) {
+          walk(item.children);
+        } else {
+          seen.push(item.href);
+        }
       }
     };
     walk(NAV_ITEMS);

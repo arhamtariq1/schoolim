@@ -67,7 +67,22 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH }} />
       </head>
-      <body className="min-h-dvh bg-background text-foreground antialiased">
+      {/*
+        No `min-h-dvh` here, on purpose.
+
+        It was doing nothing that `bg-background` was not already doing — CSS
+        propagates the body's background to the canvas, so the viewport is
+        painted whatever the body's height — and it was doing one thing that
+        hurt: forcing the body to a full `100dvh` even on screens whose own
+        chrome is `position: fixed`. The moment anything shaved a pixel off the
+        available height (a horizontal scrollbar is enough on Windows), a body
+        pinned to exactly one viewport overflowed it, and the app grew a second
+        scrollbar that scrolled the sidebar and header out of view.
+
+        Without it the body is as tall as whatever is actually in flow, so the
+        document scrolls only when a page genuinely has more than fits.
+      */}
+      <body className="bg-background text-foreground antialiased">
         {/* At the root, not per page: a toast fired while navigating away must
             outlive the page that fired it, or the confirmation of what someone
             just did disappears with the screen they did it on. */}
