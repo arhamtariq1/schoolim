@@ -4,6 +4,7 @@ import {
   createSectionSchema,
   createSessionSchema,
   ROUTES,
+  setupQuerySchema,
   updateClassLevelSchema,
   updateHolidaySchema,
   updateSectionSchema,
@@ -43,22 +44,39 @@ export class AcademicsController {
   ) {}
 
   /**
-   * The current session and the class tree in one call.
+   * A session and the class tree in one call.
    *
    * Every caller needs both together — an admission form, a promotion screen,
    * an attendance register. Splitting them means two requests whose answers can
    * disagree if the session rolls over between them.
+   *
+   * `?sessionId=` names a session other than the current one, which is what a
+   * school admitting next year's intake passes. Sections belong to a session,
+   * so the session and the classes must be resolved together or the form gets
+   * next year's session beside this year's sections.
+   *
+   * The session is resolved **first**, and the classes are scoped to what came
+   * back rather than to what was asked for. An id that is closed, invented or
+   * another school's yields no session, and then no sections either — instead
+   * of an empty session next to a full list of places to put a child.
    */
   @Get(ROUTES.academics.setup)
   @RequirePermission('academics.structure.read')
-  async setup(@Req() request: FastifyRequest): Promise<{
+  async setup(
+    @Req() request: FastifyRequest,
+    @Query('sessionId') sessionId?: string,
+  ): Promise<{
     data: { session: CurrentSession | null; classes: ClassLevelWithSections[] };
     meta: { requestId: string };
   }> {
-    const [session, classes] = await Promise.all([
-      this.academics.currentSession(),
-      this.academics.classes(),
-    ]);
+    const asked = setupQuerySchema.parse({ sessionId }).sessionId;
+
+    const session =
+      asked === undefined
+        ? await this.academics.currentSession()
+        : await this.academics.openSession(asked);
+
+    const classes = session === undefined ? [] : await this.academics.classes(session.id);
 
     return {
       // `null` rather than omitted: "there is no current session" is a real

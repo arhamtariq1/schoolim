@@ -132,10 +132,21 @@ export class StudentsRepository {
       where.push(`s.id = ${bind(scope.studentId)}::uuid`);
     }
 
+    // `length` first, on both numbers.
+    //
+    // Both are text, and both are zero-padded to four digits — which sorts
+    // correctly right up to the ten-thousandth child and then silently stops:
+    // as text, `'10000' < '9999'`, so a forty-year-old school's newest
+    // admissions would file themselves at the top of the register. Ordering by
+    // length and then by value is the natural numeric order for any padded
+    // number, and stays sane if a school ever imports legacy numbers that are
+    // not purely digits. It sorts rather than walking the index, which is worth
+    // it here: neither is the default sort, both run against one school's
+    // students, and a register in the wrong order is wrong at any speed.
     const ORDER: Record<StudentListQuery['sort'], string> = {
       name: 's.last_name, s.first_name',
-      grNo: 's.gr_no',
-      studentCode: 's.student_code',
+      grNo: 'length(s.gr_no), s.gr_no',
+      studentCode: 'length(s.student_code), s.student_code',
       className: 'cl.numeric_order, sec.name',
       createdAt: 's.created_at',
     };

@@ -8,10 +8,10 @@ import {
   type StudentProfile,
   type UpdateStudent,
 } from '@ilm/contracts';
-import { fromDecimalString } from '@ilm/utils';
+import { DEFAULT_TIMEZONE, fromDecimalString, today } from '@ilm/utils';
 import { Inject, Injectable } from '@nestjs/common';
 
-import { Prisma } from '../../prisma';
+import { Prisma, type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
@@ -111,14 +111,27 @@ export class StudentsService {
    */
   async create(input: CreateStudent): Promise<{ id: string; grNo: string; studentCode: string }> {
     return this.prisma.tenant(async (tx) => {
-      // Both numbers come from locked counters inside this same transaction.
-      // If anything below fails, neither is consumed, and the register is left
+      // The year on the Student ID is the year the child was **admitted**, in
+      // the school's own calendar.
+      //
+      // It was `clock.now().getUTCFullYear()`, which is wrong twice over. A
+      // Karachi school admitting at 2am on 1 January is still on 31 December in
+      // UTC, so the first children of every year were stamped with the last
+      // one; and a school entering an older record backdated to 2019 got the
+      // current year on it, which makes the prefix a lie about the only thing
+      // it claims to say.
+      const admissionYear = (
+        input.admittedOn ?? today(this.clock, await schoolTimeZone(tx))
+      ).slice(0, 4);
+
+      // Both numbers come from locked counters inside this same transaction. If
+      // anything below fails, neither is consumed, and the register is left
       // with no gap where a child never was.
       const grNo = await this.nextNumber(tx, 'gr', (value) => String(value).padStart(4, '0'));
       const studentCode = await this.nextNumber(
         tx,
         'student',
-        (value) => `${String(this.clock.now().getUTCFullYear())}-${String(value).padStart(4, '0')}`,
+        (value) => `${admissionYear}-${String(value).padStart(4, '0')}`,
       );
 
       const student = await tx.student.create({
@@ -144,6 +157,8 @@ export class StudentsService {
       });
 
       if (input.enrollment !== undefined) {
+        await assertEnrollmentTarget(tx, input.enrollment);
+
         await tx.enrollment.create({
           data: {
             studentId: student.id,
@@ -168,6 +183,7 @@ export class StudentsService {
             ...(input.guardian.occupation === undefined
               ? {}
               : { occupation: input.guardian.occupation }),
+            address: input.guardian.address,
           } as never,
         });
 
@@ -499,6 +515,85 @@ export class StudentsService {
 
     return format(value);
   }
+}
+
+/**
+ * The session, class and section an admission names are this school's.
+ *
+ * ## Why RLS is not enough on its own
+ *
+ * The row being written is an `enrollments` row, and RLS stamps and confines
+ * *that* row to the caller's school perfectly well. What it says nothing about
+ * is where the row **points**: `session_id` and `class_level_id` are foreign
+ * keys, and PostgreSQL checks a foreign key with the referential-integrity
+ * trigger, which does not apply row-level security. So a body naming another
+ * school's session satisfied the constraint and the admission succeeded.
+ *
+ * Nothing leaked — the other school still cannot see the row, and this school
+ * still cannot read the session it now points at. What it produced was worse in
+ * an ordinary way: a child enrolled into a session their own school cannot see,
+ * missing from every list filtered by session, on a register that no longer
+ * adds up.
+ *
+ * These lookups run on the tenant client, so RLS is what makes them work — a
+ * foreign row is simply not there, and the answer is the same 404 as for an id
+ * that never existed. That is deliberate: a different error would confirm which
+ * ids are real in some other school.
+ *
+ * ## What is deliberately not checked
+ *
+ * Whether the session is closed. A school digitising an old register admits
+ * into a year that has ended, which is exactly what backdating is for. The
+ * admission form does not offer closed sessions; the API allows one, because
+ * "you may not enter your own history" is not a rule worth having.
+ */
+async function assertEnrollmentTarget(
+  tx: TransactionClient,
+  enrollment: { sessionId: string; classLevelId: string; sectionId?: string },
+): Promise<void> {
+  const [session, classLevel] = await Promise.all([
+    tx.academicSession.findFirst({ where: { id: enrollment.sessionId }, select: { id: true } }),
+    tx.classLevel.findFirst({ where: { id: enrollment.classLevelId }, select: { id: true } }),
+  ]);
+
+  if (session === null) {
+    throw new NotFoundError('academic session');
+  }
+  if (classLevel === null) {
+    throw new NotFoundError('class');
+  }
+
+  if (enrollment.sectionId !== undefined) {
+    // Matched against the session *and* the class, not merely owned by this
+    // school. A section is "Grade 1 — A, 2026-2027"; accepting one that belongs
+    // to a different class or a different year places the child in a register
+    // their own class list will never show.
+    const section = await tx.section.findFirst({
+      where: {
+        id: enrollment.sectionId,
+        sessionId: enrollment.sessionId,
+        classLevelId: enrollment.classLevelId,
+      },
+      select: { id: true },
+    });
+
+    if (section === null) {
+      throw new NotFoundError('section');
+    }
+  }
+}
+
+/**
+ * The school's own time zone, for deciding what "today" is.
+ *
+ * One row by primary key, inside the transaction that is already open, and only
+ * on the path that needs it — an admission with no date on it, which the form
+ * never sends. The fallback is the product's default rather than the server's:
+ * a machine in Frankfurt must not decide what day it is in Lahore.
+ */
+async function schoolTimeZone(tx: TransactionClient): Promise<string> {
+  const school = await tx.school.findFirst({ select: { timezone: true } });
+  return school?.timezone ?? DEFAULT_TIMEZONE;
 }
 
 function toListItem(row: StudentRow): StudentListItem {

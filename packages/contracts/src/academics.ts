@@ -15,6 +15,36 @@ export const SESSION_STATUSES = ['PLANNED', 'ACTIVE', 'CLOSED'] as const;
 export const sessionStatusSchema = z.enum(SESSION_STATUSES);
 export type SessionStatus = z.infer<typeof sessionStatusSchema>;
 
+/**
+ * Sessions a student may still be placed into.
+ *
+ * `CLOSED` is not one of them — a closed session's register is finished, and
+ * enrolling into it would add a child to a year that has already been reported
+ * on. `PLANNED` is, and deliberately: admitting next year's intake in March,
+ * before the year turns over, is the ordinary way a school fills its classes.
+ */
+export const ENROLLABLE_SESSION_STATUSES: readonly SessionStatus[] = ['ACTIVE', 'PLANNED'];
+
+/**
+ * The optional session on `GET /academics/setup`.
+ *
+ * A separate schema rather than a bare `idSchema.optional()` on the handler,
+ * because a query string carries `''` for an absent value about as often as it
+ * carries nothing at all, and `''` must mean "the current one" rather than
+ * failing validation in front of somebody opening an admission form.
+ */
+export const setupQuerySchema = z
+  .object({
+    sessionId: z
+      .string()
+      .optional()
+      .transform((value) => (value === undefined || value.trim() === '' ? undefined : value.trim()))
+      .pipe(idSchema.optional()),
+  })
+  .strict();
+
+export type SetupQuery = z.infer<typeof setupQuerySchema>;
+
 export const academicSessionSchema = z.object({
   id: idSchema,
   name: z.string(),

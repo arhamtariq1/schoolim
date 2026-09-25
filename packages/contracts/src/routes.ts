@@ -198,7 +198,14 @@ export const ROUTES = {
     staffReport: `${API_PREFIX}/attendance/reports/staff`,
   },
   academics: {
-    /** Classes with their current-session sections, and the session itself. */
+    /**
+     * Classes with their sections, and the session those sections belong to.
+     *
+     * Defaults to the current session. `?sessionId=` asks for another one,
+     * which is what admitting into next year needs: a section belongs to a
+     * session, so the class list for 2027-2028 is a different list of sections
+     * from the one for 2026-2027 even though the classes are the same.
+     */
     setup: `${API_PREFIX}/academics/setup`,
     sessions: `${API_PREFIX}/academics/sessions`,
     session: (id: string) => `${API_PREFIX}/academics/sessions/${id}`,

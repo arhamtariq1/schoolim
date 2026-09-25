@@ -1,4 +1,10 @@
-import { ROUTES, type ClassLevelWithSections, type FeeHead } from '@ilm/contracts';
+import {
+  ENROLLABLE_SESSION_STATUSES,
+  ROUTES,
+  type AcademicSession,
+  type ClassLevelWithSections,
+  type FeeHead,
+} from '@ilm/contracts';
 import { BackIcon, ICON_SIZE } from '@ilm/ui/icons';
 import { DEFAULT_TIMEZONE, systemClock, today } from '@ilm/utils';
 import type { Metadata } from 'next';
@@ -27,16 +33,29 @@ import { tenantHref } from '@/lib/tenant-server';
 export const metadata: Metadata = { title: 'Admit a student' };
 
 export default async function NewStudentPage() {
-  const [session, academics, fees, studentsHref] = await Promise.all([
+  const [session, academics, sessions, fees, studentsHref] = await Promise.all([
     getSession(),
     apiFetch<{ data: { session: { id: string } | null; classes: ClassLevelWithSections[] } }>(
       ROUTES.academics.setup,
     ),
+    apiFetch<{ data: AcademicSession[] }>(ROUTES.academics.sessions),
     apiFetch<{ data: FeeHead[] }>(ROUTES.fees.heads),
     tenantHref('/students'),
   ]);
 
   const setup = academics.ok ? academics.data.data : { session: null, classes: [] };
+
+  // Only the years a child can actually be placed into. A closed session's
+  // register is finished, and offering it would enrol a student into a year the
+  // school has already reported on.
+  const enrollableSessions = (sessions.ok ? sessions.data.data : [])
+    .filter((entry) => ENROLLABLE_SESSION_STATUSES.includes(entry.status))
+    .map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      status: entry.status,
+      isCurrent: entry.isCurrent,
+    }));
   // Only what a school currently charges. A retired head must not reappear on
   // a new admission just because old students still carry it.
   const catalogue = fees.ok ? fees.data.data.filter((head) => head.isActive) : [];
@@ -71,6 +90,7 @@ export default async function NewStudentPage() {
           // Karachi date, and the browser may be anywhere.
           today={today(systemClock, session?.school.timezone ?? DEFAULT_TIMEZONE)}
           sessionId={setup.session?.id ?? null}
+          sessions={enrollableSessions}
           classes={setup.classes}
           catalogue={catalogue}
           canSetFees={session?.permissions.includes('fees.discount.create') ?? false}

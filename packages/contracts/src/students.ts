@@ -137,6 +137,10 @@ export type StudentListQuery = z.infer<typeof studentListQuerySchema>;
  * `schoolId` is absent for the same class of reason — tenant scope comes from
  * request context, never from the body (docs/12 R2). A caller must not be able
  * to smuggle a tenant in.
+ *
+ * Class and a contactable guardian are required: a child with no class never
+ * appears on a register or attendance sheet, and a child with no phone number
+ * cannot be reached when they are absent or a fee is overdue.
  */
 export const createStudentSchema = z
   .object({
@@ -153,27 +157,41 @@ export const createStudentSchema = z
     emergencyContact: z.string().trim().max(40).optional(),
     admittedOn: calendarDateSchema.optional(),
 
-    /** Optional first enrolment, so admission is one request rather than two. */
-    enrollment: z
-      .object({
-        sessionId: idSchema,
-        classLevelId: idSchema,
-        sectionId: idSchema.optional(),
-        rollNo: z.int().min(1).optional(),
-      })
-      .optional(),
+    /** First enrolment — admission places the child in a class in one request. */
+    enrollment: z.object({
+      sessionId: z
+        .string()
+        .trim()
+        .min(1, 'Set up an academic session before admitting.')
+        .pipe(idSchema),
+      classLevelId: z.string().trim().min(1, 'Choose a class.').pipe(idSchema),
+      sectionId: idSchema.optional(),
+      rollNo: z.int().min(1).optional(),
+    }),
 
-    /** Optional first guardian, created and linked as primary. */
-    guardian: z
-      .object({
-        name: textSchema(120),
-        relation: guardianRelationSchema,
-        phone: phoneSchema.optional(),
-        email: z.email().optional(),
-        cnic: z.string().trim().max(20).optional(),
-        occupation: z.string().trim().max(80).optional(),
-      })
-      .optional(),
+    /**
+     * Primary guardian — enough to reach someone, and to find them.
+     *
+     * `address` is required alongside the phone. A phone number is how a school
+     * contacts a family on an ordinary day; a home address is what it needs on
+     * the day the phone is dead, the child has to be sent home, a legal notice
+     * has to be served, or a leaving certificate posted. Collected at admission
+     * or not at all — chasing it a year later, one family at a time, is how the
+     * column ends up two-thirds empty in every school that made it optional.
+     */
+    guardian: z.object({
+      name: textSchema(120),
+      relation: guardianRelationSchema,
+      phone: z
+        .string()
+        .trim()
+        .min(1, 'This is required.')
+        .regex(/^\+[1-9]\d{7,14}$/, 'Enter a phone number, for example 03001234567.'),
+      address: textSchema(300),
+      email: z.email().optional(),
+      cnic: z.string().trim().max(20).optional(),
+      occupation: z.string().trim().max(80).optional(),
+    }),
 
     /**
      * The fee structure agreed at admission.

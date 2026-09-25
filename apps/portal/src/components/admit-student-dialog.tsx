@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
 import { mutate } from '@/lib/mutate';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
  * Admit a student.
@@ -95,6 +96,7 @@ export function AdmitStudentDialog({
   classes,
 }: AdmitStudentDialogProps) {
   const router = useRouter();
+  const tenantHref = useTenantHref();
   const toast = useToast();
   const [form, setForm] = useState<FormState>(EMPTY);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -112,33 +114,21 @@ export function AdmitStudentDialog({
     setFormError(undefined);
     setFieldErrors({});
 
-    const phone = toE164(form.guardianPhone);
-
     const candidate = {
       firstName: form.firstName,
       lastName: form.lastName,
       ...(form.gender === '' ? {} : { gender: form.gender }),
       ...(form.dateOfBirth === '' ? {} : { dateOfBirth: form.dateOfBirth }),
-      // Enrolment only when a class was chosen — a student may be admitted now
-      // and placed later, and forcing a class here would mean inventing one.
-      ...(form.classLevelId === '' || sessionId === undefined
-        ? {}
-        : {
-            enrollment: {
-              sessionId,
-              classLevelId: form.classLevelId,
-              ...(form.sectionId === '' ? {} : { sectionId: form.sectionId }),
-            },
-          }),
-      ...(form.guardianName === ''
-        ? {}
-        : {
-            guardian: {
-              name: form.guardianName,
-              relation: form.guardianRelation,
-              ...(phone === undefined ? {} : { phone }),
-            },
-          }),
+      enrollment: {
+        sessionId: sessionId ?? '',
+        classLevelId: form.classLevelId,
+        ...(form.sectionId === '' ? {} : { sectionId: form.sectionId }),
+      },
+      guardian: {
+        name: form.guardianName,
+        relation: form.guardianRelation,
+        phone: toE164(form.guardianPhone) ?? '',
+      },
     };
 
     // The same schema the server will apply, so the message a person sees here
@@ -169,8 +159,8 @@ export function AdmitStudentDialog({
     }
 
     // The GR number is what gets written on the file and read back later, so it
-    // leads. Announced rather than only added to the list behind, because the
-    // dialog closing looks the same as it being dismissed.
+    // leads. Then open the new record — reception usually wants to add a fee or
+    // a second guardian while the parent is still at the desk.
     toast.success(
       `${form.firstName} ${form.lastName} admitted`,
       `GR ${result.data.grNo} · Student ID ${result.data.studentCode}`,
@@ -178,6 +168,7 @@ export function AdmitStudentDialog({
 
     setForm(EMPTY);
     onOpenChange(false);
+    router.push(tenantHref(`/students/${result.data.id}`));
     router.refresh();
   }
 
@@ -205,8 +196,8 @@ export function AdmitStudentDialog({
           <DialogHeader>
             <DialogTitle>Admit a student</DialogTitle>
             <DialogDescription>
-              A GR number and a Student ID are issued automatically. Class and guardian can be added
-              later if the parent does not have them now.
+              A GR number and a Student ID are issued automatically. Class and a contactable guardian
+              are required.
             </DialogDescription>
           </DialogHeader>
 
@@ -269,7 +260,7 @@ export function AdmitStudentDialog({
               <legend className="px-1 text-sm font-medium">Class</legend>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Class" error={fieldErrors['enrollment.classLevelId']}>
+                <Field label="Class" error={fieldErrors['enrollment.classLevelId']} required>
                   <SimpleSelect
                     value={form.classLevelId}
                     onValueChange={(value) => {
@@ -278,9 +269,10 @@ export function AdmitStudentDialog({
                       // would enrol the child into another class's section.
                       set('sectionId', '');
                     }}
-                    placeholder="Not placed yet"
-                    emptyOption={{ value: '', label: 'Not placed yet' }}
+                    placeholder="Select class"
+                    emptyOption={{ value: '', label: 'Select class' }}
                     options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
+                    disabled={sessionId === undefined || classes.length === 0}
                   />
                 </Field>
 
@@ -306,7 +298,7 @@ export function AdmitStudentDialog({
               </p>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Name" error={fieldErrors['guardian.name']}>
+                <Field label="Name" error={fieldErrors['guardian.name']} required>
                   <Input
                     value={form.guardianName}
                     onChange={(event) => {
@@ -315,7 +307,7 @@ export function AdmitStudentDialog({
                   />
                 </Field>
 
-                <Field label="Relation" error={fieldErrors['guardian.relation']}>
+                <Field label="Relation" error={fieldErrors['guardian.relation']} required>
                   <SimpleSelect
                     value={form.guardianRelation}
                     onValueChange={(value) => {
@@ -333,13 +325,14 @@ export function AdmitStudentDialog({
                   error={fieldErrors['guardian.phone']}
                   hint="03001234567 or +923001234567 — both work."
                   className="sm:col-span-2"
+                  required
                 >
                   <Input
                     type="tel"
-                    inputMode="tel"
+                    inputMode="numeric"
                     value={form.guardianPhone}
                     onChange={(event) => {
-                      set('guardianPhone', event.target.value);
+                      set('guardianPhone', event.target.value.replace(/\D/g, '').slice(0, 15));
                     }}
                   />
                 </Field>

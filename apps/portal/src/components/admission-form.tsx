@@ -8,8 +8,9 @@ import {
   ROUTES,
   type ClassLevelWithSections,
   type FeeHead,
+  type SessionStatus,
 } from '@ilm/contracts';
-import { Button, DatePicker, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Field, Input, Money, SimpleSelect, useToast } from '@ilm/ui';
+import { Button, DatePicker, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Field, Input, Money, SimpleSelect, Textarea, useToast } from '@ilm/ui';
 import { CloseIcon, ICON_SIZE, SuccessIcon } from '@ilm/ui/icons';
 import { minorUnits } from '@ilm/utils';
 import { useRouter } from 'next/navigation';
@@ -45,6 +46,22 @@ const GENDER_OPTIONS = GENDERS.map((value) => ({
   label: value.charAt(0) + value.slice(1).toLowerCase(),
 }));
 
+/**
+ * The religions a register in this market actually records.
+ *
+ * A free-text box collects "Islam", "islam", "Muslim" and "ISLAM" in the same
+ * column, and the board return that has to count them becomes a spreadsheet
+ * somebody cleans by hand. A short list keeps it countable; the column is plain
+ * text, so widening this list is a one-line change and never a migration.
+ */
+const RELIGION_OPTIONS = [
+  { value: 'Islam', label: 'Islam' },
+  { value: 'Christianity', label: 'Christianity' },
+  { value: 'Hinduism', label: 'Hinduism' },
+  { value: 'Sikhism', label: 'Sikhism' },
+  { value: 'Other', label: 'Other' },
+] as const;
+
 const RELATION_OPTIONS = GUARDIAN_RELATIONS.map((value) => ({
   value,
   label: value.charAt(0) + value.slice(1).toLowerCase(),
@@ -60,10 +77,20 @@ interface FeeRow {
   readonly discountReason?: string;
 }
 
+/** A session as the picker needs it — enough to label it and mark the default. */
+export interface AdmissionSession {
+  readonly id: string;
+  readonly name: string;
+  readonly status: SessionStatus;
+  readonly isCurrent: boolean;
+}
+
 export interface AdmissionFormProps {
   /** Today in the school's timezone, resolved on the server. `YYYY-MM-DD`. */
   readonly today: string;
   readonly sessionId: string | null;
+  /** Every session a child may still be placed into, current one included. */
+  readonly sessions: readonly AdmissionSession[];
   readonly classes: readonly ClassLevelWithSections[];
   readonly catalogue: readonly FeeHead[];
   readonly canSetFees: boolean;
@@ -72,6 +99,7 @@ export interface AdmissionFormProps {
 export function AdmissionForm({
   today,
   sessionId,
+  sessions,
   classes,
   catalogue,
   canSetFees,
@@ -86,6 +114,18 @@ export function AdmissionForm({
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [admittedOn, setAdmittedOn] = useState<string>(today);
 
+  const [bFormNo, setBFormNo] = useState('');
+  const [religion, setReligion] = useState('');
+
+  // Defaults to the current session, which is the answer on almost every
+  // admission. A school filling next year's classes in March picks that year
+  // instead, and the class list below reloads with *that* session's sections —
+  // they are different rows, so offering this year's would enrol the child into
+  // the year that is ending.
+  const [enrolSessionId, setEnrolSessionId] = useState(sessionId ?? '');
+  const [sessionClasses, setSessionClasses] = useState(classes);
+  const [loadingClasses, setLoadingClasses] = useState(false);
+
   const [classLevelId, setClassLevelId] = useState('');
   const [sectionId, setSectionId] = useState('');
 
@@ -93,6 +133,8 @@ export function AdmissionForm({
   const [guardianRelation, setGuardianRelation] = useState('FATHER');
   const [guardianPhone, setGuardianPhone] = useState('');
   const [guardianCnic, setGuardianCnic] = useState('');
+  const [guardianOccupation, setGuardianOccupation] = useState('');
+  const [guardianAddress, setGuardianAddress] = useState('');
 
   const [fees, setFees] = useState<FeeRow[]>(() =>
     catalogue.map((head) => ({
@@ -107,7 +149,7 @@ export function AdmissionForm({
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [isPending, setIsPending] = useState(false);
 
-  const sections = classes.find((entry) => entry.id === classLevelId)?.sections ?? [];
+  const sections = sessionClasses.find((entry) => entry.id === classLevelId)?.sections ?? [];
 
   const totals = useMemo(() => {
     let gross = 0;
@@ -118,6 +160,52 @@ export function AdmissionForm({
     }
     return { gross, payable, discount: gross - payable };
   }, [fees]);
+
+  /**
+   * Switch the year being admitted into, and reload that year's sections.
+   *
+   * The one request this form makes before Save, and only when somebody
+   * actually changes the session — which is a few times a year, not a few times
+   * a day. The alternative was shipping every session's sections on every page
+   * load, paid for by every admission to serve the rare one.
+   *
+   * Class and section are cleared first, deliberately. A section id belongs to
+   * one session; keeping the selection would leave a valid-looking dropdown
+   * holding an id the new session has never heard of, and the failure would
+   * arrive at Save rather than here.
+   */
+  async function changeSession(next: string): Promise<void> {
+    setEnrolSessionId(next);
+    setClassLevelId('');
+    setSectionId('');
+
+    if (next === '') {
+      setSessionClasses([]);
+      return;
+    }
+
+    setLoadingClasses(true);
+    try {
+      const response = await fetch(
+        `${ROUTES.academics.setup}?sessionId=${encodeURIComponent(next)}`,
+        { credentials: 'include' },
+      );
+      if (!response.ok) {
+        setFormError('Could not load classes for that session. Try again.');
+        setSessionClasses([]);
+        return;
+      }
+      const body = (await response.json()) as {
+        data: { classes: ClassLevelWithSections[] };
+      };
+      setSessionClasses(body.data.classes);
+    } catch {
+      setFormError('Could not reach the server. Classes for that session were not loaded.');
+      setSessionClasses([]);
+    } finally {
+      setLoadingClasses(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -130,25 +218,21 @@ export function AdmissionForm({
       ...(gender === '' ? {} : { gender }),
       ...(dateOfBirth === '' ? {} : { dateOfBirth }),
       ...(admittedOn === '' ? {} : { admittedOn }),
-      ...(classLevelId === '' || sessionId === null
-        ? {}
-        : {
-            enrollment: {
-              sessionId,
-              classLevelId,
-              ...(sectionId === '' ? {} : { sectionId }),
-            },
-          }),
-      ...(guardianName.trim() === ''
-        ? {}
-        : {
-            guardian: {
-              name: guardianName,
-              relation: guardianRelation,
-              ...(guardianPhone.trim() === '' ? {} : { phone: toE164(guardianPhone) }),
-              ...(guardianCnic.trim() === '' ? {} : { cnic: guardianCnic }),
-            },
-          }),
+      ...(bFormNo.trim() === '' ? {} : { bFormNo }),
+      ...(religion.trim() === '' ? {} : { religion }),
+      enrollment: {
+        sessionId: enrolSessionId,
+        classLevelId,
+        ...(sectionId === '' ? {} : { sectionId }),
+      },
+      guardian: {
+        name: guardianName,
+        relation: guardianRelation,
+        phone: toE164(guardianPhone),
+        address: guardianAddress,
+        ...(guardianCnic.trim() === '' ? {} : { cnic: guardianCnic }),
+        ...(guardianOccupation.trim() === '' ? {} : { occupation: guardianOccupation }),
+      },
       // Always sent, even untouched: the server would otherwise fall back to
       // the catalogue, and if a head were turned off between this page loading
       // and Save being pressed, the child would silently be admitted on a
@@ -176,7 +260,7 @@ export function AdmissionForm({
     }
 
     setIsPending(true);
-    const result = await mutate<{ data: { id: string; grNo: string; studentCode: string } }>(
+    const result = await mutate<{ id: string; grNo: string; studentCode: string }>(
       ROUTES.students.create,
       'POST',
       parsed.data,
@@ -191,9 +275,9 @@ export function AdmissionForm({
 
     toast.success(
       `${firstName} ${lastName} admitted`,
-      `GR ${result.data.data.grNo} · Student ID ${result.data.data.studentCode}`,
+      `GR ${result.data.grNo} · Student ID ${result.data.studentCode}`,
     );
-    router.push(tenantHref(`/students/${result.data.data.id}`));
+    router.push(tenantHref(`/students/${result.data.id}`));
     router.refresh();
   }
 
@@ -262,6 +346,31 @@ export function AdmissionForm({
                 onChange={setAdmittedOn}
               />
             </Field>
+            <Field
+              label="B-Form number"
+              error={fieldErrors['bFormNo']}
+              hint="The child’s NADRA registration. Needed for board enrolment later."
+            >
+              <Input
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="35202-1234567-1"
+                value={bFormNo}
+                onChange={(event) => {
+                  setBFormNo(formatCnic(event.target.value));
+                }}
+              />
+            </Field>
+            <Field label="Religion" error={fieldErrors['religion']}>
+              <SimpleSelect
+                value={religion}
+                onValueChange={setReligion}
+                options={RELIGION_OPTIONS}
+                placeholder="Select"
+                ariaLabel="Religion"
+                emptyOption={{ value: '', label: 'Not recorded' }}
+              />
+            </Field>
           </div>
         </Section>
 
@@ -269,12 +378,38 @@ export function AdmissionForm({
           title="Class"
           description={
             sessionId === null
-              ? 'No academic session is set up yet, so this student is admitted without a class. Add one from Academics and place them later.'
-              : 'Can be left unplaced and assigned later.'
+              ? 'Set up an academic session under Academics before admitting — every student needs a class.'
+              : 'Which year and class this student joins.'
           }
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Class" error={fieldErrors['enrollment.classLevelId']}>
+            <Field
+              label="Academic session"
+              error={fieldErrors['enrollment.sessionId']}
+              hint="The current year unless you are admitting into a year you have planned."
+              required
+            >
+              <SimpleSelect
+                value={enrolSessionId}
+                onValueChange={(next) => {
+                  void changeSession(next);
+                }}
+                options={sessions.map((entry) => ({
+                  value: entry.id,
+                  // The label says which is which, because "2026-2027" and
+                  // "2027-2028" differ by one character and enrolling a child
+                  // into the wrong year is not visible until a register is
+                  // printed without them on it.
+                  label: entry.isCurrent
+                    ? `${entry.name} — current`
+                    : `${entry.name} — planned`,
+                }))}
+                disabled={sessions.length === 0}
+                placeholder="Select session"
+                ariaLabel="Academic session"
+              />
+            </Field>
+            <Field label="Class" error={fieldErrors['enrollment.classLevelId']} required>
               <SimpleSelect
                 value={classLevelId}
                 onValueChange={(next) => {
@@ -283,18 +418,27 @@ export function AdmissionForm({
                   // one, and leaving it selected sends a mismatched pair.
                   setSectionId('');
                 }}
-                options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
-                disabled={sessionId === null}
+                options={sessionClasses.map((entry) => ({ value: entry.id, label: entry.name }))}
+                disabled={enrolSessionId === '' || loadingClasses || sessionClasses.length === 0}
+                placeholder={loadingClasses ? 'Loading…' : 'Select class'}
                 ariaLabel="Class"
-                emptyOption={{ value: '', label: 'Not placed yet' }}
+                emptyOption={{ value: '', label: 'Select class' }}
               />
             </Field>
-            <Field label="Section" error={fieldErrors['enrollment.sectionId']}>
+            <Field
+              label="Section"
+              error={fieldErrors['enrollment.sectionId']}
+              hint={
+                classLevelId !== '' && !loadingClasses && sections.length === 0
+                  ? 'That class has no sections in this session yet. Add them under Academics, or leave this blank.'
+                  : undefined
+              }
+            >
               <SimpleSelect
                 value={sectionId}
                 onValueChange={setSectionId}
                 options={sections.map((entry) => ({ value: entry.id, label: entry.name }))}
-                disabled={classLevelId === ''}
+                disabled={classLevelId === '' || sections.length === 0}
                 ariaLabel="Section"
                 emptyOption={{ value: '', label: 'Not assigned' }}
               />
@@ -307,7 +451,7 @@ export function AdmissionForm({
           description="One contactable adult. Fee notices and absence messages go here."
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Name" error={fieldErrors['guardian.name']}>
+            <Field label="Name" error={fieldErrors['guardian.name']} required>
               <Input
                 value={guardianName}
                 onChange={(event) => {
@@ -315,7 +459,7 @@ export function AdmissionForm({
                 }}
               />
             </Field>
-            <Field label="Relation" error={fieldErrors['guardian.relation']}>
+            <Field label="Relation" error={fieldErrors['guardian.relation']} required>
               <SimpleSelect
                 value={guardianRelation}
                 onValueChange={setGuardianRelation}
@@ -327,6 +471,7 @@ export function AdmissionForm({
               label="Phone"
               error={fieldErrors['guardian.phone']}
               hint="Start with 0 and we will add +92."
+              required
             >
               <Input
                 type="tel"
@@ -348,6 +493,32 @@ export function AdmissionForm({
                 value={guardianCnic}
                 onChange={(event) => {
                   setGuardianCnic(formatCnic(event.target.value));
+                }}
+              />
+            </Field>
+            <Field label="Occupation" error={fieldErrors['guardian.occupation']}>
+              <Input
+                autoComplete="organization-title"
+                placeholder="Shopkeeper, teacher, government service…"
+                value={guardianOccupation}
+                onChange={(event) => {
+                  setGuardianOccupation(event.target.value);
+                }}
+              />
+            </Field>
+            <Field
+              label="Home address"
+              error={fieldErrors['guardian.address']}
+              hint="Where a leaving certificate or a legal notice would be posted."
+              required
+              className="sm:col-span-2"
+            >
+              <Textarea
+                rows={2}
+                autoComplete="street-address"
+                value={guardianAddress}
+                onChange={(event) => {
+                  setGuardianAddress(event.target.value);
                 }}
               />
             </Field>
