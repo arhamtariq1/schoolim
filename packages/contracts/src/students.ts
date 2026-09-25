@@ -157,7 +157,18 @@ export const createStudentSchema = z
     emergencyContact: z.string().trim().max(40).optional(),
     admittedOn: calendarDateSchema.optional(),
 
-    /** First enrolment — admission places the child in a class in one request. */
+    /**
+     * First enrolment — admission places the child in a class in one request.
+     *
+     * `rollNo` is absent for the same reason `grNo` and `studentCode` are: the
+     * server allocates it, inside the transaction, under a lock on the section.
+     * A client-supplied roll is how two children end up sharing a position in
+     * one register — and the register is the thing a teacher calls out from.
+     *
+     * A child placed in no section gets no roll. A roll is a position on one
+     * section's register; with no register there is no position, and a number
+     * that means nothing until it silently changes is worse than a blank.
+     */
     enrollment: z.object({
       sessionId: z
         .string()
@@ -166,8 +177,10 @@ export const createStudentSchema = z
         .pipe(idSchema),
       classLevelId: z.string().trim().min(1, 'Choose a class.').pipe(idSchema),
       sectionId: idSchema.optional(),
-      rollNo: z.int().min(1).optional(),
-    }),
+      // Strict like the object around it. Without this a caller could send
+      // `rollNo` and have it quietly dropped — which reads, from the outside,
+      // exactly like having set it.
+    }).strict(),
 
     /**
      * Primary guardian — enough to reach someone, and to find them.
@@ -191,7 +204,7 @@ export const createStudentSchema = z
       email: z.email().optional(),
       cnic: z.string().trim().max(20).optional(),
       occupation: z.string().trim().max(80).optional(),
-    }),
+    }).strict(),
 
     /**
      * The fee structure agreed at admission.

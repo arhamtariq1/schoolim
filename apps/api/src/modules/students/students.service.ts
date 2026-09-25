@@ -159,6 +159,8 @@ export class StudentsService {
       if (input.enrollment !== undefined) {
         await assertEnrollmentTarget(tx, input.enrollment);
 
+        const rollNo = await nextRollNo(tx, input.enrollment);
+
         await tx.enrollment.create({
           data: {
             studentId: student.id,
@@ -167,7 +169,7 @@ export class StudentsService {
             ...(input.enrollment.sectionId === undefined
               ? {}
               : { sectionId: input.enrollment.sectionId }),
-            ...(input.enrollment.rollNo === undefined ? {} : { rollNo: input.enrollment.rollNo }),
+            ...(rollNo === undefined ? {} : { rollNo }),
           } as never,
         });
       }
@@ -515,6 +517,55 @@ export class StudentsService {
 
     return format(value);
   }
+}
+
+/**
+ * The next roll number in a section's register.
+ *
+ * ## Why a roll belongs to a section, and why no section means no roll
+ *
+ * A roll number is a child's position in one register: "Grade 4 — A, 2026-2027,
+ * number 7". It is not an identifier — it repeats in every section, and it is
+ * reassigned every year on promotion. A child not yet placed in a section is
+ * not on any register, so there is no position to give them, and inventing one
+ * would be a number that means nothing until it silently changes.
+ *
+ * Which is exactly what the screen was doing before: nothing assigned a roll at
+ * all, so every real admission showed a dash, and the attendance roster filled
+ * the gap with the row's index — a number that looked recorded, was not, and
+ * moved every time somebody joined the class.
+ *
+ * ## Why the section row is locked
+ *
+ * `MAX(roll_no) + 1` read by two receptionists admitting into the same section
+ * at the same instant returns the same answer to both, and READ COMMITTED does
+ * nothing to stop it — the second insert is not blocked by the first, because
+ * it is a different row. Locking the section serialises admissions **into that
+ * section** and nothing else: a second desk admitting into Grade 5 — B is not
+ * held up at all.
+ *
+ * The unique index added in `20260925010000_enrollment_roll_unique` is the
+ * backstop. This lock is what stops anybody meeting it.
+ */
+async function nextRollNo(
+  tx: TransactionClient,
+  enrollment: { sessionId: string; sectionId?: string },
+): Promise<number | undefined> {
+  if (enrollment.sectionId === undefined) {
+    return undefined;
+  }
+
+  // RLS applies to this statement as it does to any other, so the lock can only
+  // ever be taken on a section this school owns — and `assertEnrollmentTarget`
+  // has already established that it is one.
+  await tx.$queryRaw`SELECT id FROM sections WHERE id = ${enrollment.sectionId}::uuid FOR UPDATE`;
+
+  const highest = await tx.enrollment.aggregate({
+    where: { sessionId: enrollment.sessionId, sectionId: enrollment.sectionId },
+    _max: { rollNo: true },
+  });
+
+  return (highest._max.rollNo ?? 0) + 1;
 }
 
 /**

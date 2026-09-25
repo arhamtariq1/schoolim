@@ -285,7 +285,24 @@ async function seedSchool(
   let nextGr = grSequence?.nextValue ?? 1;
 
   let created = 0;
-  let rollCounter = 0;
+  /** Walks the sections so every class gets students. Not a roll number. */
+  let placed = 0;
+  /**
+   * One counter per section, because that is what a roll number is: a position
+   * on *that* section’s register, starting at 1. A single running counter
+   * across the school produced "Grade 4 — A, roll 10" beside "Grade 4 — B,
+   * roll 11", which is not a register anybody keeps.
+   */
+  const rollBySection = new Map<string, number>();
+
+  // Clear the register before rewriting it. Rolls are unique per section, so
+  // moving a school-wide numbering to a per-section one can collide halfway
+  // through — student X already holds the number student Y is about to be
+  // given. Emptying first makes the assignment below unconditional.
+  await db.enrollment.updateMany({
+    where: { schoolId: school.id, sessionId: session.id },
+    data: { rollNo: null },
+  });
 
   for (const [surname, firstNames] of spec.families) {
     const guardian = await db.guardian.upsert({
@@ -305,10 +322,12 @@ async function seedSchool(
     });
 
     for (const firstName of firstNames) {
-      rollCounter += 1;
+      placed += 1;
 
       const studentId = deterministicId(spec.id, `student:${surname}:${firstName}`);
-      const section = pick(sections, rollCounter);
+      const section = pick(sections, placed);
+      const rollNo = (rollBySection.get(section.id) ?? 0) + 1;
+      rollBySection.set(section.id, rollNo);
 
       // Only a NEW student consumes an Student ID. Re-running the seed
       // must not burn numbers, or the register grows holes on every run.
@@ -341,7 +360,7 @@ async function seedSchool(
           lastName: surname,
           gender: pick(['MALE', 'FEMALE'] as const, firstName.length),
           dateOfBirth: new Date(
-            `${String(2014 + (rollCounter % 6))}-0${String((rollCounter % 9) + 1)}-1${String(rollCounter % 9)}`,
+            `${String(2014 + (placed % 6))}-0${String((placed % 9) + 1)}-1${String(placed % 9)}`,
           ),
           city: spec.city,
           status: 'ACTIVE',
@@ -375,14 +394,17 @@ async function seedSchool(
             studentId: student.id,
           },
         },
-        update: { sectionId: section.id, classLevelId: section.classLevelId },
+        // `rollNo` on both branches. It used to be on `create` only, so a
+        // re-seed left whatever numbering the rows already had — which is how a
+        // school-wide counter survived the change to per-section rolls.
+        update: { sectionId: section.id, classLevelId: section.classLevelId, rollNo },
         create: {
           schoolId: school.id,
           studentId: student.id,
           sessionId: session.id,
           classLevelId: section.classLevelId,
           sectionId: section.id,
-          rollNo: rollCounter,
+          rollNo,
           status: 'ENROLLED',
           enrolledOn: new Date('2026-04-01'),
         },

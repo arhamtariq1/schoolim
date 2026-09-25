@@ -248,6 +248,34 @@ function problem(body: string): { detail?: string } {
   return JSON.parse(body) as { detail?: string };
 }
 
+async function renumber(sectionId: string) {
+  return app.inject({
+    method: 'POST',
+    url: ROUTES.academics.renumberSection(sectionId),
+    headers: { host: HOST_A, cookie: ownerA },
+  });
+}
+
+/** Roll numbers in a section, ascending. */
+async function rolls(sectionId: string): Promise<number[]> {
+  const rows = await admin.$queryRawUnsafe<{ roll_no: number }[]>(
+    `SELECT roll_no FROM enrollments WHERE section_id = $1::uuid ORDER BY roll_no`,
+    sectionId,
+  );
+  return rows.map((row) => row.roll_no);
+}
+
+/** `[surname, roll]` in roll order — what the register actually reads like. */
+async function rollsByName(sectionId: string): Promise<[string, number][]> {
+  const rows = await admin.$queryRawUnsafe<{ last_name: string; roll_no: number }[]>(
+    `SELECT s.last_name, e.roll_no
+       FROM enrollments e JOIN students s ON s.id = e.student_id
+      WHERE e.section_id = $1::uuid ORDER BY e.roll_no`,
+    sectionId,
+  );
+  return rows.map((row) => [row.last_name, row.roll_no]);
+}
+
 /** The row as stored, read past the API entirely. */
 async function studentRow(grNo: string): Promise<Record<string, unknown>> {
   const rows = await admin.$queryRawUnsafe<Record<string, unknown>[]>(
@@ -302,6 +330,145 @@ describe('the numbers a child is given', () => {
 
     const good = await admit(VALID);
     expect(good.json<{ data: { grNo: string } }>().data.grNo).toBe('0001');
+  });
+});
+
+describe('the roll number', () => {
+  it('starts at one and counts up within a section', async () => {
+    await admit(VALID);
+    await admit({ ...VALID, firstName: 'Bilal' });
+
+    expect(await rolls(SECTION_CURRENT)).toEqual([1, 2]);
+  });
+
+  it('counts separately in each section — a roll is a place on one register', async () => {
+    await admit(VALID);
+    await admit({
+      ...VALID,
+      firstName: 'Sara',
+      enrollment: {
+        sessionId: SESSION_A_PLANNED,
+        classLevelId: CLASS_A,
+        sectionId: SECTION_PLANNED,
+      },
+    });
+
+    // Both are roll 1. They are on different registers, so they must be.
+    expect(await rolls(SECTION_CURRENT)).toEqual([1]);
+    expect(await rolls(SECTION_PLANNED)).toEqual([1]);
+  });
+
+  it('gives no roll to a child placed in no section', async () => {
+    const { sectionId: _sectionId, ...noSection } = VALID.enrollment;
+
+    const result = await admit({ ...VALID, enrollment: noSection });
+    expect(result.status).toBe(201);
+
+    const rows = await admin.$queryRawUnsafe<{ roll_no: number | null }[]>(
+      `SELECT roll_no FROM enrollments WHERE school_id = $1::uuid`,
+      SCHOOL_A,
+    );
+    // Not zero, and not one. A roll is a position on a register, and this child
+    // is not on one — a number here would mean nothing until it changed.
+    expect(rows[0]?.roll_no).toBeNull();
+  });
+
+  it('refuses a roll number supplied by the caller', async () => {
+    // Server-allocated, like GR and Student ID. A client-supplied roll is how
+    // two children end up sharing a place on the register a teacher reads from.
+    const result = await admit({
+      ...VALID,
+      enrollment: { ...VALID.enrollment, rollNo: 99 },
+    });
+
+    expect(result.status).toBe(400);
+  });
+
+  it('cannot be duplicated, even past the service', async () => {
+    await admit(VALID);
+
+    // Straight at the database, as a second code path written next year would.
+    // The partial unique index is what makes the lock in the service a
+    // guarantee rather than a convention.
+    await expect(
+      admin.$executeRawUnsafe(
+        `INSERT INTO enrollments
+           (id, school_id, student_id, session_id, class_level_id, section_id, roll_no,
+            status, created_at, updated_at)
+         SELECT gen_random_uuid(), school_id, student_id, session_id, class_level_id,
+                section_id, roll_no, 'ENROLLED', now(), now()
+           FROM enrollments WHERE school_id = $1::uuid LIMIT 1`,
+        SCHOOL_A,
+      ),
+    ).rejects.toThrow();
+  });
+});
+
+describe('renumbering a register', () => {
+  /** Admit three children whose names sort differently from their arrival. */
+  async function admitThreeOutOfOrder(): Promise<void> {
+    await admit({ ...VALID, firstName: 'Zara', lastName: 'Zafar' });
+    await admit({ ...VALID, firstName: 'Ahmed', lastName: 'Ahmed' });
+    await admit({ ...VALID, firstName: 'Maryam', lastName: 'Malik' });
+  }
+
+  it('puts the register into name order, one to n', async () => {
+    await admitThreeOutOfOrder();
+
+    // Admission order: Zafar 1, Ahmed 2, Malik 3.
+    expect(await rollsByName(SECTION_CURRENT)).toEqual([
+      ['Zafar', 1],
+      ['Ahmed', 2],
+      ['Malik', 3],
+    ]);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: ROUTES.academics.renumberSection(SECTION_CURRENT),
+      headers: { host: HOST_A, cookie: ownerA },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json<{ data: { renumbered: number } }>().data.renumbered).toBe(3);
+
+    expect(await rollsByName(SECTION_CURRENT)).toEqual([
+      ['Ahmed', 1],
+      ['Malik', 2],
+      ['Zafar', 3],
+    ]);
+  });
+
+  it('survives being run twice', async () => {
+    await admitThreeOutOfOrder();
+    await renumber(SECTION_CURRENT);
+    await renumber(SECTION_CURRENT);
+
+    expect(await rolls(SECTION_CURRENT)).toEqual([1, 2, 3]);
+  });
+
+  it('keeps admitting correctly afterwards — the next child gets n + 1', async () => {
+    await admitThreeOutOfOrder();
+    await renumber(SECTION_CURRENT);
+    await admit({ ...VALID, firstName: 'Bilal', lastName: 'Butt' });
+
+    expect(await rolls(SECTION_CURRENT)).toEqual([1, 2, 3, 4]);
+  });
+
+  it('reports nothing to do for an empty section', async () => {
+    const response = await renumber(SECTION_PLANNED);
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json<{ data: { renumbered: number } }>().data.renumbered).toBe(0);
+  });
+
+  it('refuses another school’s section', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: ROUTES.academics.renumberSection(SECTION_CURRENT),
+      headers: { host: HOST_B, cookie: ownerB },
+    });
+
+    expect(response.statusCode).toBe(404);
   });
 });
 

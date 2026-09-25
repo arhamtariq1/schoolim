@@ -178,13 +178,13 @@ export function StudentsTable({
           </span>
         ),
     },
-    {
-      key: 'roll',
-      header: 'Roll',
-      align: 'end',
-      hideOnMobile: true,
-      render: (row) => <span className="font-mono text-xs tabular-nums">{row.rollNo ?? '—'}</span>,
-    },
+    // No Roll column, deliberately.
+    //
+    // A roll is a position on *one* section's register. This list is every
+    // student in the school, sorted by name, so the column put "7" from Grade 2
+    // — A next to "7" from Prep — B and invited the reading that they are the
+    // same kind of number. The roll belongs beside the register it orders,
+    // which is the attendance roster and the student's own profile.
     {
       key: 'father',
       header: 'Father / guardian',

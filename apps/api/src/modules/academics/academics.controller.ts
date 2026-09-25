@@ -179,6 +179,20 @@ export class AcademicsController {
     return { data: { ok: true } };
   }
 
+  /**
+   * Renumber a section's register alphabetically.
+   *
+   * `students.student.update`, not `academics.structure.configure`: the rows it
+   * rewrites are children's enrolments, not the shape of the school. Somebody
+   * trusted to fix a misspelled name on a register is the same person trusted
+   * to put that register in order.
+   */
+  @Post('/api/v1/academics/sections/:id/renumber')
+  @RequirePermission('students.student.update')
+  async renumberSection(@Param('id') id: string): Promise<{ data: { renumbered: number } }> {
+    return { data: await this.structure.renumberSection(id) };
+  }
+
   // --- Holidays -------------------------------------------------------------
 
   @Get(ROUTES.academics.holidays)

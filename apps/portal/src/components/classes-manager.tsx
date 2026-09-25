@@ -25,7 +25,7 @@ import {
   StatusBadge,
   useToast,
 } from '@ilm/ui';
-import { CreateIcon, DeleteIcon, EditIcon, ICON_SIZE } from '@ilm/ui/icons';
+import { CreateIcon, DeleteIcon, EditIcon, ICON_SIZE, SortIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -58,6 +58,8 @@ export interface ClassesManagerProps {
   activeSessionId: string | undefined;
   error?: string | undefined;
   canConfigure: boolean;
+  /** `students.student.update` — renumbering rewrites children’s enrolments. */
+  canRenumber: boolean;
 }
 
 export function ClassesManager({
@@ -66,6 +68,7 @@ export function ClassesManager({
   activeSessionId,
   error,
   canConfigure,
+  canRenumber,
 }: ClassesManagerProps) {
   const router = useRouter();
   const toast = useToast();
@@ -79,6 +82,7 @@ export function ClassesManager({
   const [deleting, setDeleting] = useState<
     { kind: 'class' | 'section'; id: string; label: string } | undefined
   >(undefined);
+  const [renumbering, setRenumbering] = useState<string | undefined>(undefined);
 
   async function confirmDelete() {
     if (deleting === undefined) {
@@ -101,6 +105,39 @@ export function ClassesManager({
 
     toast.success(`${deleting.label} deleted`);
     setDeleting(undefined);
+    router.refresh();
+  }
+
+  /**
+   * Put a section's register back in alphabetical order, 1..n.
+   *
+   * Rolls are handed out in the order children are admitted, so by the time a
+   * class is full its register reads in whatever order the front desk took them
+   * — which is no order at all to call a name from. Most schools renumber once
+   * the class settles, and again after promotion.
+   *
+   * It is not a confirmation dialog: nothing is lost, the result is visible
+   * immediately on the register, and pressing it again is harmless.
+   */
+  async function renumber(sectionId: string, className: string, sectionName: string) {
+    setRenumbering(sectionId);
+    const result = await mutate<{ renumbered: number }>(
+      ROUTES.academics.renumberSection(sectionId),
+      'POST',
+    );
+    setRenumbering(undefined);
+
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+
+    toast.success(
+      `${className} — ${sectionName} renumbered`,
+      result.data.renumbered === 0
+        ? 'There is nobody in this section yet.'
+        : `${String(result.data.renumbered)} students, roll 1 to ${String(result.data.renumbered)}, in name order.`,
+    );
     router.refresh();
   }
 
@@ -257,6 +294,20 @@ export function ClassesManager({
                         {section.studentCount}
                         {section.capacity === null ? '' : `/${String(section.capacity)}`}
                       </span>
+                      {!canRenumber || section.studentCount === 0 ? null : (
+                        <button
+                          type="button"
+                          aria-label={`Renumber roll numbers in section ${section.name}`}
+                          title="Renumber rolls 1…n in name order"
+                          disabled={renumbering !== undefined}
+                          className="rounded-full p-1 text-muted-foreground hover:bg-background hover:text-foreground disabled:opacity-50"
+                          onClick={() => {
+                            void renumber(section.id, entry.name, section.name);
+                          }}
+                        >
+                          <SortIcon className="size-3.5" aria-hidden />
+                        </button>
+                      )}
                       {canConfigure ? (
                         <span className="flex items-center">
                           <button

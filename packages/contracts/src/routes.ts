@@ -215,6 +215,14 @@ export const ROUTES = {
     class: (id: string) => `${API_PREFIX}/academics/classes/${id}`,
     sections: `${API_PREFIX}/academics/sections`,
     section: (id: string) => `${API_PREFIX}/academics/sections/${id}`,
+    /**
+     * Renumber a section's register 1..n alphabetically.
+     *
+     * A named action rather than a PATCH of roll numbers: it rewrites every
+     * child's position in one go, under a lock, and there is no half of it a
+     * caller would ever want.
+     */
+    renumberSection: (id: string) => `${API_PREFIX}/academics/sections/${id}/renumber`,
     holidays: `${API_PREFIX}/academics/holidays`,
     holiday: (id: string) => `${API_PREFIX}/academics/holidays/${id}`,
   },

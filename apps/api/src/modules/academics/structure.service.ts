@@ -499,6 +499,80 @@ export class StructureService {
     });
   }
 
+  /**
+   * Renumber a section's register, 1..n, in alphabetical order.
+   *
+   * ## Why a school needs this at all
+   *
+   * Rolls are handed out as children are admitted, so by the time a class is
+   * full its register is in the order the front desk happened to take the
+   * admissions in. Most schools here then renumber alphabetically once the
+   * class settles, and again after promotion, because a register read out in
+   * name order is the one a teacher can actually follow. Doing that by hand is
+   * thirty edits that must not collide.
+   *
+   * ## Why it is two passes
+   *
+   * A unique index says no two children in a section share a roll, and a
+   * straight `UPDATE ... SET roll_no = <new>` walks straight into it: the
+   * moment the child who is becoming 3 is written while the current 3 still
+   * exists, the statement fails. Prisma has no deferrable constraints here, so
+   * the rolls go negative first — a range nothing else uses and the index is
+   * happy to hold — and then come back as 1..n. Both passes are in one
+   * transaction, so no one ever reads the negative register.
+   *
+   * ## What it leaves alone
+   *
+   * Only live enrolments are numbered. A child who left mid-year keeps their
+   * history and is not given a place on a register they are no longer on.
+   */
+  async renumberSection(id: string): Promise<{ renumbered: number }> {
+    return this.prisma.tenant(async (tx) => {
+      const section = await tx.section.findUnique({
+        where: { id },
+        select: { id: true, sessionId: true },
+      });
+
+      if (section === null) {
+        throw new NotFoundError('section');
+      }
+
+      // The same lock admission takes, for the same reason: a renumber running
+      // while somebody is being admitted into this section would otherwise
+      // hand out a roll that the renumber has already used.
+      await tx.$queryRaw`SELECT id FROM sections WHERE id = ${id}::uuid FOR UPDATE`;
+
+      const enrolments = await tx.enrollment.findMany({
+        where: { sectionId: id, status: 'ENROLLED' },
+        orderBy: [
+          { student: { lastName: 'asc' } },
+          { student: { firstName: 'asc' } },
+          // Two children with the same name in one section is not rare. `grNo`
+          // breaks the tie so the result is the same on every run rather than
+          // depending on what order the database felt like returning.
+          { student: { grNo: 'asc' } },
+        ],
+        select: { id: true },
+      });
+
+      for (const [index, enrolment] of enrolments.entries()) {
+        await tx.enrollment.update({
+          where: { id: enrolment.id },
+          data: { rollNo: -(index + 1) },
+        });
+      }
+
+      for (const [index, enrolment] of enrolments.entries()) {
+        await tx.enrollment.update({
+          where: { id: enrolment.id },
+          data: { rollNo: index + 1 },
+        });
+      }
+
+      return { renumbered: enrolments.length };
+    });
+  }
+
   // --- Shared readers, for use inside an existing transaction ---------------
 
   private async listSessionsWithin(

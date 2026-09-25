@@ -836,6 +836,12 @@ model Enrollment {
   sessionId    String           @map("session_id") @db.Uuid
   classLevelId String           @map("class_level_id") @db.Uuid
   sectionId    String?          @map("section_id") @db.Uuid
+  /// The child's position on one section's register, allocated by the server
+  /// under a lock on the section. Null when no section is set: a roll is a
+  /// place on a register, and with no register there is no place.
+  ///
+  /// Unique per (school, session, section), enforced by a partial unique index
+  /// in the migration — Prisma cannot express `WHERE section_id IS NOT NULL`.
   rollNo       Int?             @map("roll_no")
   status       EnrollmentStatus @default(ENROLLED)
   enrolledOn   DateTime?        @map("enrolled_on") @db.Date

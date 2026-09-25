@@ -248,15 +248,24 @@ export function AttendanceRoster({ roster, canMark, error }: AttendanceRosterPro
         </div>
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-          {visible.map((student, index) => {
+          {visible.map((student) => {
             const current = marks[student.studentId] ?? 'PRESENT';
             return (
               <li
                 key={student.studentId}
                 className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap"
               >
+                {/*
+                  The roll, or a dash — never the row's index.
+
+                  This used to fall back to `index + 1`, which printed a number
+                  that looked recorded and was not: a teacher reads "7", writes
+                  it on a leave application, and one admission into the class
+                  moves it to 8. A dash says "this child has no roll yet", which
+                  is true and fixable; a wrong number says nothing and is not.
+                */}
                 <span className="w-8 shrink-0 text-center font-mono text-sm text-muted-foreground tabular-nums">
-                  {student.rollNo ?? index + 1}
+                  {student.rollNo ?? '—'}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium text-foreground">{student.name}</span>
