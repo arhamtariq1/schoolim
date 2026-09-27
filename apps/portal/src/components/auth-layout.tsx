@@ -12,7 +12,7 @@ import { AuthSlideshow } from './auth-slideshow';
  * ## Layout
  *
  * Desktop is a 50 / 50 split — slideshow on the left, form on the right — so
- * the product is visible before anyone types. The logo sits at the **top-right**
+ * the product is visible before anyone types. The logo sits at the **top-left**
  * of the form column. Below `lg` the slideshow is hidden and the form takes the
  * full width; nobody signs in by scrolling past marketing on a phone.
  *
@@ -27,7 +27,7 @@ import { AuthSlideshow } from './auth-slideshow';
 export interface AuthLayoutProps {
   /** The heading above the form. */
   readonly title: string;
-  readonly subtitle: string;
+  readonly subtitle?: string;
   readonly children: ReactNode;
   /** The line under the form — "already have an account", and so on. */
   readonly footer?: ReactNode;
@@ -78,7 +78,7 @@ html::-webkit-scrollbar,body::-webkit-scrollbar{display:none!important;width:0!i
 
       <div className="h-full min-h-0 w-full overflow-y-auto overscroll-y-contain lg:w-1/2">
         <div className="flex min-h-full flex-col px-5 py-8 sm:px-10 sm:py-10">
-          <div className="flex shrink-0 justify-end">
+          <div className="flex shrink-0 justify-start">
             <Link
               href="/"
               className="inline-flex shrink-0 items-center gap-2 rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
@@ -103,9 +103,6 @@ html::-webkit-scrollbar,body::-webkit-scrollbar{display:none!important;width:0!i
             </div>
           </div>
 
-          <p className="shrink-0 text-center text-xs text-muted-foreground">
-            © {BRAND.name}. Your school’s data stays yours.
-          </p>
         </div>
       </div>
     </main>

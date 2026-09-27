@@ -24,7 +24,8 @@ import { readSignupDraft, saveSignupDraft } from '@/lib/signup-draft';
 export function SignupCredentialsForm() {
   const toast = useToast();
   const router = useRouter();
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -37,7 +38,8 @@ export function SignupCredentialsForm() {
   useEffect(() => {
     const stored = readSignupDraft();
     if (stored !== undefined) {
-      setName(stored.name);
+      setFirstName(stored.firstName);
+      setLastName(stored.lastName);
       setEmail(stored.email);
       setPassword(stored.password);
       setConfirmPassword(stored.confirmPassword);
@@ -86,7 +88,8 @@ export function SignupCredentialsForm() {
     setFieldErrors({});
 
     const parsed = signupStartRequestSchema.safeParse({
-      name,
+      firstName,
+      lastName,
       email,
       password,
       confirmPassword,
@@ -128,7 +131,8 @@ export function SignupCredentialsForm() {
 
       const body = (await response.json()) as { data: SignupStartResult };
       saveSignupDraft({
-        name,
+        firstName,
+        lastName,
         email,
         password,
         confirmPassword,
@@ -153,24 +157,41 @@ export function SignupCredentialsForm() {
       noValidate
       className="space-y-4"
     >
-      <Field label="Name" error={fieldErrors['name']} required>
-        <Input
-          name="name"
-          autoComplete="name"
-          autoFocus
-          value={name}
-          disabled={isPending}
-          onChange={(event) => {
-            setName(event.target.value);
-          }}
-        />
-      </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="First name" error={fieldErrors['firstName']} required>
+          <Input
+            name="firstName"
+            autoComplete="given-name"
+            autoFocus
+            placeholder="e.g. Ayesha"
+            value={firstName}
+            disabled={isPending}
+            onChange={(event) => {
+              setFirstName(event.target.value);
+            }}
+          />
+        </Field>
+
+        <Field label="Last name" error={fieldErrors['lastName']} required>
+          <Input
+            name="lastName"
+            autoComplete="family-name"
+            placeholder="e.g. Khan"
+            value={lastName}
+            disabled={isPending}
+            onChange={(event) => {
+              setLastName(event.target.value);
+            }}
+          />
+        </Field>
+      </div>
 
       <Field label="Email" error={fieldErrors['email']} required>
         <Input
           name="email"
           type="email"
           autoComplete="email"
+          placeholder="you@school.edu.pk"
           value={email}
           disabled={isPending}
           onChange={(event) => {
@@ -182,12 +203,13 @@ export function SignupCredentialsForm() {
       <Field
         label="Password"
         error={fieldErrors['password']}
-        hint="At least 12 characters. A short phrase is easier to remember and harder to guess."
+        hint="At least 8 characters, with upper and lower case, a number and a symbol — e.g. Abde@112."
         required
       >
         <PasswordInput
           name="password"
           autoComplete="new-password"
+          placeholder="Create a password"
           value={password}
           disabled={isPending}
           onChange={(event) => {
@@ -200,6 +222,7 @@ export function SignupCredentialsForm() {
         <PasswordInput
           name="confirmPassword"
           autoComplete="new-password"
+          placeholder="Re-enter your password"
           value={confirmPassword}
           disabled={isPending}
           onChange={(event) => {
@@ -209,9 +232,10 @@ export function SignupCredentialsForm() {
       </Field>
 
       <CheckboxField
-        label="I have read and accept the terms of service and the data processing agreement, and I am authorised to accept them for this school."
+        label="I accept the Terms & Conditions."
         id="accepted-terms"
         name="acceptedTerms"
+        className="whitespace-nowrap"
         checked={accepted}
         disabled={isPending}
         onCheckedChange={(next) => {

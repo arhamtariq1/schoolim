@@ -114,6 +114,7 @@ export function LoginForm({ initialEmail = '' }: { initialEmail?: string }) {
             name="identifier"
             autoComplete="username"
             autoFocus
+            placeholder="Email or phone"
             value={identifier}
             disabled={isPending}
             onChange={(event) => {
@@ -126,6 +127,7 @@ export function LoginForm({ initialEmail = '' }: { initialEmail?: string }) {
           <PasswordInput
             name="password"
             autoComplete="current-password"
+            placeholder="Your password"
             value={password}
             disabled={isPending}
             onChange={(event) => {

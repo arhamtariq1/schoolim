@@ -91,6 +91,7 @@ export function ForgotPasswordForm() {
           name="email"
           autoComplete="email"
           autoFocus
+          placeholder="you@school.edu.pk"
           value={email}
           disabled={isPending}
           onChange={(event) => {

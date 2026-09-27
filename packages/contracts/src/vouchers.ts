@@ -239,6 +239,7 @@ export type GenerateVouchers = z.infer<typeof generateVouchersSchema>;
 export const SKIP_REASONS = [
   'ALREADY_BILLED',
   'NO_FEE_AGREED',
+  'FEE_STARTS_LATER',
   'NOT_ENROLLED',
   'ZERO_AMOUNT',
 ] as const;
@@ -248,6 +249,7 @@ export type SkipReason = z.infer<typeof skipReasonSchema>;
 export const SKIP_REASON_LABELS: Readonly<Record<SkipReason, string>> = {
   ALREADY_BILLED: 'Already billed for these months',
   NO_FEE_AGREED: 'No agreed amount for the chosen fees',
+  FEE_STARTS_LATER: 'Their fee starts after these months',
   NOT_ENROLLED: 'Not enrolled in this session',
   ZERO_AMOUNT: 'Nothing to charge',
 };

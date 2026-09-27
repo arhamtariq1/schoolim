@@ -9,7 +9,8 @@
 export const SIGNUP_DRAFT_KEY = 'ilm_signup_draft';
 
 export interface SignupDraft {
-  readonly name: string;
+  readonly firstName: string;
+  readonly lastName: string;
   readonly email: string;
   readonly password: string;
   readonly confirmPassword: string;
@@ -30,12 +31,30 @@ export function readSignupDraft(): SignupDraft | undefined {
     if (raw === null || raw === '') {
       return undefined;
     }
-    const parsed = JSON.parse(raw) as Partial<SignupDraft>;
-    if (typeof parsed.name !== 'string' || typeof parsed.email !== 'string') {
+    const parsed = JSON.parse(raw) as Partial<SignupDraft> & { name?: string };
+    // Older drafts stored a single `name`. Split once so Back still restores.
+    const legacyName = typeof parsed.name === 'string' ? parsed.name.trim() : '';
+    const firstName =
+      typeof parsed.firstName === 'string'
+        ? parsed.firstName
+        : legacyName === ''
+          ? ''
+          : (legacyName.split(/\s+/)[0] ?? '');
+    const lastName =
+      typeof parsed.lastName === 'string'
+        ? parsed.lastName
+        : legacyName === ''
+          ? ''
+          : legacyName.split(/\s+/).slice(1).join(' ');
+    if (
+      (firstName === '' && lastName === '' && legacyName === '') ||
+      typeof parsed.email !== 'string'
+    ) {
       return undefined;
     }
     return {
-      name: parsed.name,
+      firstName,
+      lastName,
       email: parsed.email,
       password: typeof parsed.password === 'string' ? parsed.password : '',
       confirmPassword: typeof parsed.confirmPassword === 'string' ? parsed.confirmPassword : '',

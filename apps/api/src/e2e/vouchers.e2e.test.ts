@@ -343,7 +343,7 @@ describe('every student is billed their own agreed amount', () => {
     expect(result.data.willCreate).toBe(1);
     expect(result.data.willSkip).toBe(1);
     expect(result.data.skipsByReason[0]?.reason).toBe('NO_FEE_AGREED');
-    expect(result.data.warnings.join(' ')).toContain('no agreed amount');
+    expect(result.data.warnings.join(' ')).toContain('never been given an amount');
   });
 
   it('honours an explicit amount typed on the screen for everyone in scope', async () => {
@@ -734,5 +734,139 @@ describe('nothing crosses a school boundary', () => {
 
     // The scope resolves to nobody rather than reaching across the boundary.
     expect(response.json<{ data: { created: number } }>().data.created).toBe(0);
+  });
+});
+
+/**
+ * A child who joins part-way through a month.
+ *
+ * The rule used to be "what was agreed on the **first** of the billing month",
+ * full stop — so a child admitted on the 25th had nothing in force on the 1st,
+ * was reported as having "no agreed amount", and was silently left out of their
+ * own joining month. Every mid-month admission, every month, in every school.
+ *
+ * The preview said something untrue while it did it: the child has an agreed
+ * amount. It starts on the 25th.
+ */
+describe('a fee that starts part-way through the month', () => {
+  const LATE_JOINER = '88888888-8888-4888-8888-88888888888a';
+
+  async function admitMidMonth(effectiveFrom: string): Promise<void> {
+    await admin.$executeRawUnsafe(
+      `INSERT INTO students (id, school_id, gr_no, student_code, first_name, last_name,
+                             status, admitted_on, created_at, updated_at)
+       VALUES ($1::uuid, $2::uuid, 'GR-9009', '2026-9009', 'Nida', 'Late',
+               'ACTIVE', $3::date, now(), now())`,
+      LATE_JOINER,
+      SCHOOL_A,
+      effectiveFrom,
+    );
+    await admin.$executeRawUnsafe(
+      `INSERT INTO enrollments (id, school_id, student_id, session_id, class_level_id,
+                                status, enrolled_on, created_at, updated_at)
+       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4::uuid,
+               'ENROLLED', $5::date, now(), now())`,
+      SCHOOL_A,
+      LATE_JOINER,
+      SESSION_A,
+      CLASS_A,
+      effectiveFrom,
+    );
+    await admin.$executeRawUnsafe(
+      `INSERT INTO student_fees (id, school_id, student_id, fee_head_id, amount,
+                                 effective_from, created_at, updated_at)
+       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, '5000.00'::numeric,
+               $4::date, now(), now())`,
+      SCHOOL_A,
+      LATE_JOINER,
+      HEAD_TUITION,
+      effectiveFrom,
+    );
+  }
+
+  async function cleanUp(): Promise<void> {
+    // Lines hang off the voucher, not the student, so they go first and by
+    // voucher. Getting this wrong left the row behind and the *next* test
+    // failed on a primary key, several assertions away from the cause.
+    await admin.$executeRawUnsafe(
+      `DELETE FROM fee_voucher_lines
+        WHERE voucher_id IN (SELECT id FROM fee_vouchers WHERE student_id = $1::uuid)`,
+      LATE_JOINER,
+    );
+    for (const table of ['fee_voucher_periods', 'fee_vouchers']) {
+      await admin.$executeRawUnsafe(
+        `DELETE FROM ${table} WHERE student_id = $1::uuid`,
+        LATE_JOINER,
+      );
+    }
+    await admin.$executeRawUnsafe(`DELETE FROM student_fees WHERE student_id = $1::uuid`, LATE_JOINER);
+    await admin.$executeRawUnsafe(`DELETE FROM enrollments WHERE student_id = $1::uuid`, LATE_JOINER);
+    await admin.$executeRawUnsafe(`DELETE FROM students WHERE id = $1::uuid`, LATE_JOINER);
+  }
+
+  it('bills a child admitted on the 25th for the month they joined', async () => {
+    await admitMidMonth('2026-09-25');
+    try {
+      expect((await generate()).statusCode).toBe(201);
+
+      const { data } = await listVouchers('?sort=studentName&order=asc');
+      const nida = data.find((entry) => entry.grNo === 'GR-9009');
+
+      // Billed, at the amount she agreed on the day she joined. Before this she
+      // was silently absent from her own joining month, and the school lost it.
+      expect(nida).toBeDefined();
+      expect(nida?.netPayableMinor).toBe(500_000);
+    } finally {
+      await cleanUp();
+    }
+  });
+
+  it('does not re-rate a month for somebody who was already there', async () => {
+    // The other half of the same rule, and why it cannot simply take the newest
+    // row: Aasia agreed 5,000 from January. A raise dated the 20th must not
+    // change the September challan that was printed on the 1st.
+    await admin.$executeRawUnsafe(
+      `INSERT INTO student_fees (id, school_id, student_id, fee_head_id, amount,
+                                 effective_from, created_at, updated_at)
+       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, '9000.00'::numeric,
+               '2026-09-20'::date, now(), now())`,
+      SCHOOL_A,
+      AASIA,
+      HEAD_TUITION,
+    );
+
+    try {
+      expect((await generate()).statusCode).toBe(201);
+
+      const { data } = await listVouchers('?sort=studentName&order=asc');
+      const aasia = data.find((entry) => entry.grNo === 'GR-9001');
+
+      expect(aasia?.netPayableMinor).toBe(500_000);
+    } finally {
+      await admin.$executeRawUnsafe(
+        `DELETE FROM student_fees WHERE student_id = $1::uuid AND effective_from = '2026-09-20'`,
+        AASIA,
+      );
+    }
+  });
+
+  it('still leaves out somebody who joins after the month, and says why', async () => {
+    await admitMidMonth('2026-11-01');
+    try {
+      const response = await post(ROUTES.vouchers.preview, body());
+      const result = response.json<{
+        data: { skipsByReason: { reason: string }[]; warnings: string[] };
+      }>();
+
+      expect(result.data.skipsByReason.map((entry) => entry.reason)).toContain('FEE_STARTS_LATER');
+
+      // And it must not be reported as a missing amount — that sends a school
+      // hunting for a gap in a record that is perfectly complete.
+      const warnings = result.data.warnings.join(' ');
+      expect(warnings).toContain('after these months, so there is nothing to bill');
+      expect(warnings).not.toContain('never been given an amount');
+    } finally {
+      await cleanUp();
+    }
   });
 });

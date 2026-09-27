@@ -29,7 +29,7 @@ const OWNER_B = '44444444-4444-4444-8444-4444444444db';
 const HOST_A = 'invite-a-e2e.localhost';
 const HOST_B = 'invite-b-e2e.localhost';
 const PASSWORD = 'correct-horse-battery-staple';
-const CHOSEN = 'the-one-i-picked-myself';
+const CHOSEN = 'The1-I-Picked-Myself!';
 
 let app: NestFastifyApplication;
 let admin: PrismaClient;
@@ -446,7 +446,7 @@ describe('accepting it', () => {
 
     // A second submit, a double-clicked button, a mail client prefetching the
     // URL — none of them may set a second password.
-    expect((await acceptInvite('a-known-token', 'a-different-password')).status).toBeGreaterThanOrEqual(400);
+    expect((await acceptInvite('a-known-token', 'A-Different-Password9!')).status).toBeGreaterThanOrEqual(400);
 
     const good = await app.inject({
       method: 'POST',

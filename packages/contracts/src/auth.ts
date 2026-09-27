@@ -125,14 +125,18 @@ export type ForgotPasswordResendOtpResult = z.infer<typeof forgotPasswordResendO
 /**
  * Password rules.
  *
- * Length first, composition rules deliberately absent. NIST 800-63B: forced
- * character classes push people toward `Password1!` and a rejected paste, and
- * both make passwords worse, not better.
+ * At least eight characters, with upper and lower case, a digit and a symbol —
+ * the combination a school accountant typing `Abde@112` already expects, and
+ * short enough that a passphrase is not required for every invite accept.
  */
 export const passwordSchema = z
   .string()
-  .min(12, 'Use at least 12 characters — a short phrase is easier to remember and harder to guess.')
-  .max(256);
+  .min(8, 'Use at least 8 characters.')
+  .max(256)
+  .regex(/[a-z]/, 'Include a lowercase letter.')
+  .regex(/[A-Z]/, 'Include an uppercase letter.')
+  .regex(/[0-9]/, 'Include a number.')
+  .regex(/[^A-Za-z0-9]/, 'Include a special character, for example @ or #.');
 
 export const resetPasswordRequestSchema = z
   .object({

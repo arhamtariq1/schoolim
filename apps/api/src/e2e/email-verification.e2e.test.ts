@@ -52,7 +52,7 @@ const APEX = 'localhost';
 const OWNER_EMAIL = 'verify-e2e-owner@verify-e2e.test';
 const OTHER_EMAIL = 'verify-e2e-other@verify-e2e.test';
 const RESEND_EMAIL = 'verify-e2e-resend@verify-e2e.test';
-const PASSWORD = 'a-long-enough-passphrase';
+const PASSWORD = 'Abde@11234';
 
 const ALL_EMAILS = [OWNER_EMAIL, OTHER_EMAIL, RESEND_EMAIL];
 
@@ -195,7 +195,12 @@ beforeAll(async () => {
   const hosts: string[] = [];
 
   for (const email of ALL_EMAILS) {
-    const response = await runSignupFlow(app, mailer, { name: 'Founder', email, password: PASSWORD }, APEX);
+    const response = await runSignupFlow(
+      app,
+      mailer,
+      { firstName: 'Founder', lastName: 'Owner', email, password: PASSWORD },
+      APEX,
+    );
     expect(response.statusCode).toBe(201);
 
     const { continueTo } = response.json<{ data: { continueTo: { slug: string } } }>().data;

@@ -109,7 +109,7 @@ export class SignupService {
     await this.prisma.admin.signupIntent.create({
       data: {
         email: input.email,
-        name: input.name,
+        name: `${input.firstName} ${input.lastName}`.trim(),
         passwordHash,
         termsVersion: input.termsVersion,
         otpHash: hashToken(code),
@@ -126,7 +126,7 @@ export class SignupService {
     const sent = await this.mail.send(
       signupOtpTemplate({
         to: input.email,
-        recipientName: input.name,
+        recipientName: `${input.firstName} ${input.lastName}`.trim(),
         code,
         expiresInMinutes: OTP_TTL_MINUTES,
       }),

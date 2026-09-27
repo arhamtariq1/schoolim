@@ -15,7 +15,6 @@ export default function SignupPage() {
   return (
     <AuthLayout
       title="Create your account"
-      subtitle={`Name, email and password first. Then we confirm your email and set up the school — ${String(TRIAL_DAYS)} days free.`}
       footer={
         <>
           Already have an account?{' '}

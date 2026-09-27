@@ -29,7 +29,6 @@ import {
   loadArrearSources,
   loadHeadCatalogue,
   type HeadCatalogue,
-  firstOfMonth,
 } from './voucher-planner';
 
 /**
@@ -273,14 +272,6 @@ export class VoucherGenerationService {
     // voucher rather than to a month, so it is priced at the issue date.
     const issuedOn = firstOfDay(input.issueDate);
 
-    // The latest day this run can price anything at: the last month it bills,
-    // or the issue date if that is later. Everything after it is a rise that
-    // has not started.
-    const latestPricingDate = input.billMonths.reduce<Date>((latest, month) => {
-      const start = firstOfMonth(month);
-      return start.getTime() > latest.getTime() ? start : latest;
-    }, issuedOn);
-
     for (;;) {
       const batch = await this.prisma.tenant(async (tx) => {
         const students = await tx.student.findMany({
@@ -295,20 +286,28 @@ export class VoucherGenerationService {
             firstName: true,
             lastName: true,
             grNo: true,
-            // The whole agreed history, newest first, up to the last date this
-            // run could price at — a fee dated after that is a rise that has
-            // not started and must not reach these vouchers.
+            // The whole agreed history for the chosen heads, newest first.
             //
-            // Bounded by date rather than by row count because there is no
-            // per-group limit in SQL, and bounded at all because a school ten
-            // years in has a decade of amendments behind every head. Fee
-            // changes are rare — once or twice a year — so in practice this is
-            // a handful of rows per head, read through the
+            // **No upper bound on the date**, deliberately. There was one, and
+            // it meant the planner could not tell "this child has never been
+            // given an amount" from "their amount starts next term" — the row
+            // that would have said so was filtered out before it arrived, so
+            // both came back as the first, and a school was sent looking for a
+            // gap in a record that was complete.
+            //
+            // Deciding which agreement applies to which month is the planner's
+            // job and it is written down in one place there. A query that
+            // pre-filters by date is a second, silent copy of that rule, and
+            // this is what happens when the two disagree.
+            //
+            // The cost of dropping it is close to nothing: what it excluded was
+            // rows dated in the future, of which a typical student has none.
+            // Fee changes happen once or twice a year, so this is still a
+            // handful of rows per head, read through the
             // (school, student, head, effective_from DESC) index.
             fees: {
               where: {
                 feeHeadId: { in: [...context.heads.keys()] },
-                effectiveFrom: { lte: latestPricingDate },
               },
               orderBy: { effectiveFrom: 'desc' },
               select: {
@@ -801,8 +800,20 @@ function buildWarnings(willCreate: number, skips: Map<SkipReason, number>): stri
   }
   const noFee = skips.get('NO_FEE_AGREED') ?? 0;
   if (noFee > 0) {
+    // The only skip that is somebody's job to fix. Worded as a task rather
+    // than a fact, because that is what it is.
     warnings.push(
-      `${String(noFee)} ${noFee === 1 ? 'student has' : 'students have'} no agreed amount for the fees you chose, so they will be left out.`,
+      `${String(noFee)} ${noFee === 1 ? 'student has' : 'students have'} never been given an amount for the fees you chose. Set one on their record, or they will keep being left out.`,
+    );
+  }
+
+  const startsLater = skips.get('FEE_STARTS_LATER') ?? 0;
+  if (startsLater > 0) {
+    // Not a problem, and it used to be reported as one — under the same
+    // sentence as a missing amount, which sent schools looking for a gap in a
+    // record that was perfectly complete.
+    warnings.push(
+      `${String(startsLater)} ${startsLater === 1 ? 'student joins' : 'students join'} after these months, so there is nothing to bill them for yet.`,
     );
   }
   const billed = skips.get('ALREADY_BILLED') ?? 0;
@@ -827,3 +838,4 @@ export type { PlannedLine, StudentPlan };
 function firstOfDay(day: string): Date {
   return new Date(`${day}T00:00:00.000Z`);
 }
+

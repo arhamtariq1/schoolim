@@ -63,7 +63,8 @@ export function cookieValue(response: { headers: Record<string, unknown> }, name
 }
 
 export interface SignupFlowInput {
-  readonly name: string;
+  readonly firstName: string;
+  readonly lastName: string;
   readonly email: string;
   readonly password: string;
   /**
@@ -106,7 +107,8 @@ export async function runSignupFlow(
     url: ROUTES.public.signupStart,
     headers: { host },
     payload: {
-      name: input.name,
+      firstName: input.firstName,
+      lastName: input.lastName,
       email: input.email,
       password: input.password,
       confirmPassword: input.password,

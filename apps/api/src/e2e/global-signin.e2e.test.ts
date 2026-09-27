@@ -306,9 +306,10 @@ describe('the handoff', () => {
 
 describe('self-serve signup', () => {
   const flow = {
-    name: 'Founder',
+    firstName: 'Founder',
+    lastName: 'Owner',
     email: 'founder@signup-e2e.test',
-    password: 'a-long-enough-passphrase',
+    password: 'Abde@11234',
     school: {
       name: 'Signup E2E School',
       slug: NEW_SLUG,
@@ -423,7 +424,8 @@ describe('self-serve signup', () => {
       app,
       mailer,
       {
-        name: 'Nobody',
+        firstName: 'Nobody',
+        lastName: 'Yet',
         email: 'reserved@signup-e2e.test',
         password: flow.password,
         school: {
@@ -446,7 +448,8 @@ describe('self-serve signup', () => {
       url: ROUTES.public.signupStart,
       headers: { host: APEX },
       payload: {
-        name: 'Founder',
+        firstName: 'Founder',
+        lastName: 'Owner',
         email: 'terms@signup-e2e.test',
         password: flow.password,
         confirmPassword: flow.password,

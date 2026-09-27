@@ -40,10 +40,14 @@ export const signupOtpSchema = z
  * `confirmPassword` is validated here so the browser and the API agree; only
  * `password` is stored (hashed). `acceptedTerms` is a literal `true` — a
  * defaulted tick is not an acceptance (docs/17 §3).
+ *
+ * First and last name are collected separately on the form and joined when the
+ * intent is written, so the person's record keeps a single display name.
  */
 export const signupStartRequestSchema = z
   .object({
-    name: textSchema(120),
+    firstName: textSchema(80),
+    lastName: textSchema(80),
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string().min(1, 'Confirm your password.'),

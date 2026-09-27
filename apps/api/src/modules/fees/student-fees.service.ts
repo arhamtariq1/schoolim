@@ -73,10 +73,24 @@ export class StudentFeesService {
  * reuse it **inside its own transaction** — a student and their fees must be
  * one atomic write, so admission cannot call a service that opens a second one.
  */
-export function toRow(studentId: string, line: StudentFeeLine) {
+/**
+ * One agreed amount, as a row.
+ *
+ * `effectiveFrom` is passed in rather than left to the column's `now()`
+ * default, and that default was a real bug: an agreement began on the day
+ * somebody **typed** the record, not the day the child joined.
+ *
+ * It broke in both directions. A school entering last year's register got fees
+ * starting today, so none of that history could be billed. A school admitting
+ * next term's intake in advance got fees starting today, so those children
+ * would be billed for every month between now and the day they actually arrive.
+ * The second one takes money off a family for months their child was not there.
+ */
+export function toRow(studentId: string, line: StudentFeeLine, effectiveFrom?: Date) {
   return {
     studentId,
     feeHeadId: line.feeHeadId,
+    ...(effectiveFrom === undefined ? {} : { effectiveFrom }),
     amount: toDecimalString(minorUnits(line.amountMinor)),
     ...(line.discountedAmountMinor === undefined
       ? {}

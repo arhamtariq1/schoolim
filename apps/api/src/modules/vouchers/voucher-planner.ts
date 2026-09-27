@@ -114,9 +114,51 @@ export function buildStudentPlan(input: PlanInput): StudentPlan {
     rows.sort((a, b) => b.effectiveFrom.getTime() - a.effectiveFrom.getTime());
   }
 
-  /** The amount in force for a head on a given day: the newest row not after it. */
-  const agreedOn = (headId: string, on: Date) =>
-    history.get(headId)?.find((fee) => fee.effectiveFrom.getTime() <= on.getTime());
+  /**
+   * What a head costs this child for a billing period.
+   *
+   * ## Two questions, not one
+   *
+   * The first is the ordinary one: what was the agreed amount **at the start of
+   * the period**? That is the convention the whole slowly-changing dimension
+   * exists for — a fee raised on the 15th does not re-rate the month that was
+   * already running, so a challan printed on the 1st and a challan reprinted on
+   * the 20th say the same number.
+   *
+   * The second only matters for somebody who had no agreement at the start,
+   * and it is the one this was getting wrong: a child **admitted mid-month**.
+   * Their fee begins the day they join, so on the 1st there was nothing — and
+   * the answer was "no agreed amount", which left every mid-month admission
+   * silently unbillable for their own joining month. A school lost that month's
+   * fee on every single one, and the preview told them something untrue: the
+   * child has an agreed amount, it simply started on the 25th.
+   *
+   * So when nothing was in force at the start, the **earliest agreement that
+   * begins during the period** is used. A child who joins on the 25th is billed
+   * for the month they joined, at the amount they agreed.
+   *
+   * A child who joins *after* the period still has nothing, and still skips —
+   * correctly, and now for a reason the screen can name.
+   */
+  const agreedFor = (headId: string, periodStart: Date, periodEnd: Date) => {
+    const rows = history.get(headId);
+    if (rows === undefined) {
+      return undefined;
+    }
+
+    // `rows` is newest first, so the first row not after the start is the one
+    // in force on it.
+    const inForceAtStart = rows.find((fee) => fee.effectiveFrom.getTime() <= periodStart.getTime());
+    if (inForceAtStart !== undefined) {
+      return inForceAtStart;
+    }
+
+    // Nothing had started. Take the earliest that begins inside the period —
+    // `rows` is newest first, so the last match is the earliest one.
+    return rows
+      .filter((fee) => fee.effectiveFrom.getTime() <= periodEnd.getTime())
+      .at(-1);
+  };
   const billed = new Set(
     input.alreadyBilled
       .filter((row) => row.studentId === student.id)
@@ -127,6 +169,7 @@ export function buildStudentPlan(input: PlanInput): StudentPlan {
 
   const lines: PlannedLine[] = [];
   let sawHeadWithoutAmount = false;
+  let startsAfterPeriod = false;
 
   // Sorted so the printed order matches the catalogue the school arranged,
   // rather than the order somebody happened to tick boxes in.
@@ -148,15 +191,17 @@ export function buildStudentPlan(input: PlanInput): StudentPlan {
 
       // Priced per period, not per voucher. `period.month` is null for a head
       // that is charged once rather than monthly, and those are priced at the
-      // issue date.
-      const own = override === undefined ? agreedOn(head.id, period.month ?? input.asOf) : undefined;
+      // issue date — a single day, so the window is that day at both ends.
+      const periodStart = period.month ?? input.asOf;
+      const periodEnd = period.month === null ? input.asOf : endOfMonth(period.month);
+      const own = override === undefined ? agreedFor(head.id, periodStart, periodEnd) : undefined;
 
-      // The child has a fee for this head, but not one that had started yet
-      // when this month was billed — an increment dated after the month it is
-      // being applied to. Nothing to charge, and worth reporting rather than
-      // silently skipping.
+      // They have a fee for this head, but it does not begin until after this
+      // period is over — a child admitted next term, or an increment dated
+      // ahead. Nothing to charge for *this* month, and a different thing from
+      // having no agreed amount at all, which the preview now says separately.
       if (override === undefined && own === undefined) {
-        sawHeadWithoutAmount = true;
+        startsAfterPeriod = true;
         continue;
       }
 
@@ -199,7 +244,17 @@ export function buildStudentPlan(input: PlanInput): StudentPlan {
     // The distinction matters to whoever reads the preview: "already billed" is
     // the system working, "no agreed amount" is a gap in the student's record
     // that somebody has to go and fix.
-    return { ...base, skip: sawHeadWithoutAmount ? 'NO_FEE_AGREED' : 'ALREADY_BILLED' };
+    // Three different situations, and a school acts differently on each:
+    // "already billed" is the system working, "starts later" is a child who is
+    // simply not here yet, and "no agreed amount" is the only one that is a gap
+    // in somebody's record for a person to go and fix.
+    if (sawHeadWithoutAmount) {
+      return { ...base, skip: 'NO_FEE_AGREED' };
+    }
+    if (startsAfterPeriod) {
+      return { ...base, skip: 'FEE_STARTS_LATER' };
+    }
+    return { ...base, skip: 'ALREADY_BILLED' };
   }
 
   if (ownPayableMinor + arrearsMinor <= 0) {
@@ -344,4 +399,9 @@ export async function loadArrearSources(
     byStudent.set(row.student_id, list);
   }
   return byStudent;
+}
+
+/** The last day of the month a date falls in, at its own midnight. */
+function endOfMonth(month: Date): Date {
+  return new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth() + 1, 0));
 }

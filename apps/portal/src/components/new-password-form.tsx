@@ -108,13 +108,14 @@ export function NewPasswordForm({
       <Field
         label="New password"
         error={fieldErrors['password']}
-        hint="At least 12 characters. A short phrase is easier to remember and harder to guess."
+        hint="At least 8 characters, with upper and lower case, a number and a symbol — e.g. Abde@112."
         required
       >
         <PasswordInput
           name="password"
           autoComplete="new-password"
           autoFocus
+          placeholder="Create a password"
           value={password}
           disabled={isPending}
           onChange={(event) => {
@@ -127,6 +128,7 @@ export function NewPasswordForm({
         <PasswordInput
           name="confirm"
           autoComplete="new-password"
+          placeholder="Re-enter your password"
           value={confirm}
           disabled={isPending}
           onChange={(event) => {

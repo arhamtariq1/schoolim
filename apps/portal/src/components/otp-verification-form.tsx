@@ -167,6 +167,7 @@ export function OtpVerificationForm({
       window.location.assign(body.data.continueTo.continueUrl);
     } catch {
       toast.error('Could not reach the server. Check your connection and try again.');
+    } finally {
       setIsPending(false);
     }
   }

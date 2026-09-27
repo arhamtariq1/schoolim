@@ -117,13 +117,14 @@ export function AcceptInviteForm({
 
       <Field
         label="Choose a password"
-        hint="At least 12 characters. Use something you have not used on another site."
+        hint="At least 8 characters, with upper and lower case, a number and a symbol — e.g. Abde@112."
         error={fieldErrors['password']}
         required
       >
         <PasswordInput
           autoComplete="new-password"
           autoFocus
+          placeholder="Create a password"
           value={password}
           onChange={(event) => {
             setPassword(event.target.value);
@@ -134,6 +135,7 @@ export function AcceptInviteForm({
       <Field label="Confirm password" error={fieldErrors['confirm']} required>
         <PasswordInput
           autoComplete="new-password"
+          placeholder="Re-enter your password"
           value={confirm}
           onChange={(event) => {
             setConfirm(event.target.value);

@@ -120,9 +120,8 @@ export class StudentsService {
       // one; and a school entering an older record backdated to 2019 got the
       // current year on it, which makes the prefix a lie about the only thing
       // it claims to say.
-      const admissionYear = (
-        input.admittedOn ?? today(this.clock, await schoolTimeZone(tx))
-      ).slice(0, 4);
+      const admissionDate = input.admittedOn ?? today(this.clock, await schoolTimeZone(tx));
+      const admissionYear = admissionDate.slice(0, 4);
 
       // Both numbers come from locked counters inside this same transaction. If
       // anything below fails, neither is consumed, and the register is left
@@ -221,7 +220,14 @@ export class StudentsService {
 
       if (lines.length > 0) {
         await tx.studentFee.createMany({
-          data: lines.map((line) => toFeeRow(student.id, line)) as never,
+          // Dated from the admission, not from now. The two are the same day
+          // for a walk-in and different by months for a school entering an old
+          // register or admitting next term's intake early — and in the second
+          // case the difference is months of fees for a child who has not
+          // arrived.
+          data: lines.map((line) =>
+            toFeeRow(student.id, line, new Date(input.admittedOn ?? admissionDate)),
+          ) as never,
         });
       }
 
