@@ -30,6 +30,7 @@ export async function SchoolShell({
       permissions={session.permissions}
       profileCompleted={session.profileCompleted}
       unverifiedEmail={session.emailVerified ? undefined : session.email}
+      brandColor={session.school.primaryColor ?? undefined}
     >
       {children}
     </AppShell>

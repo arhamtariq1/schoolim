@@ -42,6 +42,7 @@ export default async function MarkStudentAttendancePage({
       permissions={session?.permissions ?? []}
       profileCompleted={session?.profileCompleted ?? true}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
+      brandColor={session?.school.primaryColor ?? undefined}
     >
       <div className="space-y-6">
         <AttendanceClassGrid

@@ -80,6 +80,7 @@ export default async function VouchersPage({
       permissions={session?.permissions ?? []}
       profileCompleted={session?.profileCompleted ?? true}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
+      brandColor={session?.school.primaryColor ?? undefined}
     >
       <VouchersView
         rows={listResult.ok ? listResult.data.data : []}

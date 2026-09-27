@@ -34,6 +34,7 @@ export default async function StudentsPage({
 
   const search = typeof params['q'] === 'string' ? params['q'] : '';
   const status = typeof params['status'] === 'string' ? params['status'] : '';
+  const classLevelId = typeof params['classLevelId'] === 'string' ? params['classLevelId'] : '';
 
   // Paging state comes from the URL, so a page of results is a link somebody
   // can send and the back button works. Parsed defensively — these arrive from
@@ -49,19 +50,28 @@ export default async function StudentsPage({
   if (status !== '') {
     query.set('status', status);
   }
+  if (classLevelId !== '') {
+    query.set('classLevelId', classLevelId);
+  }
 
-  // The class tree used to be fetched here to prime the admission dialog.
-  // Admission is its own page now and fetches what it needs, so this list pays
-  // for one query instead of two.
-  const result = await apiFetch<{
-    data: StudentListItem[];
-    meta: {
-      page: { total: number; limit: number; offset: number };
-      aggregates: Record<string, number>;
-    };
-  }>(`${ROUTES.students.list}?${query.toString()}`);
+  // The class list is back, and for a different reason than before: it used to
+  // be fetched to prime an admission dialog that is now its own page, and it is
+  // fetched now to fill the class filter. It goes out **beside** the student
+  // list rather than after it, so the page still costs one round trip's worth
+  // of waiting; and it is the naturally small query of the two — a school has
+  // a dozen classes and hundreds of students.
+  const [result, setup] = await Promise.all([
+    apiFetch<{
+      data: StudentListItem[];
+      meta: {
+        page: { total: number; limit: number; offset: number };
+        aggregates: Record<string, number>;
+      };
+    }>(`${ROUTES.students.list}?${query.toString()}`),
+    apiFetch<{ data: { classes: { id: string; name: string }[] } }>(ROUTES.academics.setup),
+  ]);
 
-  const isFiltered = search !== '' || status !== '';
+  const isFiltered = search !== '' || status !== '' || classLevelId !== '';
 
   // The menu hides what the API would refuse anyway. The API is the authority —
   // a permission check that happens only in the UI does not exist (docs/08) —
@@ -79,6 +89,7 @@ export default async function StudentsPage({
       permissions={session.permissions}
       profileCompleted={session.profileCompleted}
       unverifiedEmail={session.emailVerified ? undefined : session.email}
+      brandColor={session.school.primaryColor ?? undefined}
     >
       <StudentsTable
         rows={result.ok ? result.data.data : []}
@@ -87,6 +98,8 @@ export default async function StudentsPage({
         error={result.ok ? undefined : result.message}
         search={search}
         status={status}
+        classLevelId={classLevelId}
+        classes={setup.ok ? setup.data.data.classes.map((entry) => ({ id: entry.id, name: entry.name })) : []}
         isFiltered={isFiltered}
         limit={result.ok ? result.data.meta.page.limit : limit}
         offset={result.ok ? result.data.meta.page.offset : offset}

@@ -86,6 +86,10 @@ export interface StudentsTableProps {
   offset: number;
   search: string;
   status: string;
+  /** The class filter, from the URL. Empty means every class. */
+  classLevelId: string;
+  /** Classes in the current session, for the filter. Naturally a short list. */
+  classes: readonly { id: string; name: string }[];
   isFiltered: boolean;
   can: { create: boolean; update: boolean; delete: boolean };
 }
@@ -97,6 +101,8 @@ export function StudentsTable({
   error,
   search,
   status,
+  classLevelId,
+  classes,
   isFiltered,
   limit,
   offset,
@@ -384,6 +390,24 @@ export function StudentsTable({
             className="h-10 w-full rounded-md border border-border bg-background ps-9 pe-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           />
         </div>
+
+        {/*
+          Class before status, because it is the one people reach for.
+          "Show me Grade 4" is a daily question at a front desk; "show me the
+          students who left" is a monthly one.
+        */}
+        <SimpleSelect
+          className="w-44"
+          ariaLabel="Filter by class"
+          value={classLevelId}
+          emptyOption={{ value: '', label: 'Any class' }}
+          placeholder="Any class"
+          disabled={classes.length === 0}
+          onValueChange={(value) => {
+            apply({ classLevelId: value });
+          }}
+          options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
+        />
 
         <SimpleSelect
           className="w-44"

@@ -45,6 +45,7 @@ export default async function SettingsPage() {
       permissions={permissions}
       profileCompleted={session?.profileCompleted ?? true}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
+      brandColor={session?.school.primaryColor ?? undefined}
     >
       <div className="max-w-2xl space-y-6">
         <div>

@@ -28,4 +28,6 @@ export * from './components/textarea';
 export * from './components/toast';
 export * from './components/tooltip';
 export * from './lib/cn';
+export * from './lib/brand-theme';
+export * from './lib/palette';
 export * from './lib/plain-date';

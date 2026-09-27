@@ -71,6 +71,7 @@ export default async function DefaultersPage({
       permissions={session?.permissions ?? []}
       profileCompleted={session?.profileCompleted ?? true}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
+      brandColor={session?.school.primaryColor ?? undefined}
     >
       <DefaultersView
         page={listResult.ok ? listResult.data.data : empty}

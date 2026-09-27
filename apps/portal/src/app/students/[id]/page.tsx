@@ -44,6 +44,7 @@ export default async function StudentProfilePage({ params }: { params: Promise<{
       permissions={session.permissions}
       profileCompleted={session.profileCompleted}
       unverifiedEmail={session.emailVerified ? undefined : session.email}
+      brandColor={session.school.primaryColor ?? undefined}
     >
       {result.ok ? (
         <StudentProfileView student={result.data.data} can={can} />

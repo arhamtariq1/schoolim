@@ -1,7 +1,9 @@
 import {
   ROUTES,
+  updateSchoolAppearanceSchema,
   updateSchoolSettingsSchema,
   uploadSchoolLogoSchema,
+  type SchoolAppearance,
   type SchoolLogoInfo,
   type SchoolSettings,
 } from '@ilm/contracts';
@@ -12,7 +14,7 @@ import { RequirePermission } from '../../shared/rbac/rbac.guard';
 import { clockProvider } from '../../shared/time/clock.provider';
 
 import { SchoolLogoService } from './school-logo.service';
-import { SchoolSettingsService } from './school-settings.service';
+import { SchoolAppearanceService, SchoolSettingsService } from './school-settings.service';
 
 /**
  * The school's own settings — for now, its logo.
@@ -114,9 +116,33 @@ export class SchoolSettingsController {
   }
 }
 
+/**
+ * The school’s own colour.
+ *
+ * Reading is open to anyone signed in, and has to be: the portal paints itself
+ * in this on every page, so gating it behind a settings permission would mean a
+ * teacher sees the product’s colours while the office sees the school’s.
+ */
+@Controller()
+export class SchoolAppearanceController {
+  constructor(private readonly appearance: SchoolAppearanceService) {}
+
+  @Get(ROUTES.school.appearance)
+  @RequirePermission('dashboard.workspace.read')
+  async get(): Promise<{ data: SchoolAppearance }> {
+    return { data: await this.appearance.get() };
+  }
+
+  @Put(ROUTES.school.appearance)
+  @RequirePermission('settings.school.configure')
+  async set(@Body() body: unknown): Promise<{ data: SchoolAppearance }> {
+    return { data: await this.appearance.set(updateSchoolAppearanceSchema.parse(body)) };
+  }
+}
+
 @Module({
-  controllers: [SchoolLogoController, SchoolSettingsController],
-  providers: [clockProvider, SchoolLogoService, SchoolSettingsService],
+  controllers: [SchoolLogoController, SchoolSettingsController, SchoolAppearanceController],
+  providers: [clockProvider, SchoolLogoService, SchoolSettingsService, SchoolAppearanceService],
   exports: [SchoolLogoService],
 })
 export class SchoolsModule {}

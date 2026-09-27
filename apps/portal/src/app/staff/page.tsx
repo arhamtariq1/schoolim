@@ -41,6 +41,7 @@ export default async function StaffPage({
       permissions={session?.permissions ?? []}
       profileCompleted={session?.profileCompleted ?? true}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
+      brandColor={session?.school.primaryColor ?? undefined}
     >
       <StaffTable
         rows={result.ok ? result.data.data : []}

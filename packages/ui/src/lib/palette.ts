@@ -30,8 +30,17 @@ function encode(channel: number): number {
   return Math.min(1, Math.max(0, encoded));
 }
 
-/** OKLCH to gamma-encoded sRGB, each channel 0–1. Out-of-gamut values clamp. */
-export function oklchToRgb({ l, c, h }: Oklch): Rgb {
+/**
+ * OKLCH to **linear-light** sRGB, before gamma encoding and before clamping.
+ *
+ * Exported separately because a channel outside 0–1 here is the definition of
+ * out of gamut, and that is a question a caller needs to be able to ask.
+ * `oklchToRgb` clamps, which is the right thing for rendering and destroys the
+ * only evidence that the colour was never representable — so a ramp generated
+ * for a tenant would silently shift hue at its most saturated steps with
+ * nothing anywhere to notice.
+ */
+export function oklchToLinearRgb({ l, c, h }: Oklch): Rgb {
   const radians = (h * Math.PI) / 180;
   const a = c * Math.cos(radians);
   const b = c * Math.sin(radians);
@@ -41,10 +50,23 @@ export function oklchToRgb({ l, c, h }: Oklch): Rgb {
   const short = (l - 0.0894841775 * a - 1.291485548 * b) ** 3;
 
   return [
-    encode(4.0767416621 * long - 3.3077115913 * medium + 0.2309699292 * short),
-    encode(-1.2684380046 * long + 2.6097574011 * medium - 0.3413193965 * short),
-    encode(-0.0041960863 * long - 0.7034186147 * medium + 1.707614701 * short),
+    4.0767416621 * long - 3.3077115913 * medium + 0.2309699292 * short,
+    -1.2684380046 * long + 2.6097574011 * medium - 0.3413193965 * short,
+    -0.0041960863 * long - 0.7034186147 * medium + 1.707614701 * short,
   ];
+}
+
+/** True when every channel survives the trip to sRGB without being clamped. */
+export function inGamut(colour: Oklch): boolean {
+  // A hair of tolerance: these are floating-point matrices, and a colour that
+  // lands on 1.0000000002 is in gamut by any meaning of the word.
+  return oklchToLinearRgb(colour).every((channel) => channel >= -0.0001 && channel <= 1.0001);
+}
+
+/** OKLCH to gamma-encoded sRGB, each channel 0–1. Out-of-gamut values clamp. */
+export function oklchToRgb(colour: Oklch): Rgb {
+  const [r, g, b] = oklchToLinearRgb(colour);
+  return [encode(r), encode(g), encode(b)];
 }
 
 /**

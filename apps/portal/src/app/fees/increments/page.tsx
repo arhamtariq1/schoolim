@@ -77,6 +77,7 @@ export default async function FeeIncrementsPage({
       permissions={session?.permissions ?? []}
       profileCompleted={session?.profileCompleted ?? true}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
+      brandColor={session?.school.primaryColor ?? undefined}
     >
       <FeeIncrementsView
         page={page}

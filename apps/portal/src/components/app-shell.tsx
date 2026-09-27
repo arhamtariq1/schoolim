@@ -36,6 +36,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { AppSearch } from '@/components/app-search';
+import { BrandTheme } from '@/components/brand-theme';
 import { NAV_ICONS } from '@/components/nav-icons';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { VerifyEmailBanner } from '@/components/verify-email-banner';
@@ -99,6 +100,14 @@ export interface AppShellProps {
    * means verified, or nobody is signed in — either way, no banner. ADR-0012.
    */
   unverifiedEmail?: string | undefined;
+  /**
+   * The school's own colour, or undefined for the product's.
+   *
+   * Comes down with the session rather than being fetched here. A value that
+   * changes about once in a school's life must not cost a request on every
+   * page, and the shell already has the session in its hands.
+   */
+  brandColor?: string | undefined;
   children: ReactNode;
 }
 
@@ -117,6 +126,7 @@ export function AppShell({
   permissions,
   profileCompleted = true,
   unverifiedEmail,
+  brandColor,
   children,
 }: AppShellProps) {
   const baseItems = visibleNavItems(permissions);
@@ -138,6 +148,7 @@ export function AppShell({
 
   return (
     <TooltipProvider delayDuration={300}>
+      <BrandTheme color={brandColor} />
       {/*
         Taken out of flow, deliberately.
 

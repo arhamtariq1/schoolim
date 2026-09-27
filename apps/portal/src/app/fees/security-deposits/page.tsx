@@ -66,6 +66,7 @@ export default async function SecurityDepositsPage({
       permissions={session?.permissions ?? []}
       profileCompleted={session?.profileCompleted ?? true}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
+      brandColor={session?.school.primaryColor ?? undefined}
     >
       <SecurityDepositsView
         page={listResult.ok ? listResult.data.data : empty}

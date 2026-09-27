@@ -67,6 +67,7 @@ export default async function NewStudentPage() {
       permissions={session?.permissions ?? []}
       profileCompleted={session?.profileCompleted ?? true}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
+      brandColor={session?.school.primaryColor ?? undefined}
     >
       <div className="mx-auto max-w-5xl space-y-6">
         <div>

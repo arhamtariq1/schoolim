@@ -1,4 +1,9 @@
-import { type SchoolSettings, type UpdateSchoolSettings } from '@ilm/contracts';
+import {
+  type SchoolAppearance,
+  type SchoolSettings,
+  type UpdateSchoolAppearance,
+  type UpdateSchoolSettings,
+} from '@ilm/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../prisma/prisma.service';
@@ -99,6 +104,78 @@ export class SchoolSettingsService {
 }
 
 /**
+ * The school's own colour.
+ *
+ * ## Why this is not part of `update` above
+ *
+ * They are two different decisions. The details are typed once by whoever set
+ * the school up; the colour is chosen by whoever cares what it looks like,
+ * often months later, and changed again after that. Folding it into the same
+ * PUT would mean every phone-number correction also restates the brand — which
+ * is wrong in the audit log, where "who changed our colour, and when" becomes
+ * unanswerable amongst twenty rows that all say they changed everything.
+ *
+ * ## What the value is allowed to be
+ *
+ * `#rrggbb` lower case, or null, and nothing else — enforced by
+ * `brandColorSchema` at the controller. It is not a cosmetic restriction: this
+ * string is interpolated into a `<style>` element served on every page of the
+ * school's portal, so anything looser is a stylesheet-shaped hole with a
+ * tenant's name on it.
+ */
+@Injectable()
+export class SchoolAppearanceService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly context: TenantContextService,
+    @Inject(CLOCK) private readonly clock: Clock,
+  ) {}
+
+  async get(): Promise<SchoolAppearance> {
+    return this.prisma.tenant(async (tx) => {
+      const school = await tx.school.findFirst({ select: { primaryColor: true } });
+      if (school === null) {
+        throw new NotFoundError('school');
+      }
+      return { primaryColor: school.primaryColor };
+    });
+  }
+
+  async set(input: UpdateSchoolAppearance): Promise<SchoolAppearance> {
+    const now = this.clock.now();
+
+    return this.prisma.tenant(async (tx) => {
+      const before = await tx.school.findFirst({ select: { id: true, primaryColor: true } });
+      if (before === null) {
+        throw new NotFoundError('school');
+      }
+
+      const after = await tx.school.update({
+        where: { id: before.id },
+        data: { primaryColor: input.primaryColor },
+        select: { primaryColor: true },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          schoolId: this.context.schoolId,
+          action: 'school.appearance.update',
+          entityType: 'School',
+          entityId: before.id,
+          actorType: 'USER',
+          actorUserId: this.context.userId ?? null,
+          before: { primaryColor: before.primaryColor },
+          after: { primaryColor: after.primaryColor },
+          at: now,
+        },
+      });
+
+      return after;
+    });
+  }
+}
+
+/**
  * One selection for read, write and audit.
  *
  * Three hand-written field lists is three chances for the audit row to omit the
@@ -116,6 +193,7 @@ const SELECTION = {
   locale: true,
   currency: true,
   country: true,
+  primaryColor: true,
 } as const;
 
 function withoutId<T extends { id: string }>(row: T): Omit<T, 'id'> {

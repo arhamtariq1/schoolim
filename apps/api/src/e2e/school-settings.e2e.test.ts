@@ -148,7 +148,8 @@ beforeEach(async () => {
       locale = ${BASELINE.locale},
       currency = 'PKR',
       country = 'PK',
-      status = 'ACTIVE'
+      status = 'ACTIVE',
+      primary_color = NULL
     WHERE id = ${SCHOOL_A}::uuid
   `;
   await admin.$executeRaw`DELETE FROM audit_logs WHERE school_id = ${SCHOOL_A}::uuid`;
@@ -183,7 +184,7 @@ async function write(body: Record<string, unknown>, jar = ownerA, host = HOST_A)
 async function row(schoolId: string): Promise<Record<string, unknown>> {
   const rows = await admin.$queryRawUnsafe<Record<string, unknown>[]>(
     `SELECT name, slug, legal_name, address, city, phone, email, timezone, locale,
-            currency, country, status
+            currency, country, status, primary_color
        FROM schools WHERE id = $1::uuid`,
     schoolId,
   );
@@ -338,5 +339,102 @@ describe('tenant isolation', () => {
 
     expect(status).toBe(401);
     expect((await row(SCHOOL_A))['name']).toBe(BASELINE.name);
+  });
+});
+
+/**
+ * The school's own colour.
+ *
+ * This value is interpolated into a `style` element served on every page of
+ * the school's portal, so what the endpoint accepts is not a formatting
+ * preference — it is the width of the hole. The shape is asserted here, at the
+ * boundary, rather than trusted to the renderer downstream.
+ */
+describe('the brand colour', () => {
+  async function appearance(jar = ownerA, host = HOST_A) {
+    const response = await app.inject({
+      method: 'GET',
+      url: ROUTES.school.appearance,
+      headers: { host, cookie: jar },
+    });
+    return {
+      status: response.statusCode,
+      data: response.json<{ data: { primaryColor: string | null } }>().data,
+    };
+  }
+
+  async function setColour(body: Record<string, unknown>, jar = ownerA, host = HOST_A) {
+    const response = await app.inject({
+      method: 'PUT',
+      url: ROUTES.school.appearance,
+      headers: { host, cookie: jar },
+      payload: body,
+    });
+    return { status: response.statusCode };
+  }
+
+  it('starts unset, meaning the product’s own colours', async () => {
+    expect((await appearance()).data.primaryColor).toBeNull();
+  });
+
+  it('saves a hex and reads it back', async () => {
+    expect((await setColour({ primaryColor: '#7c3aed' })).status).toBe(200);
+    expect((await appearance()).data.primaryColor).toBe('#7c3aed');
+    expect((await row(SCHOOL_A))['primary_color']).toBe('#7c3aed');
+  });
+
+  it('lower-cases what it stores, so one colour has one spelling', async () => {
+    await setColour({ primaryColor: '#7C3AED' });
+    expect((await row(SCHOOL_A))['primary_color']).toBe('#7c3aed');
+  });
+
+  it('accepts null, which is how a school goes back to the default', async () => {
+    await setColour({ primaryColor: '#7c3aed' });
+    expect((await setColour({ primaryColor: null })).status).toBe(200);
+    expect((await row(SCHOOL_A))['primary_color']).toBeNull();
+  });
+
+  it('refuses anything that is not a six-digit hex', async () => {
+    for (const bad of [
+      '#fff',
+      'red',
+      'var(--x)',
+      '#1b838e;}html{display:none',
+      'url(javascript:alert(1))',
+      '#12345g',
+      '',
+    ]) {
+      expect((await setColour({ primaryColor: bad })).status).toBe(400);
+    }
+
+    expect((await row(SCHOOL_A))['primary_color']).toBeNull();
+  });
+
+  it('refuses a teacher, and changes nothing', async () => {
+    expect((await setColour({ primaryColor: '#7c3aed' }, teacherA)).status).toBe(403);
+    expect((await row(SCHOOL_A))['primary_color']).toBeNull();
+  });
+
+  it('lets a teacher read it — the portal paints itself in it', async () => {
+    await setColour({ primaryColor: '#7c3aed' });
+    expect((await appearance(teacherA)).data.primaryColor).toBe('#7c3aed');
+  });
+
+  it('writes an audit row with the colour before and after', async () => {
+    await setColour({ primaryColor: '#7c3aed' });
+
+    const entries = await admin.$queryRawUnsafe<{ before: unknown; after: unknown }[]>(
+      `SELECT before, after FROM audit_logs
+        WHERE school_id = $1::uuid AND action = 'school.appearance.update'`,
+      SCHOOL_A,
+    );
+
+    expect(entries).toHaveLength(1);
+    expect((entries[0]?.after as { primaryColor: string }).primaryColor).toBe('#7c3aed');
+  });
+
+  it('does not reach another school', async () => {
+    await setColour({ primaryColor: '#7c3aed' });
+    expect((await appearance(ownerB, HOST_B)).data.primaryColor).toBeNull();
   });
 });

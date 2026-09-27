@@ -1,6 +1,7 @@
 import { ROUTES, type SchoolLogoInfo, type SchoolSettings } from '@ilm/contracts';
 
 import { AppShell } from '@/components/app-shell';
+import { BrandColourCard } from '@/components/brand-colour-card';
 import { SchoolLogoCard } from '@/components/school-logo-card';
 import { SchoolSettingsForm } from '@/components/school-settings-form';
 import { apiFetch } from '@/lib/api';
@@ -44,6 +45,7 @@ export default async function SchoolSettingsPage() {
         locale: session?.school.locale ?? 'en',
         currency: 'PKR',
         country: 'PK',
+        primaryColor: session?.school.primaryColor ?? null,
       };
 
   return (
@@ -57,6 +59,7 @@ export default async function SchoolSettingsPage() {
       permissions={permissions}
       profileCompleted={session?.profileCompleted ?? true}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
+      brandColor={session?.school.primaryColor ?? undefined}
     >
       <div className="max-w-3xl space-y-6">
         <div>
@@ -70,6 +73,11 @@ export default async function SchoolSettingsPage() {
           settings={settings}
           canConfigure={canConfigure}
           error={settingsResult.ok ? undefined : settingsResult.message}
+        />
+
+        <BrandColourCard
+          appearance={{ primaryColor: settings.primaryColor }}
+          canConfigure={canConfigure}
         />
 
         <SchoolLogoCard

@@ -1,0 +1,14 @@
+-- A school may choose its own colour.
+--
+-- `primary_color` is the last of the tenant's own presentation settings that
+-- `ilm_app` could not write. It joins `name`, `address` and the rest granted by
+-- 20260925000000; the platform's columns — status, plan, slug, currency — stay
+-- withheld, for the reasons written on that migration.
+--
+-- Nothing here validates the value. The column is plain text, and the shape
+-- that matters ("#rrggbb", lower case, nothing else) is enforced at the API
+-- boundary by `brandColorSchema`, because the string is interpolated into a
+-- <style> element on every page of that school's portal. A CHECK constraint
+-- would be a second, weaker copy of that rule in a place nobody reads when
+-- adding the next colour setting.
+GRANT UPDATE ("primary_color", "updated_at") ON "schools" TO ilm_app;

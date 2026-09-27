@@ -43,6 +43,16 @@ export const schoolSettingsSchema = z.object({
   /** Read-only. See the note above on why money's unit cannot be relabelled. */
   currency: z.string(),
   country: z.string(),
+  /**
+   * The school's own colour, or null for the product's.
+   *
+   * Read here so the settings screen can show it; written through its own
+   * endpoint, because "what this school is called" and "what this school looks
+   * like" are two different decisions, made by different people, on different
+   * days — and a single PUT would make changing the phone number also restate
+   * the brand colour.
+   */
+  primaryColor: z.string().nullable(),
 });
 
 export type SchoolSettings = z.infer<typeof schoolSettingsSchema>;
@@ -91,3 +101,35 @@ function optionalTextSchema(max: number) {
     .nullable()
     .transform((value) => (value === null || value === '' ? null : value));
 }
+
+/**
+ * A six-digit hex, lower-cased, with the hash.
+ *
+ * Narrow on purpose. This value is interpolated into a `<style>` element on
+ * every page of the school's portal, so "whatever CSS colour the browser
+ * accepts" is not a specification — it is an injection surface with a
+ * stylesheet's worth of reach. One shape, validated at the boundary, and the
+ * renderer never has to wonder.
+ */
+export const brandColorSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^#[0-9a-f]{6}$/, 'Use a colour like #1b838e.');
+
+/**
+ * What a school looks like, as opposed to what it is called.
+ *
+ * `null` is a real choice and means "the product's own colours", which is why
+ * it is nullable rather than optional: leaving the field out would have to mean
+ * something, and both readings — "reset it" and "leave it alone" — are ones a
+ * caller would reasonably expect.
+ */
+export const schoolAppearanceSchema = z.object({
+  primaryColor: brandColorSchema.nullable(),
+});
+
+export type SchoolAppearance = z.infer<typeof schoolAppearanceSchema>;
+
+export const updateSchoolAppearanceSchema = schoolAppearanceSchema.strict();
+export type UpdateSchoolAppearance = z.infer<typeof updateSchoolAppearanceSchema>;

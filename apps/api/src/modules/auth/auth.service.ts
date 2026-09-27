@@ -73,6 +73,8 @@ interface SchoolRow {
   readonly slug: string;
   readonly timezone: string;
   readonly locale: string;
+  /** The school’s brand colour, or null for the product’s own. */
+  readonly primaryColor: string | null;
 }
 
 @Injectable()
@@ -106,7 +108,15 @@ export class AuthService {
   ): Promise<LoginResult> {
     const school = await this.prisma.admin.school.findUnique({
       where: { slug },
-      select: { id: true, name: true, slug: true, timezone: true, locale: true, status: true },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        timezone: true,
+        locale: true,
+        primaryColor: true,
+        status: true,
+      },
     });
 
     // `status` was being selected and then ignored, which meant a school that
@@ -299,7 +309,15 @@ export class AuthService {
   ): Promise<LoginResult> {
     const school = await this.prisma.admin.school.findUnique({
       where: { slug },
-      select: { id: true, name: true, slug: true, timezone: true, locale: true, status: true },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        timezone: true,
+        locale: true,
+        primaryColor: true,
+        status: true,
+      },
     });
 
     if (school === null || school.status === 'CHURNED') {
@@ -352,7 +370,9 @@ export class AuthService {
         emailVerifiedAt: true,
         profileCompletedAt: true,
         roles: { select: { role: true } },
-        school: { select: { id: true, name: true, slug: true, timezone: true, locale: true } },
+        school: {
+          select: { id: true, name: true, slug: true, timezone: true, locale: true, primaryColor: true },
+        },
       },
     });
 
@@ -409,7 +429,9 @@ export class AuthService {
         emailVerifiedAt: true,
         profileCompletedAt: true,
         roles: { select: { role: true } },
-        school: { select: { id: true, name: true, slug: true, timezone: true, locale: true } },
+        school: {
+          select: { id: true, name: true, slug: true, timezone: true, locale: true, primaryColor: true },
+        },
       },
     });
 
@@ -502,6 +524,7 @@ export class AuthService {
           slug: school.slug,
           timezone: school.timezone,
           locale: school.locale,
+          primaryColor: school.primaryColor,
         },
       },
     };

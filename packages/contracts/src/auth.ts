@@ -70,6 +70,16 @@ export const sessionUserSchema = z.object({
     slug: z.string(),
     timezone: z.string(),
     locale: z.string(),
+    /**
+     * The school’s brand colour, or null for the product’s own.
+     *
+     * On the session rather than fetched by the shell. The shell renders on
+     * every page and already reads the session once per render, so carrying one
+     * more string costs nothing — whereas a second request per page, for a
+     * value that changes about once in a school’s life, is the shape of
+     * slow that only shows up under load.
+     */
+    primaryColor: z.string().nullable(),
   }),
 });
 

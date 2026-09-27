@@ -35,6 +35,7 @@ export default async function GenerateFeePage() {
       permissions={session?.permissions ?? []}
       profileCompleted={session?.profileCompleted ?? true}
       unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
+      brandColor={session?.school.primaryColor ?? undefined}
     >
       <GenerateFee
         sessions={sessions.ok ? sessions.data.data : []}
