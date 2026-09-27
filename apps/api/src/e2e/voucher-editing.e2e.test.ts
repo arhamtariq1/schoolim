@@ -567,7 +567,11 @@ describe('once money has arrived', () => {
     expect(raw).toContain('waived');
   });
 
-  it('refuses any edit to a cancelled voucher', async () => {
+  it('has nothing left to edit once the voucher has been deleted', async () => {
+    // This used to expect a 409 naming a cancelled voucher, back when the trash
+    // icon cancelled rather than removed. An unpaid voucher is now deleted
+    // outright, so there is no row to refuse an edit to — 404 is the honest
+    // answer, and a 409 would be describing a state that no longer exists.
     await app.inject({
       method: 'DELETE',
       url: ROUTES.vouchers.detail(voucherId),
@@ -575,10 +579,9 @@ describe('once money has arrived', () => {
       payload: { reason: 'Issued in error' },
     });
 
-    const { status, raw } = await edit({ dueDate: '2026-09-30' });
+    const { status } = await edit({ dueDate: '2026-09-30' });
 
-    expect(status).toBe(409);
-    expect(raw).toContain('FEES_VOUCHER_CANCELLED');
+    expect(status).toBe(404);
   });
 });
 

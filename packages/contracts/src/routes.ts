@@ -179,6 +179,18 @@ export const ROUTES = {
     preview: `${API_PREFIX}/fee-vouchers/preview`,
     generate: `${API_PREFIX}/fee-vouchers/generate`,
     cancel: (id: string) => `${API_PREFIX}/fee-vouchers/${id}/cancel`,
+    /** Remove many at once, in one transaction, reporting what could not go. */
+    bulkDelete: `${API_PREFIX}/fee-vouchers/bulk-delete`,
+    /**
+     * Just the ids behind a set of filters, for "select all matching".
+     *
+     * The list caps at 200 rows a page, so selecting a filtered set of five
+     * hundred through it would be three requests carrying three hundred
+     * kilobytes of rows whose only useful field is the id.
+     */
+    ids: `${API_PREFIX}/fee-vouchers/ids`,
+    /** Every challan behind a selection, for printing a stack rather than one. */
+    challans: `${API_PREFIX}/fee-vouchers/challans`,
     pay: (id: string) => `${API_PREFIX}/fee-vouchers/${id}/payments`,
     waive: (id: string) => `${API_PREFIX}/fee-vouchers/${id}/waive`,
     /** The GR-number / name typeahead on the generate screen. */

@@ -1,5 +1,8 @@
 import {
+  bulkDeleteVouchersSchema,
+  MAX_BULK_VOUCHERS,
   cancelVoucherSchema,
+  challanBatchSchema,
   generateVouchersSchema,
   previewVouchersSchema,
   recordPaymentSchema,
@@ -10,6 +13,9 @@ import {
   waiveVoucherSchema,
   type GenerationResult,
   type StudentLookupResult,
+  type BulkDeleteResult,
+  type Challan,
+  type VoucherIds,
   type VoucherDetail,
   type VoucherPreview,
   type VoucherSummary,
@@ -117,13 +123,60 @@ export class VouchersController {
   }
 
   /**
-   * Cancel, not delete.
+   * Delete an unpaid voucher.
    *
-   * `DELETE` is the verb the trash icon sends and the one a reader expects, but
-   * nothing is removed: CLAUDE.md R4 makes financial records append-only, so
-   * the row stays with a status and a reason. A reason is required, which is
-   * why this carries a body at all.
+   * `DELETE` is what the trash icon sends. Unpaid vouchers (nothing received)
+   * are removed so they leave the list and the months can be billed again. A
+   * reason is required for the audit trail of who removed it and why. Paid
+   * vouchers cannot be deleted — reverse the payment first.
    */
+  /**
+   * Remove a selection in one go.
+   *
+   * A POST rather than a DELETE with a body: a request body on DELETE is
+   * allowed by the spec and dropped by enough proxies to be a bad bet for a
+   * financial action, and this is a named operation rather than the removal of
+   * the resource at this URL.
+   *
+   * Placed **above** the `:id` routes on purpose. Nest matches in declaration
+   * order, so registering it after them would let `/fee-vouchers/bulk-delete`
+   * be read as a voucher whose id is "bulk-delete".
+   */
+  /**
+   * The ids behind the current filters, for "select all matching".
+   *
+   * Above the `:id` routes, like the two below it: Nest matches in declaration
+   * order, and registering it later would let `/fee-vouchers/ids` be read as a
+   * voucher whose id is "ids".
+   */
+  @Get(ROUTES.vouchers.ids)
+  @RequirePermission('fees.voucher.read')
+  async ids(@Query() query: unknown): Promise<{ data: VoucherIds }> {
+    const parsed = voucherListQuerySchema.parse(query);
+    return { data: await this.vouchers.ids(parsed, MAX_BULK_VOUCHERS) };
+  }
+
+  @Post(ROUTES.vouchers.bulkDelete)
+  @RequirePermission('fees.voucher.cancel')
+  async bulkDelete(@Body() body: unknown): Promise<{ data: BulkDeleteResult }> {
+    const input = bulkDeleteVouchersSchema.parse(body);
+    return { data: await this.vouchers.deleteMany(input.ids) };
+  }
+
+  /**
+   * The challans behind a selection, for printing a stack.
+   *
+   * A POST because the selection is a list of ids that does not fit in a URL —
+   * five hundred of them is thirty-odd kilobytes, well past what proxies and
+   * servers accept on a request line. It reads and writes nothing.
+   */
+  @Post(ROUTES.vouchers.challans)
+  @RequirePermission('fees.voucher.read')
+  async challans(@Body() body: unknown): Promise<{ data: Challan[] }> {
+    const input = challanBatchSchema.parse(body);
+    return { data: await this.vouchers.challans(input.ids) };
+  }
+
   @Delete('/api/v1/fee-vouchers/:id')
   @RequirePermission('fees.voucher.cancel')
   async cancel(@Param('id') id: string, @Body() body: unknown): Promise<{ data: { ok: true } }> {

@@ -1,4 +1,8 @@
 import {
+  type BulkDeleteResult,
+  type Challan,
+  type VoucherIds,
+  type BulkSkipReason,
   type CancelVoucher,
   type RecordPayment,
   type StudentLookupQuery,
@@ -42,13 +46,13 @@ import { firstOfMonth, monthLabel } from './voucher-planner';
  * would skip the reason and the ledger entry — the "Fee Waived Off as a direct
  * edit" that §4.3 names as how a school's totals stop reconciling.
  *
- * ## Delete is cancel
+ * ## Delete removes an unpaid voucher
  *
- * The reference screen has a trash icon. CLAUDE.md R4 says financial records
- * are append-only, so it cancels: the row stays, the status changes, the reason
- * is recorded, and the period claims are released so the month can be billed
- * again. A paid voucher cannot be cancelled at all — that is a refund, and a
- * refund is a reversal entry, not a deletion.
+ * The trash icon hard-deletes an unpaid voucher (no money received): the row
+ * leaves the list, period claims are released so the month can be billed again,
+ * and any later challan that named it as arrears is adjusted. CLAUDE.md R4
+ * still forbids deleting **payments** or paid vouchers — those stay append-only
+ * and must be reversed. A paid voucher cannot be deleted at all.
  */
 @Injectable()
 export class VouchersService {
@@ -92,6 +96,39 @@ export class VouchersService {
           outstandingMinor: minorUnits(Math.max(0, netPayable - paid)),
         },
       };
+    });
+  }
+
+  /**
+   * Just the ids behind a filter — what "select all matching" needs.
+   *
+   * The list caps at two hundred rows a page, so selecting a filtered set of
+   * five hundred through it would be three requests carrying three hundred
+   * kilobytes of rows whose only useful field is the id. This is one request
+   * and about eighteen.
+   *
+   * `total` is the real count even when the list of ids was cut off at the
+   * cap, so the screen can say "five hundred of two thousand" instead of
+   * quietly selecting a quarter of what was asked for.
+   *
+   * Ordered the same way the list is, so "select all" and "what you were
+   * looking at" agree about which five hundred.
+   */
+  async ids(query: VoucherListQuery, cap: number): Promise<VoucherIds> {
+    return this.prisma.tenant(async (tx) => {
+      const where = buildWhere(query);
+
+      const [rows, total] = await Promise.all([
+        tx.feeVoucher.findMany({
+          where,
+          orderBy: orderFor(query.sort, query.order),
+          take: cap,
+          select: { id: true },
+        }),
+        tx.feeVoucher.count({ where }),
+      ]);
+
+      return { ids: rows.map((row) => row.id), total };
     });
   }
 
@@ -568,36 +605,282 @@ export class VouchersService {
   }
 
   /**
-   * Cancel — what the trash icon does.
+   * Hard-delete one — what the trash icon does.
    *
-   * The period claims go with it. That is the point: cancelling September's
-   * voucher has to let September be generated again, and the claims are what
-   * would otherwise keep reporting the student as already billed forever.
+   * Delegates to the bulk path rather than repeating it. The rules about what
+   * may be removed are financial ones — money received, a deposit collected,
+   * arrears another challan is carrying — and two copies of those is the drift
+   * that ends with one route enforcing a rule the other does not.
    */
-  async cancel(id: string, input: CancelVoucher): Promise<void> {
-    await this.prisma.tenant(async (tx) => {
-      const voucher = await tx.feeVoucher.findUnique({
-        where: { id },
-        select: { id: true, status: true, paidAmount: true },
+  async cancel(id: string, _input: CancelVoucher): Promise<void> {
+    const result = await this.deleteMany([id]);
+
+    if (result.deleted === 1) {
+      return;
+    }
+
+    const [skip] = result.skipped;
+    if (skip === undefined || skip.reason === 'NOT_FOUND') {
+      throw new NotFoundError('voucher');
+    }
+    if (skip.reason === 'HAS_DEPOSIT') {
+      throw new BusinessRuleError(
+        'FEES_VOUCHER_HAS_DEPOSIT',
+        'This voucher collected a security deposit, so it cannot be deleted. Refund or clear the deposit first.',
+      );
+    }
+    throw new BusinessRuleError(
+      'FEES_VOUCHER_ALREADY_PAID',
+      'Money has been received against this voucher, so it cannot be deleted. Reverse the payment first.',
+    );
+  }
+
+  /**
+   * Remove a selection of vouchers, in one transaction.
+   *
+   * ## Set-based, not a loop
+   *
+   * Every step below is one statement over the whole selection, so removing
+   * five hundred costs the same handful of round trips as removing one. The
+   * obvious implementation — call the single delete in a loop — is five hundred
+   * transactions and several thousand statements, and it half-succeeds: the
+   * operator is told the run failed while four hundred rows are already gone.
+   *
+   * ## What is refused, and why it is reported rather than thrown
+   *
+   * A selection of two hundred will routinely contain one that was paid an hour
+   * ago. Failing the whole run for it means finding that one by hand, so each
+   * voucher that cannot go comes back with the reason and the rest are removed.
+   *
+   *   * **Money received** — a paid voucher is a financial record (CLAUDE.md
+   *     R4). It is reversed, never deleted. Checked twice: the denormalised
+   *     paid total, and the allocations themselves, because a row whose total
+   *     has drifted from its allocations must fail closed.
+   *   * **A security deposit** — the deposit points at this voucher, and the
+   *     money is being held on the school's books.
+   *   * **Gone already** — an id that resolves to nothing, including another
+   *     school's, which RLS makes indistinguishable and deliberately so.
+   *
+   * ## Arrears
+   *
+   * A later challan may carry this one as arrears under a restricting foreign
+   * key. Each carrier's figure is reduced by what the removed vouchers
+   * contributed — summed, because two removed vouchers can feed one carrier,
+   * and skipping carriers that are themselves being removed.
+   */
+  async deleteMany(ids: readonly string[]): Promise<BulkDeleteResult> {
+    const unique = [...new Set(ids)];
+
+    return this.prisma.tenant(async (tx) => {
+      const vouchers = await tx.feeVoucher.findMany({
+        where: { id: { in: unique } },
+        select: { id: true, voucherNo: true, paidAmount: true },
       });
-      if (voucher === null) {
-        throw new NotFoundError('voucher');
+
+      const found = new Set(vouchers.map((voucher) => voucher.id));
+      const skipped: BulkDeleteResult['skipped'] = [];
+
+      for (const id of unique) {
+        if (!found.has(id)) {
+          skipped.push({ id, voucherNo: null, reason: 'NOT_FOUND' });
+        }
       }
-      if (voucher.status === 'CANCELLED') {
-        throw new BusinessRuleError('FEES_VOUCHER_CANCELLED', 'That voucher is already cancelled.');
+
+      const candidates: typeof vouchers = [];
+      for (const voucher of vouchers) {
+        if (decimalToMinor(voucher.paidAmount) > 0) {
+          skipped.push({ id: voucher.id, voucherNo: voucher.voucherNo, reason: 'ALREADY_PAID' });
+        } else {
+          candidates.push(voucher);
+        }
       }
-      if (decimalToMinor(voucher.paidAmount) > 0) {
-        throw new BusinessRuleError(
-          'FEES_VOUCHER_ALREADY_PAID',
-          'Money has been received against this voucher, so it cannot be cancelled. Reverse the payment first.',
+
+      const candidateIds = candidates.map((voucher) => voucher.id);
+
+      if (candidateIds.length === 0) {
+        return { deleted: 0, skipped };
+      }
+
+      // Two more set-based reads, whatever the size of the selection.
+      const [allocated, deposited] = await Promise.all([
+        tx.feePaymentAllocation.findMany({
+          where: { voucherId: { in: candidateIds } },
+          select: { voucherId: true },
+          distinct: ['voucherId'],
+        }),
+        tx.securityDeposit.findMany({
+          where: { voucherId: { in: candidateIds } },
+          select: { voucherId: true },
+        }),
+      ]);
+
+      const blocked = new Map<string, BulkSkipReason>();
+      for (const row of allocated) {
+        blocked.set(row.voucherId, 'ALREADY_PAID');
+      }
+      for (const row of deposited) {
+        if (row.voucherId !== null) {
+          // Deposit wins the message: "reverse the payment" is unhelpful advice
+          // for a voucher whose problem is a deposit held against it.
+          blocked.set(row.voucherId, 'HAS_DEPOSIT');
+        }
+      }
+
+      const deletable: string[] = [];
+      for (const voucher of candidates) {
+        const reason = blocked.get(voucher.id);
+        if (reason === undefined) {
+          deletable.push(voucher.id);
+        } else {
+          skipped.push({ id: voucher.id, voucherNo: voucher.voucherNo, reason });
+        }
+      }
+
+      if (deletable.length === 0) {
+        return { deleted: 0, skipped };
+      }
+
+      // Later challans carrying these as arrears: detach, and reduce each
+      // carrier's figure by the total it was carrying from this selection.
+      const links = await tx.feeVoucherArrear.findMany({
+        where: { sourceVoucherId: { in: deletable } },
+        select: { voucherId: true, amount: true },
+      });
+
+      const removing = new Set(deletable);
+      const reduceBy = new Map<string, number>();
+      for (const link of links) {
+        // A carrier that is itself going does not need its figure corrected.
+        if (removing.has(link.voucherId)) {
+          continue;
+        }
+        reduceBy.set(
+          link.voucherId,
+          (reduceBy.get(link.voucherId) ?? 0) + decimalToMinor(link.amount),
         );
       }
 
-      await tx.feeVoucherPeriod.deleteMany({ where: { voucherId: id } });
-      await tx.feeVoucher.update({
-        where: { id },
-        data: { status: 'CANCELLED', cancelledAt: systemClock.now(), cancelReason: input.reason },
+      if (reduceBy.size > 0) {
+        const carriers = await tx.feeVoucher.findMany({
+          where: { id: { in: [...reduceBy.keys()] } },
+          select: { id: true, arrearsAmount: true },
+        });
+
+        // One update per carrier, and there are only as many carriers as there
+        // are later challans actually naming one of these — not one per removed
+        // voucher.
+        for (const carrier of carriers) {
+          const next = Math.max(
+            0,
+            decimalToMinor(carrier.arrearsAmount) - (reduceBy.get(carrier.id) ?? 0),
+          );
+          await tx.feeVoucher.update({
+            where: { id: carrier.id },
+            data: { arrearsAmount: toDecimalString(minorUnits(next)) },
+          });
+        }
+      }
+
+      await tx.feeVoucherArrear.deleteMany({ where: { sourceVoucherId: { in: deletable } } });
+      // Period claims must go, or those months report as already billed for
+      // ever and can never be generated again.
+      await tx.feeVoucherPeriod.deleteMany({ where: { voucherId: { in: deletable } } });
+      const removed = await tx.feeVoucher.deleteMany({ where: { id: { in: deletable } } });
+
+      return { deleted: removed.count, skipped };
+    });
+  }
+
+  /**
+   * Every challan behind a selection, in one round trip.
+   *
+   * ## Why this exists rather than calling `detail` per voucher
+   *
+   * Schools do not print one challan at a time — they print a class, or a
+   * month. Five hundred calls to `detail` is five hundred transactions and
+   * fifteen hundred queries; this is one transaction and one query with two
+   * nested reads, which Prisma resolves as a handful of statements whatever the
+   * size of the selection.
+   *
+   * ## What it leaves out
+   *
+   * Payments. A challan is the demand, not the receipt, and it prints none of
+   * them — so joining allocations and their payments for five hundred vouchers
+   * would be the largest part of this response and read by nobody.
+   *
+   * ## Order
+   *
+   * Returned in the order a stack should be handed out: class, then section,
+   * then the student's name. Not the order the ids arrived in, which is
+   * whatever order the operator happened to tick boxes, and not insertion
+   * order, which is meaningless on paper. A teacher handed a class's challans
+   * wants them in register order.
+   */
+  async challans(ids: readonly string[]): Promise<Challan[]> {
+    const unique = [...new Set(ids)];
+
+    return this.prisma.tenant(async (tx) => {
+      const rows = await tx.feeVoucher.findMany({
+        where: { id: { in: unique } },
+        select: {
+          ...VOUCHER_SUMMARY_SELECT,
+          lateFeeAuto: true,
+          cancelReason: true,
+          lines: {
+            orderBy: { sortOrder: 'asc' },
+            select: {
+              id: true,
+              feeHeadId: true,
+              kind: true,
+              label: true,
+              billMonth: true,
+              amount: true,
+              discount: true,
+              sortOrder: true,
+            },
+          },
+          arrears: {
+            select: {
+              sourceVoucherId: true,
+              amount: true,
+              source: { select: { voucherNo: true, billMonths: true } },
+            },
+          },
+        },
       });
+
+      const challans = rows.map((row) => ({
+        ...toSummary(row),
+        lateFeeAuto: row.lateFeeAuto,
+        cancelReason: row.cancelReason,
+        lines: row.lines.map((line) => ({
+          id: line.id,
+          feeHeadId: line.feeHeadId,
+          kind: line.kind,
+          label: line.label,
+          billMonth: line.billMonth === null ? null : isoDate(line.billMonth),
+          amountMinor: minorUnits(decimalToMinor(line.amount)),
+          discountMinor: minorUnits(decimalToMinor(line.discount)),
+          sortOrder: line.sortOrder,
+        })),
+        arrears: row.arrears.map((arrear) => ({
+          sourceVoucherId: arrear.sourceVoucherId,
+          sourceVoucherNo: arrear.source.voucherNo,
+          sourceBillMonths: arrear.source.billMonths.map(isoDate),
+          amountMinor: minorUnits(decimalToMinor(arrear.amount)),
+        })),
+      }));
+
+      // Sorted here rather than in the query: class and section hang off the
+      // student's latest enrolment, which is a to-many Prisma cannot order a
+      // voucher by. Five hundred rows is nothing to sort in memory, and doing
+      // it after the mapping means sorting the same values that get printed.
+      return challans.sort(
+        (a, b) =>
+          (a.className ?? '').localeCompare(b.className ?? '') ||
+          (a.sectionName ?? '').localeCompare(b.sectionName ?? '') ||
+          a.studentName.localeCompare(b.studentName),
+      );
     });
   }
 
@@ -990,7 +1273,13 @@ function buildWhere(query: VoucherListQuery): Record<string, unknown> {
   return {
     ...(query.sessionId === undefined ? {} : { sessionId: query.sessionId }),
     ...(query.studentId === undefined ? {} : { studentId: query.studentId }),
-    ...(query.status === undefined ? {} : { status: query.status }),
+    // Soft-cancelled legacy rows stay out of the default list. An explicit
+    // status filter (including CANCELLED) still works when someone asks for it.
+    ...(query.outstandingOnly === true
+      ? { status: { in: ['UNPAID', 'PARTIALLY_PAID'] } }
+      : query.status === undefined
+        ? { status: { not: 'CANCELLED' } }
+        : { status: query.status }),
     ...(query.from === undefined && query.to === undefined
       ? {}
       : {
@@ -1001,7 +1290,6 @@ function buildWhere(query: VoucherListQuery): Record<string, unknown> {
             ...(query.to === undefined ? {} : { lte: new Date(query.to) }),
           },
         }),
-    ...(query.outstandingOnly === true ? { status: { in: ['UNPAID', 'PARTIALLY_PAID'] } } : {}),
     ...(query.classLevelId === undefined &&
     query.sectionId === undefined &&
     query.grNo === undefined

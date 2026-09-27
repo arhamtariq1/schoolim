@@ -972,3 +972,252 @@ describe('a student enrolled in no session', () => {
     }
   });
 });
+
+/**
+ * Deleting and printing a selection.
+ *
+ * Schools do neither of these one at a time — a month is generated for
+ * everybody and a month is printed for everybody — so the interesting cases
+ * are all about a selection that is not uniform: one voucher in two hundred
+ * that was paid an hour ago, one that collected a deposit, one that another
+ * challan is carrying as arrears.
+ *
+ * The rule throughout is that a mixed selection does the work it can and
+ * reports what it could not, because failing the whole run means the operator
+ * has to find the offending voucher by hand among two hundred.
+ */
+describe('deleting a selection', () => {
+  async function bulkDelete(ids: string[], reason = 'Generated for the wrong month') {
+    const response = await post(ROUTES.vouchers.bulkDelete, { ids, reason });
+    return {
+      status: response.statusCode,
+      body: response.body,
+      data: () => response.json<{ data: BulkDeleteResultBody }>().data,
+    };
+  }
+
+  it('removes every voucher in the selection', async () => {
+    await generate();
+    const { data } = await listVouchers();
+    expect(data.length).toBeGreaterThan(1);
+
+    const result = await bulkDelete(data.map((voucher) => voucher.id));
+
+    expect(result.status).toBe(201);
+    expect(result.data().deleted).toBe(data.length);
+    expect((await listVouchers()).data).toHaveLength(0);
+  });
+
+  it('frees the months, so they can be billed again', async () => {
+    await generate();
+    const first = await listVouchers();
+    await bulkDelete(first.data.map((voucher) => voucher.id));
+
+    // The period claims are the thing that would otherwise report every
+    // student as already billed for September, for ever.
+    expect((await generate()).statusCode).toBe(201);
+    expect((await listVouchers()).data).toHaveLength(first.data.length);
+  });
+
+  it('leaves a paid voucher alone and does the rest', async () => {
+    await generate();
+    const { data } = await listVouchers('?sort=studentName&order=asc');
+    const paid = data[0];
+    const rest = data.slice(1);
+    expect(paid).toBeDefined();
+    expect(rest.length).toBeGreaterThan(0);
+
+    await post(ROUTES.vouchers.pay(paid?.id ?? ''), {
+      amountMinor: 100_000,
+      method: 'CASH',
+      paidOn: '2026-09-10',
+      idempotencyKey: freshKey(),
+    });
+
+    const result = await bulkDelete(data.map((voucher) => voucher.id));
+    const body = result.data();
+
+    expect(body.deleted).toBe(rest.length);
+    expect(body.skipped).toHaveLength(1);
+    expect(body.skipped[0]?.reason).toBe('ALREADY_PAID');
+    // Named, not just counted: "one could not be deleted" sends somebody
+    // hunting through two hundred rows for it.
+    expect(body.skipped[0]?.voucherNo).toBe(paid?.voucherNo);
+
+    const left = await listVouchers();
+    expect(left.data).toHaveLength(1);
+    expect(left.data[0]?.id).toBe(paid?.id);
+  });
+
+  it('reports an id that resolves to nothing rather than failing the run', async () => {
+    await generate();
+    const { data } = await listVouchers();
+    const invented = '99999999-9999-4999-8999-999999999999';
+
+    const result = await bulkDelete([...data.map((voucher) => voucher.id), invented]);
+    const body = result.data();
+
+    expect(body.deleted).toBe(data.length);
+    expect(body.skipped).toEqual([{ id: invented, voucherNo: null, reason: 'NOT_FOUND' }]);
+  });
+
+  it('cannot reach another school’s vouchers, and says the same thing as for a typo', async () => {
+    await generate();
+    const mine = (await listVouchers()).data.map((voucher) => voucher.id);
+
+    // Written directly, because the other school's data is never reachable
+    // through the API — which is the point being tested.
+    const theirs = await foreignVoucher();
+
+    const result = await bulkDelete([...mine, theirs]);
+    const body = result.data();
+
+    expect(body.deleted).toBe(mine.length);
+    // "Not found", exactly as for an invented id. Anything else would confirm
+    // that the id is real somewhere.
+    expect(body.skipped).toEqual([{ id: theirs, voucherNo: null, reason: 'NOT_FOUND' }]);
+
+    const survivors = await admin.$queryRawUnsafe<{ n: bigint }[]>(
+      `SELECT count(*) AS n FROM fee_vouchers WHERE id = $1::uuid`,
+      theirs,
+    );
+    expect(Number(survivors[0]?.n ?? 0)).toBe(1);
+  });
+
+  it('ignores a repeated id instead of counting it twice', async () => {
+    await generate();
+    const { data } = await listVouchers();
+    const id = data[0]?.id ?? '';
+
+    const result = await bulkDelete([id, id, id]);
+
+    expect(result.data().deleted).toBe(1);
+    expect(result.data().skipped).toHaveLength(0);
+  });
+
+  it('is safe to repeat — the second run finds nothing left to do', async () => {
+    await generate();
+    const ids = (await listVouchers()).data.map((voucher) => voucher.id);
+
+    expect((await bulkDelete(ids)).data().deleted).toBe(ids.length);
+
+    // A retried request, a double-clicked button, a timeout that was actually
+    // a success. None of them may report an error.
+    const again = await bulkDelete(ids);
+    expect(again.status).toBe(201);
+    expect(again.data().deleted).toBe(0);
+    expect(again.data().skipped).toHaveLength(ids.length);
+  });
+
+  it('refuses more than the cap rather than truncating the selection', async () => {
+    const tooMany = Array.from(
+      { length: 501 },
+      (_, index) => `99999999-9999-4999-8999-${String(index).padStart(12, '0')}`,
+    );
+
+    // Silently deleting the first five hundred of five hundred and one is the
+    // worst available answer.
+    expect((await bulkDelete(tooMany)).status).toBe(400);
+  });
+
+  it('demands a reason', async () => {
+    await generate();
+    const ids = (await listVouchers()).data.map((voucher) => voucher.id);
+
+    expect((await bulkDelete(ids, '')).status).toBe(400);
+    expect((await listVouchers()).data.length).toBe(ids.length);
+  });
+});
+
+describe('the challans behind a selection', () => {
+  async function challans(ids: string[]) {
+    const response = await post(ROUTES.vouchers.challans, { ids });
+    return {
+      status: response.statusCode,
+      data: () => response.json<{ data: ChallanBody[] }>().data,
+    };
+  }
+
+  it('returns one per voucher, with the lines a challan prints', async () => {
+    await generate();
+    const { data } = await listVouchers();
+
+    const result = await challans(data.map((voucher) => voucher.id));
+
+    expect(result.status).toBe(201);
+    expect(result.data()).toHaveLength(data.length);
+    for (const challan of result.data()) {
+      expect(challan.lines.length).toBeGreaterThan(0);
+      expect(challan.voucherNo).toBeTruthy();
+    }
+  });
+
+  it('comes back in class order, so a stack is handed out in register order', async () => {
+    await generate();
+    const { data } = await listVouchers();
+
+    // Deliberately reversed on the way in: the order the ids arrive is
+    // whatever order somebody ticked boxes, which is no order at all on paper.
+    const result = await challans([...data.map((voucher) => voucher.id)].reverse());
+    const printed = result.data();
+
+    const keys = printed.map(
+      (challan) => `${challan.className ?? ''}|${challan.sectionName ?? ''}|${challan.studentName}`,
+    );
+    expect(keys).toEqual([...keys].sort());
+  });
+
+  it('never returns another school’s challan', async () => {
+    await generate();
+    const mine = (await listVouchers()).data.map((voucher) => voucher.id);
+    const theirs = await foreignVoucher();
+
+    const result = await challans([...mine, theirs]);
+
+    // Not an error — simply absent, the same as any id that does not resolve.
+    expect(result.data()).toHaveLength(mine.length);
+  });
+
+  it('refuses more than the cap', async () => {
+    const tooMany = Array.from(
+      { length: 501 },
+      (_, index) => `99999999-9999-4999-8999-${String(index).padStart(12, '0')}`,
+    );
+    expect((await challans(tooMany)).status).toBe(400);
+  });
+});
+
+/**
+ * One voucher belonging to the other school, written past the API.
+ *
+ * It has to be planted rather than generated, because there is no route by
+ * which this school could make one — which is exactly the property under test.
+ */
+async function foreignVoucher(): Promise<string> {
+  const id = '77777777-7777-4777-8777-7777777779ff';
+  await admin.$executeRawUnsafe(
+    `INSERT INTO fee_vouchers (id, school_id, session_id, student_id, voucher_no,
+                               issue_date, due_date, valid_till, created_at, updated_at)
+     VALUES ($1::uuid, $2::uuid, $3::uuid, $4::uuid, 'OTHER-0001',
+             '2026-09-01'::date, '2026-09-15'::date, '2026-09-25'::date, now(), now())
+     ON CONFLICT (id) DO NOTHING`,
+    id,
+    SCHOOL_B,
+    SESSION_B,
+    OTHER,
+  );
+  return id;
+}
+
+interface BulkDeleteResultBody {
+  deleted: number;
+  skipped: { id: string; voucherNo: string | null; reason: string }[];
+}
+
+interface ChallanBody {
+  voucherNo: string;
+  studentName: string;
+  className: string | null;
+  sectionName: string | null;
+  lines: { id: string }[];
+}

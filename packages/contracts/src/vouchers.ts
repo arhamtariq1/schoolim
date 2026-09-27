@@ -485,3 +485,94 @@ export const studentLookupResultSchema = z.object({
 });
 
 export type StudentLookupResult = z.infer<typeof studentLookupResultSchema>;
+
+/**
+ * Removing vouchers in bulk.
+ *
+ * ## Why this is not "call delete in a loop"
+ *
+ * A loop of five hundred deletes is five hundred transactions and several
+ * thousand statements, and it half-succeeds: the operator is told "that did not
+ * work" about a run where four hundred rows are already gone. This is one
+ * transaction and a fixed number of set-based statements whatever the size of
+ * the selection.
+ *
+ * ## Why it reports per voucher rather than failing
+ *
+ * A selection of two hundred will routinely contain one that has since been
+ * paid. Refusing the whole run for it means the operator has to find which one,
+ * untick it, and try again — so instead every voucher that could not go comes
+ * back with the reason it stayed, and the rest are gone.
+ */
+export const MAX_BULK_VOUCHERS = 500;
+
+export const bulkDeleteVouchersSchema = z
+  .object({
+    ids: z.array(idSchema).min(1, 'Choose at least one voucher.').max(MAX_BULK_VOUCHERS),
+    reason: reasonSchema,
+  })
+  .strict();
+
+export type BulkDeleteVouchers = z.infer<typeof bulkDeleteVouchersSchema>;
+
+/** Why one voucher in a bulk selection was left where it was. */
+export const BULK_SKIP_REASONS = ['ALREADY_PAID', 'HAS_DEPOSIT', 'NOT_FOUND'] as const;
+export const bulkSkipReasonSchema = z.enum(BULK_SKIP_REASONS);
+export type BulkSkipReason = z.infer<typeof bulkSkipReasonSchema>;
+
+export const BULK_SKIP_REASON_LABELS: Readonly<Record<BulkSkipReason, string>> = {
+  ALREADY_PAID: 'Money has been received — reverse the payment first',
+  HAS_DEPOSIT: 'Collected a security deposit — refund or clear it first',
+  NOT_FOUND: 'Already gone',
+};
+
+export const bulkDeleteResultSchema = z.object({
+  deleted: z.int().min(0),
+  skipped: z.array(z.object({ id: idSchema, voucherNo: z.string().nullable(), reason: bulkSkipReasonSchema })),
+});
+
+export type BulkDeleteResult = z.infer<typeof bulkDeleteResultSchema>;
+
+/**
+ * The challans behind a selection, for printing a stack of them.
+ *
+ * Schools do not print one voucher at a time — they print a class, or a whole
+ * month. So this takes the ids and returns what the challan needs for each,
+ * in one round trip and without an N+1 behind it.
+ *
+ * Capped at the same number as the bulk delete, and for a plainer reason: a
+ * print run is paper. Five hundred challans is five hundred sheets already.
+ */
+export const challanBatchSchema = z
+  .object({ ids: z.array(idSchema).min(1).max(MAX_BULK_VOUCHERS) })
+  .strict();
+
+export type ChallanBatch = z.infer<typeof challanBatchSchema>;
+
+/**
+ * A voucher as the printed challan needs it.
+ *
+ * `payments` is omitted rather than returned empty, because a challan never
+ * prints them: it is the demand, not the receipt. For one voucher that join is
+ * free; for a stack of five hundred it is a join nobody reads, on the request
+ * that is already the heaviest thing this screen does.
+ *
+ * The full `VoucherDetail` satisfies this shape, so the single-voucher preview
+ * and a bulk print run pass through the same component.
+ */
+export const challanSchema = voucherDetailSchema.omit({ payments: true });
+export type Challan = z.infer<typeof challanSchema>;
+
+/**
+ * The ids behind a filter, and how many there are in total.
+ *
+ * `total` is the honest count even when `ids` was truncated at the cap, so a
+ * screen can say "five hundred of two thousand" rather than quietly selecting
+ * a quarter of what somebody asked for.
+ */
+export const voucherIdsSchema = z.object({
+  ids: z.array(idSchema),
+  total: z.int().min(0),
+});
+
+export type VoucherIds = z.infer<typeof voucherIdsSchema>;

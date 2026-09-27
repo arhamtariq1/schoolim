@@ -28,11 +28,47 @@
     visibility: visible;
   }
 
-  .voucher-challan {
+  /* ---------------------------------------------------------------------
+     One challan, in the preview dialog.
+
+     `position: absolute; inset: 0` lifts the single challan out of the
+     dialog it is sitting inside and onto the sheet. It only works for one:
+     two absolutely positioned at inset 0 print on top of each other, which
+     is what a stack of five hundred would have done.
+     ------------------------------------------------------------------- */
+  .voucher-challan:only-of-type {
     position: absolute;
     inset: 0;
     width: 100%;
     padding: 0;
+  }
+
+  /* ---------------------------------------------------------------------
+     A stack of them, on the print page.
+
+     Left in normal flow so the sheets follow one another, one voucher's
+     three copies per page. `break-after: page` is what makes that true —
+     without it a printer fits one and a half vouchers on a sheet and every
+     parent after the first gets a challan cut in half.
+
+     The last one does not force a break, or every run ends on a blank sheet.
+     ------------------------------------------------------------------- */
+  .print-stack {
+    padding: 0;
+  }
+
+  .print-stack > .voucher-challan {
+    break-after: page;
+    break-inside: avoid;
+    padding: 0;
+  }
+
+  .print-stack > .voucher-challan:last-child {
+    break-after: auto;
+  }
+
+  .no-print {
+    display: none !important;
   }
 
   .voucher-challan article {

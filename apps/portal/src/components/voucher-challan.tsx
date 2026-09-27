@@ -1,6 +1,6 @@
 'use client';
 
-import { type VoucherDetail } from '@ilm/contracts';
+import { type Challan } from '@ilm/contracts';
 import { Money } from '@ilm/ui';
 
 /**
@@ -27,7 +27,13 @@ import { Money } from '@ilm/ui';
  */
 
 export interface ChallanProps {
-  voucher: VoucherDetail;
+  /**
+   * `Challan`, not `VoucherDetail`: a challan is the demand, not the receipt,
+   * and it prints no payments. Taking the narrower shape lets the single
+   * preview pass a full detail and a print run of five hundred pass a response
+   * that never joined the allocations at all.
+   */
+  voucher: Challan;
   school: { name: string; address?: string | undefined; phone?: string | undefined };
 }
 

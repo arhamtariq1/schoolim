@@ -1,6 +1,8 @@
 'use client';
 
 import {
+  MAX_BULK_VOUCHERS,
+  type VoucherIds,
   ROUTES,
   VOUCHER_STATUSES,
   VOUCHER_STATUS_LABELS,
@@ -38,6 +40,7 @@ import { systemClock } from '@ilm/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
+import { VoucherBulkBar } from './voucher-bulk-bar';
 import { VoucherChallan } from './voucher-challan';
 import { VoucherEditDialog } from './voucher-edit-dialog';
 
@@ -55,12 +58,11 @@ import { useTenantHref } from '@/lib/use-tenant-href';
  * the filtering — the browser never holds a school's whole voucher history to
  * filter it client-side, which is what stops this screen dying in year four.
  *
- * ## The trash icon cancels
+ * ## The trash icon deletes
  *
- * Financial records are append-only (CLAUDE.md R4). Cancelling keeps the row,
- * records who did it and why, and releases the month so it can be billed again.
- * A voucher with money against it cannot be cancelled at all — the server
- * refuses, and the control is not offered.
+ * Unpaid vouchers are hard-deleted so they leave the list and the months can
+ * be billed again. A voucher with money against it cannot be deleted — the
+ * server refuses, and the control is not offered. Payments stay append-only.
  */
 
 export interface VouchersViewProps {
@@ -117,6 +119,36 @@ export function VouchersView({
   const [previewing, setPreviewing] = useState<VoucherDetail | undefined>(undefined);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [editing, setEditing] = useState<VoucherSummary | undefined>(undefined);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+
+  /**
+   * Take every voucher behind the current filters, not just this page.
+   *
+   * Offered only when the whole filtered set fits in one run — otherwise the
+   * button is a promise the next screen cannot keep, and a school would tick
+   * two thousand and find out at the printer.
+   *
+   * Asks for the ids alone rather than paging the list. The list caps at two
+   * hundred rows, so doing this through it would be three requests carrying
+   * three hundred kilobytes of rows whose only useful field is the id.
+   */
+  async function selectAllMatching() {
+    const query = new URLSearchParams(params.toString());
+    query.delete('offset');
+    query.delete('limit');
+
+    const response = await fetch(`${ROUTES.vouchers.ids}?${query.toString()}`, {
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      toast.error('Could not select them all. Try again.');
+      return;
+    }
+
+    const body = (await response.json()) as { data: VoucherIds };
+    setSelected(new Set(body.data.ids));
+  }
 
   function apply(next: Partial<typeof filters>, resetPage = true) {
     const merged = { ...draft, ...next };
@@ -173,7 +205,7 @@ export function VouchersView({
       toast.error(result.message);
       return;
     }
-    toast.success(`${cancelling.voucherNo} cancelled`, 'Those months can be billed again.');
+    toast.success(`${cancelling.voucherNo} deleted`, 'Those months can be billed again.');
     setCancelling(undefined);
     setCancelReason('');
     router.refresh();
@@ -291,11 +323,11 @@ export function VouchersView({
           </Button>
           {/* Absent once money has arrived — the server refuses, and offering a
               control that always fails is worse than not offering it. */}
-          {canCancel && row.paidMinor === 0 && row.status !== 'CANCELLED' ? (
+          {canCancel && row.paidMinor === 0 ? (
             <Button
               tone="ghost"
               size="sm"
-              aria-label={`Cancel ${row.voucherNo}`}
+              aria-label={`Delete ${row.voucherNo}`}
               disabled={busyId !== undefined}
               onClick={() => {
                 setCancelling(row);
@@ -426,6 +458,7 @@ export function VouchersView({
         rows={rows}
         columns={columns}
         rowKey={(row) => row.id}
+        selection={{ selected, onChange: setSelected, noun: 'voucher' }}
         error={error}
         caption="Fee vouchers"
         empty={{
@@ -433,6 +466,18 @@ export function VouchersView({
           description:
             'Nothing matches these filters. Generate a month of fees, or clear the filters to see everything.',
         }}
+      />
+
+      <VoucherBulkBar
+        selected={selected}
+        onClear={() => {
+          setSelected(new Set());
+        }}
+        matching={total}
+        onSelectAllMatching={
+          total > rows.length && total <= MAX_BULK_VOUCHERS ? selectAllMatching : undefined
+        }
+        canDelete={canCancel}
       />
 
       {total === 0 ? null : (
@@ -478,17 +523,16 @@ export function VouchersView({
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Cancel {cancelling?.voucherNo ?? ''}?</DialogTitle>
+            <DialogTitle>Delete {cancelling?.voucherNo ?? ''}?</DialogTitle>
             <DialogDescription>
-              The voucher stays on record with the reason, and those months become available to bill
-              again.
+              The voucher is removed from the list, and those months become available to bill again.
             </DialogDescription>
           </DialogHeader>
           <DialogBody>
             <Field
               label="Reason"
               required
-              hint="Kept with the voucher, so the change can be explained later."
+              hint="Recorded with the action so the change can be explained later."
             >
               <Input
                 value={cancelReason}
@@ -515,7 +559,7 @@ export function VouchersView({
                 void confirmCancel();
               }}
             >
-              Cancel voucher
+              Delete voucher
             </Button>
           </DialogFooter>
         </DialogContent>
