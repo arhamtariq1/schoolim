@@ -156,7 +156,7 @@ export class StudentsService {
       });
 
       if (input.enrollment !== undefined) {
-        await assertEnrollmentTarget(tx, input.enrollment);
+        await assertEnrollmentTarget(tx, input.enrollment, admissionDate);
 
         const rollNo = await nextRollNo(tx, input.enrollment);
 
@@ -607,9 +607,13 @@ async function nextRollNo(
 async function assertEnrollmentTarget(
   tx: TransactionClient,
   enrollment: { sessionId: string; classLevelId: string; sectionId?: string },
+  admittedOn?: string,
 ): Promise<void> {
   const [session, classLevel] = await Promise.all([
-    tx.academicSession.findFirst({ where: { id: enrollment.sessionId }, select: { id: true } }),
+    tx.academicSession.findFirst({
+      where: { id: enrollment.sessionId },
+      select: { id: true, name: true, endDate: true },
+    }),
     tx.classLevel.findFirst({ where: { id: enrollment.classLevelId }, select: { id: true } }),
   ]);
 
@@ -618,6 +622,28 @@ async function assertEnrollmentTarget(
   }
   if (classLevel === null) {
     throw new NotFoundError('class');
+  }
+
+  // The admission date has to fall on or before the session ends.
+  //
+  // Only the upper bound, deliberately. Admitting *before* a session starts is
+  // ordinary — a school fills next year's classes in March — so a lower bound
+  // would refuse the most common advance admission there is. Admitting into a
+  // year that has already finished is not a thing that happens.
+  //
+  // Without this the two fields simply did not have to agree, and they drifted
+  // in exactly the way that is hardest to spot later: a child dated April 2027
+  // sitting in the 2025-2026 register, indistinguishable on the student list
+  // from one admitted last week, and showing up as an unexplained "skipped" on
+  // every fee run for a year.
+  if (admittedOn !== undefined) {
+    const sessionEnd = session.endDate.toISOString().slice(0, 10);
+    if (admittedOn > sessionEnd) {
+      throw new BusinessRuleError(
+        'BUSINESS_RULE_VIOLATION',
+        `The ${session.name} session ends on ${sessionEnd}, so somebody joining on ${admittedOn} belongs to a later one. Pick the session they are actually joining.`,
+      );
+    }
   }
 
   if (enrollment.sectionId !== undefined) {

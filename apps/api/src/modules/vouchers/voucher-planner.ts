@@ -62,6 +62,14 @@ export interface HeadInfo {
 export type HeadCatalogue = ReadonlyMap<string, HeadInfo>;
 
 interface PlanInput {
+  /**
+   * Whether this child is enrolled in the session being billed.
+   *
+   * False only for somebody enrolled in **no** session at all — the scope
+   * query brings them in deliberately so they can be reported rather than
+   * silently dropped. Nothing is ever written for them.
+   */
+  readonly enrolled?: boolean;
   readonly student: {
     id: string;
     firstName: string;
@@ -164,6 +172,22 @@ export function buildStudentPlan(input: PlanInput): StudentPlan {
       .filter((row) => row.studentId === student.id)
       .map((row) => `${row.feeHeadId}:${row.periodKey}`),
   );
+
+  // Before anything is priced: a child who belongs to no session cannot be
+  // billed for one, and saying which of the several reasons applies is the
+  // whole point of pulling them into the scope in the first place.
+  if (input.enrolled === false) {
+    return {
+      studentId: student.id,
+      studentName: name,
+      grNo: student.grNo,
+      lines: [],
+      arrears: [],
+      arrearsMinor: 0,
+      ownPayableMinor: 0,
+      skip: 'NOT_ENROLLED',
+    };
+  }
 
   const arrearsMinor = input.arrears.reduce((sum, arrear) => sum + arrear.balanceMinor, 0);
 

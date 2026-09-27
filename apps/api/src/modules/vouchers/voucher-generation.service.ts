@@ -286,6 +286,13 @@ export class VoucherGenerationService {
             firstName: true,
             lastName: true,
             grNo: true,
+            // Present when they are in this session, empty when they are in
+            // none — which is the only other way they can be in this scope.
+            enrollments: {
+              where: { sessionId: context.sessionId, status: 'ENROLLED' },
+              take: 1,
+              select: { id: true },
+            },
             // The whole agreed history for the chosen heads, newest first.
             //
             // **No upper bound on the date**, deliberately. There was one, and
@@ -337,6 +344,7 @@ export class VoucherGenerationService {
         return students.map((student) =>
           buildStudentPlan({
             student,
+            enrolled: student.enrollments.length > 0,
             heads: context.heads,
             asOf: issuedOn,
             overrides: new Map(
@@ -768,7 +776,7 @@ export function computeLateFee(netMinor: number, basisPoints: number, flatMinor:
 
 /** Prisma `where` for a scope, without ever taking `schoolId` as a parameter. */
 function studentScopeWhere(scope: VoucherScope, sessionId: string): Record<string, unknown> {
-  const enrolled = {
+  const inThisSession = {
     enrollments: {
       some: {
         sessionId,
@@ -783,13 +791,41 @@ function studentScopeWhere(scope: VoucherScope, sessionId: string): Record<strin
     },
   };
 
+  /**
+   * On the roll, and enrolled in **nothing**.
+   *
+   * Not the same as "enrolled in a different session", which is correctly none
+   * of this run's business. This is a child the school is counting among its
+   * students who belongs to no year at all — so no fee run will ever reach
+   * them, and until now nothing said so anywhere: the scope filtered them out
+   * before a single count was taken, and a school totting up "19 students"
+   * against "14 billed, 3 skipped" was left to wonder where the rest went.
+   *
+   * They are pulled in so they can be **reported**, not billed. The planner
+   * marks them `NOT_ENROLLED` and nothing is written for them.
+   */
+  const inNoSession = { enrollments: { none: { status: 'ENROLLED' as const } } };
+
   if (scope.kind === 'STUDENT') {
-    return { id: scope.studentId, status: 'ACTIVE', deletedAt: null, ...enrolled };
+    // Naming one child and being told nothing at all is the worst version of
+    // this: it looks like the screen is broken.
+    return {
+      id: scope.studentId,
+      status: 'ACTIVE',
+      deletedAt: null,
+      OR: [inThisSession, inNoSession],
+    };
+  }
+
+  if (scope.kind === 'CLASS') {
+    // A child in no session is in no class either, so a class run has nothing
+    // to say about them.
+    return { status: 'ACTIVE', deletedAt: null, ...inThisSession };
   }
 
   // A child who has left is not billed, and neither is one whose record was
   // soft-deleted. Both would otherwise appear in a whole-school run.
-  return { status: 'ACTIVE', deletedAt: null, ...enrolled };
+  return { status: 'ACTIVE', deletedAt: null, OR: [inThisSession, inNoSession] };
 }
 
 function buildWarnings(willCreate: number, skips: Map<SkipReason, number>): string[] {
@@ -804,6 +840,15 @@ function buildWarnings(willCreate: number, skips: Map<SkipReason, number>): stri
     // than a fact, because that is what it is.
     warnings.push(
       `${String(noFee)} ${noFee === 1 ? 'student has' : 'students have'} never been given an amount for the fees you chose. Set one on their record, or they will keep being left out.`,
+    );
+  }
+
+  const unenrolled = skips.get('NOT_ENROLLED') ?? 0;
+  if (unenrolled > 0) {
+    // A task, and a standing one: until somebody enrols them, no fee run in
+    // any month will ever pick them up.
+    warnings.push(
+      `${String(unenrolled)} ${unenrolled === 1 ? 'student is' : 'students are'} not enrolled in any session, so nothing can be billed for them. Enrol them first.`,
     );
   }
 

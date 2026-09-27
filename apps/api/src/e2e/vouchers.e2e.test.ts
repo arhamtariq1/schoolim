@@ -443,21 +443,25 @@ describe('the same month is never billed twice', () => {
     expect((await listVouchers()).meta.page.total).toBe(2);
   });
 
-  it('bills the month again once the voucher is cancelled', async () => {
+  it('bills the month again once the voucher is deleted', async () => {
     await generate();
     const { data } = await listVouchers();
     const target = data[0];
 
-    const cancelled = await app.inject({
+    const deleted = await app.inject({
       method: 'DELETE',
       url: ROUTES.vouchers.detail(target?.id ?? ''),
       headers: { host: HOST_A, cookie: jar },
       payload: { reason: 'Issued with the wrong due date' },
     });
-    expect(cancelled.statusCode).toBe(200);
+    expect(deleted.statusCode).toBe(200);
 
-    // Cancelling releases the claim on September, which is the whole reason
+    // Hard delete releases the claim on September, which is the whole reason
     // the claim rows are deleted rather than kept.
+    const listed = await listVouchers();
+    expect(listed.data.find((row) => row.id === target?.id)).toBeUndefined();
+    expect(listed.meta.page.total).toBe(1);
+
     const again = await generate();
     expect(again.json<{ data: { created: number } }>().data.created).toBe(1);
   });
@@ -546,7 +550,7 @@ describe('arrears are carried once, explained, and settled by paying', () => {
 });
 
 describe('money that has arrived cannot be quietly undone', () => {
-  it('refuses to cancel a voucher with a payment against it', async () => {
+  it('refuses to delete a voucher with a payment against it', async () => {
     await generate({ scope: { kind: 'STUDENT', studentId: AASIA } });
     const { data } = await listVouchers();
     const id = data[0]?.id ?? '';
@@ -867,6 +871,104 @@ describe('a fee that starts part-way through the month', () => {
       expect(warnings).not.toContain('never been given an amount');
     } finally {
       await cleanUp();
+    }
+  });
+});
+
+/**
+ * A child on the roll who belongs to no session at all.
+ *
+ * `NOT_ENROLLED` was declared in the contract, labelled in the UI, and produced
+ * by nothing: the scope filtered these students out before a single count was
+ * taken. So a school totting up nineteen students against "fourteen billed,
+ * three skipped" was left to work out on their own where the rest had gone —
+ * and the answer, that one of them is enrolled in nothing and can never be
+ * billed by any run in any month, was written down nowhere.
+ */
+describe('a student enrolled in no session', () => {
+  const ORPHAN = '88888888-8888-4888-8888-88888888888b';
+
+  async function addOrphan(): Promise<void> {
+    await admin.$executeRawUnsafe(
+      `INSERT INTO students (id, school_id, gr_no, student_code, first_name, last_name,
+                             status, admitted_on, created_at, updated_at)
+       VALUES ($1::uuid, $2::uuid, 'GR-9010', '2026-9010', 'Unplaced', 'Child',
+               'ACTIVE', '2026-01-01'::date, now(), now())`,
+      ORPHAN,
+      SCHOOL_A,
+    );
+    await admin.$executeRawUnsafe(
+      `INSERT INTO student_fees (id, school_id, student_id, fee_head_id, amount,
+                                 effective_from, created_at, updated_at)
+       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, '5000.00'::numeric,
+               '2026-01-01'::date, now(), now())`,
+      SCHOOL_A,
+      ORPHAN,
+      HEAD_TUITION,
+    );
+  }
+
+  async function removeOrphan(): Promise<void> {
+    await admin.$executeRawUnsafe(`DELETE FROM student_fees WHERE student_id = $1::uuid`, ORPHAN);
+    await admin.$executeRawUnsafe(`DELETE FROM students WHERE id = $1::uuid`, ORPHAN);
+  }
+
+  it('is counted and named, instead of vanishing from the arithmetic', async () => {
+    await addOrphan();
+    try {
+      const response = await post(ROUTES.vouchers.preview, body({ scope: { kind: 'ALL' } }));
+      const result = response.json<{
+        data: { willSkip: number; skipsByReason: { reason: string; count: number }[]; warnings: string[] };
+      }>();
+
+      expect(result.data.skipsByReason).toContainEqual({ reason: 'NOT_ENROLLED', count: 1 });
+      expect(result.data.warnings.join(' ')).toContain('not enrolled in any session');
+    } finally {
+      await removeOrphan();
+    }
+  });
+
+  it('is never billed, however loudly it is reported', async () => {
+    await addOrphan();
+    try {
+      expect((await generate({ scope: { kind: 'ALL' } })).statusCode).toBe(201);
+
+      const rows = await admin.$queryRawUnsafe<{ n: bigint }[]>(
+        `SELECT count(*) AS n FROM fee_vouchers WHERE student_id = $1::uuid`,
+        ORPHAN,
+      );
+      expect(Number(rows[0]?.n ?? 0)).toBe(0);
+    } finally {
+      await removeOrphan();
+    }
+  });
+
+  it('does not clutter a class run — they are in no class either', async () => {
+    await addOrphan();
+    try {
+      const response = await post(ROUTES.vouchers.preview, body());
+      const result = response.json<{ data: { skipsByReason: { reason: string }[] } }>();
+
+      expect(result.data.skipsByReason.map((entry) => entry.reason)).not.toContain('NOT_ENROLLED');
+    } finally {
+      await removeOrphan();
+    }
+  });
+
+  it('says so when that one child is the one you picked', async () => {
+    await addOrphan();
+    try {
+      const response = await post(
+        ROUTES.vouchers.preview,
+        body({ scope: { kind: 'STUDENT', studentId: ORPHAN } }),
+      );
+      const result = response.json<{ data: { skipsByReason: { reason: string }[] } }>();
+
+      // Naming a child and being shown an empty screen is the worst version of
+      // this: it reads as the page being broken.
+      expect(result.data.skipsByReason.map((entry) => entry.reason)).toContain('NOT_ENROLLED');
+    } finally {
+      await removeOrphan();
     }
   });
 });

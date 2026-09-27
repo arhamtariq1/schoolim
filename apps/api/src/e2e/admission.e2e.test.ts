@@ -671,3 +671,60 @@ describe('tenant isolation', () => {
     expect(problem(foreign.body).detail).toBe(problem(invented.body).detail);
   });
 });
+
+/**
+ * The admission date and the session have to agree.
+ *
+ * They did not have to, and they drifted in the way that is hardest to spot:
+ * a child dated April 2027 sitting in the 2025-2026 register, indistinguishable
+ * on the student list from one admitted last week, and turning up as an
+ * unexplained "skipped" on every fee run for a year.
+ */
+describe('admitting into the right year', () => {
+  it('refuses a date after the session has already ended', async () => {
+    // SESSION_A_CURRENT runs to 2027-03-31.
+    const result = await admit({ ...VALID, admittedOn: '2027-06-01' });
+
+    expect(result.status).toBe(422);
+    expect(result.body).toContain('belongs to a later one');
+  });
+
+  it('accepts a date before the session starts — admitting early is ordinary', async () => {
+    // SESSION_A_PLANNED runs 2027-04-01 to 2028-03-31. A school fills next
+    // year's classes in March, so this must not be refused.
+    const result = await admit({
+      ...VALID,
+      admittedOn: '2027-03-01',
+      enrollment: {
+        sessionId: SESSION_A_PLANNED,
+        classLevelId: CLASS_A,
+        sectionId: SECTION_PLANNED,
+      },
+    });
+
+    expect(result.status).toBe(201);
+  });
+
+  it('accepts the last day of the session', async () => {
+    expect((await admit({ ...VALID, admittedOn: '2027-03-31' })).status).toBe(201);
+  });
+
+  it('dates the agreed fee from the admission, not from today', async () => {
+    // The other half of the same idea: a fee that began when somebody typed
+    // the record cannot be billed for the months before that, and *can* be
+    // billed for months before the child arrived.
+    const result = await admit({ ...VALID, admittedOn: '2026-05-04', fees: undefined });
+    expect(result.status).toBe(201);
+
+    const rows = await admin.$queryRawUnsafe<{ effective_from: string }[]>(
+      `SELECT sf.effective_from::text AS effective_from
+         FROM student_fees sf JOIN students s ON s.id = sf.student_id
+        WHERE s.school_id = $1::uuid`,
+      SCHOOL_A,
+    );
+
+    for (const row of rows) {
+      expect(row.effective_from).toBe('2026-05-04');
+    }
+  });
+});
