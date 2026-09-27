@@ -12,6 +12,7 @@ import {
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { ENV, type Env } from '../../config/env';
+import { type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from '../../shared/auth/password.service';
 import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/errors/domain-error';
@@ -62,6 +63,17 @@ import { TenantContextService } from '../../shared/tenancy/tenant-context.servic
  */
 const INVITE_TTL_HOURS = 72;
 
+/** What `issue` produces and `deliver` needs. The token exists only in here. */
+export interface IssuedInvitation {
+  readonly token: string;
+  readonly email: string;
+  readonly expiresAt: Date;
+  readonly recipientName: string;
+  readonly schoolName: string;
+  readonly schoolSlug: string;
+  readonly roleLabel: string;
+}
+
 @Injectable()
 export class StaffInviteService {
   private readonly logger = new Logger(StaffInviteService.name);
@@ -83,8 +95,30 @@ export class StaffInviteService {
    * the rule about which roles may have one is applied.
    */
   async invite(staffId: string, now: Date): Promise<StaffInviteResult> {
-    const { token, email, expiresAt, recipientName, schoolName, schoolSlug, roleLabel } =
-      await this.prisma.tenant(async (tx) => {
+    const issued = await this.prisma.tenant((tx) => this.issue(tx, staffId, now));
+    return this.deliver(issued);
+  }
+
+  /**
+   * The database half: the account, the role, the token, the audit row.
+   *
+   * Takes a transaction rather than opening one, so that **adding** a member of
+   * staff and **inviting** them are one write. The alternative was a second
+   * request after the first, and the failure it produces is a teacher on the
+   * payroll with no invitation and nobody aware of it — the same shape as the
+   * admission that saves a child with no fees, which the students module holds
+   * in one transaction for exactly this reason.
+   *
+   * Sending the mail is deliberately **not** in here. A mail server is slow and
+   * outside the database's control, and holding a transaction open across it
+   * means holding a row lock for however long a third party takes to answer.
+   */
+  async issue(
+    tx: TransactionClient,
+    staffId: string,
+    now: Date,
+  ): Promise<IssuedInvitation> {
+    return (async () => {
         const staff = await tx.staff.findFirst({
           where: { id: staffId, deletedAt: null },
           select: { id: true, name: true, email: true, role: true, userId: true, status: true },
@@ -175,7 +209,7 @@ export class StaffInviteService {
         // somewhere it should not have.
         await tx.invitation.deleteMany({ where: { userId, acceptedAt: null } });
 
-        const issued = randomBytes(32).toString('base64url');
+        const token = randomBytes(32).toString('base64url');
         const expires = new Date(now.getTime() + INVITE_TTL_HOURS * 3_600_000);
 
         await tx.invitation.create({
@@ -183,7 +217,7 @@ export class StaffInviteService {
             email: staff.email,
             role: schoolRole,
             userId,
-            tokenHash: hash(issued),
+            tokenHash: hash(token),
             invitedBy: this.context.userId ?? null,
             expiresAt: expires,
           } as never,
@@ -207,7 +241,7 @@ export class StaffInviteService {
         });
 
         return {
-          token: issued,
+          token,
           email: staff.email,
           expiresAt: expires,
           recipientName: staff.name,
@@ -215,7 +249,19 @@ export class StaffInviteService {
           schoolSlug: school.slug,
           roleLabel: STAFF_ROLE_LABELS[role],
         };
-      });
+    })();
+  }
+
+  /**
+   * The mail half, run after the transaction has committed.
+   *
+   * A `false` is reported, never thrown. `MailPort` never throws by contract,
+   * a school must not fail to record an employee because a mail server was
+   * slow, and the invitation exists either way — so the honest answer is
+   * "invited, but the email did not go", beside a Re-send button that works.
+   */
+  async deliver(issued: IssuedInvitation): Promise<StaffInviteResult> {
+    const { token, email, expiresAt, recipientName, schoolName, schoolSlug, roleLabel } = issued;
 
     const origin = schoolOrigin(
       schoolSlug,
@@ -236,10 +282,6 @@ export class StaffInviteService {
     );
 
     if (!result.sent) {
-      // Not fatal, and not rolled back. The invitation exists and the account
-      // exists; what failed is a mail server. Undoing the whole thing would
-      // leave the school with nothing and no way to retry, so the honest answer
-      // is `sent: false` and a "resend" button that already works.
       this.logger.warn(`Invitation for ${email} was created but not delivered: ${result.error}`);
     }
 

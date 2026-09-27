@@ -199,9 +199,17 @@ export function StaffTable({
       render: (row) => (
         <div className="flex flex-wrap items-center gap-1.5">
           <span>{STAFF_ROLE_LABELS[row.role]}</span>
-          {/* Worth surfacing: it is the difference between somebody who can
-              open the portal and somebody who cannot. */}
-          {row.hasLogin ? <StatusBadge tone="neutral">Login</StatusBadge> : null}
+          {/*
+            Three states, and the office acts differently on each: nobody to
+            chase, somebody to chase, nobody to chase for a different reason.
+            One "Login" badge covering the last two would say nothing now that
+            every teacher gets an account the moment they are added.
+          */}
+          {row.invitePending ? (
+            <StatusBadge tone="warning">Invited</StatusBadge>
+          ) : row.hasLogin ? (
+            <StatusBadge tone="neutral">Login</StatusBadge>
+          ) : null}
         </div>
       ),
     },
@@ -261,6 +269,11 @@ export function StaffTable({
               >
                 <SendIcon className={ICON_SIZE.inline} aria-hidden />
                 {row.hasLogin ? 'Re-send' : 'Invite'}
+                <span className="sr-only">
+                  {row.invitePending
+                    ? ' invitation — they have not set a password yet'
+                    : ' invitation'}
+                </span>
               </Button>
             )}
             <Button
@@ -620,10 +633,12 @@ function StaffDialog({
             {!canSignIn ? null : (
               <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
                 {editing === undefined
-                  ? 'After saving, send them an invitation from the staff list. They choose their own password.'
-                  : editing.hasLogin
-                    ? 'They set their own password. Use Re-send invitation on the staff list if they need a new link.'
-                    : 'No portal login yet. Use Send invitation on the staff list to give them one.'}
+                  ? 'An invitation is emailed as soon as you save. They choose their own password — nobody here ever sees it.'
+                  : editing.invitePending
+                    ? 'Invited, but they have not set a password yet. Re-send from the staff list if the link went astray.'
+                    : editing.hasLogin
+                      ? 'They have set their own password. Re-send an invitation only if they have lost access.'
+                      : 'No portal login yet. Send an invitation from the staff list.'}
               </p>
             )}
 

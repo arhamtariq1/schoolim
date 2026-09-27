@@ -87,6 +87,21 @@ export const staffListItemSchema = z.object({
   joinedOn: calendarDateSchema.nullable(),
   /** Whether they actually hold a portal account, not whether they could. */
   hasLogin: z.boolean(),
+  /**
+   * Invited, but they have not chosen a password yet.
+   *
+   * A separate flag rather than folding it into `hasLogin`, because the two
+   * answer different questions and the screen needs both: "does this person
+   * have an account" decides whether removing them revokes access, and "can
+   * they get into it" decides whether the office should chase them.
+   *
+   * It became worth distinguishing the moment invitations started going out
+   * automatically. Before that, an account existed only once somebody had set a
+   * password on it, so the two states were the same state. Now every teacher
+   * has an account from the moment they are added, and a "Login" badge beside
+   * all of them would tell the office nothing at all.
+   */
+  invitePending: z.boolean(),
 });
 
 export type StaffListItem = z.infer<typeof staffListItemSchema>;

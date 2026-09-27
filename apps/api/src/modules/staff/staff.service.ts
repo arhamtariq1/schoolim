@@ -14,6 +14,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/errors/domain-error';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
 
+import { StaffInviteService } from './staff-invite.service';
+
 /**
  * Staff — employment records, and the portal accounts some of them carry.
  *
@@ -28,10 +30,37 @@ import { CLOCK, type Clock } from '../../shared/time/clock.provider';
  * - ending employment disables the account in the same breath;
  * - deleting is soft, because "who worked here in 2026" outlives the person.
  */
+/**
+ * The columns a staff row needs to become a `StaffListItem`.
+ *
+ * One constant rather than the same object written out three times, which is
+ * three chances for a new field to reach the list from one path and not the
+ * others.
+ */
+const LIST_SELECTION = {
+  id: true,
+  employeeNo: true,
+  name: true,
+  email: true,
+  phone: true,
+  gender: true,
+  role: true,
+  status: true,
+  casualLeaves: true,
+  sickLeaves: true,
+  basicSalary: true,
+  userId: true,
+  joinedOn: true,
+  // The account's own state, for `invitePending`. An invited account exists
+  // and cannot be used; the list has to be able to say so.
+  user: { select: { status: true } },
+} as const;
+
 @Injectable()
 export class StaffService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly invites: StaffInviteService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -58,21 +87,7 @@ export class StaffService {
           orderBy: orderFor(query.sort, query.order),
           skip: query.offset,
           take: query.limit,
-          select: {
-            id: true,
-            employeeNo: true,
-            name: true,
-            email: true,
-            phone: true,
-            gender: true,
-            role: true,
-            status: true,
-            casualLeaves: true,
-            sickLeaves: true,
-            basicSalary: true,
-            joinedOn: true,
-            userId: true,
-          },
+          select: LIST_SELECTION,
         }),
         tx.staff.count({ where }),
       ]);
@@ -93,13 +108,37 @@ export class StaffService {
           basicSalaryMinor: fromDecimalString(row.basicSalary.toFixed(2)),
           joinedOn: row.joinedOn === null ? null : row.joinedOn.toISOString().slice(0, 10),
           hasLogin: row.userId !== null,
+          invitePending: row.user?.status === 'INVITED',
         })),
       };
     });
   }
 
+  /**
+   * Add somebody to the payroll, and invite them if the role uses the portal.
+   *
+   * ## Why the invitation is not a second step
+   *
+   * It was: add them, then press Invite on the staff list. Which meant the
+   * normal outcome of adding a teacher was a teacher who could not sign in, and
+   * nobody found out until the teacher tried — days later, usually on the
+   * morning they were supposed to take a register.
+   *
+   * So the two are one write, in one transaction, the same way an admission
+   * saves the child, the enrolment and the fee structure together: a record
+   * whose second half failed is worse than no record, because it looks finished
+   * on every screen.
+   *
+   * ## Why the mail is sent after the transaction
+   *
+   * A mail server is slow and outside the database's control. Sending inside
+   * the transaction would hold row locks for however long a third party takes
+   * to answer — and a failure to deliver is not a reason to refuse to employ
+   * somebody. The invitation exists; `sent: false` reaches the screen, and
+   * Re-send is one press away.
+   */
   async create(input: CreateStaff): Promise<StaffListItem> {
-    return this.prisma
+    const { id, invitation } = await this.prisma
       .tenant(async (tx) => {
         const employeeNo = await this.nextEmployeeNo(tx);
 
@@ -121,24 +160,19 @@ export class StaffService {
             ...(input.cnic === undefined ? {} : { cnic: input.cnic }),
             ...(input.designation === undefined ? {} : { designation: input.designation }),
           } as never,
-          select: {
-            id: true,
-            employeeNo: true,
-            name: true,
-            email: true,
-            phone: true,
-            gender: true,
-            role: true,
-            status: true,
-            casualLeaves: true,
-            sickLeaves: true,
-            basicSalary: true,
-            joinedOn: true,
-            userId: true,
-          },
+          select: LIST_SELECTION,
         });
 
-        return toListItem(created);
+        // Only for the roles that use the portal, and only with somewhere to
+        // send it. The contract already refuses a portal role with no email, so
+        // the second half of this condition is for a caller that is not our
+        // form.
+        const invitation =
+          staffRoleCanSignIn(input.role) && input.email !== undefined
+            ? await this.invites.issue(tx, created.id, this.clock.now())
+            : undefined;
+
+        return { id: created.id, invitation };
       })
       .catch((error: unknown) => {
         if (isUniqueViolation(error)) {
@@ -148,6 +182,31 @@ export class StaffService {
         }
         throw error;
       });
+
+    if (invitation !== undefined) {
+      await this.invites.deliver(invitation);
+    }
+
+    // Re-read rather than patching the row in memory: `issue` created the
+    // account and wrote `user_id` back, and the list item has to say so or the
+    // screen shows "no login" beside somebody who has just been invited.
+    return this.detail(id);
+  }
+
+  /** One row, as the list shows it. */
+  private async detail(id: string): Promise<StaffListItem> {
+    return this.prisma.tenant(async (tx) => {
+      const row = await tx.staff.findFirst({
+        where: { id, deletedAt: null },
+        select: LIST_SELECTION,
+      });
+
+      if (row === null) {
+        throw new NotFoundError('staff member');
+      }
+
+      return toListItem(row);
+    });
   }
 
   async update(id: string, input: UpdateStaff): Promise<StaffListItem> {
@@ -257,21 +316,7 @@ export class StaffService {
             ...(input.designation === undefined ? {} : { designation: input.designation }),
             ...(userId === existing.userId ? {} : { userId }),
           },
-          select: {
-            id: true,
-            employeeNo: true,
-            name: true,
-            email: true,
-            phone: true,
-            gender: true,
-            role: true,
-            status: true,
-            casualLeaves: true,
-            sickLeaves: true,
-            basicSalary: true,
-            joinedOn: true,
-            userId: true,
-          },
+          select: LIST_SELECTION,
         });
 
         return toListItem(updated);
@@ -381,6 +426,7 @@ function toListItem(row: {
   basicSalary: { toFixed: (digits: number) => string };
   joinedOn: Date | null;
   userId: string | null;
+  user?: { status: string } | null;
 }): StaffListItem {
   return {
     id: row.id,
@@ -396,6 +442,7 @@ function toListItem(row: {
     basicSalaryMinor: fromDecimalString(row.basicSalary.toFixed(2)),
     joinedOn: row.joinedOn === null ? null : row.joinedOn.toISOString().slice(0, 10),
     hasLogin: row.userId !== null,
+    invitePending: row.user?.status === 'INVITED',
   };
 }
 
