@@ -477,3 +477,157 @@ describe('accepting it', () => {
     expect((await userOf(staffId))['status']).toBe('INVITED');
   });
 });
+
+/**
+ * Editing somebody after they are on the payroll.
+ *
+ * The invite flow above is the new code; this is the code it sits next to, and
+ * it had no coverage at all. A role is not a label — it is what the portal
+ * lets somebody do — so every one of these is about whether changing the word
+ * on the staff list actually changes what the account can reach.
+ */
+describe('changing a role', () => {
+  async function activeTeacher(): Promise<{ staffId: string; userId: string }> {
+    const staff = (await addStaff(TEACHER)).data();
+    await invite(staff.id);
+    const user = await userOf(staff.id);
+    await plantToken(String(user['id']), 'a-known-token', new Date(Date.now() + 3_600_000));
+    await acceptInvite('a-known-token');
+    return { staffId: staff.id, userId: String(user['id']) };
+  }
+
+  async function rolesOf(userId: string): Promise<string[]> {
+    const rows = await admin.$queryRawUnsafe<{ role: string }[]>(
+      `SELECT role::text AS role FROM user_roles WHERE user_id = $1::uuid ORDER BY role`,
+      userId,
+    );
+    return rows.map((row) => row.role);
+  }
+
+  async function patch(staffId: string, body: Record<string, unknown>) {
+    const response = await app.inject({
+      method: 'PATCH',
+      url: ROUTES.staff.update(staffId),
+      headers: { host: HOST_A, cookie: ownerA },
+      payload: body,
+    });
+    return { status: response.statusCode, body: response.body };
+  }
+
+  it('grants the new role’s permissions when only the role changes', async () => {
+    const { staffId, userId } = await activeTeacher();
+    expect(await rolesOf(userId)).toEqual(['TEACHER']);
+
+    expect((await patch(staffId, { role: 'ADMIN' })).status).toBe(200);
+
+    expect(await rolesOf(userId)).toEqual(['ADMIN']);
+  });
+
+  it('takes the old role’s permissions away when somebody is demoted', async () => {
+    // The one that matters. A head demoted to a teacher who keeps PRINCIPAL on
+    // their account is still a head as far as every permission check goes, and
+    // the staff list says otherwise — so nobody looking at the screen can tell.
+    const { staffId, userId } = await activeTeacher();
+    await patch(staffId, { role: 'HEAD' });
+    expect(await rolesOf(userId)).toEqual(['PRINCIPAL']);
+
+    expect((await patch(staffId, { role: 'TEACHER' })).status).toBe(200);
+
+    expect(await rolesOf(userId)).toEqual(['TEACHER']);
+  });
+
+  it('disables the account when somebody moves to a role with no portal', async () => {
+    const { staffId, userId } = await activeTeacher();
+
+    expect((await patch(staffId, { role: 'JANITOR' })).status).toBe(200);
+
+    const rows = await admin.$queryRawUnsafe<{ status: string }[]>(
+      `SELECT status::text AS status FROM users WHERE id = $1::uuid`,
+      userId,
+    );
+    expect(rows[0]?.status).toBe('DISABLED');
+  });
+
+  it('refuses to promote somebody who has no email to invite', async () => {
+    const janitor = (
+      await addStaff({ name: 'Rafiq', phone: '+923009876543', role: 'JANITOR' })
+    ).data();
+
+    const result = await patch(janitor.id, { role: 'TEACHER' });
+
+    expect(result.status).toBeGreaterThanOrEqual(400);
+    expect(result.body).toContain('email');
+  });
+
+  it('promotes when the email arrives with the role', async () => {
+    const janitor = (
+      await addStaff({ name: 'Rafiq', phone: '+923009876543', role: 'JANITOR' })
+    ).data();
+
+    expect((await patch(janitor.id, { role: 'TEACHER', email: 'rafiq@invite-a.test' })).status).toBe(
+      200,
+    );
+  });
+});
+
+describe('editing the fields the rules are about', () => {
+  async function patch(staffId: string, body: Record<string, unknown>) {
+    const response = await app.inject({
+      method: 'PATCH',
+      url: ROUTES.staff.update(staffId),
+      headers: { host: HOST_A, cookie: ownerA },
+      payload: body,
+    });
+    return { status: response.statusCode, body: response.body };
+  }
+
+  it('refuses to clear a phone number', async () => {
+    const staff = (await addStaff(TEACHER)).data();
+
+    const result = await patch(staff.id, { phone: '' });
+
+    expect(result.status).toBeGreaterThanOrEqual(400);
+  });
+
+  it('leaves a salary edit alone — a PATCH says nothing about fields it omits', async () => {
+    const staff = (await addStaff(TEACHER)).data();
+
+    expect((await patch(staff.id, { basicSalaryMinor: 5_000_000 })).status).toBe(200);
+  });
+
+  it('un-verifies the address when it changes after they accepted', async () => {
+    const staff = (await addStaff(TEACHER)).data();
+    await invite(staff.id);
+    const user = await userOf(staff.id);
+    await plantToken(String(user['id']), 'a-known-token', new Date(Date.now() + 3_600_000));
+    await acceptInvite('a-known-token');
+
+    expect((await userOf(staff.id))['email_verified_at']).not.toBeNull();
+
+    await patch(staff.id, { email: 'ayesha.khan@invite-a.test' });
+
+    // ADR-0012: the proof was about the old address. Keeping the stamp would
+    // mean a password reset could be sent to an address nobody has confirmed
+    // anyone can read.
+    const after = await userOf(staff.id);
+    expect(after['email']).toBe('ayesha.khan@invite-a.test');
+    expect(after['email_verified_at']).toBeNull();
+  });
+
+  it('says so, clearly, when two people are given the same address', async () => {
+    const first = (await addStaff(TEACHER)).data();
+    const second = (
+      await addStaff({ ...TEACHER, name: 'Someone Else', phone: '+923005556666' })
+    ).data();
+
+    expect((await invite(first.id)).status).toBe(201);
+
+    const result = await invite(second.id);
+
+    // A unique violation on (school, email) reaching the client as a 500 tells
+    // an office that the system is broken about a typo they could fix in five
+    // seconds. It is a conflict, and the message names the address.
+    expect(result.status).toBe(409);
+    expect(result.body).toContain(TEACHER.email);
+  });
+});

@@ -192,22 +192,49 @@ export class StaffService {
           );
         }
 
-        // Keep the account's own fields in step with the employment record, or
-        // the person signs in with an address the staff list says they no
-        // longer use.
-        if (userId !== null && (input.email !== undefined || input.name !== undefined)) {
-          await tx.user.update({
-            where: { id: userId },
-            data: {
-              ...(input.email === undefined ? {} : { email: input.email }),
-              ...(input.name === undefined ? {} : { name: input.name }),
-            },
-          });
+        if (userId !== null) {
+          // Keep the account's own fields in step with the employment record,
+          // or the person signs in with an address the staff list says they no
+          // longer use.
+          if (input.email !== undefined || input.name !== undefined) {
+            const addressChanged = input.email !== undefined && input.email !== existing.email;
 
+            await tx.user.update({
+              where: { id: userId },
+              data: {
+                ...(input.email === undefined ? {} : { email: input.email }),
+                ...(input.name === undefined ? {} : { name: input.name }),
+                // ADR-0012: the confirmation was about the old address. Keeping
+                // the stamp would leave a password reset deliverable to an
+                // address nobody has shown they can read — which is the whole
+                // thing email verification exists to prevent.
+                ...(addressChanged ? { emailVerifiedAt: null } : {}),
+              },
+            });
+          }
+
+          // Permissions follow the role, and this is **not** nested inside the
+          // block above any more.
+          //
+          // It was, which meant a role change only took effect if the same
+          // request happened to also change a name or an email. Promoting
+          // somebody left them without the access their new role implies —
+          // annoying — and demoting somebody left them with the access their
+          // old one did, which is the same account still holding PRINCIPAL
+          // while every screen says "Teacher". Nobody looking at the staff list
+          // could tell.
           if (input.role !== undefined && staffRoleCanSignIn(nextRole)) {
             await tx.userRole.deleteMany({ where: { userId } });
             await tx.userRole.create({
               data: { userId, role: schoolRoleFor(nextRole) } as never,
+            });
+
+            // Coming back from a non-portal role, the account was disabled on
+            // the way out. Re-enable it only if it has a password — an account
+            // still waiting on its invitation must stay unable to sign in.
+            await tx.user.updateMany({
+              where: { id: userId, status: 'DISABLED', passwordHash: { not: null } },
+              data: { status: 'ACTIVE' },
             });
           }
         }

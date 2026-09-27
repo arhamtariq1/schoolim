@@ -14,7 +14,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ENV, type Env } from '../../config/env';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from '../../shared/auth/password.service';
-import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
+import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/errors/domain-error';
 import { MAIL, type MailPort } from '../../shared/mail/mail.port';
 import { staffInviteTemplate } from '../../shared/mail/templates/staff-invite.template';
 import { schoolOrigin } from '../../shared/tenancy/school-origin';
@@ -130,6 +130,22 @@ export class StaffInviteService {
         let userId = staff.userId;
 
         if (userId === null) {
+          // A portal account already on this address, belonging to somebody
+          // else. `users` is unique on (school, email) and `staff` is not, so
+          // this is reachable with two rows and one typo — and it surfaced as a
+          // 500, which tells an office that the system is broken about
+          // something they could fix in five seconds.
+          const taken = await tx.user.findFirst({
+            where: { email: staff.email },
+            select: { id: true },
+          });
+
+          if (taken !== null) {
+            throw new ConflictError(
+              `Somebody else at this school already uses ${staff.email}. Give this person their own address.`,
+            );
+          }
+
           const user = await tx.user.create({
             // `as never` as everywhere else in this codebase: the tenant
             // extension supplies `schoolId`, which the generated input type
