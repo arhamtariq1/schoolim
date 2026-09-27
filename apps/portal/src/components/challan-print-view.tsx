@@ -2,11 +2,11 @@
 
 import { ROUTES, type Challan } from '@ilm/contracts';
 import { Button } from '@ilm/ui';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { VoucherChallan } from './voucher-challan';
 
-import { takePrintSelection } from '@/lib/print-handoff';
+import { readPrintSelection } from '@/lib/print-handoff';
 
 /**
  * A stack of challans, laid out for a printer.
@@ -42,12 +42,21 @@ export function ChallanPrintView({
   const [challans, setChallans] = useState<Challan[] | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
 
+  // Strict Mode runs this twice on mount, and the request behind it is the
+  // heaviest in the product — five hundred vouchers with their lines. Once.
+  const started = useRef(false);
+
   useEffect(() => {
-    const ids = takePrintSelection(new URLSearchParams(window.location.search).get('h'));
+    if (started.current) {
+      return;
+    }
+    started.current = true;
+
+    const ids = readPrintSelection(new URLSearchParams(window.location.search).get('h'));
 
     if (ids.length === 0) {
       setError(
-        'That print link has already been used, or the selection was not passed across. Go back to the voucher list, tick what you want, and press Print again.',
+        'That print link has expired, or the selection was not passed across. Go back to the voucher list, tick what you want, and press Print again.',
       );
       return;
     }

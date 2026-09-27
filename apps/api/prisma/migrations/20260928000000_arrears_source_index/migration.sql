@@ -1,0 +1,22 @@
+-- Find the challans that carry a voucher, by the voucher they carry.
+--
+-- `fee_voucher_arrears` had one index, `(school_id, voucher_id,
+-- source_voucher_id)`, which answers "what arrears does this challan carry" —
+-- the direction the challan printer asks in.
+--
+-- Deleting asks the opposite question: "which later challans name *this*
+-- voucher as arrears", filtering on `source_voucher_id` with `voucher_id`
+-- unconstrained. That is the second column of a composite index with the first
+-- one open, which no btree can serve — so the lookup falls back to a scan, and
+-- RLS does not save it: `school_id = current_school_id()` is a filter applied
+-- to rows already read, not a partition. On a platform table holding every
+-- school's arrears, a scan reads all of them to find one school's five hundred.
+--
+-- Every other child table the bulk delete touches already leads with
+-- `(school_id, voucher_id)` — periods, allocations, deposits. This is the one
+-- that was asymmetric, and it is the one on the delete path.
+--
+-- Leading with `school_id` like every tenant-scoped index here, so it is useful
+-- for one school's queries rather than for a scan across all of them.
+CREATE INDEX "fee_voucher_arrears_school_id_source_voucher_id_idx"
+  ON "fee_voucher_arrears" ("school_id", "source_voucher_id");

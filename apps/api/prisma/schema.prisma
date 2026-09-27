@@ -1432,6 +1432,9 @@ model FeeVoucherArrear {
   source  FeeVoucher @relation("ArrearSource", fields: [sourceVoucherId], references: [id], onDelete: Restrict)
 
   @@unique([schoolId, voucherId, sourceVoucherId], map: "fee_voucher_arrears_school_id_voucher_id_source_key")
+  /// Deleting a voucher asks which later challans carry it, which the unique
+  /// index above cannot answer: it leads with `voucherId`.
+  @@index([schoolId, sourceVoucherId])
   @@map("fee_voucher_arrears")
 }
 

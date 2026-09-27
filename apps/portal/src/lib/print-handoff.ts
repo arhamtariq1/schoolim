@@ -26,12 +26,20 @@
  * and the second would win both tabs. Each run writes under its own id and the
  * print page is told which one to read, in a query string short enough to fit.
  *
- * ## Why it is read once and deleted
+ * ## Why reading does **not** delete
  *
- * `localStorage` persists. A selection left behind is a stale list that the
- * next print run could pick up, and it is nobody's idea of data worth keeping
- * after the paper is out of the printer. Reading removes it, and a sweep on
- * write clears anything an abandoned run left behind.
+ * It did, and that was a bug. React runs an effect twice on mount in Strict
+ * Mode, which is on in development: the first read took the selection and
+ * removed it, the second found an empty store, and the error won. Every print
+ * run failed, on a token that was sitting right there in the address bar.
+ *
+ * Reading is idempotent now, and that is the right shape regardless of Strict
+ * Mode — refreshing the print tab reprints the same stack, which is exactly
+ * what somebody refreshing a print tab wants. "Read once" was protecting
+ * against a stale reprint that nobody was asking for, at the cost of losing
+ * the data on any remount at all.
+ *
+ * Growth is bounded by the sweep below rather than by deletion on read.
  */
 
 const PREFIX = 'ilm:print:';
@@ -63,15 +71,16 @@ export function stashPrintSelection(ids: readonly string[]): string | undefined 
   }
 }
 
-/** Take the selection for a token. Removes it: a handoff is read once. */
-export function takePrintSelection(token: string | null): readonly string[] {
+/**
+ * The selection for a token. Safe to call as many times as React feels like.
+ */
+export function readPrintSelection(token: string | null): readonly string[] {
   if (token === null || token === '') {
     return [];
   }
 
   try {
     const raw = localStorage.getItem(PREFIX + token);
-    localStorage.removeItem(PREFIX + token);
 
     if (raw === null) {
       return [];
@@ -83,12 +92,21 @@ export function takePrintSelection(token: string | null): readonly string[] {
     // could have put anything, and an id that is not a string would reach the
     // API as part of a request body.
     if (!Array.isArray(parsed.ids)) {
+      // Something else wrote under this key, or it was half-written. Clearing
+      // it is the one case where reading removes anything: it cannot become
+      // valid, and leaving it means failing the same way tomorrow.
+      localStorage.removeItem(PREFIX + token);
       return [];
     }
     return parsed.ids.filter((id): id is string => typeof id === 'string');
   } catch {
     // Unreadable, or storage is unavailable. Either way there is nothing to
     // print, which is what the caller is about to say.
+    try {
+      localStorage.removeItem(PREFIX + token);
+    } catch {
+      // Storage is gone entirely. Nothing to clean up.
+    }
     return [];
   }
 }

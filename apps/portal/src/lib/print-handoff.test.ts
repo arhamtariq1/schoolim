@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { stashPrintSelection, takePrintSelection } from './print-handoff';
+import { stashPrintSelection, readPrintSelection } from './print-handoff';
 
 /**
  * Handing a selection to the print tab.
@@ -65,7 +65,7 @@ describe('handing a selection over', () => {
     const token = stashPrintSelection(ids);
 
     expect(token).toBeDefined();
-    expect(takePrintSelection(token ?? null)).toEqual(ids);
+    expect(readPrintSelection(token ?? null)).toEqual(ids);
   });
 
   it('survives the opener being gone', () => {
@@ -75,14 +75,18 @@ describe('handing a selection over', () => {
 
     // Nothing of the opener is available here — no reference, no inherited
     // session store — and it still resolves.
-    expect(takePrintSelection(token ?? null)).toEqual(['a']);
+    expect(readPrintSelection(token ?? null)).toEqual(['a']);
   });
 
-  it('is spent once, so a refresh does not print a stale stack', () => {
+  it('survives being read twice, which is how React mounts an effect', () => {
+    // The regression this file exists for. Strict Mode runs a mount effect
+    // twice; when reading also deleted, the first call took the selection and
+    // the second reported an empty one — and the second is the one that won.
     const token = stashPrintSelection(['a', 'b']);
 
-    expect(takePrintSelection(token ?? null)).toHaveLength(2);
-    expect(takePrintSelection(token ?? null)).toEqual([]);
+    expect(readPrintSelection(token ?? null)).toEqual(['a', 'b']);
+    expect(readPrintSelection(token ?? null)).toEqual(['a', 'b']);
+    expect(readPrintSelection(token ?? null)).toEqual(['a', 'b']);
   });
 
   it('keeps two runs apart instead of letting the second win both tabs', () => {
@@ -90,8 +94,8 @@ describe('handing a selection over', () => {
     const second = stashPrintSelection(['b', 'c']);
 
     expect(first).not.toBe(second);
-    expect(takePrintSelection(first ?? null)).toEqual(['a']);
-    expect(takePrintSelection(second ?? null)).toEqual(['b', 'c']);
+    expect(readPrintSelection(first ?? null)).toEqual(['a']);
+    expect(readPrintSelection(second ?? null)).toEqual(['b', 'c']);
   });
 });
 
@@ -103,15 +107,15 @@ describe('when it cannot hand anything over', () => {
   });
 
   it('treats a missing token as an empty selection', () => {
-    expect(takePrintSelection(null)).toEqual([]);
-    expect(takePrintSelection('')).toEqual([]);
-    expect(takePrintSelection('never-written')).toEqual([]);
+    expect(readPrintSelection(null)).toEqual([]);
+    expect(readPrintSelection('')).toEqual([]);
+    expect(readPrintSelection('never-written')).toEqual([]);
   });
 
   it('does not throw on a value somebody else left under our prefix', () => {
     storage.setItem('ilm:print:junk', 'not json');
 
-    expect(takePrintSelection('junk')).toEqual([]);
+    expect(readPrintSelection('junk')).toEqual([]);
     // And it is cleared, so it cannot fail twice.
     expect(storage.getItem('ilm:print:junk')).toBeNull();
   });
@@ -127,7 +131,7 @@ describe('cleaning up after itself', () => {
     vi.setSystemTime(new Date('2026-09-27T12:00:00Z'));
     stashPrintSelection(['b']);
 
-    expect(takePrintSelection(abandoned ?? null)).toEqual([]);
+    expect(readPrintSelection(abandoned ?? null)).toEqual([]);
   });
 
   it('keeps one from a few minutes ago — a tab can sit unopened for a while', () => {
@@ -138,7 +142,7 @@ describe('cleaning up after itself', () => {
     vi.setSystemTime(new Date('2026-09-27T10:05:00Z'));
     stashPrintSelection(['b']);
 
-    expect(takePrintSelection(earlier ?? null)).toEqual(['a']);
+    expect(readPrintSelection(earlier ?? null)).toEqual(['a']);
   });
 
   it('removes anything under the prefix it cannot read', () => {
