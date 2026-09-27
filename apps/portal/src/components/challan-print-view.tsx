@@ -6,16 +6,18 @@ import { useEffect, useState } from 'react';
 
 import { VoucherChallan } from './voucher-challan';
 
+import { takePrintSelection } from '@/lib/print-handoff';
+
 /**
  * A stack of challans, laid out for a printer.
  *
- * ## Why the selection arrives through `sessionStorage`
+ * ## Why the selection arrives through a handoff token
  *
- * Five hundred ids is thirty kilobytes, which is well past what any browser
- * will carry on a request line and past what most proxies accept in a URL. A
- * print view is also not a link anybody shares — it is a step between pressing
- * Print and holding paper — so the tab that opened it handing the list over
- * directly is both the smallest mechanism and the honest one.
+ * Five hundred ids is eighteen kilobytes, well past what a browser will carry
+ * on a request line. The list is stashed by the tab that opened this one and
+ * fetched here by a short token — see `print-handoff`, which also explains why
+ * it is not `sessionStorage`, the mechanism that looked obvious and silently
+ * did not survive `noopener`.
  *
  * ## Why it fetches once and renders plain
  *
@@ -41,15 +43,12 @@ export function ChallanPrintView({
   const [error, setError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    let ids: string[] = [];
-    try {
-      ids = JSON.parse(sessionStorage.getItem('ilm:print-vouchers') ?? '[]') as string[];
-    } catch {
-      ids = [];
-    }
+    const ids = takePrintSelection(new URLSearchParams(window.location.search).get('h'));
 
     if (ids.length === 0) {
-      setError('Nothing was selected. Go back, tick the vouchers you want, and press Print.');
+      setError(
+        'That print link has already been used, or the selection was not passed across. Go back to the voucher list, tick what you want, and press Print again.',
+      );
       return;
     }
 

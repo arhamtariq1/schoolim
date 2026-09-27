@@ -25,6 +25,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { mutate } from '@/lib/mutate';
+import { stashPrintSelection } from '@/lib/print-handoff';
 
 /**
  * What you can do to a selection of vouchers.
@@ -82,17 +83,28 @@ export function VoucherBulkBar({
 
   const overCap = count > MAX_BULK_VOUCHERS;
 
+  /**
+   * More match than can be selected, so there is no honest "select all".
+   *
+   * Offering it would take the first five hundred by sort order, which is an
+   * arbitrary five hundred of two thousand — useless for printing, where the
+   * stack has to be a class. So the bar says the limit and points at the
+   * filter that makes the selection meaningful.
+   */
+  const tooManyMatching = matching > MAX_BULK_VOUCHERS && onSelectAllMatching === undefined;
+
   function print() {
-    // Handed over in `sessionStorage` rather than in the URL. Five hundred ids
-    // is thirty kilobytes, which no browser will carry on a request line — and
-    // a print view is not a link anybody needs to share.
-    try {
-      sessionStorage.setItem('ilm:print-vouchers', JSON.stringify([...selected]));
-    } catch {
-      toast.error('Could not open the print view. Try a smaller selection.');
+    const token = stashPrintSelection([...selected]);
+
+    if (token === undefined) {
+      toast.error(
+        'Could not open the print view',
+        'This browser is blocking site storage. Allow it for this site, or print from the row menu.',
+      );
       return;
     }
-    window.open('/fees/vouchers/print', '_blank', 'noopener');
+
+    window.open(`/fees/vouchers/print?h=${token}`, '_blank', 'noopener');
   }
 
   async function remove() {
@@ -133,13 +145,20 @@ export function VoucherBulkBar({
         role="status"
         className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-overlay"
       >
-        <span className="text-sm font-medium text-foreground">
-          {count} selected
-          {overCap ? (
-            <span className="ms-2 font-normal text-warning">
-              — more than {MAX_BULK_VOUCHERS} can be handled at once. Filter by class, or select a
-              page at a time.
-            </span>
+        {/*
+          The header checkbox ticks the page in front of you and nothing else,
+          which is the only scope it can honestly have — it cannot tick rows it
+          has not loaded. So the bar says what is selected *and* what matches,
+          and the difference between the two is where the next control goes.
+          Leaving that difference unsaid is what made "does this select twenty
+          or five hundred" a question somebody had to ask.
+        */}
+        <span className="text-sm text-foreground">
+          <span className="font-medium">
+            {count} selected
+          </span>
+          {matching > count ? (
+            <span className="text-muted-foreground"> of {matching} matching these filters</span>
           ) : null}
         </span>
 
@@ -151,8 +170,14 @@ export function VoucherBulkBar({
               void onSelectAllMatching();
             }}
           >
-            Select all {matching} matching these filters
+            Select all {matching}
           </Button>
+        )}
+
+        {!tooManyMatching ? null : (
+          <span className="text-sm text-warning">
+            Only {MAX_BULK_VOUCHERS} can be handled at once — filter by class to print a stack.
+          </span>
         )}
 
         <div className="ms-auto flex flex-wrap items-center gap-2">

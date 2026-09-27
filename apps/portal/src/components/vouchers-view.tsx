@@ -151,6 +151,18 @@ export function VouchersView({
   }
 
   function apply(next: Partial<typeof filters>, resetPage = true) {
+    // A filter change drops the selection; turning a page keeps it.
+    //
+    // Without this, ticking twenty October vouchers and then filtering to
+    // November leaves twenty rows selected that are no longer on screen — and
+    // Delete would remove vouchers the operator can no longer see, from a
+    // month they are no longer looking at. Paging is the opposite case: the
+    // rows are still in the set, and carrying the ticks across pages is the
+    // whole point of being able to tick across pages.
+    if (resetPage) {
+      setSelected(new Set());
+    }
+
     const merged = { ...draft, ...next };
     const query = new URLSearchParams();
     for (const [key, value] of Object.entries(merged)) {
@@ -166,6 +178,7 @@ export function VouchersView({
   }
 
   function reset() {
+    setSelected(new Set());
     const cleared = {
       q: '',
       grNo: '',
