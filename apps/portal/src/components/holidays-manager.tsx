@@ -14,7 +14,7 @@ import {
 import { Button, CheckboxField, ConfirmDialog, DataTable, DateDisplay, DatePicker, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, EmptyState, Field, Input, SimpleSelect, StatusBadge, type Column, useToast } from '@ilm/ui';
 import { CreateIcon, DeleteIcon, EditIcon, ICON_SIZE } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
 import { mutate } from '@/lib/mutate';
 import { useTenantHref } from '@/lib/use-tenant-href';
@@ -261,16 +261,18 @@ export function HolidaysManager({
         />
       )}
 
-      <HolidayDialog
-        open={dialogOpen}
-        editing={editing}
-        sessionId={activeSessionId}
-        sessionName={activeSession?.name}
-        onClose={() => {
-          setDialogOpen(false);
-          setEditing(undefined);
-        }}
-      />
+      {dialogOpen ? (
+        <HolidayDialog
+          key={editing?.id ?? 'new'}
+          editing={editing}
+          sessionId={activeSessionId}
+          sessionName={activeSession?.name}
+          onClose={() => {
+            setDialogOpen(false);
+            setEditing(undefined);
+          }}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={deleting !== undefined}
@@ -290,13 +292,11 @@ export function HolidaysManager({
 }
 
 function HolidayDialog({
-  open,
   editing,
   sessionId,
   sessionName,
   onClose,
 }: {
-  open: boolean;
   editing: Holiday | undefined;
   sessionId: string | undefined;
   sessionName: string | undefined;
@@ -328,6 +328,13 @@ function HolidayDialog({
     setFieldErrors({});
     setFormError(undefined);
   }
+
+  // Run once, on mount. The dialog is mounted fresh for each row (its call site
+  // keys it by id), so this is the prefill — and it replaces a `reset()` hung
+  // off `onOpenChange(true)`, which Radix only fires for a dialog that opens
+  // itself. Opened from a row's Edit button, that callback never ran and the
+  // form kept whatever was last typed into it.
+  useEffect(reset, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -389,11 +396,9 @@ function HolidayDialog({
 
   return (
     <Dialog
-      open={open}
+      open
       onOpenChange={(next) => {
-        if (next) {
-          reset();
-        } else {
+        if (!next) {
           onClose();
         }
       }}

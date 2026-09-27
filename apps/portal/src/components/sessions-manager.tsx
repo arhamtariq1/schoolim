@@ -9,7 +9,7 @@ import {
 import { Button, ConfirmDialog, DataTable, DateDisplay, DatePicker, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Field, Input, SimpleSelect, StatusBadge, type Column, useToast } from '@ilm/ui';
 import { ApproveIcon, CreateIcon, DeleteIcon, EditIcon, ICON_SIZE } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
 import { mutate } from '@/lib/mutate';
 
@@ -254,14 +254,16 @@ export function SessionsManager({ sessions, error, canConfigure }: SessionsManag
         }}
       />
 
-      <SessionDialog
-        open={dialogOpen}
-        editing={editing}
-        onClose={() => {
-          setDialogOpen(false);
-          setEditing(undefined);
-        }}
-      />
+      {dialogOpen ? (
+        <SessionDialog
+          key={editing?.id ?? 'new'}
+          editing={editing}
+          onClose={() => {
+            setDialogOpen(false);
+            setEditing(undefined);
+          }}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={deleting !== undefined}
@@ -281,11 +283,9 @@ export function SessionsManager({ sessions, error, canConfigure }: SessionsManag
 }
 
 function SessionDialog({
-  open,
   editing,
   onClose,
 }: {
-  open: boolean;
   editing: AcademicSession | undefined;
   onClose: () => void;
 }) {
@@ -310,6 +310,13 @@ function SessionDialog({
     setFieldErrors({});
     setFormError(undefined);
   }
+
+  // Run once, on mount. The dialog is mounted fresh for each row (its call site
+  // keys it by id), so this is the prefill — and it replaces a `reset()` hung
+  // off `onOpenChange(true)`, which Radix only fires for a dialog that opens
+  // itself. Opened from a row's Edit button, that callback never ran and the
+  // form kept whatever was last typed into it.
+  useEffect(reset, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -348,11 +355,9 @@ function SessionDialog({
 
   return (
     <Dialog
-      open={open}
+      open
       onOpenChange={(next) => {
-        if (next) {
-          reset();
-        } else {
+        if (!next) {
           onClose();
         }
       }}

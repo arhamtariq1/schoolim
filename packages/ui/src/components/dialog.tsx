@@ -60,6 +60,17 @@ export function DialogContent({
           // A long form must scroll inside the dialog, never take the page with
           // it, and never push its own footer off the bottom of a laptop.
           'flex max-h-[calc(100dvh-2rem)] flex-col',
+          // And the same again for a `<form>` wrapped around the three parts,
+          // which is how every form dialog in this product is built.
+          //
+          // Without it the form is the flex item and the header, body and
+          // footer are its ordinary block children — so `DialogBody`'s
+          // `flex-1 overflow-y-auto` has no flex parent to size it, the body
+          // grows past `max-h`, and a form taller than the viewport simply
+          // cannot be scrolled. It is fixed here rather than at each call site
+          // because "remember to make your form a flex column" is a rule that
+          // gets forgotten by the next dialog somebody writes.
+          '[&>form]:flex [&>form]:min-h-0 [&>form]:flex-1 [&>form]:flex-col',
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
           'data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
           className,

@@ -4,6 +4,7 @@ import {
   ROUTES,
   staffListQuerySchema,
   updateStaffSchema,
+  type StaffInviteResult,
   type StaffListItem,
 } from '@ilm/contracts';
 import {
@@ -11,6 +12,7 @@ import {
   Controller,
   Delete,
   Get,
+  Inject,
   Module,
   Param,
   Patch,
@@ -21,8 +23,9 @@ import {
 import { type FastifyRequest } from 'fastify';
 
 import { RequirePermission } from '../../shared/rbac/rbac.guard';
-import { clockProvider } from '../../shared/time/clock.provider';
+import { CLOCK, clockProvider, type Clock } from '../../shared/time/clock.provider';
 
+import { StaffInviteService } from './staff-invite.service';
 import { StaffService } from './staff.service';
 
 /**
@@ -37,7 +40,11 @@ import { StaffService } from './staff.service';
  */
 @Controller()
 export class StaffController {
-  constructor(private readonly staff: StaffService) {}
+  constructor(
+    private readonly staff: StaffService,
+    private readonly invites: StaffInviteService,
+    @Inject(CLOCK) private readonly clock: Clock,
+  ) {}
 
   @Get(ROUTES.staff.list)
   @RequirePermission('staff.record.read')
@@ -72,6 +79,22 @@ export class StaffController {
     return { data: await this.staff.update(id, updateStaffSchema.parse(body)) };
   }
 
+  /**
+   * Send, or re-send, the invitation that lets somebody set their own password.
+   *
+   * `staff.record.update`, the same permission as editing the record: whoever
+   * may put a teacher on the payroll may give that teacher a way in. It is a
+   * POST with no body because there is nothing to choose — the address, the
+   * role and the school are all on the record already, and offering any of them
+   * as parameters would be offering a way to send an invitation somewhere the
+   * staff list does not say.
+   */
+  @Post('/api/v1/staff/:id/invite')
+  @RequirePermission('staff.record.update')
+  async invite(@Param('id') id: string): Promise<{ data: StaffInviteResult }> {
+    return { data: await this.invites.invite(id, this.clock.now()) };
+  }
+
   @Delete('/api/v1/staff/:id')
   @RequirePermission('staff.record.update')
   async remove(@Param('id') id: string, @Body() body: unknown): Promise<{ data: { ok: true } }> {
@@ -83,6 +106,7 @@ export class StaffController {
 
 @Module({
   controllers: [StaffController],
-  providers: [clockProvider, StaffService],
+  providers: [clockProvider, StaffService, StaffInviteService],
+  exports: [StaffInviteService],
 })
 export class StaffModule {}

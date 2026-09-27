@@ -1428,6 +1428,14 @@ export type $EnrollmentPayload<ExtArgs extends runtime.Types.Extensions.Internal
     sessionId: string
     classLevelId: string
     sectionId: string | null
+    /**
+     * The child's position on one section's register, allocated by the server
+     * under a lock on the section. Null when no section is set: a roll is a
+     * place on a register, and with no register there is no place.
+     * 
+     * Unique per (school, session, section), enforced by a partial unique index
+     * in the migration — Prisma cannot express `WHERE section_id IS NOT NULL`.
+     */
     rollNo: number | null
     status: $Enums.EnrollmentStatus
     enrolledOn: Date | null

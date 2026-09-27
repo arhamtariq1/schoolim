@@ -6,6 +6,7 @@ import {
   STAFF_ROLE_LABELS,
   STAFF_ROLES,
   staffRoleCanSignIn,
+  type StaffInviteResult,
   type StaffListItem,
   type StaffRole,
 } from '@ilm/contracts';
@@ -22,7 +23,6 @@ import {
   DialogTitle,
   Field,
   Input,
-  PasswordInput,
   Money,
   Pagination,
   SimpleSelect,
@@ -30,7 +30,14 @@ import {
   useToast,
   type Column,
 } from '@ilm/ui';
-import { CreateIcon, DeleteIcon, EditIcon, ICON_SIZE, SearchIcon } from '@ilm/ui/icons';
+import {
+  CreateIcon,
+  DeleteIcon,
+  EditIcon,
+  ICON_SIZE,
+  SearchIcon,
+  SendIcon,
+} from '@ilm/ui/icons';
 import { minorUnits } from '@ilm/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useTransition, type FormEvent } from 'react';
@@ -86,6 +93,41 @@ export function StaffTable({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<StaffListItem | undefined>(undefined);
   const [deleting, setDeleting] = useState<StaffListItem | undefined>(undefined);
+  const [inviting, setInviting] = useState<string | undefined>(undefined);
+
+  /**
+   * Send, or re-send, somebody's invitation to the portal.
+   *
+   * Re-sending is not a second invitation: the server supersedes the previous
+   * one, so a link that was forwarded or left in a mailbox stops working the
+   * moment this is pressed. That is usually the reason it is being pressed.
+   *
+   * `sent: false` is reported as a warning, not an error. The invitation was
+   * created; what failed was a mail server, and telling a school "that did not
+   * work" about something that half-worked sends them to look for a problem
+   * that is not theirs.
+   */
+  async function sendInvite(row: StaffListItem) {
+    setInviting(row.id);
+    const result = await mutate<StaffInviteResult>(ROUTES.staff.invite(row.id), 'POST');
+    setInviting(undefined);
+
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+
+    if (result.data.sent) {
+      toast.success(`Invitation sent to ${result.data.email}`, 'The link works once, for 3 days.');
+    } else {
+      toast.warning(
+        'Invitation created, but the email did not go',
+        'Check the mail settings, then press Re-send.',
+      );
+    }
+
+    router.refresh();
+  }
 
   // Filters live in the URL: a filtered view is then a link someone can send,
   // it survives a refresh, and Back does what it should.
@@ -201,6 +243,26 @@ export function StaffTable({
       render: (row) =>
         !canManage ? null : (
           <div className="flex items-center justify-end gap-1">
+            {/*
+              Only for the roles that use the portal, and only once there is an
+              address to send to. A janitor has nothing to be invited to, and a
+              teacher with no email has nowhere to be invited at — showing the
+              button in either case is offering an action that always fails.
+            */}
+            {!staffRoleCanSignIn(row.role) || row.email === null || row.email === '' ? null : (
+              <Button
+                tone="ghost"
+                size="sm"
+                isPending={inviting === row.id}
+                disabled={inviting !== undefined}
+                onClick={() => {
+                  void sendInvite(row);
+                }}
+              >
+                <SendIcon className={ICON_SIZE.inline} aria-hidden />
+                {row.hasLogin ? 'Re-send' : 'Invite'}
+              </Button>
+            )}
             <Button
               tone="ghost"
               size="sm"
@@ -329,14 +391,16 @@ export function StaffTable({
         />
       )}
 
-      <StaffDialog
-        open={dialogOpen}
-        editing={editing}
-        onClose={() => {
-          setDialogOpen(false);
-          setEditing(undefined);
-        }}
-      />
+      {dialogOpen ? (
+        <StaffDialog
+          key={editing?.id ?? 'new'}
+          editing={editing}
+          onClose={() => {
+            setDialogOpen(false);
+            setEditing(undefined);
+          }}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={deleting !== undefined}
@@ -360,45 +424,28 @@ export function StaffTable({
 }
 
 function StaffDialog({
-  open,
   editing,
   onClose,
 }: {
-  open: boolean;
   editing: StaffListItem | undefined;
   onClose: () => void;
 }) {
   const router = useRouter();
   const toast = useToast();
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [gender, setGender] = useState('');
-  const [role, setRole] = useState<StaffRole>('TEACHER');
-  const [casual, setCasual] = useState('0');
-  const [sick, setSick] = useState('0');
-  const [salary, setSalary] = useState('0');
+  const [name, setName] = useState(editing?.name ?? '');
+  const [email, setEmail] = useState(editing?.email ?? '');
+  const [phone, setPhone] = useState(editing?.phone ?? '');
+  const [gender, setGender] = useState<string>(editing?.gender ?? '');
+  const [role, setRole] = useState<StaffRole>(editing?.role ?? 'TEACHER');
+  const [casual, setCasual] = useState(String(editing?.casualLeaves ?? 0));
+  const [sick, setSick] = useState(String(editing?.sickLeaves ?? 0));
+  const [salary, setSalary] = useState(
+    editing === undefined ? '0' : (editing.basicSalaryMinor / 100).toFixed(2),
+  );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [isPending, setIsPending] = useState(false);
-
-  // The dialog is mounted once and reused, so fields are reset when it opens
-  // rather than relying on a remount that never happens.
-  function reset() {
-    setName(editing?.name ?? '');
-    setEmail(editing?.email ?? '');
-    setPhone(editing?.phone ?? '');
-    setPassword('');
-    setGender(editing?.gender ?? '');
-    setRole(editing?.role ?? 'TEACHER');
-    setCasual(String(editing?.casualLeaves ?? 0));
-    setSick(String(editing?.sickLeaves ?? 0));
-    setSalary(editing === undefined ? '0' : (editing.basicSalaryMinor / 100).toFixed(2));
-    setFieldErrors({});
-    setFormError(undefined);
-  }
 
   const canSignIn = staffRoleCanSignIn(role);
 
@@ -424,9 +471,6 @@ function StaffDialog({
       ...(email.trim() === '' ? {} : { email }),
       ...(phone.trim() === '' ? {} : { phone: toE164(phone) }),
       ...(gender === '' ? {} : { gender }),
-      // Never sent for a role that cannot sign in, even if the field was filled
-      // in before the role was changed.
-      ...(password.trim() === '' || !canSignIn ? {} : { password }),
     };
 
     if (editing === undefined) {
@@ -462,11 +506,9 @@ function StaffDialog({
 
   return (
     <Dialog
-      open={open}
+      open
       onOpenChange={(next) => {
-        if (next) {
-          reset();
-        } else {
+        if (!next) {
           onClose();
         }
       }}
@@ -514,9 +556,6 @@ function StaffDialog({
                   value={role}
                   onValueChange={(next) => {
                     setRole(next as StaffRole);
-                    if (!staffRoleCanSignIn(next as StaffRole)) {
-                      setPassword('');
-                    }
                   }}
                   options={ROLE_OPTIONS}
                   ariaLabel="Role"
@@ -534,7 +573,16 @@ function StaffDialog({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Email" error={fieldErrors['email']}>
+              <Field
+                label="Email"
+                error={fieldErrors['email']}
+                hint={
+                  canSignIn
+                    ? 'The invitation to set up their portal login is sent here.'
+                    : 'Optional — this role does not use the portal.'
+                }
+                required={canSignIn}
+              >
                 <Input
                   type="email"
                   value={email}
@@ -547,6 +595,7 @@ function StaffDialog({
                 label="Phone"
                 error={fieldErrors['phone']}
                 hint="Start with 0 and we will add +92."
+                required
               >
                 <Input
                   type="tel"
@@ -560,27 +609,23 @@ function StaffDialog({
               </Field>
             </div>
 
-            {/* Removed entirely rather than disabled: a field that is present
-                but ignored is a password somebody believes they set. */}
-            {canSignIn ? (
-              <Field
-                label={editing === undefined ? 'Password' : 'New password'}
-                error={fieldErrors['password']}
-                hint={
-                  editing === undefined
-                    ? 'Optional. Leave blank to add them now and set up their login later.'
-                    : 'Leave blank to keep the current one. Setting it signs them out everywhere.'
-                }
-              >
-                <PasswordInput
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(event) => {
-                    setPassword(event.target.value);
-                  }}
-                />
-              </Field>
-            ) : null}
+            {/*
+              No password field, on purpose.
+
+              An administrator typing one in is how a school ends up with a
+              shared password behind the counter: somebody has to say it out
+              loud to hand it over. Staff who use the portal are sent an
+              invitation and choose their own, which nobody else ever sees.
+            */}
+            {!canSignIn ? null : (
+              <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                {editing === undefined
+                  ? 'After saving, send them an invitation from the staff list. They choose their own password.'
+                  : editing.hasLogin
+                    ? 'They set their own password. Use Re-send invitation on the staff list if they need a new link.'
+                    : 'No portal login yet. Use Send invitation on the staff list to give them one.'}
+              </p>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Casual leaves" error={fieldErrors['casualLeaves']}>

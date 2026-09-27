@@ -11,8 +11,12 @@ import {
   type ForgotPasswordResendOtpResult,
   type ForgotPasswordVerifyOtpResult,
   type LoginOutcome,
+  acceptInviteRequestSchema,
+  inviteCheckRequestSchema,
   verifyEmailRequestSchema,
   type LoginRequest,
+  type AcceptInviteResult,
+  type InviteCheckResult,
   type ResendVerificationResult,
   type SessionUser,
 } from '@ilm/contracts';
@@ -25,6 +29,7 @@ import { BusinessRuleError } from '../../shared/errors/domain-error';
 import { RateLimit } from '../../shared/http/rate-limit.guard';
 import { resolveTenantSlug } from '../../shared/tenancy/resolve-tenant-slug';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
+import { StaffInviteService } from '../staff/staff-invite.service';
 
 import { AuthService, type LoginResult } from './auth.service';
 import { EmailVerificationService } from './email-verification.service';
@@ -47,6 +52,7 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly verification: EmailVerificationService,
     private readonly passwordResets: PasswordResetService,
+    private readonly invites: StaffInviteService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ENV) private readonly env: Env,
   ) {}
@@ -191,6 +197,51 @@ export class AuthController {
    * The token itself is the authentication, and it is single-use, expiring, and
    * scoped to the school whose hostname it arrives on.
    */
+  /**
+   * Read an invitation, without spending it.
+   *
+   * So the page can greet the person by name and say which school this is,
+   * rather than showing a bare password box to somebody who followed a link two
+   * days after it arrived. Rate-limited the same as the accept below, because
+   * it is the endpoint a token guesser would use to find a live one.
+   */
+  @Public()
+  @RateLimit({ limit: 30, windowSeconds: 300 })
+  @Post(ROUTES.auth.inviteCheck)
+  async inviteCheck(
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+  ): Promise<{ data: InviteCheckResult }> {
+    const input = inviteCheckRequestSchema.parse(body);
+    return { data: await this.invites.check(this.tenantSlug(request), input.token, this.clock.now()) };
+  }
+
+  /**
+   * Choose a password, and the account goes live.
+   *
+   * `@Public` for the same reason `verifyEmail` is: the person following this
+   * link has no account to sign in with yet — that is the entire point of the
+   * link. The token is the authentication, and it is single-use, expiring and
+   * scoped to the school whose hostname it arrives on.
+   */
+  @Public()
+  @RateLimit({ limit: 20, windowSeconds: 300 })
+  @Post(ROUTES.auth.acceptInvite)
+  async acceptInvite(
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+  ): Promise<{ data: AcceptInviteResult }> {
+    const input = acceptInviteRequestSchema.parse(body);
+    return {
+      data: await this.invites.accept(
+        this.tenantSlug(request),
+        input.token,
+        input.password,
+        this.clock.now(),
+      ),
+    };
+  }
+
   @Public()
   @RateLimit({ limit: 30, windowSeconds: 300 })
   @Post(ROUTES.auth.verifyEmail)
@@ -427,5 +478,26 @@ export class AuthController {
     // Cleared at the same path it was set at, or the browser keeps it.
     void reply.clearCookie(COOKIES.refreshToken, { path: '/', ...this.cookieScope() });
     this.clearLegacyRefreshCookie(reply);
+  }
+  /**
+   * Which school this request is for, from the hostname.
+   *
+   * Throws rather than returning undefined: every caller here is a link
+   * somebody followed, and a link that arrived on no recognisable school is a
+   * link that cannot be honoured. The message is the same one a spent or
+   * expired token gets, so the apex and a real school cannot be told apart by
+   * trying.
+   */
+  private tenantSlug(request: FastifyRequest): string {
+    const slug = resolveTenantSlug(request, this.env.APP_DOMAIN);
+
+    if (slug === undefined) {
+      throw new BusinessRuleError(
+        'AUTH_TOKEN_INVALID',
+        'That link is no longer valid. Ask the school to send another.',
+      );
+    }
+
+    return slug;
   }
 }

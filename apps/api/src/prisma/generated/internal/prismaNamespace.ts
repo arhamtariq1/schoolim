@@ -3707,6 +3707,7 @@ export const InvitationScalarFieldEnum = {
   schoolId: 'schoolId',
   email: 'email',
   role: 'role',
+  userId: 'userId',
   tokenHash: 'tokenHash',
   invitedBy: 'invitedBy',
   expiresAt: 'expiresAt',

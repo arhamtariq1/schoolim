@@ -26,7 +26,6 @@ export const ROUTES = {
     forgotPasswordVerifyOtp: `${API_PREFIX}/auth/forgot-password/verify-otp`,
     forgotPasswordResendOtp: `${API_PREFIX}/auth/forgot-password/resend-otp`,
     resetPassword: `${API_PREFIX}/auth/reset-password`,
-    acceptInvite: `${API_PREFIX}/auth/accept-invite`,
     /**
      * Redeem a handoff token for cookies, on the school's own hostname.
      *
@@ -40,6 +39,10 @@ export const ROUTES = {
      * days later, in a different browser.
      */
     verifyEmail: `${API_PREFIX}/auth/verify-email`,
+    /** Read an invitation without spending it, to render the page. */
+    inviteCheck: `${API_PREFIX}/auth/invite/check`,
+    /** Spend it: choose a password, and the account goes live. */
+    acceptInvite: `${API_PREFIX}/auth/invite/accept`,
     /** Send another confirmation. Requires a session; you can only mail yourself. */
     resendVerification: `${API_PREFIX}/auth/resend-verification`,
   },
@@ -241,6 +244,8 @@ export const ROUTES = {
     detail: (id: string) => `${API_PREFIX}/staff/${id}`,
     update: (id: string) => `${API_PREFIX}/staff/${id}`,
     remove: (id: string) => `${API_PREFIX}/staff/${id}`,
+    /** Send, or re-send, the invitation that lets them set their own password. */
+    invite: (id: string) => `${API_PREFIX}/staff/${id}/invite`,
   },
   health: `${API_PREFIX}/health`,
 

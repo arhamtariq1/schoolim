@@ -153,16 +153,6 @@ export const resetPasswordRequestSchema = z
 
 export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
 
-export const acceptInviteRequestSchema = z
-  .object({
-    token: nonEmptyString,
-    name: nonEmptyString.max(120),
-    password: passwordSchema,
-  })
-  .strict();
-
-export type AcceptInviteRequest = z.infer<typeof acceptInviteRequestSchema>;
-
 /**
  * One school a set of credentials just unlocked.
  *
@@ -237,3 +227,46 @@ export const resendVerificationResultSchema = z.object({
 });
 
 export type ResendVerificationResult = z.infer<typeof resendVerificationResultSchema>;
+
+/**
+ * Accepting an invitation to a school's portal.
+ *
+ * The token is the whole of the authentication: whoever holds it read the
+ * mailbox the invitation was sent to, which is the same proof a password reset
+ * link carries. It is single-use, it expires, and it is scoped to the school
+ * whose hostname it arrives on — so a token from one school cannot be spent
+ * against another even if the two share an administrator.
+ */
+export const inviteCheckRequestSchema = z.object({ token: z.string().min(1) }).strict();
+export type InviteCheckRequest = z.infer<typeof inviteCheckRequestSchema>;
+
+/** Enough to address the person by name and show them which school this is. */
+export const inviteCheckResultSchema = z.object({
+  name: z.string(),
+  email: emailSchema,
+  schoolName: z.string(),
+  roleLabel: z.string(),
+});
+
+export type InviteCheckResult = z.infer<typeof inviteCheckResultSchema>;
+
+export const acceptInviteRequestSchema = z
+  .object({
+    token: z.string().min(1),
+    password: passwordSchema,
+  })
+  .strict();
+
+export type AcceptInviteRequest = z.infer<typeof acceptInviteRequestSchema>;
+
+/**
+ * The invitation is spent and the account is live.
+ *
+ * Deliberately not a session. Accepting happens in whatever browser the link
+ * was opened in — often a phone, often not the one they will work in — and
+ * signing them in there would leave a session on a device they were only
+ * reading mail on. They are sent to the sign-in page to use the password they
+ * have just chosen, which is also the first time they type it.
+ */
+export const acceptInviteResultSchema = z.object({ email: emailSchema });
+export type AcceptInviteResult = z.infer<typeof acceptInviteResultSchema>;

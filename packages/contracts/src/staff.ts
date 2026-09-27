@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-import { passwordSchema } from './auth';
 import { listQuery } from './pagination';
 import {
   calendarDateSchema,
@@ -110,18 +109,36 @@ export type StaffListQuery = z.infer<typeof staffListQuerySchema>;
  * sequence allocated on the server, in the same transaction as the insert. A
  * client-supplied number is how two people end up sharing one.
  *
- * `password` is optional even for roles that *can* sign in: a school often
- * records the person first and sorts out their login later, and forcing a
- * password at creation means inventing one and writing it on paper.
+ * ## No password
+ *
+ * There was one, and an administrator typed it in. That is the pattern where a
+ * school ends up with a shared password on a sticky note, because somebody has
+ * to say it out loud to hand it over — and where the product knows a person's
+ * password, which it should never be in a position to do. A member of staff who
+ * uses the portal is **invited** instead: they get a link, they choose a
+ * password nobody else has seen, and until they do there is no password to
+ * leak.
+ *
+ * ## Which fields are required, and why they differ by role
+ *
+ * **Phone, always.** This is a payroll record before it is a login. A school
+ * calls a janitor who has not arrived exactly as it calls a teacher, and a
+ * staff list with no number on half its rows is a staff list nobody uses.
+ *
+ * **Email, only for the roles that sign in.** It is the address the invitation
+ * goes to, so for a head, an admin, office staff or a teacher it is not
+ * optional in any meaningful sense — without it the account cannot be created
+ * at all. A security guard or a janitor is on the payroll and off the portal,
+ * and most of them genuinely do not have one; demanding it would mean inventing
+ * addresses to satisfy a form.
  */
 export const createStaffSchema = z
   .object({
     name: textSchema(120),
     email: emailSchema.optional(),
-    phone: phoneSchema.optional(),
+    phone: phoneSchema,
     gender: genderSchema.optional(),
     role: staffRoleSchema,
-    password: passwordSchema.optional(),
     casualLeaves: z.int().min(0).max(365).default(0),
     sickLeaves: z.int().min(0).max(365).default(0),
     basicSalaryMinor: positiveMinorUnitsSchema.default(0),
@@ -130,21 +147,24 @@ export const createStaffSchema = z
     designation: z.string().trim().max(80).optional(),
   })
   .strict()
-  .refine((value) => value.password === undefined || value.email !== undefined, {
-    message: 'An email address is needed to create a login.',
+  .refine((value) => !staffRoleCanSignIn(value.role) || value.email !== undefined, {
+    message: 'This role uses the portal, so an email address is needed to invite them.',
     path: ['email'],
-  })
-  .refine((value) => value.password === undefined || staffRoleCanSignIn(value.role), {
-    message: 'This role does not use the portal, so it cannot have a password.',
-    path: ['password'],
   });
 
 export type CreateStaff = z.infer<typeof createStaffSchema>;
 
 /**
- * Editing. `password` is here so it can be *set* later or changed, and status
- * is not — ending someone's employment also ends their access, so it is its own
- * endpoint that can do both and say why.
+ * Editing.
+ *
+ * Every field is optional, so the "phone is required" and "a portal role needs
+ * an email" rules cannot be checked here: a PATCH carrying only a salary says
+ * nothing about either. The service applies them to the row **after** the merge,
+ * which is the only place that knows what the record will actually end up as.
+ *
+ * No `password`, and no `status`. A password is set by the person it belongs
+ * to, through an invitation; ending someone's employment also ends their
+ * access, so that is its own endpoint that can do both and say why.
  */
 export const updateStaffSchema = z
   .object({
@@ -153,7 +173,6 @@ export const updateStaffSchema = z
     phone: phoneSchema.optional(),
     gender: genderSchema.optional(),
     role: staffRoleSchema.optional(),
-    password: passwordSchema.optional(),
     casualLeaves: z.int().min(0).max(365).optional(),
     sickLeaves: z.int().min(0).max(365).optional(),
     basicSalaryMinor: positiveMinorUnitsSchema.optional(),
@@ -176,3 +195,20 @@ export type UpdateStaff = z.infer<typeof updateStaffSchema>;
  */
 export const deleteStaffSchema = z.object({ reason: reasonSchema }).strict();
 export type DeleteStaff = z.infer<typeof deleteStaffSchema>;
+
+/**
+ * What the staff screen learns after asking for an invitation to be sent.
+ *
+ * `sent: false` is not an error and must not be shown as one. The mail port
+ * never throws (see `MailPort`), a school must not fail to record an employee
+ * because a mail server was slow, and the invitation itself has been created
+ * either way — so the honest message is "invited, but the email did not go;
+ * try resending", not "something went wrong".
+ */
+export const staffInviteResultSchema = z.object({
+  sent: z.boolean(),
+  email: emailSchema,
+  expiresAt: z.iso.datetime(),
+});
+
+export type StaffInviteResult = z.infer<typeof staffInviteResultSchema>;

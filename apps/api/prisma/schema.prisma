@@ -332,6 +332,7 @@ model User {
   authHandoffs       AuthHandoff[]
   emailVerifications EmailVerification[]
   invitesSent        Invitation[]        @relation("InvitedBy")
+  invitations        Invitation[]        @relation("Invited")
   staffRecord        Staff?
 
   /// Email is unique per school, not globally: the same person may hold an
@@ -403,6 +404,12 @@ model Invitation {
   schoolId   String     @map("school_id") @db.Uuid
   email      String
   role       SchoolRole
+  /// The account this invitation sets a password on.
+  ///
+  /// Nullable only because rows predating it have none. Looking the user up by
+  /// the invitation's email would land on whichever account happens to hold that
+  /// address today, which is not the same question.
+  userId     String?    @map("user_id") @db.Uuid
   tokenHash  String     @unique @map("token_hash")
   invitedBy  String?    @map("invited_by") @db.Uuid
   expiresAt  DateTime   @map("expires_at") @db.Timestamptz(6)
@@ -410,9 +417,11 @@ model Invitation {
   createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
 
   school  School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user    User?  @relation("Invited", fields: [userId], references: [id], onDelete: Cascade)
   inviter User?  @relation("InvitedBy", fields: [invitedBy], references: [id], onDelete: SetNull)
 
   @@index([schoolId, email])
+  @@index([schoolId, userId])
   @@index([schoolId, expiresAt])
   @@map("invitations")
 }

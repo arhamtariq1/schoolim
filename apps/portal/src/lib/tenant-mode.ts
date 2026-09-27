@@ -59,6 +59,10 @@ const PUBLIC_PATHS: ReadonlySet<string> = new Set([
   '/forgot-password',
   '/otp-verification',
   '/new-password',
+  // The page an invited member of staff lands on. They have no account yet —
+  // that is what the link is for — so gating it behind a session would send
+  // them to sign in with a password they have not chosen.
+  '/invite',
 ]);
 
 export function isPublicPath(pathname: string): boolean {
@@ -108,6 +112,7 @@ const APP_ROUTE_SEGMENTS: ReadonlySet<string> = new Set([
   'fees',
   'finance',
   'forgot-password',
+  'invite',
   'login',
   'new-password',
   'otp-verification',

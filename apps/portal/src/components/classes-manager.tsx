@@ -27,7 +27,7 @@ import {
 } from '@ilm/ui';
 import { CreateIcon, DeleteIcon, EditIcon, ICON_SIZE, SortIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
 import { mutate } from '@/lib/mutate';
 
@@ -347,28 +347,33 @@ export function ClassesManager({
         </ul>
       )}
 
-      <ClassDialog
-        open={creatingClass || editingClass !== undefined}
-        editing={editingClass}
-        suggestedOrder={
-          classes.length === 0 ? 0 : Math.max(...classes.map((c) => c.numericOrder)) + 1
-        }
-        onClose={() => {
-          setCreatingClass(false);
-          setEditingClass(undefined);
-        }}
-      />
+      {creatingClass || editingClass !== undefined ? (
+        <ClassDialog
+          key={editingClass?.id ?? 'new'}
+          editing={editingClass}
+          suggestedOrder={
+            classes.length === 0 ? 0 : Math.max(...classes.map((c) => c.numericOrder)) + 1
+          }
+          onClose={() => {
+            setCreatingClass(false);
+            setEditingClass(undefined);
+          }}
+        />
+      ) : null}
 
-      <SectionDialog
-        forClass={sectionFor}
-        editing={editingSection}
-        sessionId={activeSessionId}
-        classes={classes}
-        onClose={() => {
-          setSectionFor(undefined);
-          setEditingSection(undefined);
-        }}
-      />
+      {sectionFor !== undefined || editingSection !== undefined ? (
+        <SectionDialog
+          key={editingSection?.section.id ?? 'new'}
+          forClass={sectionFor}
+          editing={editingSection}
+          sessionId={activeSessionId}
+          classes={classes}
+          onClose={() => {
+            setSectionFor(undefined);
+            setEditingSection(undefined);
+          }}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={deleting !== undefined}
@@ -393,12 +398,10 @@ export function ClassesManager({
 
 /** Add or rename a class. Same dialog for both, keyed so defaults reset. */
 function ClassDialog({
-  open,
   editing,
   suggestedOrder,
   onClose,
 }: {
-  open: boolean;
   editing: ClassLevel | undefined;
   suggestedOrder: number;
   onClose: () => void;
@@ -420,6 +423,13 @@ function ClassDialog({
     setFieldErrors({});
     setFormError(undefined);
   }
+
+  // Run once, on mount. The dialog is mounted fresh for each row (its call site
+  // keys it by id), so this is the prefill — and it replaces a `reset()` hung
+  // off `onOpenChange(true)`, which Radix only fires for a dialog that opens
+  // itself. Opened from a row's Edit button, that callback never ran and the
+  // form kept whatever was last typed into it.
+  useEffect(reset, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -463,11 +473,9 @@ function ClassDialog({
 
   return (
     <Dialog
-      open={open}
+      open
       onOpenChange={(next) => {
-        if (next) {
-          reset();
-        } else {
+        if (!next) {
           onClose();
         }
       }}
@@ -564,8 +572,6 @@ function SectionDialog({
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [isPending, setIsPending] = useState(false);
 
-  const open = forClass !== undefined || editing !== undefined;
-
   function reset() {
     setName(editing?.section.name ?? '');
     setCapacity(
@@ -581,6 +587,13 @@ function SectionDialog({
     setFieldErrors({});
     setFormError(undefined);
   }
+
+  // Run once, on mount. The dialog is mounted fresh for each row (its call site
+  // keys it by id), so this is the prefill — and it replaces a `reset()` hung
+  // off `onOpenChange(true)`, which Radix only fires for a dialog that opens
+  // itself. Opened from a row's Edit button, that callback never ran and the
+  // form kept whatever was last typed into it.
+  useEffect(reset, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -643,11 +656,9 @@ function SectionDialog({
 
   return (
     <Dialog
-      open={open}
+      open
       onOpenChange={(next) => {
-        if (next) {
-          reset();
-        } else {
+        if (!next) {
           onClose();
         }
       }}

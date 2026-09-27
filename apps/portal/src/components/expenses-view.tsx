@@ -14,7 +14,7 @@ import { Button, ConfirmDialog, DataTable, DateDisplay, DatePicker, Dialog, Dial
 import { CreateIcon, DeleteIcon, EditIcon, ICON_SIZE, SearchIcon } from '@ilm/ui/icons';
 import { minorUnits } from '@ilm/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useState, useTransition, type FormEvent } from 'react';
+import { useEffect, useState, useTransition, type FormEvent } from 'react';
 
 import { mutate } from '@/lib/mutate';
 
@@ -336,17 +336,19 @@ export function ExpensesView({
         />
       )}
 
-      <ExpenseDialog
-        open={dialogOpen}
-        editing={editing}
-        categories={categories.filter((entry) => entry.isActive)}
-        sessions={sessions}
-        defaultSessionId={filters.sessionId}
-        onClose={() => {
-          setDialogOpen(false);
-          setEditing(undefined);
-        }}
-      />
+      {dialogOpen ? (
+        <ExpenseDialog
+          key={editing?.id ?? 'new'}
+          editing={editing}
+          categories={categories.filter((entry) => entry.isActive)}
+          sessions={sessions}
+          defaultSessionId={filters.sessionId}
+          onClose={() => {
+            setDialogOpen(false);
+            setEditing(undefined);
+          }}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={deleting !== undefined}
@@ -366,14 +368,12 @@ export function ExpensesView({
 }
 
 function ExpenseDialog({
-  open,
   editing,
   categories,
   sessions,
   defaultSessionId,
   onClose,
 }: {
-  open: boolean;
   editing: Expense | undefined;
   categories: readonly ExpenseCategory[];
   sessions: readonly AcademicSession[];
@@ -414,6 +414,13 @@ function ExpenseDialog({
     setFieldErrors({});
     setFormError(undefined);
   }
+
+  // Run once, on mount. The dialog is mounted fresh for each row (its call site
+  // keys it by id), so this is the prefill — and it replaces a `reset()` hung
+  // off `onOpenChange(true)`, which Radix only fires for a dialog that opens
+  // itself. Opened from a row's Edit button, that callback never ran and the
+  // form kept whatever was last typed into it.
+  useEffect(reset, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -468,11 +475,9 @@ function ExpenseDialog({
 
   return (
     <Dialog
-      open={open}
+      open
       onOpenChange={(next) => {
-        if (next) {
-          reset();
-        } else {
+        if (!next) {
           onClose();
         }
       }}

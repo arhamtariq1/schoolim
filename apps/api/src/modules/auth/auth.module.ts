@@ -5,6 +5,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from '../../shared/auth/password.service';
 import { TokenService } from '../../shared/auth/token.service';
 import { clockProvider } from '../../shared/time/clock.provider';
+import { StaffModule } from '../staff/staff.module';
 
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -13,7 +14,12 @@ import { HandoffService } from './handoff.service';
 import { PasswordResetService } from './password-reset.service';
 import { SessionService } from './session.service';
 
+
 @Module({
+  // For `StaffInviteService`, which owns both halves of an invitation: sending
+  // it lives with staff, accepting it lives with auth, and one service knowing
+  // both is what keeps the token's rules in a single file.
+  imports: [StaffModule],
   controllers: [AuthController],
   providers: [
     clockProvider,

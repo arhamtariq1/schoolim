@@ -37,7 +37,20 @@ export type ApiResult<T> =
   | { readonly ok: true; readonly data: T }
   | { readonly ok: false; readonly status: number; readonly message: string };
 
-export async function apiFetch<T>(path: string): Promise<ApiResult<T>> {
+/**
+ * A server-side call that is not a GET.
+ *
+ * Almost every server render reads, so `apiFetch` takes a path and nothing
+ * else. The exception is a token being checked before a page is drawn — an
+ * invitation, say — where the token belongs in a body rather than in a URL that
+ * ends up in a server log and a browser history.
+ */
+export interface ApiFetchInit {
+  readonly method: 'POST';
+  readonly body: string;
+}
+
+export async function apiFetch<T>(path: string, init?: ApiFetchInit): Promise<ApiResult<T>> {
   const [jar, incoming] = await Promise.all([nextCookies(), nextHeaders()]);
 
   const cookie = jar
@@ -54,9 +67,11 @@ export async function apiFetch<T>(path: string): Promise<ApiResult<T>> {
 
   try {
     const response = await fetch(`${base}${path}`, {
+      ...(init === undefined ? {} : { method: init.method, body: init.body }),
       headers: {
         cookie,
         ...(slug === undefined || slug === '' ? {} : { 'x-school-slug': slug }),
+        ...(init === undefined ? {} : { 'content-type': 'application/json' }),
       },
       // A tenant-scoped list must never be served from a shared cache.
       cache: 'no-store',

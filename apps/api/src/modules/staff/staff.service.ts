@@ -11,7 +11,6 @@ import { fromDecimalString, minorUnits, toDecimalString } from '@ilm/utils';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../prisma/prisma.service';
-import { PasswordService } from '../../shared/auth/password.service';
 import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/errors/domain-error';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
 
@@ -33,7 +32,6 @@ import { CLOCK, type Clock } from '../../shared/time/clock.provider';
 export class StaffService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly passwords: PasswordService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -107,7 +105,6 @@ export class StaffService {
 
         // The account first, so that if it collides on email the staff row is
         // never written — the two are one fact and must succeed together.
-        const userId = await this.createLoginIfWanted(tx, input);
 
         const created = await tx.staff.create({
           data: {
@@ -117,7 +114,6 @@ export class StaffService {
             casualLeaves: input.casualLeaves,
             sickLeaves: input.sickLeaves,
             basicSalary: toDecimalString(minorUnits(input.basicSalaryMinor)),
-            ...(userId === undefined ? {} : { userId }),
             ...(input.email === undefined ? {} : { email: input.email }),
             ...(input.phone === undefined ? {} : { phone: input.phone }),
             ...(input.gender === undefined ? {} : { gender: input.gender }),
@@ -159,7 +155,7 @@ export class StaffService {
       .tenant(async (tx) => {
         const existing = await tx.staff.findFirst({
           where: { id, deletedAt: null },
-          select: { id: true, userId: true, email: true, role: true },
+          select: { id: true, userId: true, email: true, phone: true, role: true },
         });
         if (existing === null) {
           throw new NotFoundError('staff member');
@@ -167,7 +163,7 @@ export class StaffService {
 
         const nextRole = input.role ?? existing.role;
         const nextEmail = input.email ?? existing.email ?? undefined;
-        let userId = existing.userId;
+        const userId = existing.userId;
 
         // A role change can take somebody's portal access away, and leaving a
         // live account behind for a janitor is the whole reason the roles are
@@ -176,52 +172,24 @@ export class StaffService {
           await tx.user.update({ where: { id: userId }, data: { status: 'DISABLED' } });
         }
 
-        if (input.password !== undefined) {
-          if (!staffRoleCanSignIn(nextRole)) {
-            throw new BusinessRuleError(
-              'BUSINESS_RULE_VIOLATION',
-              'This role does not use the portal, so it cannot have a password.',
-            );
-          }
-          if (nextEmail === undefined) {
-            throw new BusinessRuleError(
-              'BUSINESS_RULE_VIOLATION',
-              'An email address is needed to create a login.',
-            );
-          }
+        // Phone, and an email for anyone who signs in, checked against the row
+        // as it will be **after** this merge. The contract cannot do it: a
+        // PATCH carrying only a salary says nothing about either field, and one
+        // carrying only a role changes whether an email is needed at all.
+        const nextPhone = input.phone ?? existing.phone ?? undefined;
 
-          const passwordHash = await this.passwords.hash(input.password);
+        if (nextPhone === undefined || nextPhone === '') {
+          throw new BusinessRuleError(
+            'BUSINESS_RULE_VIOLATION',
+            'A phone number is required. This is a payroll record before it is a login.',
+          );
+        }
 
-          if (userId === null) {
-            // Setting a password on somebody who had no account creates one.
-            const user = await tx.user.create({
-              data: {
-                email: nextEmail,
-                name: input.name ?? nextEmail,
-                passwordHash,
-                status: 'ACTIVE',
-                mustChangePassword: true,
-                profileCompletedAt: this.clock.now(),
-              } as never,
-              select: { id: true },
-            });
-            userId = user.id;
-            await tx.userRole.create({
-              data: { userId: user.id, role: schoolRoleFor(nextRole) } as never,
-            });
-          } else {
-            await tx.user.update({
-              where: { id: userId },
-              data: {
-                passwordHash,
-                status: 'ACTIVE',
-                mustChangePassword: true,
-                // Every existing session dies. A password set by an
-                // administrator is usually a password being taken back.
-                tokenVersion: { increment: 1 },
-              },
-            });
-          }
+        if (staffRoleCanSignIn(nextRole) && (nextEmail === undefined || nextEmail === '')) {
+          throw new BusinessRuleError(
+            'BUSINESS_RULE_VIOLATION',
+            'This role uses the portal, so an email address is needed to invite them.',
+          );
         }
 
         // Keep the account's own fields in step with the employment record, or
@@ -330,43 +298,6 @@ export class StaffService {
         data: { deletedAt: now, status: 'LEFT', leftOn: now, designation: reason.slice(0, 80) },
       });
     });
-  }
-
-  /** Create the portal account, when the role has one and a password was given. */
-  private async createLoginIfWanted(
-    tx: Parameters<Parameters<PrismaService['tenant']>[0]>[0],
-    input: CreateStaff,
-  ): Promise<string | undefined> {
-    if (input.password === undefined || input.email === undefined) {
-      return undefined;
-    }
-    if (!staffRoleCanSignIn(input.role)) {
-      // The contract refuses this too; repeated because a future caller that is
-      // not our form would otherwise create a login for a janitor.
-      throw new BusinessRuleError(
-        'BUSINESS_RULE_VIOLATION',
-        'This role does not use the portal, so it cannot have a password.',
-      );
-    }
-
-    const user = await tx.user.create({
-      data: {
-        email: input.email,
-        name: input.name,
-        passwordHash: await this.passwords.hash(input.password),
-        status: 'ACTIVE',
-        // Somebody else chose this password and it was handed over out of band.
-        mustChangePassword: true,
-        profileCompletedAt: this.clock.now(),
-      } as never,
-      select: { id: true },
-    });
-
-    await tx.userRole.create({
-      data: { userId: user.id, role: schoolRoleFor(input.role) } as never,
-    });
-
-    return user.id;
   }
 
   /**

@@ -73,6 +73,10 @@ const SCHOOL_ANONYMOUS_PATHS = new Set([
   '/new-password',
   '/auth/continue',
   '/verify-email',
+  // An invited member of staff arrives here on their school's own hostname
+  // with no account yet — that is what the link is for. Sending them to sign
+  // in would be sending them to use a password they have not chosen.
+  '/invite',
 ]);
 
 /**
