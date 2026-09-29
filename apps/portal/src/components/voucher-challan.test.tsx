@@ -210,25 +210,31 @@ describe('printing in black and white', () => {
 });
 
 describe('filling the sheet', () => {
-  it('gives every copy the height of its share of the paper', () => {
-    // Otherwise three copies huddle at the top of a landscape A4 and two thirds
-    // of the sheet is blank.
-    const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
+  it('sets nothing smaller than 8px, because this is read at a bank counter', () => {
+    // A copy is a 92mm column on a landscape A4 — there is room. The type was
+    // once down at 6.5px, which is legible on a screen at 2x and not on paper
+    // under a fluorescent light. Anything below this is a figure somebody has
+    // to guess at.
+    const { container } = paint(BOTH, VOUCHER, { bankLogoVersion: 'b1' });
 
-    expect(container.firstElementChild?.getAttribute('style')).toContain('191mm');
-    expect(container.querySelector('.challan-copy')?.className).toContain(
-      'min-h-[var(--challan-copy-height)]',
-    );
+    const tooSmall = [...container.querySelectorAll('*')]
+      .flatMap((element) => [...element.className.toString().matchAll(/text-\[([\d.]+)px\]/g)])
+      .map((match) => Number(match[1]))
+      .filter((size) => size < 8);
+
+    expect(tooSmall).toEqual([]);
   });
 
-  it('gives a quarter-sheet copy the shorter height', () => {
-    const { container } = paint({
-      ...DEFAULT_VOUCHER_SETTINGS,
-      copyCount: 4,
-      copyLabels: ['A', 'B', 'C', 'D'],
-    });
+  it('is sized by its content, not stretched to the height of the sheet', () => {
+    // A forced height produced a hand-span of white between the total and the
+    // signature, because a two-line bill is not 191mm tall however much paper
+    // it is given. Real challans do not fill the sheet either — they end where
+    // the payment block ends, and the rest of the page is where you cut.
+    const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
 
-    expect(container.firstElementChild?.getAttribute('style')).toContain('136mm');
+    const copy = container.querySelector('.challan-copy');
+    expect(copy?.className).not.toContain('min-h-');
+    expect(container.firstElementChild?.getAttribute('style')).not.toContain('copy-height');
   });
 
   it('prints one row per charge and nothing else', () => {

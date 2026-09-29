@@ -38,19 +38,17 @@
   }
 
   /* ---------------------------------------------------------------------
-     One challan, in the preview dialog.
+     There is one print path, and it is the print page.
 
-     `position: absolute; inset: 0` lifts the single challan out of the
-     dialog it is sitting inside and onto the sheet. It only works for one:
-     two absolutely positioned at inset 0 print on top of each other, which
-     is what a stack of five hundred would have done.
+     The preview dialog used to print itself, which meant lifting the challan
+     out of a centred modal with `position: absolute; inset: 0`. That is
+     positioned against the dialog rather than the sheet, so the challan
+     landed a third of the way down the page — and it carried the preview's
+     own `zoom` onto the paper, which shrank the type past reading.
+
+     Both print buttons now open `/fees/vouchers/print`, where the challans
+     are in normal flow at their real size. Nothing here has to compensate.
      ------------------------------------------------------------------- */
-  .voucher-challan:only-of-type {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    padding: 0;
-  }
 
   /* ---------------------------------------------------------------------
      A stack of them, on the print page.

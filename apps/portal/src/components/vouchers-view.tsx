@@ -39,7 +39,6 @@ import {
 import {
   DeleteIcon,
   EditIcon,
-  ExportIcon,
   ICON_SIZE,
   PrintIcon,
   SearchIcon,
@@ -56,6 +55,7 @@ import { VoucherEditDialog } from './voucher-edit-dialog';
 
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
+import { stashPrintSelection } from '@/lib/print-handoff';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -132,6 +132,7 @@ export function VouchersView({
   const router = useRouter();
   const tenantHref = useTenantHref();
   const params = useSearchParams();
+
   const toast = useToast();
 
   const [draft, setDraft] = useState(filters);
@@ -155,6 +156,26 @@ export function VouchersView({
    * hundred rows, so doing this through it would be three requests carrying
    * three hundred kilobytes of rows whose only useful field is the id.
    */
+  /**
+   * Hand a selection to the print page, the same way the bulk bar does.
+   *
+   * The ids go through storage rather than the query string: a print run can be
+   * five hundred of them, which is a URL no browser will accept.
+   */
+  function openPrintPage(ids: readonly string[]): void {
+    const token = stashPrintSelection(ids);
+
+    if (token === undefined) {
+      toast.error(
+        'Could not open the print view',
+        'This browser is blocking site storage. Allow it for this site and try again.',
+      );
+      return;
+    }
+
+    window.open(`/fees/vouchers/print?h=${token}`, '_blank', 'noopener');
+  }
+
   async function selectAllMatching() {
     const query = new URLSearchParams(params.toString());
     query.delete('offset');
@@ -662,22 +683,19 @@ export function VouchersView({
             >
               Close
             </Button>
-            <Button
-              tone="outline"
-              onClick={() => {
-                window.print();
-              }}
-            >
-              <ExportIcon className={ICON_SIZE.inline} aria-hidden />
-              Download PDF
-            </Button>
+            {/* Opens the same print page a bulk run uses, rather than printing
+                the dialog. Printing in place meant lifting the challan out of a
+                centred modal with `position: absolute`, which put it a third of
+                the way down the sheet — and dragged the preview's own zoom onto
+                the paper, which is what made the type unreadable. One print
+                path, and it is the one that was already correct. */}
             <Button
               onClick={() => {
-                window.print();
+                openPrintPage(previewing === undefined ? [] : [previewing.id]);
               }}
             >
               <PrintIcon className={ICON_SIZE.inline} aria-hidden />
-              Print
+              Print or download
             </Button>
           </DialogFooter>
         </DialogContent>
