@@ -489,7 +489,7 @@ export function VoucherSettingsForm({
               landscape. A narrower preview makes a challan look cramped that is
               not, and a school would redesign around a problem it does not
               have. */}
-          <div className="min-w-[54rem]">
+          <div className={preview.copyCount === 4 ? 'min-w-[30rem]' : 'min-w-[48rem]'}>
             <VoucherChallan voucher={SAMPLE} school={school} settings={preview} />
           </div>
         </div>
@@ -529,11 +529,13 @@ function LayoutChoice({
         onChange={onSelect}
       />
 
-      {/* A4 proportions, so the miniature is the sheet and not a rectangle. */}
+      {/* A4 proportions, and the sheet turns with the layout — three copies go
+          across a landscape page, four down a portrait one. Which way up the
+          paper goes is half of what is being chosen here. */}
       <span
         aria-hidden
-        className={`grid h-12 w-[2.12rem] shrink-0 gap-[2px] rounded-xs border border-border bg-background p-[2px] ${
-          count === 4 ? 'grid-cols-2' : 'grid-cols-1'
+        className={`grid shrink-0 gap-[2px] rounded-xs border border-border bg-background p-[2px] ${
+          count === 4 ? 'h-12 w-[2.12rem] grid-cols-2' : 'h-[2.12rem] w-12 grid-cols-3'
         }`}
       >
         {Array.from({ length: count }, (_, index) => (
@@ -544,7 +546,7 @@ function LayoutChoice({
       <span className="min-w-0">
         <span className="block text-sm font-medium text-foreground">{count} copies</span>
         <span className="block text-xs text-muted-foreground">
-          {count === 3 ? 'Stacked down the page' : 'Two by two'}
+          {count === 3 ? 'Across a landscape sheet' : 'Two by two, portrait'}
         </span>
       </span>
     </label>

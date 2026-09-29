@@ -15,13 +15,17 @@
    be handed a screenshot of a web app instead of something a bank will accept.
    So printing hides everything and promotes the challan to the page.
 
-   ## A4 portrait, in one of two arrangements
+   ## Two arrangements, and the sheet turns with them
 
-   Three copies stack down the sheet as full-width strips; four sit in a 2x2.
-   The arrangement is the component's own grid — `grid-cols-1` or `grid-cols-2`
-   from `copyCount` — so there is nothing here that has to agree with it. What
-   is here is the page itself, and the rule that no copy may be split across two
-   sheets.
+   Three copies go across a **landscape** A4 as columns — 92x194mm each, which
+   is the shape a counter clerk expects. Four go on a **portrait** sheet in a
+   2x2, at 97x140mm. Both are tall and narrow, so one copy design serves both.
+
+   The columns themselves are the component's own grid, so nothing here has to
+   agree with it. What is here is the paper: named `@page` rules, selected by
+   the `challan-landscape` class the component adds for the three-up layout.
+   A browser that ignores named pages prints on its default size and the
+   columns still come out in order — narrower than intended, not broken.
 --------------------------------------------------------------------------- */
 @media print {
   body * {
@@ -103,8 +107,19 @@
     print-color-adjust: exact;
   }
 
+  /* Four copies in a 2x2 — the default, and what an unclassed challan gets. */
   @page {
     size: A4 portrait;
     margin: 8mm;
+  }
+
+  /* Three copies across, which needs the sheet turned. */
+  @page challan-landscape {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
+  .challan-landscape {
+    page: challan-landscape;
   }
 }

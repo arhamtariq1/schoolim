@@ -77,7 +77,11 @@ export function VoucherChallan({ voucher, school, settings }: ChallanProps) {
   return (
     <div
       className={`voucher-challan grid gap-3 ${
-        settings.copyCount === 4 ? 'grid-cols-2' : 'grid-cols-1'
+        // `challan-landscape` is what turns the sheet, via a named `@page` in
+        // globals.css. Three copies across a landscape A4 gives each one a
+        // 92x194mm column; four on a portrait sheet gives 97x140mm. Both are
+        // tall and narrow, which is why one copy design serves both.
+        settings.copyCount === 4 ? 'grid-cols-2' : 'challan-landscape grid-cols-3'
       }`}
       // Set once on the container and inherited by every copy. Three custom
       // properties is the whole of the school's colour on this page, and they
@@ -115,23 +119,25 @@ function ChallanCopy({ copy, voucher, school, settings }: ChallanProps & { copy:
   const showLogo = settings.showLogo && school.logoVersion !== undefined;
   const showBank = settings.bankName !== null || school.bankLogoVersion !== undefined;
 
-  /** Three copies are wide strips; four are tall quarters. */
-  const wide = settings.copyCount === 3;
-
   return (
-    <article className="challan-copy flex break-inside-avoid flex-col overflow-hidden rounded-lg border border-neutral-400 bg-white text-[9px] leading-snug text-neutral-900">
-      {/* Which copy this is, and which challan. Tinted rather than filled, so
-          both survive a printer that drops backgrounds. */}
-      <div className="challan-tint flex items-center justify-between gap-2 border-b border-[var(--challan-rule)] bg-[var(--challan-tint)] px-3 py-1">
-        <span className="text-[8px] font-bold tracking-[0.18em] text-[var(--challan-accent)] uppercase">
+    <article className="challan-copy flex break-inside-avoid flex-col overflow-hidden rounded-lg border border-neutral-300 bg-white text-[9px] leading-snug text-neutral-900">
+      {/* A solid rule of the school's colour, full bleed. Borders print when
+          fills do not, so this is the one mark of the accent that is certain to
+          survive — and it is what makes the sheet look designed rather than
+          typed. */}
+      <div className="h-[3px] shrink-0 bg-[var(--challan-accent)] challan-tint" />
+
+      {/* Which copy this is, and which challan. */}
+      <div className="flex items-center justify-between gap-2 px-3.5 pt-2">
+        <span className="rounded-full border border-[var(--challan-rule)] px-2 py-[1px] text-[7px] font-bold tracking-[0.16em] text-[var(--challan-accent)] uppercase">
           {copy}
         </span>
-        <span className="font-mono text-[8px] font-semibold tracking-wide">
+        <span className="font-mono text-[8px] font-semibold tracking-wide text-neutral-500">
           {voucher.voucherNo}
         </span>
       </div>
 
-      <header className="flex items-center gap-2.5 border-b border-neutral-300 px-3 py-2">
+      <header className="flex items-center gap-2.5 px-3.5 pt-2 pb-2.5">
         {showLogo ? (
           // A plain `img`: this is printed, so there is nothing for Next's
           // image pipeline to optimise, and a `next/image` here would be a
@@ -140,52 +146,46 @@ function ChallanCopy({ copy, voucher, school, settings }: ChallanProps & { copy:
           <img
             src={`${ROUTES.schoolLogo.image}?v=${school.logoVersion ?? ''}`}
             alt=""
-            className="size-9 shrink-0 object-contain"
+            className="size-10 shrink-0 object-contain"
           />
         ) : null}
 
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-[13px] leading-tight font-bold tracking-tight">
+          <h3 className="text-[14px] leading-[1.15] font-bold tracking-tight text-balance">
             {school.name}
           </h3>
-          <p className="truncate text-[8px] leading-tight text-neutral-600">
+          <p className="mt-0.5 truncate text-[7.5px] leading-tight text-neutral-500">
             {[school.address, school.phone === undefined ? undefined : `Ph ${school.phone}`]
               .filter((part) => part !== undefined)
               .join('  ·  ')}
           </p>
         </div>
-
-        <span className="shrink-0 text-right text-[7px] tracking-[0.12em] text-neutral-500 uppercase">
-          Fee Challan
-        </span>
       </header>
 
-      {/* Side by side when there is width to spend, stacked when there is not. */}
-      <div className={wide ? 'grid grid-cols-[1fr_1.25fr] divide-x divide-neutral-300' : ''}>
-        <Particulars voucher={voucher} />
+      <Particulars voucher={voucher} />
 
-        <div className={wide ? 'min-w-0' : 'border-t border-neutral-300'}>
-          <Charges charges={charges} voucher={voucher} />
-          <Totals voucher={voucher} afterDue={afterDue} />
-        </div>
+      {/* Grows, so on a tall column the slack lands here rather than under the
+          signature — the totals sit where the eye ends up. */}
+      <div className="flex-1">
+        <Charges charges={charges} voucher={voucher} />
       </div>
 
+      <Totals voucher={voucher} afterDue={afterDue} />
+
       {settings.footerNote === null ? null : (
-        <p className="border-t border-neutral-300 px-3 py-1 text-[7px] leading-snug text-neutral-600">
+        <p className="px-3.5 pt-1.5 text-[7px] leading-snug text-neutral-500">
           {settings.footerNote}
         </p>
       )}
 
-      {/* Pushed down so every copy signs on the same line, whatever number of
-          fee rows each carries. */}
-      <div className="mt-auto flex items-end justify-between gap-3 border-t border-neutral-300 px-3 pt-2 pb-1.5">
+      <div className="flex items-end justify-between gap-3 px-3.5 pt-3 pb-2">
         {showBank ? (
-          <div className="flex min-w-0 items-center gap-1.5">
+          <span className="flex min-w-0 items-center gap-1.5">
             {school.bankLogoVersion === undefined ? null : (
               <img
                 src={`${ROUTES.bankLogo.image}?v=${school.bankLogoVersion}`}
                 alt=""
-                className="h-5 w-auto max-w-14 shrink-0 object-contain"
+                className="h-6 w-auto max-w-16 shrink-0 object-contain"
               />
             )}
             <span className="min-w-0">
@@ -194,12 +194,12 @@ function ChallanCopy({ copy, voucher, school, settings }: ChallanProps & { copy:
                 <span className="block truncate text-[8px] font-semibold">{settings.bankName}</span>
               )}
             </span>
-          </div>
+          </span>
         ) : (
           <span />
         )}
 
-        <span className="w-28 shrink-0 border-t border-dashed border-neutral-500 pt-0.5 text-center text-[7px] text-neutral-600">
+        <span className="w-24 shrink-0 border-t border-dotted border-neutral-400 pt-1 text-center text-[6.5px] tracking-wide text-neutral-500 uppercase">
           Receiver&rsquo;s Signature
         </span>
       </div>
@@ -209,7 +209,6 @@ function ChallanCopy({ copy, voucher, school, settings }: ChallanProps & { copy:
           kuickpay={kuickpay}
           onelink={onelink}
           channels={settings.kuickpayChannels}
-          columns={wide ? 4 : 2}
         />
       )}
     </article>
@@ -226,11 +225,11 @@ function ChallanCopy({ copy, voucher, school, settings }: ChallanProps & { copy:
  */
 function Particulars({ voucher }: { voucher: Challan }) {
   return (
-    <dl className="grid grid-cols-2 gap-x-3 gap-y-1 px-3 py-2">
+    <dl className="challan-tint grid grid-cols-2 gap-x-3 gap-y-1.5 border-y border-neutral-200 bg-[var(--challan-tint)] px-3.5 py-2.5">
       <Pair label="Student" value={voucher.studentName} span />
       <Pair label="Father" value={voucher.fatherName ?? '—'} span />
       <Pair label="GR No" value={voucher.grNo ?? '—'} />
-      <Pair label="Class" value={voucher.className ?? '—'} />
+      <Pair label="Class" value={`${voucher.className ?? '—'}`} />
       <Pair label="Section" value={voucher.sectionName ?? '—'} />
       <Pair label="Session" value={voucher.sessionName} />
       <Pair label="Issued" value={formatDate(voucher.issueDate)} />
@@ -258,10 +257,10 @@ function Charges({ charges, voucher }: { charges: Challan['lines']; voucher: Cha
 
       <thead>
         <tr className="border-b border-[var(--challan-rule)]">
-          <th className="px-3 py-1 text-left">
+          <th className="px-3.5 pt-2.5 pb-1 text-left">
             <Micro>Particulars</Micro>
           </th>
-          <th className="px-3 py-1 text-right">
+          <th className="px-3.5 pt-2.5 pb-1 text-right">
             <Micro>Amount (Rs.)</Micro>
           </th>
         </tr>
@@ -300,23 +299,25 @@ function Charges({ charges, voucher }: { charges: Challan['lines']; voucher: Cha
 /** The figure this document exists to communicate, and the one after it. */
 function Totals({ voucher, afterDue }: { voucher: Challan; afterDue: number }) {
   return (
-    <div className="challan-tint border-t border-[var(--challan-rule)] bg-[var(--challan-tint)]">
-      <div className="flex items-baseline justify-between gap-2 px-3 pt-1.5">
-        <span className="text-[8px] font-semibold tracking-wide text-[var(--challan-accent)] uppercase">
-          Payable within due date
+    <div className="challan-tint border-y-2 border-[var(--challan-accent)] bg-[var(--challan-tint)]">
+      <div className="flex items-end justify-between gap-2 px-3.5 pt-2">
+        <span className="pb-[3px] text-[7.5px] font-bold tracking-[0.1em] text-[var(--challan-accent)] uppercase">
+          Payable
+          <br />
+          within due date
         </span>
-        <span className="font-mono text-[14px] leading-none font-bold tabular-nums">
+        <span className="font-mono text-[19px] leading-none font-bold tracking-tight tabular-nums">
           <Money valueMinor={voucher.totalPayableMinor} withSymbol={false} />
         </span>
       </div>
 
       {/* Printed even when it equals the figure above: a parent who sees only
           one number cannot tell whether paying late costs more. */}
-      <div className="flex items-baseline justify-between gap-2 px-3 pt-0.5 pb-1.5">
-        <span className="text-[7.5px] text-neutral-600">
+      <div className="mt-1.5 flex items-baseline justify-between gap-2 border-t border-[var(--challan-rule)] px-3.5 py-1">
+        <span className="text-[7.5px] text-neutral-500">
           After {formatDate(voucher.dueDate)}
         </span>
-        <span className="font-mono text-[9px] font-semibold tabular-nums text-neutral-700">
+        <span className="font-mono text-[10px] font-semibold tabular-nums text-neutral-700">
           <Money valueMinor={afterDue} withSymbol={false} />
         </span>
       </div>
@@ -336,35 +337,29 @@ function PaymentBlock({
   kuickpay,
   onelink,
   channels,
-  columns,
 }: {
   kuickpay: string;
   onelink: string | undefined;
   channels: readonly string[];
-  columns: 2 | 4;
 }) {
   return (
-    <div className="challan-paybar border-t border-[var(--challan-accent)] bg-[var(--challan-tint)]">
-      <div className="flex items-center justify-between gap-2 px-3 py-1">
+    <div className="challan-paybar border-t border-[var(--challan-rule)] bg-[var(--challan-tint)]">
+      <div className="flex items-center justify-between gap-2 px-3.5 py-1.5">
         <span className="text-[10px] font-bold tracking-tight text-[var(--challan-accent)]">
           Kuickpay
         </span>
-        <span className="flex items-center gap-1 rounded border border-neutral-500 bg-white px-1.5 py-0.5 text-black">
-          <span className="text-[7px] font-normal text-neutral-600">ID</span>
-          <span className="font-mono text-[10px] font-bold tracking-wider">{kuickpay}</span>
+        <span className="flex items-center gap-1.5 rounded border border-neutral-400 bg-white px-2 py-0.5 text-black">
+          <span className="text-[6.5px] tracking-wide text-neutral-500 uppercase">ID</span>
+          <span className="font-mono text-[11px] font-bold tracking-wider">{kuickpay}</span>
         </span>
       </div>
 
       {channels.length === 0 ? null : (
-        <div className="px-3 pb-1">
+        <div className="px-3.5 pb-1.5">
           <Micro>Pay in cash at</Micro>
-          {/* Four columns on a wide strip, two on a quarter — twelve names down
-              one side is a strip taller than the challan it belongs to. */}
-          <ul
-            className={`mt-0.5 grid gap-x-2 text-[6.5px] leading-snug text-neutral-700 ${
-              columns === 4 ? 'grid-cols-4' : 'grid-cols-2'
-            }`}
-          >
+          {/* Two columns: a copy is about 92mm wide, and twelve outlet names
+              down one side is a strip taller than the challan it belongs to. */}
+          <ul className="mt-0.5 grid grid-cols-2 gap-x-2 text-[6.5px] leading-snug text-neutral-600">
             {channels.map((channel) => (
               <li key={channel} className="truncate">
                 {channel}
@@ -375,8 +370,8 @@ function PaymentBlock({
       )}
 
       {onelink === undefined ? null : (
-        <p className="border-t border-[var(--challan-rule)] px-3 py-0.5 text-center text-[8px]">
-          <span className="text-neutral-600">1LINK ID</span>{' '}
+        <p className="border-t border-[var(--challan-rule)] px-3.5 py-1 text-center text-[8px]">
+          <span className="text-neutral-500">1LINK ID</span>{' '}
           <span className="font-mono font-semibold tracking-wider">{onelink}</span>
         </p>
       )}
@@ -422,13 +417,13 @@ function Charge({
 }) {
   return (
     <tr className="border-b border-neutral-200 last:border-b-0">
-      <td className="truncate px-3 py-[3px]">
+      <td className="truncate px-3.5 py-[3.5px]">
         {label}
         {hint === undefined ? null : (
           <span className="ms-1 text-[7px] text-neutral-500">({hint})</span>
         )}
       </td>
-      <td className="px-3 py-[3px] text-right font-mono tabular-nums">
+      <td className="px-3.5 py-[3.5px] text-right font-mono tabular-nums">
         <Money valueMinor={minor} withSymbol={false} />
       </td>
     </tr>

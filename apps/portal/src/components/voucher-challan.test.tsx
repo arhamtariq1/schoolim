@@ -143,13 +143,16 @@ describe('the three copies', () => {
 
     expect(screen.getAllByText('Kaneez Fatima')).toHaveLength(4);
     expect(screen.getByText('Office Copy')).toBeTruthy();
-    // Two across is the 2x2 on an A4 portrait; three stack full-width.
+    // Two across is the 2x2 on a portrait sheet; three go across a landscape one.
     expect(container.firstElementChild?.className).toContain('grid-cols-2');
+    expect(container.firstElementChild?.className).not.toContain('challan-landscape');
   });
 
-  it('stacks three down the page rather than across it', () => {
+  it('puts three across a landscape sheet', () => {
     const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
-    expect(container.firstElementChild?.className).toContain('grid-cols-1');
+    expect(container.firstElementChild?.className).toContain('grid-cols-3');
+    // And the sheet is turned for it — three columns need a landscape A4.
+    expect(container.firstElementChild?.className).toContain('challan-landscape');
   });
 });
 
