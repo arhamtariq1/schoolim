@@ -42,6 +42,9 @@ export type SchoolLogoMinAggregateOutputType = {
   mimeType: string | null
   etag: string | null
   byteSize: number | null
+  storageProvider: string | null
+  storageKey: string | null
+  storageUrl: string | null
   createdBy: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -55,6 +58,9 @@ export type SchoolLogoMaxAggregateOutputType = {
   mimeType: string | null
   etag: string | null
   byteSize: number | null
+  storageProvider: string | null
+  storageKey: string | null
+  storageUrl: string | null
   createdBy: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -68,6 +74,9 @@ export type SchoolLogoCountAggregateOutputType = {
   mimeType: number
   etag: number
   byteSize: number
+  storageProvider: number
+  storageKey: number
+  storageUrl: number
   createdBy: number
   createdAt: number
   updatedAt: number
@@ -91,6 +100,9 @@ export type SchoolLogoMinAggregateInputType = {
   mimeType?: true
   etag?: true
   byteSize?: true
+  storageProvider?: true
+  storageKey?: true
+  storageUrl?: true
   createdBy?: true
   createdAt?: true
   updatedAt?: true
@@ -104,6 +116,9 @@ export type SchoolLogoMaxAggregateInputType = {
   mimeType?: true
   etag?: true
   byteSize?: true
+  storageProvider?: true
+  storageKey?: true
+  storageUrl?: true
   createdBy?: true
   createdAt?: true
   updatedAt?: true
@@ -117,6 +132,9 @@ export type SchoolLogoCountAggregateInputType = {
   mimeType?: true
   etag?: true
   byteSize?: true
+  storageProvider?: true
+  storageKey?: true
+  storageUrl?: true
   createdBy?: true
   createdAt?: true
   updatedAt?: true
@@ -213,10 +231,13 @@ export type SchoolLogoGroupByOutputType = {
   id: string
   schoolId: string
   kind: $Enums.SchoolImageKind
-  bytes: runtime.Bytes
+  bytes: runtime.Bytes | null
   mimeType: string
   etag: string
   byteSize: number
+  storageProvider: string
+  storageKey: string
+  storageUrl: string | null
   createdBy: string | null
   createdAt: Date
   updatedAt: Date
@@ -249,10 +270,13 @@ export type SchoolLogoWhereInput = {
   id?: Prisma.UuidFilter<"SchoolLogo"> | string
   schoolId?: Prisma.UuidFilter<"SchoolLogo"> | string
   kind?: Prisma.EnumSchoolImageKindFilter<"SchoolLogo"> | $Enums.SchoolImageKind
-  bytes?: Prisma.BytesFilter<"SchoolLogo"> | runtime.Bytes
+  bytes?: Prisma.BytesNullableFilter<"SchoolLogo"> | runtime.Bytes | null
   mimeType?: Prisma.StringFilter<"SchoolLogo"> | string
   etag?: Prisma.StringFilter<"SchoolLogo"> | string
   byteSize?: Prisma.IntFilter<"SchoolLogo"> | number
+  storageProvider?: Prisma.StringFilter<"SchoolLogo"> | string
+  storageKey?: Prisma.StringFilter<"SchoolLogo"> | string
+  storageUrl?: Prisma.StringNullableFilter<"SchoolLogo"> | string | null
   createdBy?: Prisma.UuidNullableFilter<"SchoolLogo"> | string | null
   createdAt?: Prisma.DateTimeFilter<"SchoolLogo"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"SchoolLogo"> | Date | string
@@ -263,10 +287,13 @@ export type SchoolLogoOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   schoolId?: Prisma.SortOrder
   kind?: Prisma.SortOrder
-  bytes?: Prisma.SortOrder
+  bytes?: Prisma.SortOrderInput | Prisma.SortOrder
   mimeType?: Prisma.SortOrder
   etag?: Prisma.SortOrder
   byteSize?: Prisma.SortOrder
+  storageProvider?: Prisma.SortOrder
+  storageKey?: Prisma.SortOrder
+  storageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdBy?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -281,10 +308,13 @@ export type SchoolLogoWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.SchoolLogoWhereInput | Prisma.SchoolLogoWhereInput[]
   schoolId?: Prisma.UuidFilter<"SchoolLogo"> | string
   kind?: Prisma.EnumSchoolImageKindFilter<"SchoolLogo"> | $Enums.SchoolImageKind
-  bytes?: Prisma.BytesFilter<"SchoolLogo"> | runtime.Bytes
+  bytes?: Prisma.BytesNullableFilter<"SchoolLogo"> | runtime.Bytes | null
   mimeType?: Prisma.StringFilter<"SchoolLogo"> | string
   etag?: Prisma.StringFilter<"SchoolLogo"> | string
   byteSize?: Prisma.IntFilter<"SchoolLogo"> | number
+  storageProvider?: Prisma.StringFilter<"SchoolLogo"> | string
+  storageKey?: Prisma.StringFilter<"SchoolLogo"> | string
+  storageUrl?: Prisma.StringNullableFilter<"SchoolLogo"> | string | null
   createdBy?: Prisma.UuidNullableFilter<"SchoolLogo"> | string | null
   createdAt?: Prisma.DateTimeFilter<"SchoolLogo"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"SchoolLogo"> | Date | string
@@ -295,10 +325,13 @@ export type SchoolLogoOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   schoolId?: Prisma.SortOrder
   kind?: Prisma.SortOrder
-  bytes?: Prisma.SortOrder
+  bytes?: Prisma.SortOrderInput | Prisma.SortOrder
   mimeType?: Prisma.SortOrder
   etag?: Prisma.SortOrder
   byteSize?: Prisma.SortOrder
+  storageProvider?: Prisma.SortOrder
+  storageKey?: Prisma.SortOrder
+  storageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdBy?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -316,10 +349,13 @@ export type SchoolLogoScalarWhereWithAggregatesInput = {
   id?: Prisma.UuidWithAggregatesFilter<"SchoolLogo"> | string
   schoolId?: Prisma.UuidWithAggregatesFilter<"SchoolLogo"> | string
   kind?: Prisma.EnumSchoolImageKindWithAggregatesFilter<"SchoolLogo"> | $Enums.SchoolImageKind
-  bytes?: Prisma.BytesWithAggregatesFilter<"SchoolLogo"> | runtime.Bytes
+  bytes?: Prisma.BytesNullableWithAggregatesFilter<"SchoolLogo"> | runtime.Bytes | null
   mimeType?: Prisma.StringWithAggregatesFilter<"SchoolLogo"> | string
   etag?: Prisma.StringWithAggregatesFilter<"SchoolLogo"> | string
   byteSize?: Prisma.IntWithAggregatesFilter<"SchoolLogo"> | number
+  storageProvider?: Prisma.StringWithAggregatesFilter<"SchoolLogo"> | string
+  storageKey?: Prisma.StringWithAggregatesFilter<"SchoolLogo"> | string
+  storageUrl?: Prisma.StringNullableWithAggregatesFilter<"SchoolLogo"> | string | null
   createdBy?: Prisma.UuidNullableWithAggregatesFilter<"SchoolLogo"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"SchoolLogo"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"SchoolLogo"> | Date | string
@@ -328,10 +364,13 @@ export type SchoolLogoScalarWhereWithAggregatesInput = {
 export type SchoolLogoCreateInput = {
   id?: string
   kind?: $Enums.SchoolImageKind
-  bytes: runtime.Bytes
+  bytes?: runtime.Bytes | null
   mimeType: string
   etag: string
   byteSize: number
+  storageProvider?: string
+  storageKey: string
+  storageUrl?: string | null
   createdBy?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -342,10 +381,13 @@ export type SchoolLogoUncheckedCreateInput = {
   id?: string
   schoolId: string
   kind?: $Enums.SchoolImageKind
-  bytes: runtime.Bytes
+  bytes?: runtime.Bytes | null
   mimeType: string
   etag: string
   byteSize: number
+  storageProvider?: string
+  storageKey: string
+  storageUrl?: string | null
   createdBy?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -354,10 +396,13 @@ export type SchoolLogoUncheckedCreateInput = {
 export type SchoolLogoUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumSchoolImageKindFieldUpdateOperationsInput | $Enums.SchoolImageKind
-  bytes?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  bytes?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   etag?: Prisma.StringFieldUpdateOperationsInput | string
   byteSize?: Prisma.IntFieldUpdateOperationsInput | number
+  storageProvider?: Prisma.StringFieldUpdateOperationsInput | string
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  storageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -368,10 +413,13 @@ export type SchoolLogoUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schoolId?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumSchoolImageKindFieldUpdateOperationsInput | $Enums.SchoolImageKind
-  bytes?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  bytes?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   etag?: Prisma.StringFieldUpdateOperationsInput | string
   byteSize?: Prisma.IntFieldUpdateOperationsInput | number
+  storageProvider?: Prisma.StringFieldUpdateOperationsInput | string
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  storageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -381,10 +429,13 @@ export type SchoolLogoCreateManyInput = {
   id?: string
   schoolId: string
   kind?: $Enums.SchoolImageKind
-  bytes: runtime.Bytes
+  bytes?: runtime.Bytes | null
   mimeType: string
   etag: string
   byteSize: number
+  storageProvider?: string
+  storageKey: string
+  storageUrl?: string | null
   createdBy?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -393,10 +444,13 @@ export type SchoolLogoCreateManyInput = {
 export type SchoolLogoUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumSchoolImageKindFieldUpdateOperationsInput | $Enums.SchoolImageKind
-  bytes?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  bytes?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   etag?: Prisma.StringFieldUpdateOperationsInput | string
   byteSize?: Prisma.IntFieldUpdateOperationsInput | number
+  storageProvider?: Prisma.StringFieldUpdateOperationsInput | string
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  storageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -406,10 +460,13 @@ export type SchoolLogoUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schoolId?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumSchoolImageKindFieldUpdateOperationsInput | $Enums.SchoolImageKind
-  bytes?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  bytes?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   etag?: Prisma.StringFieldUpdateOperationsInput | string
   byteSize?: Prisma.IntFieldUpdateOperationsInput | number
+  storageProvider?: Prisma.StringFieldUpdateOperationsInput | string
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  storageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -438,6 +495,9 @@ export type SchoolLogoCountOrderByAggregateInput = {
   mimeType?: Prisma.SortOrder
   etag?: Prisma.SortOrder
   byteSize?: Prisma.SortOrder
+  storageProvider?: Prisma.SortOrder
+  storageKey?: Prisma.SortOrder
+  storageUrl?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -455,6 +515,9 @@ export type SchoolLogoMaxOrderByAggregateInput = {
   mimeType?: Prisma.SortOrder
   etag?: Prisma.SortOrder
   byteSize?: Prisma.SortOrder
+  storageProvider?: Prisma.SortOrder
+  storageKey?: Prisma.SortOrder
+  storageUrl?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -468,6 +531,9 @@ export type SchoolLogoMinOrderByAggregateInput = {
   mimeType?: Prisma.SortOrder
   etag?: Prisma.SortOrder
   byteSize?: Prisma.SortOrder
+  storageProvider?: Prisma.SortOrder
+  storageKey?: Prisma.SortOrder
+  storageUrl?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -523,17 +589,20 @@ export type EnumSchoolImageKindFieldUpdateOperationsInput = {
   set?: $Enums.SchoolImageKind
 }
 
-export type BytesFieldUpdateOperationsInput = {
-  set?: runtime.Bytes
+export type NullableBytesFieldUpdateOperationsInput = {
+  set?: runtime.Bytes | null
 }
 
 export type SchoolLogoCreateWithoutSchoolInput = {
   id?: string
   kind?: $Enums.SchoolImageKind
-  bytes: runtime.Bytes
+  bytes?: runtime.Bytes | null
   mimeType: string
   etag: string
   byteSize: number
+  storageProvider?: string
+  storageKey: string
+  storageUrl?: string | null
   createdBy?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -542,10 +611,13 @@ export type SchoolLogoCreateWithoutSchoolInput = {
 export type SchoolLogoUncheckedCreateWithoutSchoolInput = {
   id?: string
   kind?: $Enums.SchoolImageKind
-  bytes: runtime.Bytes
+  bytes?: runtime.Bytes | null
   mimeType: string
   etag: string
   byteSize: number
+  storageProvider?: string
+  storageKey: string
+  storageUrl?: string | null
   createdBy?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -584,10 +656,13 @@ export type SchoolLogoScalarWhereInput = {
   id?: Prisma.UuidFilter<"SchoolLogo"> | string
   schoolId?: Prisma.UuidFilter<"SchoolLogo"> | string
   kind?: Prisma.EnumSchoolImageKindFilter<"SchoolLogo"> | $Enums.SchoolImageKind
-  bytes?: Prisma.BytesFilter<"SchoolLogo"> | runtime.Bytes
+  bytes?: Prisma.BytesNullableFilter<"SchoolLogo"> | runtime.Bytes | null
   mimeType?: Prisma.StringFilter<"SchoolLogo"> | string
   etag?: Prisma.StringFilter<"SchoolLogo"> | string
   byteSize?: Prisma.IntFilter<"SchoolLogo"> | number
+  storageProvider?: Prisma.StringFilter<"SchoolLogo"> | string
+  storageKey?: Prisma.StringFilter<"SchoolLogo"> | string
+  storageUrl?: Prisma.StringNullableFilter<"SchoolLogo"> | string | null
   createdBy?: Prisma.UuidNullableFilter<"SchoolLogo"> | string | null
   createdAt?: Prisma.DateTimeFilter<"SchoolLogo"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"SchoolLogo"> | Date | string
@@ -596,10 +671,13 @@ export type SchoolLogoScalarWhereInput = {
 export type SchoolLogoCreateManySchoolInput = {
   id?: string
   kind?: $Enums.SchoolImageKind
-  bytes: runtime.Bytes
+  bytes?: runtime.Bytes | null
   mimeType: string
   etag: string
   byteSize: number
+  storageProvider?: string
+  storageKey: string
+  storageUrl?: string | null
   createdBy?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -608,10 +686,13 @@ export type SchoolLogoCreateManySchoolInput = {
 export type SchoolLogoUpdateWithoutSchoolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumSchoolImageKindFieldUpdateOperationsInput | $Enums.SchoolImageKind
-  bytes?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  bytes?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   etag?: Prisma.StringFieldUpdateOperationsInput | string
   byteSize?: Prisma.IntFieldUpdateOperationsInput | number
+  storageProvider?: Prisma.StringFieldUpdateOperationsInput | string
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  storageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -620,10 +701,13 @@ export type SchoolLogoUpdateWithoutSchoolInput = {
 export type SchoolLogoUncheckedUpdateWithoutSchoolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumSchoolImageKindFieldUpdateOperationsInput | $Enums.SchoolImageKind
-  bytes?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  bytes?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   etag?: Prisma.StringFieldUpdateOperationsInput | string
   byteSize?: Prisma.IntFieldUpdateOperationsInput | number
+  storageProvider?: Prisma.StringFieldUpdateOperationsInput | string
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  storageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -632,10 +716,13 @@ export type SchoolLogoUncheckedUpdateWithoutSchoolInput = {
 export type SchoolLogoUncheckedUpdateManyWithoutSchoolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumSchoolImageKindFieldUpdateOperationsInput | $Enums.SchoolImageKind
-  bytes?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  bytes?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   etag?: Prisma.StringFieldUpdateOperationsInput | string
   byteSize?: Prisma.IntFieldUpdateOperationsInput | number
+  storageProvider?: Prisma.StringFieldUpdateOperationsInput | string
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  storageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -651,6 +738,9 @@ export type SchoolLogoSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   mimeType?: boolean
   etag?: boolean
   byteSize?: boolean
+  storageProvider?: boolean
+  storageKey?: boolean
+  storageUrl?: boolean
   createdBy?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -665,6 +755,9 @@ export type SchoolLogoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   mimeType?: boolean
   etag?: boolean
   byteSize?: boolean
+  storageProvider?: boolean
+  storageKey?: boolean
+  storageUrl?: boolean
   createdBy?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -679,6 +772,9 @@ export type SchoolLogoSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   mimeType?: boolean
   etag?: boolean
   byteSize?: boolean
+  storageProvider?: boolean
+  storageKey?: boolean
+  storageUrl?: boolean
   createdBy?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -693,12 +789,15 @@ export type SchoolLogoSelectScalar = {
   mimeType?: boolean
   etag?: boolean
   byteSize?: boolean
+  storageProvider?: boolean
+  storageKey?: boolean
+  storageUrl?: boolean
   createdBy?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type SchoolLogoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "kind" | "bytes" | "mimeType" | "etag" | "byteSize" | "createdBy" | "createdAt" | "updatedAt", ExtArgs["result"]["schoolLogo"]>
+export type SchoolLogoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "kind" | "bytes" | "mimeType" | "etag" | "byteSize" | "storageProvider" | "storageKey" | "storageUrl" | "createdBy" | "createdAt" | "updatedAt", ExtArgs["result"]["schoolLogo"]>
 export type SchoolLogoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
 }
@@ -718,13 +817,29 @@ export type $SchoolLogoPayload<ExtArgs extends runtime.Types.Extensions.Internal
     id: string
     schoolId: string
     kind: $Enums.SchoolImageKind
-    bytes: runtime.Bytes
+    /**
+     * The image itself — only for rows the `database` driver wrote (ADR-0013).
+     */
+    bytes: runtime.Bytes | null
     mimeType: string
     /**
      * Served as the HTTP ETag, so a logo shown on every page is fetched once.
      */
     etag: string
     byteSize: number
+    /**
+     * Which `StoragePort` driver holds the bytes. Read dispatches on this, not
+     * on whatever is configured now, so switching drivers keeps old files.
+     */
+    storageProvider: string
+    /**
+     * The driver's own address for the bytes. Opaque above the storage layer.
+     */
+    storageKey: string
+    /**
+     * Delivery URL for a remote driver, so serving costs no call to it.
+     */
+    storageUrl: string | null
     createdBy: string | null
     createdAt: Date
     updatedAt: Date
@@ -1159,6 +1274,9 @@ export interface SchoolLogoFieldRefs {
   readonly mimeType: Prisma.FieldRef<"SchoolLogo", 'String'>
   readonly etag: Prisma.FieldRef<"SchoolLogo", 'String'>
   readonly byteSize: Prisma.FieldRef<"SchoolLogo", 'Int'>
+  readonly storageProvider: Prisma.FieldRef<"SchoolLogo", 'String'>
+  readonly storageKey: Prisma.FieldRef<"SchoolLogo", 'String'>
+  readonly storageUrl: Prisma.FieldRef<"SchoolLogo", 'String'>
   readonly createdBy: Prisma.FieldRef<"SchoolLogo", 'String'>
   readonly createdAt: Prisma.FieldRef<"SchoolLogo", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"SchoolLogo", 'DateTime'>

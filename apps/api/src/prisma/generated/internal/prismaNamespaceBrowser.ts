@@ -830,6 +830,9 @@ export const SchoolLogoScalarFieldEnum = {
   mimeType: 'mimeType',
   etag: 'etag',
   byteSize: 'byteSize',
+  storageProvider: 'storageProvider',
+  storageKey: 'storageKey',
+  storageUrl: 'storageUrl',
   createdBy: 'createdBy',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

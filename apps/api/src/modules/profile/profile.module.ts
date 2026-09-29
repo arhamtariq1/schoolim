@@ -13,12 +13,14 @@ import { type FastifyRequest } from 'fastify';
 import { ENV, type Env } from '../../config/env';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, ConflictError } from '../../shared/errors/domain-error';
+import { localKey } from '../../shared/storage/database.store';
+import { verifyImage } from '../../shared/storage/image-bytes';
+import { STORAGE_PROVIDERS } from '../../shared/storage/storage.port';
 import { schoolOrigin } from '../../shared/tenancy/school-origin';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
 import { CLOCK, clockProvider, type Clock } from '../../shared/time/clock.provider';
 import { AuthModule } from '../auth/auth.module';
 import { HandoffService } from '../auth/handoff.service';
-import { decodeAndVerify } from '../schools/school-logo.service';
 
 /**
  * The signed-in person's own profile, and first-login school onboarding.
@@ -271,27 +273,32 @@ export class ProfileService {
         });
 
         if (input.logo !== undefined) {
-          const { bytes, etag } = decodeAndVerify(input.logo);
+          // Written straight to the database driver, not through `StoragePort`.
+          //
+          // This runs inside the transaction that onboards a school, and an
+          // upload to a CDN is a network call that would hold a Postgres
+          // connection open for as long as the provider takes to answer — up to
+          // the storage timeout, on the one request a new customer cannot
+          // retry. Reading dispatches on the provider recorded per row, so this
+          // logo serves correctly forever; replacing it from Settings moves it
+          // to whatever driver is configured. See ADR-0013.
+          const image = verifyImage('SCHOOL_LOGO', input.logo);
+          const stored = {
+            bytes: new Uint8Array(image.bytes),
+            mimeType: image.mimeType,
+            etag: image.etag,
+            byteSize: image.bytes.byteLength,
+            storageProvider: STORAGE_PROVIDERS.database,
+            storageKey: localKey(schoolBefore.id, 'SCHOOL_LOGO'),
+            createdBy: userId,
+          };
+
           await tx.schoolLogo.upsert({
             // The school's own mark, not the bank's — a school now has a row
             // for each, and this path only ever writes the letterhead.
             where: { schoolId_kind: { schoolId: schoolBefore.id, kind: 'SCHOOL' } },
-            create: {
-              schoolId: schoolBefore.id,
-              kind: 'SCHOOL',
-              bytes: new Uint8Array(bytes),
-              mimeType: input.logo.mimeType,
-              etag,
-              byteSize: bytes.byteLength,
-              createdBy: userId,
-            },
-            update: {
-              bytes: new Uint8Array(bytes),
-              mimeType: input.logo.mimeType,
-              etag,
-              byteSize: bytes.byteLength,
-              createdBy: userId,
-            },
+            create: { schoolId: schoolBefore.id, kind: 'SCHOOL', ...stored },
+            update: stored,
           });
         }
 

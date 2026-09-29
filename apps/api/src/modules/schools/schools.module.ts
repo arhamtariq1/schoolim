@@ -1,5 +1,6 @@
 import {
   ROUTES,
+  type AssetKind,
   updateSchoolAppearanceSchema,
   updateSchoolSettingsSchema,
   updateVoucherSettingsSchema,
@@ -33,6 +34,63 @@ import { VoucherSettingsService } from './voucher-settings.service';
  * It is the one endpoint in this API that answers with something other than the
  * standard envelope, and it earns the exception by being an image.
  */
+/**
+ * Serve one of a school's images, wherever its bytes turned out to be.
+ *
+ * Shared by both image endpoints because the caching contract is the same and
+ * getting it subtly different on one of them is how a replaced logo keeps
+ * showing the old one for an afternoon.
+ *
+ * ## Why a redirect is safe here
+ *
+ * A CDN-backed asset answers `302` to the delivery URL. The permission check
+ * has already happened — the redirect is only issued to someone allowed to see
+ * the image — and the target is a `public` asset by the catalogue's own
+ * declaration, which is what makes it eligible for a CDN at all. A `private`
+ * asset never reaches this branch: the router keeps it in Postgres, and it is
+ * streamed from here behind the session like everything else.
+ */
+async function serveAsset(
+  logos: SchoolLogoService,
+  kind: AssetKind,
+  request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  const asset = await logos.locate(kind);
+
+  // An image appears on every page and changes about once a year. Without a
+  // conditional request that is one download per navigation, on a connection
+  // where it is the slowest thing the page does.
+  if (request.headers['if-none-match'] === `"${asset.etag}"`) {
+    await reply.code(304).send();
+    return;
+  }
+
+  if (asset.kind === 'redirect') {
+    await reply
+      // 302, not 301: the delivery URL changes when the image is replaced, and
+      // a permanent redirect is one browsers refuse to forget.
+      .code(302)
+      .header('location', asset.url)
+      .header('cache-control', 'private, max-age=300, must-revalidate')
+      .send();
+    return;
+  }
+
+  await reply
+    .header('content-type', asset.mimeType)
+    .header('etag', `"${asset.etag}"`)
+    // Private: it is one school's mark, behind a session, and it must not sit
+    // in a shared proxy where another tenant could be served it.
+    .header('cache-control', 'private, max-age=300, must-revalidate')
+    .header('content-length', String(asset.bytes.byteLength))
+    // The bytes are attacker-supplied in the sense that a school uploaded them.
+    // Refusing to let a browser second-guess the content type is what stops a
+    // crafted file being sniffed into something executable.
+    .header('x-content-type-options', 'nosniff')
+    .send(asset.bytes);
+}
+
 @Controller()
 export class SchoolLogoController {
   constructor(private readonly logos: SchoolLogoService) {}
@@ -50,46 +108,25 @@ export class SchoolLogoController {
     @Req() request: FastifyRequest,
     @Res({ passthrough: false }) reply: FastifyReply,
   ): Promise<void> {
-    const logo = await this.logos.read('SCHOOL');
-
-    // A logo appears on every page and changes about once a year. Without a
-    // conditional request that is one image download per navigation, on a
-    // connection where that is the slowest thing the page does.
-    if (request.headers['if-none-match'] === `"${logo.etag}"`) {
-      await reply.code(304).send();
-      return;
-    }
-
-    await reply
-      .header('content-type', logo.mimeType)
-      .header('etag', `"${logo.etag}"`)
-      // Private: it is one school's mark, behind a session, and it must not sit
-      // in a shared proxy where another tenant could be served it.
-      .header('cache-control', 'private, max-age=300, must-revalidate')
-      .header('content-length', String(logo.bytes.byteLength))
-      // The bytes are attacker-supplied in the sense that a school uploaded
-      // them. Refusing to let a browser second-guess the content type is what
-      // stops a crafted file being sniffed into something executable.
-      .header('x-content-type-options', 'nosniff')
-      .send(logo.bytes);
+    await serveAsset(this.logos, 'SCHOOL_LOGO', request, reply);
   }
 
   @Get(ROUTES.schoolLogo.info)
   @RequirePermission('dashboard.workspace.read')
   async info(): Promise<{ data: SchoolLogoInfo }> {
-    return { data: await this.logos.info('SCHOOL') };
+    return { data: await this.logos.info('SCHOOL_LOGO') };
   }
 
   @Put(ROUTES.schoolLogo.image)
   @RequirePermission('settings.school.configure')
   async upload(@Body() body: unknown): Promise<{ data: SchoolLogoInfo }> {
-    return { data: await this.logos.replace('SCHOOL', uploadSchoolLogoSchema.parse(body)) };
+    return { data: await this.logos.replace('SCHOOL_LOGO', uploadSchoolLogoSchema.parse(body)) };
   }
 
   @Delete(ROUTES.schoolLogo.image)
   @RequirePermission('settings.school.configure')
   async remove(): Promise<{ data: { removed: true } }> {
-    await this.logos.remove('SCHOOL');
+    await this.logos.remove('SCHOOL_LOGO');
     return { data: { removed: true } };
   }
 }
@@ -112,38 +149,25 @@ export class BankLogoController {
     @Req() request: FastifyRequest,
     @Res({ passthrough: false }) reply: FastifyReply,
   ): Promise<void> {
-    const logo = await this.logos.read('BANK');
-
-    if (request.headers['if-none-match'] === `"${logo.etag}"`) {
-      await reply.code(304).send();
-      return;
-    }
-
-    await reply
-      .header('content-type', logo.mimeType)
-      .header('etag', `"${logo.etag}"`)
-      .header('cache-control', 'private, max-age=300, must-revalidate')
-      .header('content-length', String(logo.bytes.byteLength))
-      .header('x-content-type-options', 'nosniff')
-      .send(logo.bytes);
+    await serveAsset(this.logos, 'BANK_LOGO', request, reply);
   }
 
   @Get(ROUTES.bankLogo.info)
   @RequirePermission('fees.voucher.read')
   async info(): Promise<{ data: SchoolLogoInfo }> {
-    return { data: await this.logos.info('BANK') };
+    return { data: await this.logos.info('BANK_LOGO') };
   }
 
   @Put(ROUTES.bankLogo.image)
   @RequirePermission('settings.school.configure')
   async upload(@Body() body: unknown): Promise<{ data: SchoolLogoInfo }> {
-    return { data: await this.logos.replace('BANK', uploadSchoolLogoSchema.parse(body)) };
+    return { data: await this.logos.replace('BANK_LOGO', uploadSchoolLogoSchema.parse(body)) };
   }
 
   @Delete(ROUTES.bankLogo.image)
   @RequirePermission('settings.school.configure')
   async remove(): Promise<{ data: { removed: true } }> {
-    await this.logos.remove('BANK');
+    await this.logos.remove('BANK_LOGO');
     return { data: { removed: true } };
   }
 }

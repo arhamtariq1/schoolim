@@ -1663,11 +1663,20 @@ model SchoolLogo {
   schoolId String          @map("school_id") @db.Uuid
   kind     SchoolImageKind @default(SCHOOL)
 
-  bytes    Bytes
+  /// The image itself — only for rows the `database` driver wrote (ADR-0013).
+  bytes    Bytes?
   mimeType String @map("mime_type")
   /// Served as the HTTP ETag, so a logo shown on every page is fetched once.
   etag     String
   byteSize Int    @map("byte_size")
+
+  /// Which `StoragePort` driver holds the bytes. Read dispatches on this, not
+  /// on whatever is configured now, so switching drivers keeps old files.
+  storageProvider String  @default("database") @map("storage_provider")
+  /// The driver's own address for the bytes. Opaque above the storage layer.
+  storageKey      String  @map("storage_key")
+  /// Delivery URL for a remote driver, so serving costs no call to it.
+  storageUrl      String? @map("storage_url")
 
   createdBy String?  @map("created_by") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)

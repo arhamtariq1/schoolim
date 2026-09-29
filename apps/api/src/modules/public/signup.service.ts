@@ -20,9 +20,11 @@ import { PasswordService } from '../../shared/auth/password.service';
 import { BusinessRuleError, ConflictError } from '../../shared/errors/domain-error';
 import { MAIL, type MailPort } from '../../shared/mail/mail.port';
 import { signupOtpTemplate } from '../../shared/mail/templates/signup-otp.template';
+import { localKey } from '../../shared/storage/database.store';
+import { verifyImage } from '../../shared/storage/image-bytes';
+import { STORAGE_PROVIDERS } from '../../shared/storage/storage.port';
 import { schoolOrigin } from '../../shared/tenancy/school-origin';
 import { HandoffService } from '../auth/handoff.service';
-import { decodeAndVerify } from '../schools/school-logo.service';
 
 /**
  * Self-serve signup — credentials → OTP (creates tenant) → /profile onboarding.
@@ -515,15 +517,22 @@ export class SignupService {
         });
 
         if (input.logo !== undefined) {
-          const { bytes, etag } = decodeAndVerify(input.logo);
+          const image = verifyImage('SCHOOL_LOGO', input.logo);
+          // Straight to the database driver, for the same reason as the profile
+          // wizard: this is inside the transaction that creates the tenant, and
+          // a CDN upload there would hold a connection across a network call on
+          // the one request a new customer cannot retry. The row records its
+          // own provider, so it reads correctly whatever is configured later.
           await tx.schoolLogo.create({
             data: {
               schoolId: school.id,
               kind: 'SCHOOL',
-              bytes: new Uint8Array(bytes),
-              mimeType: input.logo.mimeType,
-              etag,
-              byteSize: bytes.byteLength,
+              storageProvider: STORAGE_PROVIDERS.database,
+              storageKey: localKey(school.id, 'SCHOOL_LOGO'),
+              bytes: new Uint8Array(image.bytes),
+              mimeType: image.mimeType,
+              etag: image.etag,
+              byteSize: image.bytes.byteLength,
               createdBy: owner.id,
             },
           });

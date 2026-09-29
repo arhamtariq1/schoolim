@@ -107,8 +107,71 @@ const envSchema = z.object({
    */
   MAIL_FROM: z.string().min(1).default('no-reply@localhost'),
 
+  // --- Storage --------------------------------------------------------------
+  /**
+   * Which `StoragePort` driver holds uploaded files (ADR-0013).
+   *
+   * Defaults to `database`, and that default is deliberate rather than lazy: a
+   * deployment that has not configured object storage should keep its files
+   * where its other data already is — behind row-level security, in the same
+   * backup — rather than fail to accept an upload. Local development and CI
+   * need no account and no secret.
+   *
+   * Private assets go to the database whatever this says. See `StorageRouter`.
+   */
+  STORAGE_DRIVER: z.enum(['database', 'cloudinary']).default('database'),
+
+  /** From the Cloudinary console. Not a secret; it appears in every asset URL. */
+  CLOUDINARY_CLOUD_NAME: z.string().min(1).optional(),
+  CLOUDINARY_API_KEY: z.string().min(1).optional(),
+  /**
+   * The secret that signs every upload and delete.
+   *
+   * Server-side only, and it must stay that way: anyone holding it can write to
+   * and delete from the account. It is never sent to a browser, never signed
+   * into a payload, and never logged — `signCloudinaryParams` is the only code
+   * that reads it.
+   */
+  CLOUDINARY_API_SECRET: z.string().min(1).optional(),
+  /**
+   * The top-level folder every asset sits under.
+   *
+   * One Cloudinary account usually serves several deployments. Without a
+   * distinct prefix per environment, a staging upload overwrites the production
+   * object with the same deterministic id — silently, because the write
+   * succeeds.
+   */
+  CLOUDINARY_FOLDER: z.string().min(1).default('local'),
+  /**
+   * How long to wait for Cloudinary before giving up.
+   *
+   * This sits on the path of a person pressing Save, so it is short. Without a
+   * timeout a provider that stops answering becomes held connections and a
+   * request that never returns.
+   */
+  CLOUDINARY_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).default(15_000),
+
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
-});
+})
+  .superRefine((env, ctx) => {
+    if (env.STORAGE_DRIVER !== 'cloudinary') {
+      return;
+    }
+
+    // Checked at boot, not at the first upload. A deployment that names a
+    // driver it cannot reach should refuse to start (docs/03 §8) rather than
+    // accept a term's worth of traffic and fail the first time somebody
+    // uploads a logo.
+    for (const key of ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'] as const) {
+      if (env[key] === undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [key],
+          message: `Required when STORAGE_DRIVER is "cloudinary".`,
+        });
+      }
+    }
+  });
 
 export type Env = z.infer<typeof envSchema>;
 
