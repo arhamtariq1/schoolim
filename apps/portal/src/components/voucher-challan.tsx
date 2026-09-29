@@ -83,15 +83,18 @@ export function VoucherChallan({ voucher, school, settings }: ChallanProps) {
         // tall and narrow, which is why one copy design serves both.
         settings.copyCount === 4 ? 'grid-cols-2' : 'challan-landscape grid-cols-3'
       }`}
-      // Set once on the container and inherited by every copy. Three custom
-      // properties is the whole of the school's colour on this page, and they
-      // have to be inline because the value is one school's data — the cast is
-      // how a custom property is written into a typed style object.
+      // Set once on the container and inherited by every copy. They have to be
+      // inline because the values are one school's data — the cast is how a
+      // custom property is written into a typed style object.
       style={
         {
           '--challan-accent': accent,
-          '--challan-tint': mixWithWhite(accent, 8),
           '--challan-rule': mixWithWhite(accent, 30),
+          // The height of one copy, so the copies fill the sheet instead of
+          // huddling at the top of it. A landscape A4 at 8mm margins is 194mm
+          // of usable height; a portrait one halves into two rows of about
+          // 138mm, less the gap between them.
+          '--challan-copy-height': settings.copyCount === 4 ? '136mm' : '191mm',
         } as CSSProperties
       }
     >
@@ -120,13 +123,10 @@ function ChallanCopy({ copy, voucher, school, settings }: ChallanProps & { copy:
   const showBank = settings.bankName !== null || school.bankLogoVersion !== undefined;
 
   return (
-    <article className="challan-copy flex break-inside-avoid flex-col overflow-hidden rounded-lg border border-neutral-300 bg-white text-[9px] leading-snug text-neutral-900">
-      {/* A solid rule of the school's colour, full bleed. Borders print when
-          fills do not, so this is the one mark of the accent that is certain to
-          survive — and it is what makes the sheet look designed rather than
-          typed. */}
-      <div className="h-[3px] shrink-0 bg-[var(--challan-accent)] challan-tint" />
-
+    // The 3px top rule is a *border*, not a filled strip. Borders print when
+    // background colours do not, so the one mark of the school's colour on the
+    // page is the one mark certain to survive a black-and-white printer.
+    <article className="challan-copy flex min-h-[var(--challan-copy-height)] break-inside-avoid flex-col overflow-hidden rounded-lg border border-t-[3px] border-neutral-300 border-t-[var(--challan-accent)] bg-white text-[9px] leading-snug text-neutral-900">
       {/* Which copy this is, and which challan. */}
       <div className="flex items-center justify-between gap-2 px-3.5 pt-2">
         <span className="rounded-full border border-[var(--challan-rule)] px-2 py-[1px] text-[7px] font-bold tracking-[0.16em] text-[var(--challan-accent)] uppercase">
@@ -164,10 +164,18 @@ function ChallanCopy({ copy, voucher, school, settings }: ChallanProps & { copy:
 
       <Particulars voucher={voucher} />
 
-      {/* Grows, so on a tall column the slack lands here rather than under the
-          signature — the totals sit where the eye ends up. */}
+      {/* Grows, so any slack the ruled lines do not take lands here rather than
+          under the signature — the totals sit where the eye ends up. */}
       <div className="flex-1">
-        <Charges charges={charges} voucher={voucher} />
+        <Charges
+          charges={charges}
+          voucher={voucher}
+          // How many ruled lines the copy has room for. A landscape column is
+          // 194mm tall and a portrait quarter 138mm, so the shorter one gets
+          // fewer — padding it to the same count would push the total off the
+          // bottom of the sheet.
+          ledgerRows={settings.copyCount === 4 ? 6 : 10}
+        />
       </div>
 
       <Totals voucher={voucher} afterDue={afterDue} />
@@ -225,7 +233,7 @@ function ChallanCopy({ copy, voucher, school, settings }: ChallanProps & { copy:
  */
 function Particulars({ voucher }: { voucher: Challan }) {
   return (
-    <dl className="challan-tint grid grid-cols-2 gap-x-3 gap-y-1.5 border-y border-neutral-200 bg-[var(--challan-tint)] px-3.5 py-2.5">
+    <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-y border-neutral-200 px-3.5 py-2.5">
       <Pair label="Student" value={voucher.studentName} span />
       <Pair label="Father" value={voucher.fatherName ?? '—'} span />
       <Pair label="GR No" value={voucher.grNo ?? '—'} />
@@ -247,7 +255,20 @@ function Particulars({ voucher }: { voucher: Challan }) {
  * per figure, which is what this started as, cannot be made to fit beside a
  * label in 90mm.
  */
-function Charges({ charges, voucher }: { charges: Challan['lines']; voucher: Challan }) {
+function Charges({
+  charges,
+  voucher,
+  ledgerRows,
+}: {
+  charges: Challan['lines'];
+  voucher: Challan;
+  ledgerRows: number;
+}) {
+  // Arrears is always printed, even at zero — "you owe nothing from before" is
+  // information a parent wants — so it counts towards the ruled lines.
+  const printed = charges.length + (voucher.waiverMinor > 0 ? 1 : 0) + 1;
+  const blanks = Math.max(0, ledgerRows - printed);
+
   return (
     <table className="w-full table-fixed border-collapse">
       <colgroup>
@@ -291,6 +312,19 @@ function Charges({ charges, voucher }: { charges: Challan['lines']; voucher: Cha
           }
           minor={voucher.arrearsMinor}
         />
+
+        {/* Ruled blank lines to the foot of the ledger, the way a printed
+            challan has always been set. Without them a two-line bill leaves a
+            hand-span of white between the last charge and the total, which
+            reads as a page that failed to finish rather than one with nothing
+            more to say. They are decoration, so they are hidden from anyone
+            listening to the document rather than looking at it. */}
+        {Array.from({ length: blanks }, (_, index) => (
+          <tr key={`blank-${String(index)}`} aria-hidden className="border-b border-neutral-200">
+            <td className="px-3.5 py-[3.5px]">&nbsp;</td>
+            <td />
+          </tr>
+        ))}
       </tbody>
     </table>
   );
@@ -299,9 +333,12 @@ function Charges({ charges, voucher }: { charges: Challan['lines']; voucher: Cha
 /** The figure this document exists to communicate, and the one after it. */
 function Totals({ voucher, afterDue }: { voucher: Challan; afterDue: number }) {
   return (
-    <div className="challan-tint border-y-2 border-[var(--challan-accent)] bg-[var(--challan-tint)]">
+    <div className="border-y-2 border-[var(--challan-accent)]">
       <div className="flex items-end justify-between gap-2 px-3.5 pt-2">
-        <span className="pb-[3px] text-[7.5px] font-bold tracking-[0.1em] text-[var(--challan-accent)] uppercase">
+        {/* Black, not the accent: this is the label on the one figure the
+            document exists to carry, and most schools print in black and
+            white, where a colour is only ever a weaker grey. */}
+        <span className="pb-[3px] text-[7.5px] font-bold tracking-[0.1em] text-neutral-900 uppercase">
           Payable
           <br />
           within due date
@@ -343,7 +380,7 @@ function PaymentBlock({
   channels: readonly string[];
 }) {
   return (
-    <div className="challan-paybar border-t border-[var(--challan-rule)] bg-[var(--challan-tint)]">
+    <div className="border-t border-[var(--challan-rule)]">
       <div className="flex items-center justify-between gap-2 px-3.5 py-1.5">
         <span className="text-[10px] font-bold tracking-tight text-[var(--challan-accent)]">
           Kuickpay

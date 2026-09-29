@@ -88,24 +88,11 @@
     background: #fff;
   }
 
-  /* -----------------------------------------------------------------------
-     The tints.
-
-     Browsers drop background colours when printing unless asked, and a
-     printer's "background graphics" checkbox is off as often as not.
-     `print-color-adjust` asks for them anyway, which every current engine
-     honours even with that checkbox off.
-
-     It is a request, not a guarantee — so the document does not depend on it.
-     Every fill on a challan is a light tint carrying dark text, never the
-     reverse, and losing all of them leaves it correct in black on white. See
-     the header of `voucher-challan.tsx`.
-     --------------------------------------------------------------------- */
-  .challan-tint,
-  .challan-paybar {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+  /* There is deliberately nothing here asking for background colours to be
+     printed. The challan has no fills at all — schools print it in black and
+     white, and a document whose structure is carried by tints is a document
+     that arrives as a blank grid. Rules, weight and spacing carry it instead,
+     and the school's colour appears only as borders, which always print. */
 
   /* Four copies in a 2x2 — the default, and what an unclassed challan gets. */
   @page {

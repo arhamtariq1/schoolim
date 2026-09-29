@@ -481,15 +481,16 @@ export function VoucherSettingsForm({
         <p className="text-sm text-muted-foreground">
           Live preview — the challan itself, with a made-up child on it.
         </p>
-        {/* Scrolled, not reflowed: three copies across is the A4 layout, and a
-            preview that stacks them is a preview of a different document. The
-            white background is the paper, whatever theme the portal is in. */}
+        {/* The sheet at its real size, zoomed down to fit — not reflowed. The
+            width is the printable area of an A4 in the orientation this layout
+            uses, so the preview has the paper's proportions and the copies fill
+            it exactly as they will. Scaling rather than narrowing is what keeps
+            it honest: a narrower preview makes a challan look cramped that is
+            not, and a school would redesign around a problem it does not have. */}
         <div className="overflow-x-auto rounded-xl border border-border bg-white p-3">
-          {/* Wide enough that each copy is about the width it will be on A4
-              landscape. A narrower preview makes a challan look cramped that is
-              not, and a school would redesign around a problem it does not
-              have. */}
-          <div className={preview.copyCount === 4 ? 'min-w-[30rem]' : 'min-w-[48rem]'}>
+          <div
+            className={`[zoom:0.55] ${preview.copyCount === 4 ? 'w-[194mm]' : 'w-[281mm]'}`}
+          >
             <VoucherChallan voucher={SAMPLE} school={school} settings={preview} />
           </div>
         </div>

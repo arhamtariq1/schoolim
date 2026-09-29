@@ -626,7 +626,15 @@ export function VouchersView({
           </DialogHeader>
           <DialogBody>
             {previewing === undefined ? null : (
-              <VoucherChallan voucher={previewing} school={school} settings={voucherSettings} />
+              // The sheet at its printable size, zoomed to fit the dialog. What
+              // is on screen is then the paper, not an approximation of it.
+              <div
+                className={`mx-auto [zoom:0.6] ${
+                  voucherSettings.copyCount === 4 ? 'w-[194mm]' : 'w-[281mm]'
+                }`}
+              >
+                <VoucherChallan voucher={previewing} school={school} settings={voucherSettings} />
+              </div>
             )}
           </DialogBody>
           <DialogFooter>

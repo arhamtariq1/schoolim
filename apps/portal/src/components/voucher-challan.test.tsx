@@ -186,6 +186,89 @@ describe('the bank at the foot', () => {
   });
 });
 
+describe('printing in black and white', () => {
+  it('has no background fill anywhere on the document', () => {
+    // Most schools print this on a mono laser. A document whose structure is
+    // carried by tints arrives as a blank grid — so rules, weight and spacing
+    // carry it, and the school's colour appears only as borders, which print
+    // whatever the "background graphics" box is set to.
+    const { container } = paint(BOTH, VOUCHER, { accentColor: '#013131' });
+
+    const filled = [...container.querySelectorAll('*')].filter((element) =>
+      /(^|\s)bg-(?!white\b)/.test(element.className.toString()),
+    );
+    expect(filled.map((element) => element.className.toString())).toEqual([]);
+  });
+
+  it('draws the school’s colour as a border, not a strip', () => {
+    const { container } = paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, { accentColor: '#013131' });
+
+    const copy = container.querySelector('.challan-copy');
+    expect(copy?.className).toContain('border-t-[var(--challan-accent)]');
+  });
+});
+
+describe('filling the sheet', () => {
+  it('gives every copy the height of its share of the paper', () => {
+    // Otherwise three copies huddle at the top of a landscape A4 and two thirds
+    // of the sheet is blank.
+    const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
+
+    expect(container.firstElementChild?.getAttribute('style')).toContain('191mm');
+    expect(container.querySelector('.challan-copy')?.className).toContain(
+      'min-h-[var(--challan-copy-height)]',
+    );
+  });
+
+  it('gives a quarter-sheet copy the shorter height', () => {
+    const { container } = paint({
+      ...DEFAULT_VOUCHER_SETTINGS,
+      copyCount: 4,
+      copyLabels: ['A', 'B', 'C', 'D'],
+    });
+
+    expect(container.firstElementChild?.getAttribute('style')).toContain('136mm');
+  });
+
+  it('rules the ledger to the foot, so a short bill is not half a page of white', () => {
+    // Two charges and an arrears line on a 194mm column leaves a hand-span of
+    // nothing before the total. A printed challan has always been set with
+    // ruled blank lines instead.
+    const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
+
+    // Scoped to one copy — the selector would otherwise count all three.
+    const copy = container.querySelector('.challan-copy');
+    expect(copy?.querySelectorAll('tbody tr')).toHaveLength(10);
+    // The filler is decoration, so it is not read out to anyone listening.
+    expect(copy?.querySelectorAll('tbody tr[aria-hidden]')).toHaveLength(7);
+  });
+
+  it('rules fewer lines on the shorter copy, so the total stays on the paper', () => {
+    const { container } = paint({
+      ...DEFAULT_VOUCHER_SETTINGS,
+      copyCount: 4,
+      copyLabels: ['A', 'B', 'C', 'D'],
+    });
+
+    expect(container.querySelector('.challan-copy')?.querySelectorAll('tbody tr')).toHaveLength(6);
+  });
+
+  it('adds no filler when the bill already fills the ledger', () => {
+    const many = Array.from({ length: 12 }, (_, index) => ({
+      ...(VOUCHER.lines[0] as (typeof VOUCHER.lines)[number]),
+      id: `line-${String(index)}`,
+      label: `Fee head ${String(index)}`,
+    }));
+
+    const { container } = paint(DEFAULT_VOUCHER_SETTINGS, { ...VOUCHER, lines: many });
+
+    const copy = container.querySelector('.challan-copy');
+    expect(copy?.querySelectorAll('tbody tr[aria-hidden]')).toHaveLength(0);
+    // Twelve charges plus arrears — nothing is dropped to make room.
+    expect(copy?.querySelectorAll('tbody tr')).toHaveLength(13);
+  });
+});
+
 describe('the school’s colour', () => {
   it('inks the challan in it when it is dark enough to read', () => {
     const { container } = paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, { accentColor: '#013131' });
