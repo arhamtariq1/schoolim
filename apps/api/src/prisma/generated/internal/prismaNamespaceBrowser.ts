@@ -825,6 +825,7 @@ export type SecurityDepositRefundScalarFieldEnum = (typeof SecurityDepositRefund
 export const SchoolLogoScalarFieldEnum = {
   id: 'id',
   schoolId: 'schoolId',
+  kind: 'kind',
   bytes: 'bytes',
   mimeType: 'mimeType',
   etag: 'etag',
@@ -842,7 +843,9 @@ export const SchoolVoucherSettingsScalarFieldEnum = {
   schoolId: 'schoolId',
   showLogo: 'showLogo',
   footerNote: 'footerNote',
+  copyCount: 'copyCount',
   copyLabels: 'copyLabels',
+  bankName: 'bankName',
   kuickpayEnabled: 'kuickpayEnabled',
   kuickpayPrefix: 'kuickpayPrefix',
   kuickpayChannels: 'kuickpayChannels',

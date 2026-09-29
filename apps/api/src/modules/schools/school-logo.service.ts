@@ -35,6 +35,16 @@ import { TenantContextService } from '../../shared/tenancy/tenant-context.servic
  * every user of a school is a script served back to every user of a school —
  * so the magic number has to agree with the claim before anything is stored.
  */
+/**
+ * Which image, of the two a school owns.
+ *
+ * Spelled out here rather than imported from the generated client, so a module
+ * does not depend on Prisma's output for a two-value union — the values are
+ * the same two the `school_image_kind` enum holds, and the column refuses
+ * anything else.
+ */
+export type SchoolImageKind = 'SCHOOL' | 'BANK';
+
 @Injectable()
 export class SchoolLogoService {
   constructor(
@@ -43,9 +53,10 @@ export class SchoolLogoService {
   ) {}
 
   /** What the portal needs to decide whether to render an `<img>` at all. */
-  async info(): Promise<SchoolLogoInfo> {
+  async info(kind: SchoolImageKind): Promise<SchoolLogoInfo> {
     return this.prisma.tenant(async (tx) => {
       const logo = await tx.schoolLogo.findFirst({
+        where: { kind },
         // Deliberately not selecting `bytes`: this is called on page loads and
         // the whole point of the separate table is that the image does not ride
         // along with questions about it.
@@ -66,9 +77,10 @@ export class SchoolLogoService {
   }
 
   /** The image itself, for the endpoint that streams it back. */
-  async read(): Promise<{ bytes: Buffer; mimeType: string; etag: string }> {
+  async read(kind: SchoolImageKind): Promise<{ bytes: Buffer; mimeType: string; etag: string }> {
     return this.prisma.tenant(async (tx) => {
       const logo = await tx.schoolLogo.findFirst({
+        where: { kind },
         select: { bytes: true, mimeType: true, etag: true },
       });
       if (logo === null) {
@@ -85,7 +97,7 @@ export class SchoolLogoService {
    * one means "use this instead", and a table of every logo a school has ever
    * tried is not something anybody wants to look through.
    */
-  async replace(input: UploadSchoolLogo): Promise<SchoolLogoInfo> {
+  async replace(kind: SchoolImageKind, input: UploadSchoolLogo): Promise<SchoolLogoInfo> {
     const { bytes, etag } = decodeAndVerify(input);
     // Prisma's `Bytes` is a `Uint8Array` over a plain `ArrayBuffer`, and a
     // Node `Buffer` may sit on a `SharedArrayBuffer`. The copy is a few tens
@@ -94,11 +106,12 @@ export class SchoolLogoService {
     const actorId = this.context.userId;
 
     await this.prisma.tenant(async (tx) => {
-      const existing = await tx.schoolLogo.findFirst({ select: { id: true } });
+      const existing = await tx.schoolLogo.findFirst({ where: { kind }, select: { id: true } });
 
       if (existing === null) {
         await tx.schoolLogo.create({
           data: {
+            kind,
             bytes: stored,
             mimeType: input.mimeType,
             etag,
@@ -115,14 +128,14 @@ export class SchoolLogoService {
       });
     });
 
-    return this.info();
+    return this.info(kind);
   }
 
-  async remove(): Promise<void> {
+  async remove(kind: SchoolImageKind): Promise<void> {
     await this.prisma.tenant(async (tx) => {
       // `deleteMany`, so removing a logo a school does not have is not an
       // error. "Make sure there is no logo" is the request, and it succeeds.
-      await tx.schoolLogo.deleteMany({});
+      await tx.schoolLogo.deleteMany({ where: { kind } });
     });
   }
 }

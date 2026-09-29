@@ -119,6 +119,18 @@ export const ROUTES = {
   },
 
   /**
+   * The bank's mark, printed at the foot of a challan.
+   *
+   * Its own paths rather than `/schools/logo/:kind`, so that every `<img src>`
+   * in the product stays a constant. A parameterised path would mean the school
+   * logo's URL — which appears on every page — was assembled at each call site.
+   */
+  bankLogo: {
+    image: `${API_PREFIX}/schools/bank-logo`,
+    info: `${API_PREFIX}/schools/bank-logo/info`,
+  },
+
+  /**
    * The school's own details.
    *
    * GET and PUT the same path, for the same reason as the late-fee policy: it

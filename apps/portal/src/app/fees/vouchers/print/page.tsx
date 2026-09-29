@@ -32,10 +32,11 @@ export default async function PrintVouchersPage() {
   // Three independent reads, so the page costs one round trip's worth of
   // waiting rather than three. All of them are the same for every challan in
   // the stack, which is why they are fetched with the page and not per row.
-  const [schoolResult, voucherResult, logoResult] = await Promise.all([
+  const [schoolResult, voucherResult, logoResult, bankLogoResult] = await Promise.all([
     apiFetch<{ data: SchoolSettings }>(ROUTES.school.settings),
     apiFetch<{ data: VoucherSettings }>(ROUTES.school.voucherSettings),
     apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info),
+    apiFetch<{ data: SchoolLogoInfo }>(ROUTES.bankLogo.info),
   ]);
 
   const school = schoolResult.ok ? schoolResult.data.data : undefined;
@@ -43,6 +44,7 @@ export default async function PrintVouchersPage() {
     ? voucherResult.data.data
     : DEFAULT_VOUCHER_SETTINGS;
   const logo = logoResult.ok ? logoResult.data.data : undefined;
+  const bankLogo = bankLogoResult.ok ? bankLogoResult.data.data : undefined;
 
   return (
     <ChallanPrintView
@@ -53,6 +55,8 @@ export default async function PrintVouchersPage() {
         // Undefined when the school has never uploaded one, which is what
         // makes the challan leave the space out rather than print a gap.
         logoVersion: logo?.present === true ? (logo.version ?? '') : undefined,
+        bankLogoVersion: bankLogo?.present === true ? (bankLogo.version ?? '') : undefined,
+        accentColor: school?.primaryColor ?? undefined,
       }}
       settings={settings}
     />

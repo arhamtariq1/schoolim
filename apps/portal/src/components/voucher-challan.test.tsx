@@ -2,7 +2,7 @@ import { DEFAULT_VOUCHER_SETTINGS, type Challan, type VoucherSettings } from '@i
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { VoucherChallan } from './voucher-challan';
+import { readableAccent, VoucherChallan } from './voucher-challan';
 
 /**
  * What ends up on the paper.
@@ -102,13 +102,17 @@ const BOTH: VoucherSettings = {
 // end of the file — a failure that says nothing about the component.
 afterEach(cleanup);
 
-function paint(settings: VoucherSettings, voucher: Challan = VOUCHER, logoVersion?: string) {
+function paint(
+  settings: VoucherSettings,
+  voucher: Challan = VOUCHER,
+  extra: {
+    logoVersion?: string;
+    bankLogoVersion?: string;
+    accentColor?: string;
+  } = {},
+) {
   return render(
-    <VoucherChallan
-      voucher={voucher}
-      school={{ ...SCHOOL, ...(logoVersion === undefined ? {} : { logoVersion }) }}
-      settings={settings}
-    />,
+    <VoucherChallan voucher={voucher} school={{ ...SCHOOL, ...extra }} settings={settings} />,
   );
 }
 
@@ -129,7 +133,93 @@ describe('the three copies', () => {
     paint({ ...DEFAULT_VOUCHER_SETTINGS, copyLabels: ['Copy', 'Copy', 'Copy'] });
     expect(screen.getAllByText('Copy')).toHaveLength(3);
   });
+
+  it('prints four when a school asks for four, two by two', () => {
+    const { container } = paint({
+      ...DEFAULT_VOUCHER_SETTINGS,
+      copyCount: 4,
+      copyLabels: ['School Copy', 'Bank Copy', 'Student Copy', 'Office Copy'],
+    });
+
+    expect(screen.getAllByText('Kaneez Fatima')).toHaveLength(4);
+    expect(screen.getByText('Office Copy')).toBeTruthy();
+    // Two across is the 2x2 on an A4 portrait; three stack full-width.
+    expect(container.firstElementChild?.className).toContain('grid-cols-2');
+  });
+
+  it('stacks three down the page rather than across it', () => {
+    const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
+    expect(container.firstElementChild?.className).toContain('grid-cols-1');
+  });
 });
+
+describe('the bank at the foot', () => {
+  it('prints nothing for a school that collects at its own office', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS);
+    expect(screen.queryByText(/deposit at/i)).toBeNull();
+  });
+
+  it('prints the bank’s name on every copy', () => {
+    paint({ ...DEFAULT_VOUCHER_SETTINGS, bankName: 'Meezan Bank Ltd.' });
+
+    expect(screen.getAllByText('Meezan Bank Ltd.')).toHaveLength(3);
+    expect(screen.getAllByText(/deposit at/i)).toHaveLength(3);
+  });
+
+  it('prints the bank’s mark, versioned so a replacement is not cached', () => {
+    paint({ ...DEFAULT_VOUCHER_SETTINGS, bankName: 'Meezan Bank Ltd.' }, VOUCHER, {
+      bankLogoVersion: 'b3',
+    });
+
+    const marks = screen.getAllByRole('presentation', { hidden: true });
+    expect(marks).toHaveLength(3);
+    expect(marks[0]?.getAttribute('src')).toContain('v=b3');
+  });
+
+  it('prints the mark even with no name, and the name with no mark', () => {
+    // Either alone is a complete answer to "where does this get deposited".
+    paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, { bankLogoVersion: 'b3' });
+    expect(screen.getAllByText(/deposit at/i)).toHaveLength(3);
+  });
+});
+
+describe('the school’s colour', () => {
+  it('inks the challan in it when it is dark enough to read', () => {
+    const { container } = paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, { accentColor: '#013131' });
+
+    expect(readableAccent('#013131')).toBe('#013131');
+    expect(container.firstElementChild?.getAttribute('style')).toContain('#013131');
+  });
+
+  it('darkens one too light to read, rather than printing it unreadable', () => {
+    // A school may choose a bright yellow for its portal, where it lands under
+    // white text on a button. Here it is ink on white paper, and docs/16 §6
+    // makes 4.5:1 binding — so it is walked darker until it clears.
+    //
+    // This bites on ordinary choices, not only extreme ones: #1b838e is a
+    // perfectly good button colour and still only manages about 3.9:1 as text.
+    for (const chosen of ['#ffe600', '#1b838e', '#7dd3fc']) {
+      expect(readableAccent(chosen)).not.toBe(chosen);
+      expect(contrastWithWhite(readableAccent(chosen))).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('falls back to a default ink for a school that has chosen nothing', () => {
+    const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
+
+    expect(container.firstElementChild?.getAttribute('style')).toContain('--challan-accent');
+    expect(contrastWithWhite(readableAccent(undefined))).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+/** WCAG contrast of a `#rrggbb` against white, so the test measures what it claims. */
+function contrastWithWhite(hex: string): number {
+  const channels = [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16) / 255);
+  const linear = channels.map((s) => (s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4));
+  const luminance =
+    0.2126 * (linear[0] ?? 0) + 0.7152 * (linear[1] ?? 0) + 0.0722 * (linear[2] ?? 0);
+  return 1.05 / (luminance + 0.05);
+}
 
 describe('the figures', () => {
   it('prints each charge at what is actually owed for it', () => {
@@ -195,7 +285,7 @@ describe('the figures', () => {
 
 describe('the logo', () => {
   it('prints it when the school has one and asked for it', () => {
-    paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, 'v7');
+    paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, { logoVersion: 'v7' });
 
     const images = screen.getAllByRole('presentation', { hidden: true });
     expect(images).toHaveLength(3);
@@ -212,7 +302,7 @@ describe('the logo', () => {
   });
 
   it('prints nothing when the school has one but turned it off', () => {
-    paint({ ...DEFAULT_VOUCHER_SETTINGS, showLogo: false }, VOUCHER, 'v7');
+    paint({ ...DEFAULT_VOUCHER_SETTINGS, showLogo: false }, VOUCHER, { logoVersion: 'v7' });
     expect(screen.queryAllByRole('presentation', { hidden: true })).toHaveLength(0);
   });
 });
@@ -252,12 +342,13 @@ describe('the payment strip', () => {
   });
 
   it('keeps the consumer number legible without its background fill', () => {
-    // A printer with background graphics off, or any photocopier, drops the
-    // tint. The number must not be white-on-white when that happens, so it
-    // carries its own light background and dark text.
-    const { container } = paint(KUICKPAY);
+    // A printer with background graphics off, or any photocopier, drops every
+    // tint on the page. The number a parent quotes must survive that, so it
+    // carries its own white ground and dark text rather than being reversed
+    // out of a filled bar.
+    paint(KUICKPAY);
 
-    const chip = container.querySelector('.challan-paybar > span:last-child');
+    const chip = screen.getAllByText('15140810')[0]?.parentElement;
     expect(chip?.className).toContain('bg-white');
     expect(chip?.className).toContain('text-black');
   });
@@ -277,8 +368,13 @@ describe('the school’s own words', () => {
 
   it('prints the letterhead on every copy', () => {
     paint(DEFAULT_VOUCHER_SETTINGS);
+
     expect(screen.getAllByText('Demo Public School')).toHaveLength(3);
-    expect(screen.getAllByText(SCHOOL.address)).toHaveLength(3);
+    // Address and phone share a line, so this matches the element that holds
+    // both rather than either on its own.
+    expect(
+      screen.getAllByText((_, element) => element?.textContent === `${SCHOOL.address}  ·  Ph ${SCHOOL.phone}`),
+    ).not.toHaveLength(0);
   });
 
   it('prints dashes, not blanks, for a child with no section or father recorded', () => {

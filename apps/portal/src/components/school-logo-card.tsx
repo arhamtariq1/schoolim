@@ -4,17 +4,19 @@ import { ROUTES, type SchoolLogoInfo, type UploadSchoolLogo } from '@ilm/contrac
 import { Button, useToast } from '@ilm/ui';
 import { ICON_SIZE, SpinnerIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 import { LogoPicker } from './logo-picker';
 
 import { mutate } from '@/lib/mutate';
 
 /**
- * Settings › the school's logo.
+ * Settings › an image the school owns.
  *
- * The other half of the optional field on signup: a school that skipped it
- * there, or has since had one designed, adds it here.
+ * Two of them: the school's own mark, and the mark of the bank its challans are
+ * deposited at. They are uploaded, replaced and removed identically — same
+ * limits, same sniffing, same cached endpoint — so this takes the endpoint as a
+ * prop rather than existing twice with one word changed.
  *
  * ## The `?v=` on the image
  *
@@ -30,9 +32,23 @@ export interface SchoolLogoCardProps {
   readonly info: SchoolLogoInfo;
   readonly canConfigure: boolean;
   readonly error?: string | undefined;
+  /** Which image this card manages. Defaults to the school's own mark. */
+  readonly imageRoute?: string;
+  readonly title?: string;
+  readonly description?: string;
+  /** What the toast calls it — "Logo updated", "Bank logo removed". */
+  readonly noun?: string;
 }
 
-export function SchoolLogoCard({ info, canConfigure, error }: SchoolLogoCardProps) {
+export function SchoolLogoCard({
+  info,
+  canConfigure,
+  error,
+  imageRoute = ROUTES.schoolLogo.image,
+  title = 'School logo',
+  description = 'Shown in the portal and printed on fee challans. A square or wide mark on a transparent background works best.',
+  noun = 'Logo',
+}: SchoolLogoCardProps) {
   const router = useRouter();
   const toast = useToast();
 
@@ -40,9 +56,10 @@ export function SchoolLogoCard({ info, canConfigure, error }: SchoolLogoCardProp
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState<string | undefined>(undefined);
 
-  const currentSrc = info.present
-    ? `${ROUTES.schoolLogo.image}?v=${info.version ?? ''}`
-    : undefined;
+  const currentSrc = info.present ? `${imageRoute}?v=${info.version ?? ''}` : undefined;
+  // Two of these can share a page, so the heading a section is labelled by
+  // cannot be a constant — duplicate ids would point both at the first.
+  const headingId = useId();
 
   async function save(): Promise<void> {
     if (chosen === undefined) {
@@ -51,7 +68,7 @@ export function SchoolLogoCard({ info, canConfigure, error }: SchoolLogoCardProp
     setIsSaving(true);
     setFormError(undefined);
 
-    const result = await mutate<SchoolLogoInfo>(ROUTES.schoolLogo.image, 'PUT', chosen);
+    const result = await mutate<SchoolLogoInfo>(imageRoute, 'PUT', chosen);
     setIsSaving(false);
 
     if (!result.ok) {
@@ -60,7 +77,7 @@ export function SchoolLogoCard({ info, canConfigure, error }: SchoolLogoCardProp
     }
 
     setChosen(undefined);
-    toast.success('Logo updated.');
+    toast.success(`${noun} updated.`);
     router.refresh();
   }
 
@@ -68,7 +85,7 @@ export function SchoolLogoCard({ info, canConfigure, error }: SchoolLogoCardProp
     setIsSaving(true);
     setFormError(undefined);
 
-    const result = await mutate<{ removed: true }>(ROUTES.schoolLogo.image, 'DELETE');
+    const result = await mutate<{ removed: true }>(imageRoute, 'DELETE');
     setIsSaving(false);
 
     if (!result.ok) {
@@ -77,19 +94,16 @@ export function SchoolLogoCard({ info, canConfigure, error }: SchoolLogoCardProp
     }
 
     setChosen(undefined);
-    toast.success('Logo removed.');
+    toast.success(`${noun} removed.`);
     router.refresh();
   }
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4" aria-labelledby="school-logo">
-      <h2 id="school-logo" className="text-base font-medium text-foreground">
-        School logo
+    <section className="rounded-xl border border-border bg-card p-4" aria-labelledby={headingId}>
+      <h2 id={headingId} className="text-base font-medium text-foreground">
+        {title}
       </h2>
-      <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-        Shown in the portal and printed on fee challans. A square or wide mark on a transparent
-        background works best.
-      </p>
+      <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>
 
       {error === undefined ? null : (
         <p

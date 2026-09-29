@@ -4319,6 +4319,7 @@ export type SecurityDepositRefundScalarFieldEnum = (typeof SecurityDepositRefund
 export const SchoolLogoScalarFieldEnum = {
   id: 'id',
   schoolId: 'schoolId',
+  kind: 'kind',
   bytes: 'bytes',
   mimeType: 'mimeType',
   etag: 'etag',
@@ -4336,7 +4337,9 @@ export const SchoolVoucherSettingsScalarFieldEnum = {
   schoolId: 'schoolId',
   showLogo: 'showLogo',
   footerNote: 'footerNote',
+  copyCount: 'copyCount',
   copyLabels: 'copyLabels',
+  bankName: 'bankName',
   kuickpayEnabled: 'kuickpayEnabled',
   kuickpayPrefix: 'kuickpayPrefix',
   kuickpayChannels: 'kuickpayChannels',
@@ -4827,6 +4830,20 @@ export type EnumStaffAttendanceStatusFieldRefInput<$PrismaModel> = FieldRefInput
  * Reference to a field of type 'StaffAttendanceStatus[]'
  */
 export type ListEnumStaffAttendanceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'StaffAttendanceStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'SchoolImageKind'
+ */
+export type EnumSchoolImageKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SchoolImageKind'>
+    
+
+
+/**
+ * Reference to a field of type 'SchoolImageKind[]'
+ */
+export type ListEnumSchoolImageKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SchoolImageKind[]'>
     
 
 

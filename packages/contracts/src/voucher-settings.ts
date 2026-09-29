@@ -23,10 +23,31 @@ import { z } from 'zod';
  * print run and any future PDF cannot disagree about what a parent should type.
  */
 
-/** The three copies. Their names are a school's, their number is not. */
-export const COPY_COUNT = 3;
+/**
+ * How many copies fit on a sheet, and therefore how the sheet is laid out.
+ *
+ * Three stack down an A4 portrait as full-width strips; four sit in a 2x2. They
+ * are the only two arrangements that give a copy enough room to be read at a
+ * counter, so this is a pair of numbers rather than a free integer — five
+ * copies on a page is five copies nobody can read.
+ */
+export const COPY_COUNTS = [3, 4] as const;
 
-export const DEFAULT_COPY_LABELS = ['School Copy', 'Bank Copy', 'Student Copy'] as const;
+export type CopyCount = (typeof COPY_COUNTS)[number];
+
+export const DEFAULT_COPY_COUNT: CopyCount = 3;
+
+/**
+ * The names a school starts with, for each count.
+ *
+ * A school moving from three copies to four should not be handed a blank
+ * heading to fill in, so the fourth arrives named — and the first three keep
+ * whatever the school had already called them.
+ */
+export const DEFAULT_COPY_LABELS: Readonly<Record<CopyCount, readonly string[]>> = {
+  3: ['School Copy', 'Bank Copy', 'Student Copy'],
+  4: ['School Copy', 'Bank Copy', 'Student Copy', 'Office Copy'],
+};
 
 /**
  * Kuickpay's network, as it stood when this was written.
@@ -64,10 +85,15 @@ const digitsSchema = (min: number, max: number, label: string) =>
     .trim()
     .regex(new RegExp(`^[0-9]{${String(min)},${String(max)}}$`), `${label} is digits only.`);
 
+export const copyCountSchema = z.union([z.literal(3), z.literal(4)]);
+
 export const voucherSettingsSchema = z.object({
   showLogo: z.boolean(),
   footerNote: z.string().nullable(),
-  copyLabels: z.array(z.string()).length(COPY_COUNT),
+  copyCount: copyCountSchema,
+  copyLabels: z.array(z.string()),
+  /** The bank a parent deposits at. Its mark is uploaded separately. */
+  bankName: z.string().nullable(),
   kuickpayEnabled: z.boolean(),
   kuickpayPrefix: z.string().nullable(),
   kuickpayChannels: z.array(z.string()),
@@ -94,9 +120,14 @@ export const updateVoucherSettingsSchema = z
       .max(400, 'Keep the note under 400 characters.')
       .nullable()
       .transform((value) => (value === null || value === '' ? null : value)),
-    copyLabels: z
-      .array(z.string().trim().min(1, 'Name each copy.').max(40))
-      .length(COPY_COUNT, 'A challan has three copies.'),
+    copyCount: copyCountSchema,
+    copyLabels: z.array(z.string().trim().min(1, 'Name each copy.').max(40)),
+    bankName: z
+      .string()
+      .trim()
+      .max(60, 'Keep the bank name under 60 characters.')
+      .nullable()
+      .transform((value) => (value === null || value === '' ? null : value)),
     kuickpayEnabled: z.boolean(),
     kuickpayPrefix: digitsSchema(2, 12, 'The Kuickpay prefix').nullable(),
     kuickpayChannels: z.array(z.string().trim().min(1).max(40)).max(30),
@@ -104,6 +135,12 @@ export const updateVoucherSettingsSchema = z
     onelinkInstitutionId: digitsSchema(3, 12, 'The 1LINK institution ID').nullable(),
   })
   .strict()
+  .refine((value) => value.copyLabels.length === value.copyCount, {
+    // The database says the same as a check constraint. A fourth copy with no
+    // name is a blank heading on a printed document.
+    message: 'Name every copy — one label per copy.',
+    path: ['copyLabels'],
+  })
   .refine((value) => !value.kuickpayEnabled || value.kuickpayPrefix !== null, {
     message: 'Kuickpay needs the company prefix they issued you.',
     path: ['kuickpayPrefix'],
@@ -125,7 +162,9 @@ export type UpdateVoucherSettings = z.infer<typeof updateVoucherSettingsSchema>;
 export const DEFAULT_VOUCHER_SETTINGS: VoucherSettings = {
   showLogo: true,
   footerNote: null,
-  copyLabels: [...DEFAULT_COPY_LABELS],
+  copyCount: DEFAULT_COPY_COUNT,
+  copyLabels: [...DEFAULT_COPY_LABELS[DEFAULT_COPY_COUNT]],
+  bankName: null,
   kuickpayEnabled: false,
   kuickpayPrefix: null,
   kuickpayChannels: [...DEFAULT_KUICKPAY_CHANNELS],

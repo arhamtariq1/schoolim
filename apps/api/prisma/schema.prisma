@@ -231,7 +231,8 @@ model School {
   numberSequences       NumberSequence[]
   securityDeposits       SecurityDeposit[]
   securityDepositRefunds SecurityDepositRefund[]
-  logo                   SchoolLogo?
+  /// The school's own mark and the bank's, one row each — see SchoolImageKind.
+  images                 SchoolLogo[]
   voucherSettings        SchoolVoucherSettings?
 
   @@index([schoolGroupId])
@@ -1644,9 +1645,23 @@ model SecurityDepositRefund {
 /// A school's logo, kept out of `schools` so its bytes never ride along with a
 /// tenant lookup. See the migration for why the bytes are in Postgres at all,
 /// and what moving them out would cost.
+/// Which of a school's images a row holds.
+///
+/// `SCHOOL` is the mark on the letterhead, the portal header and every challan.
+/// `BANK` is the mark of the bank a challan is deposited at, printed at its
+/// foot. Same bytes, same validation, same cached endpoint — only the purpose
+/// differs, so they share a table.
+enum SchoolImageKind {
+  SCHOOL
+  BANK
+
+  @@map("school_image_kind")
+}
+
 model SchoolLogo {
-  id       String @id @default(uuid(7)) @db.Uuid
-  schoolId String @unique @map("school_id") @db.Uuid
+  id       String          @id @default(uuid(7)) @db.Uuid
+  schoolId String          @map("school_id") @db.Uuid
+  kind     SchoolImageKind @default(SCHOOL)
 
   bytes    Bytes
   mimeType String @map("mime_type")
@@ -1660,6 +1675,7 @@ model SchoolLogo {
 
   school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
+  @@unique([schoolId, kind])
   @@index([schoolId])
   @@map("school_logos")
 }
@@ -1675,8 +1691,12 @@ model SchoolVoucherSettings {
   showLogo    Boolean  @default(true) @map("show_logo")
   /// Printed under the signature line: the school's own note to parents.
   footerNote  String?  @map("footer_note")
-  /// Three of them, enforced by a check constraint.
+  /// Three copies stacked down the page, or four in a 2x2. Nothing else.
+  copyCount   Int      @default(3) @map("copy_count")
+  /// One per copy — `copyCount` of them, enforced by a check constraint.
   copyLabels  String[] @default(["School Copy", "Bank Copy", "Student Copy"]) @map("copy_labels")
+  /// The bank a parent deposits at, printed beside its mark at the foot.
+  bankName    String?  @map("bank_name")
 
   kuickpayEnabled  Boolean  @default(false) @map("kuickpay_enabled")
   /// The company prefix Kuickpay issues. The consumer number on a challan is

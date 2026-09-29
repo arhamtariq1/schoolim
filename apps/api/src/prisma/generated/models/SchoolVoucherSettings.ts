@@ -23,8 +23,18 @@ export type SchoolVoucherSettingsModel = runtime.Types.Result.DefaultSelection<P
 
 export type AggregateSchoolVoucherSettings = {
   _count: SchoolVoucherSettingsCountAggregateOutputType | null
+  _avg: SchoolVoucherSettingsAvgAggregateOutputType | null
+  _sum: SchoolVoucherSettingsSumAggregateOutputType | null
   _min: SchoolVoucherSettingsMinAggregateOutputType | null
   _max: SchoolVoucherSettingsMaxAggregateOutputType | null
+}
+
+export type SchoolVoucherSettingsAvgAggregateOutputType = {
+  copyCount: number | null
+}
+
+export type SchoolVoucherSettingsSumAggregateOutputType = {
+  copyCount: number | null
 }
 
 export type SchoolVoucherSettingsMinAggregateOutputType = {
@@ -32,6 +42,8 @@ export type SchoolVoucherSettingsMinAggregateOutputType = {
   schoolId: string | null
   showLogo: boolean | null
   footerNote: string | null
+  copyCount: number | null
+  bankName: string | null
   kuickpayEnabled: boolean | null
   kuickpayPrefix: string | null
   onelinkEnabled: boolean | null
@@ -45,6 +57,8 @@ export type SchoolVoucherSettingsMaxAggregateOutputType = {
   schoolId: string | null
   showLogo: boolean | null
   footerNote: string | null
+  copyCount: number | null
+  bankName: string | null
   kuickpayEnabled: boolean | null
   kuickpayPrefix: string | null
   onelinkEnabled: boolean | null
@@ -58,7 +72,9 @@ export type SchoolVoucherSettingsCountAggregateOutputType = {
   schoolId: number
   showLogo: number
   footerNote: number
+  copyCount: number
   copyLabels: number
+  bankName: number
   kuickpayEnabled: number
   kuickpayPrefix: number
   kuickpayChannels: number
@@ -70,11 +86,21 @@ export type SchoolVoucherSettingsCountAggregateOutputType = {
 }
 
 
+export type SchoolVoucherSettingsAvgAggregateInputType = {
+  copyCount?: true
+}
+
+export type SchoolVoucherSettingsSumAggregateInputType = {
+  copyCount?: true
+}
+
 export type SchoolVoucherSettingsMinAggregateInputType = {
   id?: true
   schoolId?: true
   showLogo?: true
   footerNote?: true
+  copyCount?: true
+  bankName?: true
   kuickpayEnabled?: true
   kuickpayPrefix?: true
   onelinkEnabled?: true
@@ -88,6 +114,8 @@ export type SchoolVoucherSettingsMaxAggregateInputType = {
   schoolId?: true
   showLogo?: true
   footerNote?: true
+  copyCount?: true
+  bankName?: true
   kuickpayEnabled?: true
   kuickpayPrefix?: true
   onelinkEnabled?: true
@@ -101,7 +129,9 @@ export type SchoolVoucherSettingsCountAggregateInputType = {
   schoolId?: true
   showLogo?: true
   footerNote?: true
+  copyCount?: true
   copyLabels?: true
+  bankName?: true
   kuickpayEnabled?: true
   kuickpayPrefix?: true
   kuickpayChannels?: true
@@ -150,6 +180,18 @@ export type SchoolVoucherSettingsAggregateArgs<ExtArgs extends runtime.Types.Ext
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: SchoolVoucherSettingsAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: SchoolVoucherSettingsSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: SchoolVoucherSettingsMinAggregateInputType
@@ -180,6 +222,8 @@ export type SchoolVoucherSettingsGroupByArgs<ExtArgs extends runtime.Types.Exten
   take?: number
   skip?: number
   _count?: SchoolVoucherSettingsCountAggregateInputType | true
+  _avg?: SchoolVoucherSettingsAvgAggregateInputType
+  _sum?: SchoolVoucherSettingsSumAggregateInputType
   _min?: SchoolVoucherSettingsMinAggregateInputType
   _max?: SchoolVoucherSettingsMaxAggregateInputType
 }
@@ -189,7 +233,9 @@ export type SchoolVoucherSettingsGroupByOutputType = {
   schoolId: string
   showLogo: boolean
   footerNote: string | null
+  copyCount: number
   copyLabels: string[]
+  bankName: string | null
   kuickpayEnabled: boolean
   kuickpayPrefix: string | null
   kuickpayChannels: string[]
@@ -198,6 +244,8 @@ export type SchoolVoucherSettingsGroupByOutputType = {
   createdAt: Date
   updatedAt: Date
   _count: SchoolVoucherSettingsCountAggregateOutputType | null
+  _avg: SchoolVoucherSettingsAvgAggregateOutputType | null
+  _sum: SchoolVoucherSettingsSumAggregateOutputType | null
   _min: SchoolVoucherSettingsMinAggregateOutputType | null
   _max: SchoolVoucherSettingsMaxAggregateOutputType | null
 }
@@ -225,7 +273,9 @@ export type SchoolVoucherSettingsWhereInput = {
   schoolId?: Prisma.UuidFilter<"SchoolVoucherSettings"> | string
   showLogo?: Prisma.BoolFilter<"SchoolVoucherSettings"> | boolean
   footerNote?: Prisma.StringNullableFilter<"SchoolVoucherSettings"> | string | null
+  copyCount?: Prisma.IntFilter<"SchoolVoucherSettings"> | number
   copyLabels?: Prisma.StringNullableListFilter<"SchoolVoucherSettings">
+  bankName?: Prisma.StringNullableFilter<"SchoolVoucherSettings"> | string | null
   kuickpayEnabled?: Prisma.BoolFilter<"SchoolVoucherSettings"> | boolean
   kuickpayPrefix?: Prisma.StringNullableFilter<"SchoolVoucherSettings"> | string | null
   kuickpayChannels?: Prisma.StringNullableListFilter<"SchoolVoucherSettings">
@@ -241,7 +291,9 @@ export type SchoolVoucherSettingsOrderByWithRelationInput = {
   schoolId?: Prisma.SortOrder
   showLogo?: Prisma.SortOrder
   footerNote?: Prisma.SortOrderInput | Prisma.SortOrder
+  copyCount?: Prisma.SortOrder
   copyLabels?: Prisma.SortOrder
+  bankName?: Prisma.SortOrderInput | Prisma.SortOrder
   kuickpayEnabled?: Prisma.SortOrder
   kuickpayPrefix?: Prisma.SortOrderInput | Prisma.SortOrder
   kuickpayChannels?: Prisma.SortOrder
@@ -260,7 +312,9 @@ export type SchoolVoucherSettingsWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.SchoolVoucherSettingsWhereInput | Prisma.SchoolVoucherSettingsWhereInput[]
   showLogo?: Prisma.BoolFilter<"SchoolVoucherSettings"> | boolean
   footerNote?: Prisma.StringNullableFilter<"SchoolVoucherSettings"> | string | null
+  copyCount?: Prisma.IntFilter<"SchoolVoucherSettings"> | number
   copyLabels?: Prisma.StringNullableListFilter<"SchoolVoucherSettings">
+  bankName?: Prisma.StringNullableFilter<"SchoolVoucherSettings"> | string | null
   kuickpayEnabled?: Prisma.BoolFilter<"SchoolVoucherSettings"> | boolean
   kuickpayPrefix?: Prisma.StringNullableFilter<"SchoolVoucherSettings"> | string | null
   kuickpayChannels?: Prisma.StringNullableListFilter<"SchoolVoucherSettings">
@@ -276,7 +330,9 @@ export type SchoolVoucherSettingsOrderByWithAggregationInput = {
   schoolId?: Prisma.SortOrder
   showLogo?: Prisma.SortOrder
   footerNote?: Prisma.SortOrderInput | Prisma.SortOrder
+  copyCount?: Prisma.SortOrder
   copyLabels?: Prisma.SortOrder
+  bankName?: Prisma.SortOrderInput | Prisma.SortOrder
   kuickpayEnabled?: Prisma.SortOrder
   kuickpayPrefix?: Prisma.SortOrderInput | Prisma.SortOrder
   kuickpayChannels?: Prisma.SortOrder
@@ -285,8 +341,10 @@ export type SchoolVoucherSettingsOrderByWithAggregationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.SchoolVoucherSettingsCountOrderByAggregateInput
+  _avg?: Prisma.SchoolVoucherSettingsAvgOrderByAggregateInput
   _max?: Prisma.SchoolVoucherSettingsMaxOrderByAggregateInput
   _min?: Prisma.SchoolVoucherSettingsMinOrderByAggregateInput
+  _sum?: Prisma.SchoolVoucherSettingsSumOrderByAggregateInput
 }
 
 export type SchoolVoucherSettingsScalarWhereWithAggregatesInput = {
@@ -297,7 +355,9 @@ export type SchoolVoucherSettingsScalarWhereWithAggregatesInput = {
   schoolId?: Prisma.UuidWithAggregatesFilter<"SchoolVoucherSettings"> | string
   showLogo?: Prisma.BoolWithAggregatesFilter<"SchoolVoucherSettings"> | boolean
   footerNote?: Prisma.StringNullableWithAggregatesFilter<"SchoolVoucherSettings"> | string | null
+  copyCount?: Prisma.IntWithAggregatesFilter<"SchoolVoucherSettings"> | number
   copyLabels?: Prisma.StringNullableListFilter<"SchoolVoucherSettings">
+  bankName?: Prisma.StringNullableWithAggregatesFilter<"SchoolVoucherSettings"> | string | null
   kuickpayEnabled?: Prisma.BoolWithAggregatesFilter<"SchoolVoucherSettings"> | boolean
   kuickpayPrefix?: Prisma.StringNullableWithAggregatesFilter<"SchoolVoucherSettings"> | string | null
   kuickpayChannels?: Prisma.StringNullableListFilter<"SchoolVoucherSettings">
@@ -311,7 +371,9 @@ export type SchoolVoucherSettingsCreateInput = {
   id?: string
   showLogo?: boolean
   footerNote?: string | null
+  copyCount?: number
   copyLabels?: Prisma.SchoolVoucherSettingsCreatecopyLabelsInput | string[]
+  bankName?: string | null
   kuickpayEnabled?: boolean
   kuickpayPrefix?: string | null
   kuickpayChannels?: Prisma.SchoolVoucherSettingsCreatekuickpayChannelsInput | string[]
@@ -327,7 +389,9 @@ export type SchoolVoucherSettingsUncheckedCreateInput = {
   schoolId: string
   showLogo?: boolean
   footerNote?: string | null
+  copyCount?: number
   copyLabels?: Prisma.SchoolVoucherSettingsCreatecopyLabelsInput | string[]
+  bankName?: string | null
   kuickpayEnabled?: boolean
   kuickpayPrefix?: string | null
   kuickpayChannels?: Prisma.SchoolVoucherSettingsCreatekuickpayChannelsInput | string[]
@@ -341,7 +405,9 @@ export type SchoolVoucherSettingsUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   showLogo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   footerNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  copyCount?: Prisma.IntFieldUpdateOperationsInput | number
   copyLabels?: Prisma.SchoolVoucherSettingsUpdatecopyLabelsInput | string[]
+  bankName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kuickpayEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   kuickpayPrefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kuickpayChannels?: Prisma.SchoolVoucherSettingsUpdatekuickpayChannelsInput | string[]
@@ -357,7 +423,9 @@ export type SchoolVoucherSettingsUncheckedUpdateInput = {
   schoolId?: Prisma.StringFieldUpdateOperationsInput | string
   showLogo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   footerNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  copyCount?: Prisma.IntFieldUpdateOperationsInput | number
   copyLabels?: Prisma.SchoolVoucherSettingsUpdatecopyLabelsInput | string[]
+  bankName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kuickpayEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   kuickpayPrefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kuickpayChannels?: Prisma.SchoolVoucherSettingsUpdatekuickpayChannelsInput | string[]
@@ -372,7 +440,9 @@ export type SchoolVoucherSettingsCreateManyInput = {
   schoolId: string
   showLogo?: boolean
   footerNote?: string | null
+  copyCount?: number
   copyLabels?: Prisma.SchoolVoucherSettingsCreatecopyLabelsInput | string[]
+  bankName?: string | null
   kuickpayEnabled?: boolean
   kuickpayPrefix?: string | null
   kuickpayChannels?: Prisma.SchoolVoucherSettingsCreatekuickpayChannelsInput | string[]
@@ -386,7 +456,9 @@ export type SchoolVoucherSettingsUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   showLogo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   footerNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  copyCount?: Prisma.IntFieldUpdateOperationsInput | number
   copyLabels?: Prisma.SchoolVoucherSettingsUpdatecopyLabelsInput | string[]
+  bankName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kuickpayEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   kuickpayPrefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kuickpayChannels?: Prisma.SchoolVoucherSettingsUpdatekuickpayChannelsInput | string[]
@@ -401,7 +473,9 @@ export type SchoolVoucherSettingsUncheckedUpdateManyInput = {
   schoolId?: Prisma.StringFieldUpdateOperationsInput | string
   showLogo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   footerNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  copyCount?: Prisma.IntFieldUpdateOperationsInput | number
   copyLabels?: Prisma.SchoolVoucherSettingsUpdatecopyLabelsInput | string[]
+  bankName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kuickpayEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   kuickpayPrefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kuickpayChannels?: Prisma.SchoolVoucherSettingsUpdatekuickpayChannelsInput | string[]
@@ -429,7 +503,9 @@ export type SchoolVoucherSettingsCountOrderByAggregateInput = {
   schoolId?: Prisma.SortOrder
   showLogo?: Prisma.SortOrder
   footerNote?: Prisma.SortOrder
+  copyCount?: Prisma.SortOrder
   copyLabels?: Prisma.SortOrder
+  bankName?: Prisma.SortOrder
   kuickpayEnabled?: Prisma.SortOrder
   kuickpayPrefix?: Prisma.SortOrder
   kuickpayChannels?: Prisma.SortOrder
@@ -439,11 +515,17 @@ export type SchoolVoucherSettingsCountOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
+export type SchoolVoucherSettingsAvgOrderByAggregateInput = {
+  copyCount?: Prisma.SortOrder
+}
+
 export type SchoolVoucherSettingsMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   schoolId?: Prisma.SortOrder
   showLogo?: Prisma.SortOrder
   footerNote?: Prisma.SortOrder
+  copyCount?: Prisma.SortOrder
+  bankName?: Prisma.SortOrder
   kuickpayEnabled?: Prisma.SortOrder
   kuickpayPrefix?: Prisma.SortOrder
   onelinkEnabled?: Prisma.SortOrder
@@ -457,12 +539,18 @@ export type SchoolVoucherSettingsMinOrderByAggregateInput = {
   schoolId?: Prisma.SortOrder
   showLogo?: Prisma.SortOrder
   footerNote?: Prisma.SortOrder
+  copyCount?: Prisma.SortOrder
+  bankName?: Prisma.SortOrder
   kuickpayEnabled?: Prisma.SortOrder
   kuickpayPrefix?: Prisma.SortOrder
   onelinkEnabled?: Prisma.SortOrder
   onelinkInstitutionId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type SchoolVoucherSettingsSumOrderByAggregateInput = {
+  copyCount?: Prisma.SortOrder
 }
 
 export type SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput = {
@@ -519,7 +607,9 @@ export type SchoolVoucherSettingsCreateWithoutSchoolInput = {
   id?: string
   showLogo?: boolean
   footerNote?: string | null
+  copyCount?: number
   copyLabels?: Prisma.SchoolVoucherSettingsCreatecopyLabelsInput | string[]
+  bankName?: string | null
   kuickpayEnabled?: boolean
   kuickpayPrefix?: string | null
   kuickpayChannels?: Prisma.SchoolVoucherSettingsCreatekuickpayChannelsInput | string[]
@@ -533,7 +623,9 @@ export type SchoolVoucherSettingsUncheckedCreateWithoutSchoolInput = {
   id?: string
   showLogo?: boolean
   footerNote?: string | null
+  copyCount?: number
   copyLabels?: Prisma.SchoolVoucherSettingsCreatecopyLabelsInput | string[]
+  bankName?: string | null
   kuickpayEnabled?: boolean
   kuickpayPrefix?: string | null
   kuickpayChannels?: Prisma.SchoolVoucherSettingsCreatekuickpayChannelsInput | string[]
@@ -563,7 +655,9 @@ export type SchoolVoucherSettingsUpdateWithoutSchoolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   showLogo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   footerNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  copyCount?: Prisma.IntFieldUpdateOperationsInput | number
   copyLabels?: Prisma.SchoolVoucherSettingsUpdatecopyLabelsInput | string[]
+  bankName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kuickpayEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   kuickpayPrefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kuickpayChannels?: Prisma.SchoolVoucherSettingsUpdatekuickpayChannelsInput | string[]
@@ -577,7 +671,9 @@ export type SchoolVoucherSettingsUncheckedUpdateWithoutSchoolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   showLogo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   footerNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  copyCount?: Prisma.IntFieldUpdateOperationsInput | number
   copyLabels?: Prisma.SchoolVoucherSettingsUpdatecopyLabelsInput | string[]
+  bankName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kuickpayEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   kuickpayPrefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kuickpayChannels?: Prisma.SchoolVoucherSettingsUpdatekuickpayChannelsInput | string[]
@@ -594,7 +690,9 @@ export type SchoolVoucherSettingsSelect<ExtArgs extends runtime.Types.Extensions
   schoolId?: boolean
   showLogo?: boolean
   footerNote?: boolean
+  copyCount?: boolean
   copyLabels?: boolean
+  bankName?: boolean
   kuickpayEnabled?: boolean
   kuickpayPrefix?: boolean
   kuickpayChannels?: boolean
@@ -610,7 +708,9 @@ export type SchoolVoucherSettingsSelectCreateManyAndReturn<ExtArgs extends runti
   schoolId?: boolean
   showLogo?: boolean
   footerNote?: boolean
+  copyCount?: boolean
   copyLabels?: boolean
+  bankName?: boolean
   kuickpayEnabled?: boolean
   kuickpayPrefix?: boolean
   kuickpayChannels?: boolean
@@ -626,7 +726,9 @@ export type SchoolVoucherSettingsSelectUpdateManyAndReturn<ExtArgs extends runti
   schoolId?: boolean
   showLogo?: boolean
   footerNote?: boolean
+  copyCount?: boolean
   copyLabels?: boolean
+  bankName?: boolean
   kuickpayEnabled?: boolean
   kuickpayPrefix?: boolean
   kuickpayChannels?: boolean
@@ -642,7 +744,9 @@ export type SchoolVoucherSettingsSelectScalar = {
   schoolId?: boolean
   showLogo?: boolean
   footerNote?: boolean
+  copyCount?: boolean
   copyLabels?: boolean
+  bankName?: boolean
   kuickpayEnabled?: boolean
   kuickpayPrefix?: boolean
   kuickpayChannels?: boolean
@@ -652,7 +756,7 @@ export type SchoolVoucherSettingsSelectScalar = {
   updatedAt?: boolean
 }
 
-export type SchoolVoucherSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "showLogo" | "footerNote" | "copyLabels" | "kuickpayEnabled" | "kuickpayPrefix" | "kuickpayChannels" | "onelinkEnabled" | "onelinkInstitutionId" | "createdAt" | "updatedAt", ExtArgs["result"]["schoolVoucherSettings"]>
+export type SchoolVoucherSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "showLogo" | "footerNote" | "copyCount" | "copyLabels" | "bankName" | "kuickpayEnabled" | "kuickpayPrefix" | "kuickpayChannels" | "onelinkEnabled" | "onelinkInstitutionId" | "createdAt" | "updatedAt", ExtArgs["result"]["schoolVoucherSettings"]>
 export type SchoolVoucherSettingsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
 }
@@ -677,9 +781,17 @@ export type $SchoolVoucherSettingsPayload<ExtArgs extends runtime.Types.Extensio
      */
     footerNote: string | null
     /**
-     * Three of them, enforced by a check constraint.
+     * Three copies stacked down the page, or four in a 2x2. Nothing else.
+     */
+    copyCount: number
+    /**
+     * One per copy — `copyCount` of them, enforced by a check constraint.
      */
     copyLabels: string[]
+    /**
+     * The bank a parent deposits at, printed beside its mark at the foot.
+     */
+    bankName: string | null
     kuickpayEnabled: boolean
     /**
      * The company prefix Kuickpay issues. The consumer number on a challan is
@@ -1125,7 +1237,9 @@ export interface SchoolVoucherSettingsFieldRefs {
   readonly schoolId: Prisma.FieldRef<"SchoolVoucherSettings", 'String'>
   readonly showLogo: Prisma.FieldRef<"SchoolVoucherSettings", 'Boolean'>
   readonly footerNote: Prisma.FieldRef<"SchoolVoucherSettings", 'String'>
+  readonly copyCount: Prisma.FieldRef<"SchoolVoucherSettings", 'Int'>
   readonly copyLabels: Prisma.FieldRef<"SchoolVoucherSettings", 'String[]'>
+  readonly bankName: Prisma.FieldRef<"SchoolVoucherSettings", 'String'>
   readonly kuickpayEnabled: Prisma.FieldRef<"SchoolVoucherSettings", 'Boolean'>
   readonly kuickpayPrefix: Prisma.FieldRef<"SchoolVoucherSettings", 'String'>
   readonly kuickpayChannels: Prisma.FieldRef<"SchoolVoucherSettings", 'String[]'>

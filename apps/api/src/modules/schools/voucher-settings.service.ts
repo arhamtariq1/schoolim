@@ -55,6 +55,8 @@ export class VoucherSettingsService {
 
       const data = {
         showLogo: input.showLogo,
+        copyCount: input.copyCount,
+        bankName: input.bankName,
         footerNote: input.footerNote,
         copyLabels: input.copyLabels,
         kuickpayEnabled: input.kuickpayEnabled,
@@ -97,6 +99,8 @@ export class VoucherSettingsService {
 
 const SELECTION = {
   showLogo: true,
+  copyCount: true,
+  bankName: true,
   footerNote: true,
   copyLabels: true,
   kuickpayEnabled: true,
@@ -108,6 +112,8 @@ const SELECTION = {
 
 function toSettings(row: {
   showLogo: boolean;
+  copyCount: number;
+  bankName: string | null;
   footerNote: string | null;
   copyLabels: string[];
   kuickpayEnabled: boolean;
@@ -116,5 +122,12 @@ function toSettings(row: {
   onelinkEnabled: boolean;
   onelinkInstitutionId: string | null;
 }): VoucherSettings {
-  return { ...row };
+  return {
+    ...row,
+    // The column is an `integer` with a check constraint; the contract is the
+    // two literals. Narrowed here rather than cast, so a row that somehow
+    // carried anything else reads as the default rather than as a layout the
+    // renderer has no arm for.
+    copyCount: row.copyCount === 4 ? 4 : 3,
+  };
 }

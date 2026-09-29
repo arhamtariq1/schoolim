@@ -1,12 +1,15 @@
 'use client';
 
 import {
+  COPY_COUNTS,
+  DEFAULT_COPY_LABELS,
   DEFAULT_KUICKPAY_CHANNELS,
   kuickpayConsumerNo,
   onelinkConsumerNo,
   ROUTES,
   updateVoucherSettingsSchema,
   type Challan,
+  type CopyCount,
   type VoucherSettings,
 } from '@ilm/contracts';
 import { Button, CheckboxField, Field, Input, Textarea, useToast } from '@ilm/ui';
@@ -109,6 +112,8 @@ export interface VoucherSettingsFormProps {
     readonly address?: string | undefined;
     readonly phone?: string | undefined;
     readonly logoVersion?: string | undefined;
+    readonly bankLogoVersion?: string | undefined;
+    readonly accentColor?: string | undefined;
   };
   readonly canConfigure: boolean;
   readonly error?: string | undefined;
@@ -155,6 +160,24 @@ export function VoucherSettingsForm({
     setDraft((current) => ({
       ...current,
       copyLabels: current.copyLabels.map((label, at) => (at === index ? value : label)),
+    }));
+  }
+
+  /**
+   * Change the layout, and keep the labels in step with it.
+   *
+   * A fourth copy arrives named rather than blank, and the names the school
+   * already chose for the first three survive going to four and back again —
+   * which is what somebody does while deciding between the two.
+   */
+  function setCopyCount(count: CopyCount): void {
+    setDraft((current) => ({
+      ...current,
+      copyCount: count,
+      copyLabels: Array.from(
+        { length: count },
+        (_, index) => current.copyLabels[index] ?? DEFAULT_COPY_LABELS[count][index] ?? '',
+      ),
     }));
   }
 
@@ -221,28 +244,35 @@ export function VoucherSettingsForm({
             read-only viewer and a save in flight are the same state as far as
             the inputs are concerned. */}
         <fieldset disabled={!canConfigure || isSaving} className="space-y-4">
-          <Card title="What it shows">
-            <CheckboxField
-              label="Print the school logo"
-              hint={
-                hasLogo ? 'Top-left of every copy.' : 'Upload one under Settings › School first.'
-              }
-              checked={draft.showLogo && hasLogo}
-              disabled={!hasLogo}
-              onCheckedChange={(next) => {
-                set('showLogo', next === true);
-              }}
-            />
+          <Card title="The page">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-foreground">Copies per sheet</p>
+              <p className="text-xs text-muted-foreground">
+                A4 either way. Three stack down the page; four sit in a square.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {COPY_COUNTS.map((count) => (
+                  <LayoutChoice
+                    key={count}
+                    count={count}
+                    checked={draft.copyCount === count}
+                    onSelect={() => {
+                      setCopyCount(count);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
 
             <div className="space-y-2">
               <p className="text-sm font-medium text-foreground">Copy names</p>
               <p className="text-xs text-muted-foreground">
-                Three, left to right. Most schools keep School, Bank, Student.
+                One per copy, in order. Most schools keep School, Bank, Student.
               </p>
-              {/* Three inputs, not a textarea of lines: a challan has exactly
-                  three copies, and a box you can delete a line from produces a
+              {/* One input per copy, not a textarea of lines: the count is a
+                  setting, and a box you can delete a line from produces a
                   payload the server has to refuse. */}
-              <div className="grid gap-2 sm:grid-cols-3">
+              <div className="grid gap-2 sm:grid-cols-2">
                 {draft.copyLabels.map((label, index) => (
                   <Input
                     // The index is the identity: two copies may legitimately
@@ -264,6 +294,35 @@ export function VoucherSettingsForm({
                 </p>
               )}
             </div>
+          </Card>
+
+          <Card title="What it shows">
+            <CheckboxField
+              label="Print the school logo"
+              hint={
+                hasLogo ? 'Top-left of every copy.' : 'Upload one under Settings › School first.'
+              }
+              checked={draft.showLogo && hasLogo}
+              disabled={!hasLogo}
+              onCheckedChange={(next) => {
+                set('showLogo', next === true);
+              }}
+            />
+
+            <Field
+              label="Bank name"
+              hint="Printed at the foot of every copy, beside the bank’s mark."
+              error={fieldErrors['bankName']}
+            >
+              <Input
+                maxLength={60}
+                placeholder="Meezan Bank Ltd."
+                value={draft.bankName ?? ''}
+                onChange={(event) => {
+                  set('bankName', event.target.value === '' ? null : event.target.value);
+                }}
+              />
+            </Field>
 
             <Field
               label="Note under the signature"
@@ -436,6 +495,59 @@ export function VoucherSettingsForm({
         </div>
       </div>
     </form>
+  );
+}
+
+/**
+ * One of the two page layouts, drawn rather than described.
+ *
+ * "Three copies" and "four copies" say nothing about what comes out of the
+ * printer — a sheet with three strips and a sheet quartered are different
+ * documents to whoever has to cut them up. A miniature of the sheet answers
+ * the question the words do not.
+ */
+function LayoutChoice({
+  count,
+  checked,
+  onSelect,
+}: {
+  readonly count: CopyCount;
+  readonly checked: boolean;
+  readonly onSelect: () => void;
+}) {
+  return (
+    <label
+      className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+        checked ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+      }`}
+    >
+      <input
+        type="radio"
+        name="copyCount"
+        className="sr-only"
+        checked={checked}
+        onChange={onSelect}
+      />
+
+      {/* A4 proportions, so the miniature is the sheet and not a rectangle. */}
+      <span
+        aria-hidden
+        className={`grid h-12 w-[2.12rem] shrink-0 gap-[2px] rounded-xs border border-border bg-background p-[2px] ${
+          count === 4 ? 'grid-cols-2' : 'grid-cols-1'
+        }`}
+      >
+        {Array.from({ length: count }, (_, index) => (
+          <span key={index} className="rounded-[1px] bg-muted-foreground/30" />
+        ))}
+      </span>
+
+      <span className="min-w-0">
+        <span className="block text-sm font-medium text-foreground">{count} copies</span>
+        <span className="block text-xs text-muted-foreground">
+          {count === 3 ? 'Stacked down the page' : 'Two by two'}
+        </span>
+      </span>
+    </label>
   );
 }
 

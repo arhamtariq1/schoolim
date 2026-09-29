@@ -519,6 +519,7 @@ export class SignupService {
           await tx.schoolLogo.create({
             data: {
               schoolId: school.id,
+              kind: 'SCHOOL',
               bytes: new Uint8Array(bytes),
               mimeType: input.logo.mimeType,
               etag,

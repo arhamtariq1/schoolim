@@ -13,10 +13,15 @@
    `window.print()` from the preview dialog would otherwise put the whole
    application on paper — sidebar, filters, toolbar and all — and a parent would
    be handed a screenshot of a web app instead of something a bank will accept.
+   So printing hides everything and promotes the challan to the page.
 
-   So printing hides everything and promotes the challan to the page. The three
-   copies keep their row on A4 landscape and are marked `break-inside-avoid`, so
-   no copy is ever split across two sheets.
+   ## A4 portrait, in one of two arrangements
+
+   Three copies stack down the sheet as full-width strips; four sit in a 2x2.
+   The arrangement is the component's own grid — `grid-cols-1` or `grid-cols-2`
+   from `copyCount` — so there is nothing here that has to agree with it. What
+   is here is the page itself, and the rule that no copy may be split across two
+   sheets.
 --------------------------------------------------------------------------- */
 @media print {
   body * {
@@ -47,9 +52,9 @@
      A stack of them, on the print page.
 
      Left in normal flow so the sheets follow one another, one voucher's
-     three copies per page. `break-after: page` is what makes that true —
-     without it a printer fits one and a half vouchers on a sheet and every
-     parent after the first gets a challan cut in half.
+     copies per page. `break-after: page` is what makes that true — without
+     it a printer fits one and a half vouchers on a sheet and every parent
+     after the first gets a challan cut in half.
 
      The last one does not force a break, or every run ends on a blank sheet.
      ------------------------------------------------------------------- */
@@ -71,35 +76,35 @@
     display: none !important;
   }
 
+  /* A copy is never split, and the paper is white whatever the portal's
+     theme is. The borders are the component's own — this used to force them
+     all to heavy black, which is not what the document is drawn in. */
   .voucher-challan article {
     break-inside: avoid;
-    /* Borders print; background tints mostly do not, and a challan that relies
-       on one is a challan with invisible boxes. */
-    border: 1px solid #000;
     background: #fff;
-    color: #000;
   }
 
   /* -----------------------------------------------------------------------
-     The one fill on the document: the Kuickpay bar.
+     The tints.
 
      Browsers drop background colours when printing unless asked, and a
-     printer's "background graphics" checkbox is off as often as not — so the
-     bar would come out white, with white text on it. `print-color-adjust`
-     asks for the fill anyway, which every current engine honours even with
-     that checkbox off.
+     printer's "background graphics" checkbox is off as often as not.
+     `print-color-adjust` asks for them anyway, which every current engine
+     honours even with that checkbox off.
 
-     It is a request, not a guarantee, so the component does not depend on it:
-     the consumer number is black on white inside the bar, and only the word
-     "Kuickpay" is reversed out. See `voucher-challan.tsx`.
+     It is a request, not a guarantee — so the document does not depend on it.
+     Every fill on a challan is a light tint carrying dark text, never the
+     reverse, and losing all of them leaves it correct in black on white. See
+     the header of `voucher-challan.tsx`.
      --------------------------------------------------------------------- */
+  .challan-tint,
   .challan-paybar {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
   @page {
-    size: A4 landscape;
+    size: A4 portrait;
     margin: 8mm;
   }
 }

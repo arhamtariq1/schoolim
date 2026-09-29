@@ -80,7 +80,9 @@ describe('what the settings form will accept', () => {
   const valid = {
     showLogo: true,
     footerNote: 'Fees paid after the due date attract a surcharge.',
+    copyCount: 3,
     copyLabels: ['School Copy', 'Bank Copy', 'Student Copy'],
+    bankName: 'Meezan Bank Ltd.',
     kuickpayEnabled: true,
     kuickpayPrefix: '1514',
     kuickpayChannels: ['Meezan Bank'],
@@ -123,13 +125,39 @@ describe('what the settings form will accept', () => {
     }
   });
 
-  it('insists on three copies, because a challan has three', () => {
+  it('insists on one label per copy, whichever count is chosen', () => {
+    // A fourth copy with no name is a blank heading on a printed document, and
+    // three names with a count of four is a copy nobody can tell from the one
+    // above it. The database holds the same rule as a check constraint.
     expect(
       updateVoucherSettingsSchema.safeParse({ ...valid, copyLabels: ['One', 'Two'] }).success,
     ).toBe(false);
     expect(
       updateVoucherSettingsSchema.safeParse({ ...valid, copyLabels: ['A', 'B', 'C', 'D'] }).success,
     ).toBe(false);
+
+    expect(
+      updateVoucherSettingsSchema.safeParse({
+        ...valid,
+        copyCount: 4,
+        copyLabels: ['A', 'B', 'C', 'D'],
+      }).success,
+    ).toBe(true);
+    expect(
+      updateVoucherSettingsSchema.safeParse({ ...valid, copyCount: 4 }).success,
+    ).toBe(false);
+  });
+
+  it('accepts only the two layouts that fit on a sheet', () => {
+    for (const bad of [1, 2, 5, 6, 0, -3, 3.5]) {
+      expect(updateVoucherSettingsSchema.safeParse({ ...valid, copyCount: bad }).success).toBe(
+        false,
+      );
+    }
+  });
+
+  it('stores a blank bank name as nothing', () => {
+    expect(updateVoucherSettingsSchema.parse({ ...valid, bankName: '  ' }).bankName).toBeNull();
   });
 
   it('stores a blank note as nothing, so "no note" has one spelling', () => {

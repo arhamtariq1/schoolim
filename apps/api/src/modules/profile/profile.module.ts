@@ -273,9 +273,12 @@ export class ProfileService {
         if (input.logo !== undefined) {
           const { bytes, etag } = decodeAndVerify(input.logo);
           await tx.schoolLogo.upsert({
-            where: { schoolId: schoolBefore.id },
+            // The school's own mark, not the bank's — a school now has a row
+            // for each, and this path only ever writes the letterhead.
+            where: { schoolId_kind: { schoolId: schoolBefore.id, kind: 'SCHOOL' } },
             create: {
               schoolId: schoolBefore.id,
+              kind: 'SCHOOL',
               bytes: new Uint8Array(bytes),
               mimeType: input.logo.mimeType,
               etag,

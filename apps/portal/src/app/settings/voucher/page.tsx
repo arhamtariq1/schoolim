@@ -7,6 +7,7 @@ import {
 } from '@ilm/contracts';
 
 import { AppShell } from '@/components/app-shell';
+import { SchoolLogoCard } from '@/components/school-logo-card';
 import { VoucherSettingsForm } from '@/components/voucher-settings-form';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
@@ -24,11 +25,12 @@ import { getSession } from '@/lib/session';
  * already printing, so the form and its preview still show the truth.
  */
 export default async function VoucherSettingsPage() {
-  const [session, voucherResult, schoolResult, logoResult] = await Promise.all([
+  const [session, voucherResult, schoolResult, logoResult, bankLogoResult] = await Promise.all([
     getSession(),
     apiFetch<{ data: VoucherSettings }>(ROUTES.school.voucherSettings),
     apiFetch<{ data: SchoolSettings }>(ROUTES.school.settings),
     apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info),
+    apiFetch<{ data: SchoolLogoInfo }>(ROUTES.bankLogo.info),
   ]);
 
   const permissions = session?.permissions ?? [];
@@ -40,6 +42,9 @@ export default async function VoucherSettingsPage() {
 
   const school = schoolResult.ok ? schoolResult.data.data : undefined;
   const logoVersion = logoResult.ok ? logoResult.data.data.version : null;
+  const bankLogo: SchoolLogoInfo = bankLogoResult.ok
+    ? bankLogoResult.data.data
+    : { present: false, mimeType: null, byteSize: null, version: null };
 
   return (
     <AppShell
@@ -72,10 +77,27 @@ export default async function VoucherSettingsPage() {
             address: school?.address ?? undefined,
             phone: school?.phone ?? undefined,
             logoVersion: logoVersion ?? undefined,
+            bankLogoVersion: bankLogo.version ?? undefined,
+            // The challan is inked in the school's own colour, the same one the
+            // portal is painted in.
+            accentColor:
+              school?.primaryColor ?? session?.school.primaryColor ?? undefined,
           }}
           canConfigure={canConfigure}
           error={voucherResult.ok ? undefined : voucherResult.message}
         />
+
+        <div className="max-w-2xl">
+          <SchoolLogoCard
+            info={bankLogo}
+            canConfigure={canConfigure}
+            imageRoute={ROUTES.bankLogo.image}
+            title="Bank logo"
+            description="Printed at the foot of every copy, beside the bank’s name. Optional — a school that collects at its own office needs neither."
+            noun="Bank logo"
+            error={bankLogoResult.ok ? undefined : bankLogoResult.message}
+          />
+        </div>
       </div>
     </AppShell>
   );

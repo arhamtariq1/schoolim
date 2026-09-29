@@ -837,11 +837,28 @@ export type EnumStaffAttendanceStatusWithAggregatesFilter<$PrismaModel = never> 
   _max?: Prisma.NestedEnumStaffAttendanceStatusFilter<$PrismaModel>
 }
 
+export type EnumSchoolImageKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.SchoolImageKind | Prisma.EnumSchoolImageKindFieldRefInput<$PrismaModel>
+  in?: $Enums.SchoolImageKind[] | Prisma.ListEnumSchoolImageKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.SchoolImageKind[] | Prisma.ListEnumSchoolImageKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumSchoolImageKindFilter<$PrismaModel> | $Enums.SchoolImageKind
+}
+
 export type BytesFilter<$PrismaModel = never> = {
   equals?: runtime.Bytes | Prisma.BytesFieldRefInput<$PrismaModel>
   in?: runtime.Bytes[] | Prisma.ListBytesFieldRefInput<$PrismaModel>
   notIn?: runtime.Bytes[] | Prisma.ListBytesFieldRefInput<$PrismaModel>
   not?: Prisma.NestedBytesFilter<$PrismaModel> | runtime.Bytes
+}
+
+export type EnumSchoolImageKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.SchoolImageKind | Prisma.EnumSchoolImageKindFieldRefInput<$PrismaModel>
+  in?: $Enums.SchoolImageKind[] | Prisma.ListEnumSchoolImageKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.SchoolImageKind[] | Prisma.ListEnumSchoolImageKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumSchoolImageKindWithAggregatesFilter<$PrismaModel> | $Enums.SchoolImageKind
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumSchoolImageKindFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumSchoolImageKindFilter<$PrismaModel>
 }
 
 export type BytesWithAggregatesFilter<$PrismaModel = never> = {
@@ -1632,11 +1649,28 @@ export type NestedEnumStaffAttendanceStatusWithAggregatesFilter<$PrismaModel = n
   _max?: Prisma.NestedEnumStaffAttendanceStatusFilter<$PrismaModel>
 }
 
+export type NestedEnumSchoolImageKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.SchoolImageKind | Prisma.EnumSchoolImageKindFieldRefInput<$PrismaModel>
+  in?: $Enums.SchoolImageKind[] | Prisma.ListEnumSchoolImageKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.SchoolImageKind[] | Prisma.ListEnumSchoolImageKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumSchoolImageKindFilter<$PrismaModel> | $Enums.SchoolImageKind
+}
+
 export type NestedBytesFilter<$PrismaModel = never> = {
   equals?: runtime.Bytes | Prisma.BytesFieldRefInput<$PrismaModel>
   in?: runtime.Bytes[] | Prisma.ListBytesFieldRefInput<$PrismaModel>
   notIn?: runtime.Bytes[] | Prisma.ListBytesFieldRefInput<$PrismaModel>
   not?: Prisma.NestedBytesFilter<$PrismaModel> | runtime.Bytes
+}
+
+export type NestedEnumSchoolImageKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.SchoolImageKind | Prisma.EnumSchoolImageKindFieldRefInput<$PrismaModel>
+  in?: $Enums.SchoolImageKind[] | Prisma.ListEnumSchoolImageKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.SchoolImageKind[] | Prisma.ListEnumSchoolImageKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumSchoolImageKindWithAggregatesFilter<$PrismaModel> | $Enums.SchoolImageKind
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumSchoolImageKindFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumSchoolImageKindFilter<$PrismaModel>
 }
 
 export type NestedBytesWithAggregatesFilter<$PrismaModel = never> = {

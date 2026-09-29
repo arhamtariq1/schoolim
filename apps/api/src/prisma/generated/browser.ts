@@ -347,9 +347,7 @@ export type SecurityDeposit = Prisma.SecurityDepositModel
 export type SecurityDepositRefund = Prisma.SecurityDepositRefundModel
 /**
  * Model SchoolLogo
- * A school's logo, kept out of `schools` so its bytes never ride along with a
- * tenant lookup. See the migration for why the bytes are in Postgres at all,
- * and what moving them out would cost.
+ * 
  */
 export type SchoolLogo = Prisma.SchoolLogoModel
 /**

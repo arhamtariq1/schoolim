@@ -63,6 +63,7 @@ export default async function VouchersPage({
     schoolResult,
     voucherSettingsResult,
     logoResult,
+    bankLogoResult,
   ] = await Promise.all([
     getSession(),
     apiFetch<{
@@ -84,6 +85,7 @@ export default async function VouchersPage({
     apiFetch<{ data: SchoolSettings }>(ROUTES.school.settings),
     apiFetch<{ data: VoucherSettings }>(ROUTES.school.voucherSettings),
     apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info),
+    apiFetch<{ data: SchoolLogoInfo }>(ROUTES.bankLogo.info),
   ]);
 
   const emptyTotals: VoucherTotals = {
@@ -120,6 +122,13 @@ export default async function VouchersPage({
             logoResult.ok && logoResult.data.data.present
               ? (logoResult.data.data.version ?? '')
               : undefined,
+          bankLogoVersion:
+            bankLogoResult.ok && bankLogoResult.data.data.present
+              ? (bankLogoResult.data.data.version ?? '')
+              : undefined,
+          accentColor: schoolResult.ok
+            ? (schoolResult.data.data.primaryColor ?? undefined)
+            : (session?.school.primaryColor ?? undefined),
         }}
         voucherSettings={
           voucherSettingsResult.ok ? voucherSettingsResult.data.data : DEFAULT_VOUCHER_SETTINGS

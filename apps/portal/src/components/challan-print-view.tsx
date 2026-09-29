@@ -43,6 +43,8 @@ export function ChallanPrintView({
     address?: string | undefined;
     phone?: string | undefined;
     logoVersion?: string | undefined;
+    bankLogoVersion?: string | undefined;
+    accentColor?: string | undefined;
   };
   readonly settings: VoucherSettings;
 }) {

@@ -42,6 +42,8 @@ const PASSWORD = 'correct-horse-battery-staple';
 
 /** A complete, valid body. Individual tests override one field of it. */
 const VALID = {
+  copyCount: 3,
+  bankName: 'Meezan Bank Ltd.',
   showLogo: true,
   footerNote: 'Fees paid after the due date attract a surcharge.',
   copyLabels: ['School Copy', 'Bank Copy', 'Student Copy'],
@@ -72,6 +74,7 @@ async function wipe(): Promise<void> {
   for (const school of [SCHOOL_A, SCHOOL_B]) {
     for (const table of [
       'school_voucher_settings',
+      'school_logos',
       'sessions',
       'audit_logs',
       'user_roles',
@@ -183,8 +186,8 @@ async function write(body: Record<string, unknown>, jar = ownerA, host = HOST_A)
 /** The row as the database holds it, bypassing the endpoint entirely. */
 async function row(schoolId: string): Promise<Record<string, unknown> | undefined> {
   const rows = await admin.$queryRawUnsafe<Record<string, unknown>[]>(
-    `SELECT show_logo, footer_note, copy_labels, kuickpay_enabled, kuickpay_prefix,
-            kuickpay_channels, onelink_enabled, onelink_institution_id
+    `SELECT show_logo, footer_note, copy_count, copy_labels, bank_name, kuickpay_enabled,
+            kuickpay_prefix, kuickpay_channels, onelink_enabled, onelink_institution_id
        FROM school_voucher_settings WHERE school_id = $1::uuid`,
     schoolId,
   );
@@ -310,10 +313,32 @@ describe('the rules that keep a challan payable', () => {
     expect(await row(SCHOOL_A)).toBeUndefined();
   });
 
-  it('insists on three copy names, because a challan has three copies', async () => {
+  it('insists on one copy name per copy', async () => {
     expect((await write({ ...PLAIN, copyLabels: ['One', 'Two'] })).status).toBe(400);
     expect((await write({ ...PLAIN, copyLabels: ['A', 'B', 'C', 'D'] })).status).toBe(400);
     expect((await write({ ...PLAIN, copyLabels: ['A', '   ', 'C'] })).status).toBe(400);
+    // Four copies needs four names, and the names go with the count.
+    expect((await write({ ...PLAIN, copyCount: 4 })).status).toBe(400);
+  });
+
+  it('accepts four copies with four names', async () => {
+    const { status } = await write({
+      ...PLAIN,
+      copyCount: 4,
+      copyLabels: ['School Copy', 'Bank Copy', 'Student Copy', 'Office Copy'],
+    });
+
+    expect(status).toBe(200);
+    const after = await row(SCHOOL_A);
+    expect(after?.['copy_count']).toBe(4);
+    expect(after?.['copy_labels']).toHaveLength(4);
+  });
+
+  it('accepts only the two layouts that fit on a sheet', async () => {
+    for (const bad of [1, 2, 5, 0, -3]) {
+      expect((await write({ ...PLAIN, copyCount: bad })).status).toBe(400);
+    }
+    expect(await row(SCHOOL_A)).toBeUndefined();
   });
 
   it('rejects an unknown field rather than ignoring it', async () => {
@@ -354,6 +379,101 @@ describe('who may do what', () => {
       headers: { host: HOST_A },
     });
     expect(response.statusCode).toBe(401);
+  });
+});
+
+/**
+ * The bank's mark.
+ *
+ * The same table, the same sniffing and the same limits as the school's own
+ * logo, with a `kind` telling them apart. What is worth proving is that they
+ * *are* apart: uploading one must not overwrite the other, which is exactly
+ * what the old one-row-per-school unique constraint would have done.
+ */
+describe('the bank logo', () => {
+  // A one-pixel PNG. The endpoint sniffs the bytes, so this cannot be a stub.
+  const PNG =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+  async function upload(route: string, jar = ownerA, host = HOST_A) {
+    const response = await app.inject({
+      method: 'PUT',
+      url: route,
+      headers: { host, cookie: jar },
+      payload: { dataBase64: PNG, mimeType: 'image/png' },
+    });
+    return { status: response.statusCode };
+  }
+
+  async function info(route: string, jar = ownerA, host = HOST_A) {
+    const response = await app.inject({
+      method: 'GET',
+      url: route,
+      headers: { host, cookie: jar },
+    });
+    return {
+      status: response.statusCode,
+      data:
+        response.statusCode === 200
+          ? response.json<{ data: { present: boolean } }>().data
+          : undefined,
+    };
+  }
+
+  beforeEach(async () => {
+    await admin.$executeRaw`DELETE FROM school_logos WHERE school_id = ${SCHOOL_A}::uuid`;
+  });
+
+  it('starts absent, which is what makes the challan leave the space out', async () => {
+    expect((await info(ROUTES.bankLogo.info)).data?.present).toBe(false);
+  });
+
+  it('is stored and read back', async () => {
+    expect((await upload(ROUTES.bankLogo.image)).status).toBe(200);
+    expect((await info(ROUTES.bankLogo.info)).data?.present).toBe(true);
+  });
+
+  it('does not overwrite the school’s own mark', async () => {
+    // The whole reason for the `kind` column. One row per school — which is
+    // what the constraint used to say — means uploading a bank logo silently
+    // replaced the letterhead.
+    await upload(ROUTES.schoolLogo.image);
+    await upload(ROUTES.bankLogo.image);
+
+    expect((await info(ROUTES.schoolLogo.info)).data?.present).toBe(true);
+    expect((await info(ROUTES.bankLogo.info)).data?.present).toBe(true);
+
+    const rows = await admin.$queryRawUnsafe<{ kind: string }[]>(
+      // Cast to text: an enum orders by the order its values were declared,
+      // which would make this assertion a statement about the migration.
+      `SELECT kind FROM school_logos WHERE school_id = $1::uuid ORDER BY kind::text`,
+      SCHOOL_A,
+    );
+    expect(rows.map((entry) => entry.kind)).toEqual(['BANK', 'SCHOOL']);
+  });
+
+  it('removes one without touching the other', async () => {
+    await upload(ROUTES.schoolLogo.image);
+    await upload(ROUTES.bankLogo.image);
+
+    await app.inject({
+      method: 'DELETE',
+      url: ROUTES.bankLogo.image,
+      headers: { host: HOST_A, cookie: ownerA },
+    });
+
+    expect((await info(ROUTES.bankLogo.info)).data?.present).toBe(false);
+    expect((await info(ROUTES.schoolLogo.info)).data?.present).toBe(true);
+  });
+
+  it('refuses an accountant writing it, and a teacher reading it', async () => {
+    expect((await upload(ROUTES.bankLogo.image, accountantA)).status).toBe(403);
+    expect((await info(ROUTES.bankLogo.info, teacherA)).status).toBe(403);
+  });
+
+  it('does not reach another school', async () => {
+    await upload(ROUTES.bankLogo.image);
+    expect((await info(ROUTES.bankLogo.info, ownerB, HOST_B)).data?.present).toBe(false);
   });
 });
 

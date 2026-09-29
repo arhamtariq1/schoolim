@@ -50,7 +50,7 @@ export class SchoolLogoController {
     @Req() request: FastifyRequest,
     @Res({ passthrough: false }) reply: FastifyReply,
   ): Promise<void> {
-    const logo = await this.logos.read();
+    const logo = await this.logos.read('SCHOOL');
 
     // A logo appears on every page and changes about once a year. Without a
     // conditional request that is one image download per navigation, on a
@@ -77,19 +77,73 @@ export class SchoolLogoController {
   @Get(ROUTES.schoolLogo.info)
   @RequirePermission('dashboard.workspace.read')
   async info(): Promise<{ data: SchoolLogoInfo }> {
-    return { data: await this.logos.info() };
+    return { data: await this.logos.info('SCHOOL') };
   }
 
   @Put(ROUTES.schoolLogo.image)
   @RequirePermission('settings.school.configure')
   async upload(@Body() body: unknown): Promise<{ data: SchoolLogoInfo }> {
-    return { data: await this.logos.replace(uploadSchoolLogoSchema.parse(body)) };
+    return { data: await this.logos.replace('SCHOOL', uploadSchoolLogoSchema.parse(body)) };
   }
 
   @Delete(ROUTES.schoolLogo.image)
   @RequirePermission('settings.school.configure')
   async remove(): Promise<{ data: { removed: true } }> {
-    await this.logos.remove();
+    await this.logos.remove('SCHOOL');
+    return { data: { removed: true } };
+  }
+}
+
+/**
+ * The bank's mark, printed at the foot of a challan.
+ *
+ * The same four endpoints as the school's own logo, against the same table and
+ * the same validation, differing only in which row they address. Reading is
+ * open to anyone who may see a voucher — the renderer needs it on every print
+ * run, including a receptionist's.
+ */
+@Controller()
+export class BankLogoController {
+  constructor(private readonly logos: SchoolLogoService) {}
+
+  @Get(ROUTES.bankLogo.image)
+  @RequirePermission('fees.voucher.read')
+  async image(
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: false }) reply: FastifyReply,
+  ): Promise<void> {
+    const logo = await this.logos.read('BANK');
+
+    if (request.headers['if-none-match'] === `"${logo.etag}"`) {
+      await reply.code(304).send();
+      return;
+    }
+
+    await reply
+      .header('content-type', logo.mimeType)
+      .header('etag', `"${logo.etag}"`)
+      .header('cache-control', 'private, max-age=300, must-revalidate')
+      .header('content-length', String(logo.bytes.byteLength))
+      .header('x-content-type-options', 'nosniff')
+      .send(logo.bytes);
+  }
+
+  @Get(ROUTES.bankLogo.info)
+  @RequirePermission('fees.voucher.read')
+  async info(): Promise<{ data: SchoolLogoInfo }> {
+    return { data: await this.logos.info('BANK') };
+  }
+
+  @Put(ROUTES.bankLogo.image)
+  @RequirePermission('settings.school.configure')
+  async upload(@Body() body: unknown): Promise<{ data: SchoolLogoInfo }> {
+    return { data: await this.logos.replace('BANK', uploadSchoolLogoSchema.parse(body)) };
+  }
+
+  @Delete(ROUTES.bankLogo.image)
+  @RequirePermission('settings.school.configure')
+  async remove(): Promise<{ data: { removed: true } }> {
+    await this.logos.remove('BANK');
     return { data: { removed: true } };
   }
 }
@@ -171,6 +225,7 @@ export class VoucherSettingsController {
 @Module({
   controllers: [
     SchoolLogoController,
+    BankLogoController,
     SchoolSettingsController,
     SchoolAppearanceController,
     VoucherSettingsController,

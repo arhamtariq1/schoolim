@@ -90,6 +90,8 @@ export interface VouchersViewProps {
     address?: string | undefined;
     phone?: string | undefined;
     logoVersion?: string | undefined;
+    bankLogoVersion?: string | undefined;
+    accentColor?: string | undefined;
   };
   /** How this school’s challan is laid out. Defaults until they change it. */
   voucherSettings: VoucherSettings;

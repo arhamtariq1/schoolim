@@ -262,3 +262,11 @@ export const StaffAttendanceStatus = {
 } as const
 
 export type StaffAttendanceStatus = (typeof StaffAttendanceStatus)[keyof typeof StaffAttendanceStatus]
+
+
+export const SchoolImageKind = {
+  SCHOOL: 'SCHOOL',
+  BANK: 'BANK'
+} as const
+
+export type SchoolImageKind = (typeof SchoolImageKind)[keyof typeof SchoolImageKind]

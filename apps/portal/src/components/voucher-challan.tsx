@@ -8,57 +8,45 @@ import {
   type VoucherSettings,
 } from '@ilm/contracts';
 import { Money } from '@ilm/ui';
+import { type CSSProperties, type ReactNode } from 'react';
 
 /**
- * The printed fee challan — three copies on one A4.
+ * The printed fee challan.
  *
- * ## Why three
+ * ## Three copies down the page, or four in a square
  *
- * School, bank, parent. It is what Pakistani banks accept at the counter, and a
- * single-copy challan is one a cashier hands back (docs/modules §6). The names
- * on them are a school's own, because some say "Student Copy" and some say
- * "Parent Copy" and neither is ours to decide.
+ * A4 portrait either way. Three copies are full-width strips stacked down the
+ * sheet; four sit in a 2x2. They are the only two arrangements that leave a
+ * copy big enough to read at a counter, and which one a school uses is
+ * `copyCount` — CLAUDE.md R1, on the one document of this product that leaves
+ * the building.
  *
- * ## Why it is a ruled document and not a grid of boxes
+ * The two shapes are genuinely different — a strip is 194x93mm and a quarter is
+ * 96x140mm — so the body lays itself out accordingly: side by side when there is
+ * width to spend, stacked when there is not. Everything else is identical,
+ * because it is the same document.
  *
- * The first cut drew a box around every figure. Three copies across A4 leaves
- * each one about 90mm wide, and a box wide enough to hold "15,900.00" does not
- * fit beside a label like "Amount payable within due date" — so the amounts
- * overflowed their borders and the whole thing read as congested.
+ * ## Why nothing legible depends on a fill
  *
- * A challan is a ledger, so it is set as one: a single amount **column**, ruled,
- * right-aligned, the same width down the page. One column cannot overflow the
- * way twelve independent boxes can, the eye reads straight down it, and the
- * space it costs is taken once rather than per row.
+ * This is designed for paper. A printer with "background graphics" off, and
+ * every photocopier, drops background colour — so **every fill on this document
+ * is a light tint carrying dark text**, never the reverse. Lose the tints and
+ * the challan is still correct in flat black on white; keep them and it looks
+ * like something a school would be happy to send home. `globals.css` asks for
+ * them with `print-color-adjust`, and this is what makes that a nicety rather
+ * than a dependency.
  *
- * Everything else follows from the same constraint — a counter clerk reading
- * this upside down, at speed, under a fluorescent light:
- *
- * - **Four bands, in order.** Which copy this is, whose school it is, whose
- *   child it is, what is owed. Each is separated by a rule, so the eye can jump
- *   to one without reading the others.
- * - **Labels are small caps, values are bold.** The label is scenery; the value
- *   is what is being read. Making them the same weight is what made the old
- *   particulars block look mixed up.
- * - **One figure is the biggest thing on the page** — the amount payable within
- *   the due date. That is the number this document exists to communicate.
- * - **Flat black on white.** Background tints do not survive a photocopier, so
- *   nothing here depends on a fill to be legible.
+ * The school's own brand colour is the accent, darkened if need be until it
+ * clears 4.5:1 against white (docs/16 §6). It is passed as a hex and set as a
+ * custom property: the one place raw colour is right, because a printed page
+ * must not follow the portal's theme — a challan in dark mode is a black sheet
+ * of paper.
  *
  * ## Two figures, deliberately
  *
- * "Payable within due date" and "payable after due date" are separate rows,
- * because they are separate amounts and the surcharge applies only to one of
- * them. Printing a single total is how a parent who paid on time is charged a
- * late fee.
- *
- * ## The payment block
- *
- * A school with a Kuickpay arrangement prints a consumer number and the network
- * a parent can pay at; a single campus with a bank slip prints neither, and the
- * space goes back to the signature line a counter actually needs. Which of those
- * happens is `VoucherSettings` — CLAUDE.md R1, on the one page of this product
- * that crosses a bank counter.
+ * "Payable within due date" and "payable after" are separate rows, because they
+ * are separate amounts and the surcharge applies only to one. Printing a single
+ * total is how a parent who paid on time is charged a late fee.
  */
 
 export interface ChallanProps {
@@ -75,13 +63,34 @@ export interface ChallanProps {
     phone?: string | undefined;
     /** Version string for the logo URL, so a replaced mark is not cached. */
     logoVersion?: string | undefined;
+    /** The same, for the bank's mark at the foot. */
+    bankLogoVersion?: string | undefined;
+    /** The school's brand colour, `#rrggbb`. Absent means the default ink. */
+    accentColor?: string | undefined;
   };
   settings: VoucherSettings;
 }
 
 export function VoucherChallan({ voucher, school, settings }: ChallanProps) {
+  const accent = readableAccent(school.accentColor);
+
   return (
-    <div className="voucher-challan grid gap-2 sm:grid-cols-3">
+    <div
+      className={`voucher-challan grid gap-3 ${
+        settings.copyCount === 4 ? 'grid-cols-2' : 'grid-cols-1'
+      }`}
+      // Set once on the container and inherited by every copy. Three custom
+      // properties is the whole of the school's colour on this page, and they
+      // have to be inline because the value is one school's data — the cast is
+      // how a custom property is written into a typed style object.
+      style={
+        {
+          '--challan-accent': accent,
+          '--challan-tint': mixWithWhite(accent, 8),
+          '--challan-rule': mixWithWhite(accent, 30),
+        } as CSSProperties
+      }
+    >
       {settings.copyLabels.map((copy, index) => (
         <ChallanCopy
           // Labels are a school's own text and two of them can be identical.
@@ -104,213 +113,261 @@ function ChallanCopy({ copy, voucher, school, settings }: ChallanProps & { copy:
   const kuickpay = kuickpayConsumerNo(settings, voucher.grNo);
   const onelink = onelinkConsumerNo(settings, voucher.grNo);
   const showLogo = settings.showLogo && school.logoVersion !== undefined;
+  const showBank = settings.bankName !== null || school.bankLogoVersion !== undefined;
+
+  /** Three copies are wide strips; four are tall quarters. */
+  const wide = settings.copyCount === 3;
 
   return (
-    <article className="challan-copy flex break-inside-avoid flex-col border border-black bg-white text-[9px] leading-snug text-black">
-      {/* Which copy this is, on its own line. It used to sit in the corner of
-          the letterhead, where it read as part of the school's name. */}
-      <p className="border-b border-black py-[3px] text-center text-[8px] font-bold tracking-[0.18em] uppercase">
-        {copy}
-      </p>
+    <article className="challan-copy flex break-inside-avoid flex-col overflow-hidden rounded-lg border border-neutral-400 bg-white text-[9px] leading-snug text-neutral-900">
+      {/* Which copy this is, and which challan. Tinted rather than filled, so
+          both survive a printer that drops backgrounds. */}
+      <div className="challan-tint flex items-center justify-between gap-2 border-b border-[var(--challan-rule)] bg-[var(--challan-tint)] px-3 py-1">
+        <span className="text-[8px] font-bold tracking-[0.18em] text-[var(--challan-accent)] uppercase">
+          {copy}
+        </span>
+        <span className="font-mono text-[8px] font-semibold tracking-wide">
+          {voucher.voucherNo}
+        </span>
+      </div>
 
-      <header className="flex items-center gap-2 border-b border-black px-2 py-1.5">
+      <header className="flex items-center gap-2.5 border-b border-neutral-300 px-3 py-2">
         {showLogo ? (
           // A plain `img`: this is printed, so there is nothing for Next's
           // image pipeline to optimise, and a `next/image` here would be a
-          // layout-shifting placeholder on a page whose only job is to be
-          // laid out once and sent to a printer.
+          // layout-shifting placeholder on a page whose only job is to be laid
+          // out once and sent to a printer.
           <img
             src={`${ROUTES.schoolLogo.image}?v=${school.logoVersion ?? ''}`}
             alt=""
-            className="size-10 shrink-0 object-contain"
+            className="size-9 shrink-0 object-contain"
           />
         ) : null}
 
-        <div className="min-w-0 flex-1 text-center">
-          <h3 className="text-[12px] leading-tight font-bold tracking-tight uppercase">
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-[13px] leading-tight font-bold tracking-tight">
             {school.name}
           </h3>
-          {school.address === undefined ? null : (
-            <p className="mt-0.5 text-[8px] leading-tight">{school.address}</p>
-          )}
-          {school.phone === undefined ? null : (
-            <p className="text-[8px] leading-tight">Ph: {school.phone}</p>
-          )}
+          <p className="truncate text-[8px] leading-tight text-neutral-600">
+            {[school.address, school.phone === undefined ? undefined : `Ph ${school.phone}`]
+              .filter((part) => part !== undefined)
+              .join('  ·  ')}
+          </p>
         </div>
 
-        {/* Balances the logo, so the letterhead stays optically centred whether
-            or not the school has uploaded one. */}
-        {showLogo ? <span className="size-10 shrink-0" aria-hidden="true" /> : null}
+        <span className="shrink-0 text-right text-[7px] tracking-[0.12em] text-neutral-500 uppercase">
+          Fee Challan
+        </span>
       </header>
 
-      {/* The names get the full width and are allowed to wrap. Half a copy is
-          about 40mm, and "Muhammad Abdul Rahman Siddiqui" does not fit in it —
-          a challan that truncates the child's name is one the office cannot
-          match to a record. */}
-      <dl className="grid grid-cols-[4.2rem_minmax(0,1fr)] gap-x-1 gap-y-[3px] border-b border-black px-2 py-1.5">
-        <Row label="Student" value={voucher.studentName} wrap />
-        <Row label="Father" value={voucher.fatherName ?? '—'} wrap />
-      </dl>
+      {/* Side by side when there is width to spend, stacked when there is not. */}
+      <div className={wide ? 'grid grid-cols-[1fr_1.25fr] divide-x divide-neutral-300' : ''}>
+        <Particulars voucher={voucher} />
 
-      {/* Everything short, in two columns. Each is its own label/value grid, so
-          every value in a column starts on the same x however long its label. */}
-      <div className="grid grid-cols-2 divide-x divide-black border-b border-black">
-        <dl className="grid grid-cols-[3.4rem_minmax(0,1fr)] gap-x-1 gap-y-[3px] px-2 py-1.5">
-          <Row label="GR No" value={voucher.grNo ?? '—'} />
-          <Row label="Class" value={voucher.className ?? '—'} />
-          <Row label="Section" value={voucher.sectionName ?? '—'} />
-          <Row label="Session" value={voucher.sessionName} />
-        </dl>
-
-        <dl className="grid grid-cols-[3.4rem_minmax(0,1fr)] gap-x-1 gap-y-[3px] px-2 py-1.5">
-          {/* The challan's own number. Without it a school taking a payment at
-              the counter has nothing to reconcile it against. */}
-          <Row label="Voucher" value={voucher.voucherNo} />
-          <Row label="Issued" value={formatDate(voucher.issueDate)} />
-          <Row label="Due" value={formatDate(voucher.dueDate)} />
-          <Row label="Valid till" value={formatDate(voucher.validTill)} />
-        </dl>
+        <div className={wide ? 'min-w-0' : 'border-t border-neutral-300'}>
+          <Charges charges={charges} voucher={voucher} />
+          <Totals voucher={voucher} afterDue={afterDue} />
+        </div>
       </div>
 
-      {/* One amount column, ruled. `table-fixed` is what holds it to the same
-          width on every row — and what stops a long fee name from squeezing the
-          figure until it wraps. */}
-      <table className="w-full table-fixed border-collapse">
-        <colgroup>
-          <col />
-          <col className="w-[38%]" />
-        </colgroup>
-
-        <thead>
-          <tr className="border-b border-black">
-            <th className="px-2 py-[3px] text-left text-[8px] font-semibold tracking-wide uppercase">
-              Particulars
-            </th>
-            <th className="px-2 py-[3px] text-right text-[8px] font-semibold tracking-wide uppercase">
-              Amount (Rs.)
-            </th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {charges.map((line) => (
-            <Charge
-              key={line.id}
-              label={line.label}
-              // Each fee line is already the discounted figure a parent owes.
-              // No separate discount row: printing "−1,500" under a total that
-              // does not move looks like an arithmetic mistake on the school's
-              // own challan, and what was agreed privately with one family is
-              // not for a document that crosses a bank counter.
-              minor={line.amountMinor - line.discountMinor}
-            />
-          ))}
-
-          {voucher.waiverMinor > 0 ? (
-            <Charge label="Waived" minor={-voucher.waiverMinor} />
-          ) : null}
-
-          <Charge
-            label="Arrears"
-            hint={
-              voucher.arrears.length === 0
-                ? undefined
-                : voucher.arrears.map((entry) => entry.sourceVoucherNo).join(', ')
-            }
-            minor={voucher.arrearsMinor}
-          />
-        </tbody>
-
-        <tfoot>
-          {/* The one figure this document exists to communicate, set as such. */}
-          <tr className="border-t-2 border-black">
-            <th className="px-2 py-1 text-left text-[9px] font-bold tracking-wide uppercase">
-              Payable within due date
-            </th>
-            <td className="px-2 py-1 text-right font-mono text-[12px] font-bold tabular-nums">
-              <Money valueMinor={voucher.totalPayableMinor} withSymbol={false} />
-            </td>
-          </tr>
-          {/* Printed even when it equals the figure above: a parent who sees
-              only one number cannot tell whether paying late costs more. */}
-          <tr className="border-t border-black">
-            <th className="px-2 py-[3px] text-left text-[8px] font-semibold">
-              Payable after {formatDate(voucher.dueDate)}
-            </th>
-            <td className="px-2 py-[3px] text-right font-mono text-[10px] font-semibold tabular-nums">
-              <Money valueMinor={afterDue} withSymbol={false} />
-            </td>
-          </tr>
-        </tfoot>
-      </table>
-
       {settings.footerNote === null ? null : (
-        <p className="border-t border-black px-2 py-1 text-[7.5px] leading-snug">
+        <p className="border-t border-neutral-300 px-3 py-1 text-[7px] leading-snug text-neutral-600">
           {settings.footerNote}
         </p>
       )}
 
-      {/* Pushed to the bottom so every copy signs on the same line, whatever
-          number of fee rows each carries. */}
-      <div className="mt-auto px-2 pt-7 pb-1">
-        <p className="border-t border-black pt-0.5 text-center text-[8px]">
-          Receiver&rsquo;s Signature &amp; Stamp
-        </p>
+      {/* Pushed down so every copy signs on the same line, whatever number of
+          fee rows each carries. */}
+      <div className="mt-auto flex items-end justify-between gap-3 border-t border-neutral-300 px-3 pt-2 pb-1.5">
+        {showBank ? (
+          <div className="flex min-w-0 items-center gap-1.5">
+            {school.bankLogoVersion === undefined ? null : (
+              <img
+                src={`${ROUTES.bankLogo.image}?v=${school.bankLogoVersion}`}
+                alt=""
+                className="h-5 w-auto max-w-14 shrink-0 object-contain"
+              />
+            )}
+            <span className="min-w-0">
+              <Micro>Deposit at</Micro>
+              {settings.bankName === null ? null : (
+                <span className="block truncate text-[8px] font-semibold">{settings.bankName}</span>
+              )}
+            </span>
+          </div>
+        ) : (
+          <span />
+        )}
+
+        <span className="w-28 shrink-0 border-t border-dashed border-neutral-500 pt-0.5 text-center text-[7px] text-neutral-600">
+          Receiver&rsquo;s Signature
+        </span>
       </div>
 
       {kuickpay === undefined ? null : (
-        <PaymentBlock kuickpay={kuickpay} onelink={onelink} channels={settings.kuickpayChannels} />
+        <PaymentBlock
+          kuickpay={kuickpay}
+          onelink={onelink}
+          channels={settings.kuickpayChannels}
+          columns={wide ? 4 : 2}
+        />
       )}
     </article>
   );
 }
 
 /**
- * The strip a parent actually uses to pay.
+ * Whose child this is, and which dates govern it.
  *
- * Kept visually distinct from the challan above it — a filled bar and a boxed
- * number — because at a counter this is the only part anybody looks at, and it
- * has to be findable on a folded, photocopied sheet.
+ * The names take the full width and are allowed to wrap: half a quarter-sheet
+ * is about 40mm and "Muhammad Abdul Rahman Siddiqui" does not fit in it. A
+ * challan that truncates the child's name is one the office cannot match to a
+ * record.
+ */
+function Particulars({ voucher }: { voucher: Challan }) {
+  return (
+    <dl className="grid grid-cols-2 gap-x-3 gap-y-1 px-3 py-2">
+      <Pair label="Student" value={voucher.studentName} span />
+      <Pair label="Father" value={voucher.fatherName ?? '—'} span />
+      <Pair label="GR No" value={voucher.grNo ?? '—'} />
+      <Pair label="Class" value={voucher.className ?? '—'} />
+      <Pair label="Section" value={voucher.sectionName ?? '—'} />
+      <Pair label="Session" value={voucher.sessionName} />
+      <Pair label="Issued" value={formatDate(voucher.issueDate)} />
+      <Pair label="Due date" value={formatDate(voucher.dueDate)} />
+      <Pair label="Valid till" value={formatDate(voucher.validTill)} />
+    </dl>
+  );
+}
+
+/**
+ * The charges, in one amount column.
  *
- * ## Nothing legible depends on the fill
+ * `table-fixed` is what holds the column to the same width on every row — and
+ * what stops a long fee name from squeezing the figure until it wraps. A box
+ * per figure, which is what this started as, cannot be made to fit beside a
+ * label in 90mm.
+ */
+function Charges({ charges, voucher }: { charges: Challan['lines']; voucher: Challan }) {
+  return (
+    <table className="w-full table-fixed border-collapse">
+      <colgroup>
+        <col />
+        <col className="w-[38%]" />
+      </colgroup>
+
+      <thead>
+        <tr className="border-b border-[var(--challan-rule)]">
+          <th className="px-3 py-1 text-left">
+            <Micro>Particulars</Micro>
+          </th>
+          <th className="px-3 py-1 text-right">
+            <Micro>Amount (Rs.)</Micro>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {charges.map((line) => (
+          <Charge
+            key={line.id}
+            label={line.label}
+            // Each fee line is already the discounted figure a parent owes. No
+            // separate discount row: printing "−1,500" under a total that does
+            // not move looks like an arithmetic mistake on the school's own
+            // challan, and what was agreed privately with one family is not for
+            // a document that crosses a bank counter.
+            minor={line.amountMinor - line.discountMinor}
+          />
+        ))}
+
+        {voucher.waiverMinor > 0 ? <Charge label="Waived" minor={-voucher.waiverMinor} /> : null}
+
+        <Charge
+          label="Arrears"
+          hint={
+            voucher.arrears.length === 0
+              ? undefined
+              : voucher.arrears.map((entry) => entry.sourceVoucherNo).join(', ')
+          }
+          minor={voucher.arrearsMinor}
+        />
+      </tbody>
+    </table>
+  );
+}
+
+/** The figure this document exists to communicate, and the one after it. */
+function Totals({ voucher, afterDue }: { voucher: Challan; afterDue: number }) {
+  return (
+    <div className="challan-tint border-t border-[var(--challan-rule)] bg-[var(--challan-tint)]">
+      <div className="flex items-baseline justify-between gap-2 px-3 pt-1.5">
+        <span className="text-[8px] font-semibold tracking-wide text-[var(--challan-accent)] uppercase">
+          Payable within due date
+        </span>
+        <span className="font-mono text-[14px] leading-none font-bold tabular-nums">
+          <Money valueMinor={voucher.totalPayableMinor} withSymbol={false} />
+        </span>
+      </div>
+
+      {/* Printed even when it equals the figure above: a parent who sees only
+          one number cannot tell whether paying late costs more. */}
+      <div className="flex items-baseline justify-between gap-2 px-3 pt-0.5 pb-1.5">
+        <span className="text-[7.5px] text-neutral-600">
+          After {formatDate(voucher.dueDate)}
+        </span>
+        <span className="font-mono text-[9px] font-semibold tabular-nums text-neutral-700">
+          <Money valueMinor={afterDue} withSymbol={false} />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The strip a parent uses to pay.
  *
- * The bar is the one place on this document that uses a tint, and a tint is the
- * one thing that may not survive: a printer with background graphics off, or a
- * photocopier, drops it. So the consumer number sits in a **white** box with
- * black digits and a black border — the same either way — and only the word
- * "Kuickpay" is white on black. If the fill vanishes that word goes with it and
- * no information is lost, because the line underneath already says what the
- * number is for. `globals.css` asks for the fill with `print-color-adjust`; this
- * is what makes the challan correct when the request is refused.
+ * Tinted, not filled: the consumer number is the single most important thing on
+ * the page for a parent, and reversing it out of a solid bar means it vanishes
+ * on any printer that drops backgrounds. The number itself sits in a white,
+ * bordered chip so it reads as something to be copied.
  */
 function PaymentBlock({
   kuickpay,
   onelink,
   channels,
+  columns,
 }: {
   kuickpay: string;
   onelink: string | undefined;
   channels: readonly string[];
+  columns: 2 | 4;
 }) {
   return (
-    <div className="border-t border-black">
-      <div className="challan-paybar flex items-center justify-between gap-2 bg-black px-2 py-1 text-white">
-        <span className="text-[11px] font-bold tracking-tight">Kuickpay</span>
-        <span className="flex items-center gap-1 border border-black bg-white px-1 py-0.5 text-black">
-          <span className="text-[8px] font-normal">ID</span>
+    <div className="challan-paybar border-t border-[var(--challan-accent)] bg-[var(--challan-tint)]">
+      <div className="flex items-center justify-between gap-2 px-3 py-1">
+        <span className="text-[10px] font-bold tracking-tight text-[var(--challan-accent)]">
+          Kuickpay
+        </span>
+        <span className="flex items-center gap-1 rounded border border-neutral-500 bg-white px-1.5 py-0.5 text-black">
+          <span className="text-[7px] font-normal text-neutral-600">ID</span>
           <span className="font-mono text-[10px] font-bold tracking-wider">{kuickpay}</span>
         </span>
       </div>
 
       {channels.length === 0 ? null : (
-        <div className="px-2 py-1">
-          <p className="text-[7.5px] font-semibold">Pay in cash using the Kuickpay ID at:</p>
-          {/* Three columns, because twelve names down one side is a strip
-              taller than the challan it belongs to. */}
-          <ul className="mt-0.5 grid grid-cols-3 gap-x-2 text-[7px] leading-snug">
+        <div className="px-3 pb-1">
+          <Micro>Pay in cash at</Micro>
+          {/* Four columns on a wide strip, two on a quarter — twelve names down
+              one side is a strip taller than the challan it belongs to. */}
+          <ul
+            className={`mt-0.5 grid gap-x-2 text-[6.5px] leading-snug text-neutral-700 ${
+              columns === 4 ? 'grid-cols-4' : 'grid-cols-2'
+            }`}
+          >
             {channels.map((channel) => (
               <li key={channel} className="truncate">
-                • {channel}
+                {channel}
               </li>
             ))}
           </ul>
@@ -318,31 +375,39 @@ function PaymentBlock({
       )}
 
       {onelink === undefined ? null : (
-        <p className="border-t border-black px-2 py-0.5 text-center text-[8px] font-semibold">
-          1LINK ID: <span className="font-mono tracking-wider">{onelink}</span>
+        <p className="border-t border-[var(--challan-rule)] px-3 py-0.5 text-center text-[8px]">
+          <span className="text-neutral-600">1LINK ID</span>{' '}
+          <span className="font-mono font-semibold tracking-wider">{onelink}</span>
         </p>
       )}
     </div>
   );
 }
 
+/** The one type style every small-caps label on this document uses. */
+const MICRO = 'text-[6.5px] leading-tight tracking-[0.12em] text-neutral-500 uppercase';
+
 /**
- * One particular of the child, as a label/value pair.
+ * A label/value pair.
  *
- * The two cells are siblings in the parent's grid rather than a nested flex
- * row, which is what makes every value in a column start on the same x however
- * long its label is. A label that sets its own width is what made the old
- * block look like it had been shaken.
+ * The `div` wrapper is what HTML5 permits inside a `dl` to group a `dt` with
+ * its `dd`, so the pair can be a grid cell without the list losing its
+ * semantics.
  */
-function Row({ label, value, wrap = false }: { label: string; value: string; wrap?: boolean }) {
+function Pair({ label, value, span = false }: { label: string; value: string; span?: boolean }) {
   return (
-    <>
-      <dt className="text-[7.5px] tracking-wide uppercase">{label}</dt>
-      {/* Short values truncate rather than reflow the grid; a name wraps,
-          because cutting one off is worse than an extra line. */}
-      <dd className={`font-bold ${wrap ? 'break-words' : 'truncate'}`}>{value}</dd>
-    </>
+    <div className={span ? 'col-span-full min-w-0' : 'min-w-0'}>
+      <dt className={MICRO}>{label}</dt>
+      {/* A name wraps; everything else is short and truncates rather than
+          reflowing the grid. */}
+      <dd className={`font-semibold ${span ? 'break-words' : 'truncate'}`}>{value}</dd>
+    </div>
   );
+}
+
+/** The same style outside a description list — a table heading, a strip label. */
+function Micro({ children }: { children: ReactNode }) {
+  return <span className={`block ${MICRO}`}>{children}</span>;
 }
 
 /** A charge and its amount, in the ledger column. */
@@ -356,12 +421,14 @@ function Charge({
   minor: number;
 }) {
   return (
-    <tr className="border-b border-black/25 last:border-b-0">
-      <td className="truncate px-2 py-[3px]">
+    <tr className="border-b border-neutral-200 last:border-b-0">
+      <td className="truncate px-3 py-[3px]">
         {label}
-        {hint === undefined ? null : <span className="ms-1 text-[8px]">({hint})</span>}
+        {hint === undefined ? null : (
+          <span className="ms-1 text-[7px] text-neutral-500">({hint})</span>
+        )}
       </td>
-      <td className="px-2 py-[3px] text-right font-mono tabular-nums">
+      <td className="px-3 py-[3px] text-right font-mono tabular-nums">
         <Money valueMinor={minor} withSymbol={false} />
       </td>
     </tr>
@@ -372,4 +439,79 @@ function Charge({
 function formatDate(iso: string): string {
   const [year, month, day] = iso.split('-');
   return `${day ?? ''}-${month ?? ''}-${year ?? ''}`;
+}
+
+/** The default ink, for a school that has not chosen a colour. */
+const DEFAULT_ACCENT = '#334155';
+
+/**
+ * The school's colour, dark enough to read as text on white.
+ *
+ * A school may pick a bright yellow for its portal, where it lands on buttons
+ * with white text of its own. Here it has to work as ink, so it is walked
+ * darker until it clears the 4.5:1 that docs/16 §6 makes binding — rather than
+ * printing a heading nobody can read, or silently refusing the school's colour.
+ */
+export function readableAccent(hex: string | undefined): string {
+  const rgb = parseHex(hex);
+  if (rgb === undefined) {
+    return DEFAULT_ACCENT;
+  }
+
+  let [r, g, b] = rgb;
+  // Bounded: each pass removes 15% of the remaining light, so twenty passes
+  // reach effectively black long before the loop could run away.
+  for (let pass = 0; pass < 20 && contrastWithWhite([r, g, b]) < 4.5; pass += 1) {
+    r = Math.trunc(r * 0.85);
+    g = Math.trunc(g * 0.85);
+    b = Math.trunc(b * 0.85);
+  }
+
+  return toHex([r, g, b]);
+}
+
+/** The accent laid over white at `percent` opacity, as a flat hex. */
+function mixWithWhite(hex: string, percent: number): string {
+  const rgb = parseHex(hex);
+  if (rgb === undefined) {
+    return '#ffffff';
+  }
+
+  // Integer arithmetic throughout: ADR-0007 bans `Math.round` outright, so that
+  // no rounding decision anywhere can quietly be applied to money.
+  const over = (channel: number): number =>
+    Math.trunc((channel * percent + 255 * (100 - percent)) / 100);
+
+  return toHex([over(rgb[0]), over(rgb[1]), over(rgb[2])]);
+}
+
+/** A tuple, not an array: every consumer here wants exactly three channels. */
+type Rgb = readonly [number, number, number];
+
+function parseHex(hex: string | undefined): Rgb | undefined {
+  const match = /^#?([0-9a-f]{6})$/i.exec((hex ?? '').trim());
+  if (match?.[1] === undefined) {
+    return undefined;
+  }
+  const value = Number.parseInt(match[1], 16);
+  return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
+}
+
+function toHex([r, g, b]: Rgb): string {
+  return `#${[r, g, b].map((channel) => clamp(channel).toString(16).padStart(2, '0')).join('')}`;
+}
+
+function clamp(channel: number): number {
+  return channel < 0 ? 0 : channel > 255 ? 255 : channel;
+}
+
+/** WCAG contrast against white, which is what this is printed on. */
+function contrastWithWhite([r, g, b]: Rgb): number {
+  const linear = (channel: number): number => {
+    const s = channel / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+
+  const luminance = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+  return 1.05 / (luminance + 0.05);
 }
