@@ -197,6 +197,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
         permission: 'academics.structure.read',
       },
       {
+        href: '/academics/promote',
+        label: 'Promote students',
+        icon: 'ForwardIcon',
+        // Readable by anyone who may see the structure — the preview answers
+        // "why is next year empty", which is a question a receptionist asks
+        // too. Running it is `academics.structure.configure`.
+        permission: 'academics.structure.read',
+      },
+      {
         href: '/academics/holidays',
         label: 'Calendar',
         icon: 'HolidayIcon',

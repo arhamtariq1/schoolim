@@ -242,6 +242,16 @@ export const ROUTES = {
     session: (id: string) => `${API_PREFIX}/academics/sessions/${id}`,
     /** Making one session current necessarily un-currents the other. */
     makeSessionCurrent: (id: string) => `${API_PREFIX}/academics/sessions/${id}/make-current`,
+    /**
+     * Carrying a school from one session into the next.
+     *
+     * Its own pair of paths rather than something hung off a session, because
+     * it is about the gap between two of them — and because a preview that is
+     * a GET can be reloaded, bookmarked and reasoned about, which a school
+     * about to move two thousand children will want to do more than once.
+     */
+    promotionPreview: `${API_PREFIX}/academics/promotions/preview`,
+    promotions: `${API_PREFIX}/academics/promotions`,
     classes: `${API_PREFIX}/academics/classes`,
     class: (id: string) => `${API_PREFIX}/academics/classes/${id}`,
     sections: `${API_PREFIX}/academics/sections`,

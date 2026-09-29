@@ -129,6 +129,12 @@ export class VoucherGenerationService {
 
     const willSkip = [...skips.values()].reduce((sum, n) => sum + n, 0);
 
+    // Not a skip — these children are not in this run's scope at all, because
+    // they belong to a different session. Counted anyway, because "we have 17
+    // students and this says 2" is the question a school asks the first time it
+    // bills a new year, and the answer is a promotion run rather than a bug.
+    const elsewhere = await this.countEnrolledElsewhere(input.sessionId);
+
     return {
       willCreate,
       willSkip,
@@ -148,8 +154,30 @@ export class VoucherGenerationService {
         };
       }),
       samples,
-      warnings: buildWarnings(willCreate, skips),
+      warnings: buildWarnings(willCreate, skips, elsewhere),
     };
+  }
+
+  /**
+   * Children on the roll who belong to a different session than the one chosen.
+   *
+   * Only counted for a whole-school run: a class run is already narrower than
+   * "the school", so the number would be answering a question nobody asked.
+   */
+  private async countEnrolledElsewhere(sessionId: string): Promise<number> {
+    return this.prisma.tenant(async (tx) =>
+      tx.student.count({
+        where: {
+          status: 'ACTIVE',
+          deletedAt: null,
+          enrollments: {
+            // In some other session, and in this one not at all.
+            some: { status: 'ENROLLED', sessionId: { not: sessionId } },
+            none: { sessionId },
+          },
+        },
+      }),
+    );
   }
 
   /**
@@ -828,11 +856,26 @@ function studentScopeWhere(scope: VoucherScope, sessionId: string): Record<strin
   return { status: 'ACTIVE', deletedAt: null, OR: [inThisSession, inNoSession] };
 }
 
-function buildWarnings(willCreate: number, skips: Map<SkipReason, number>): string[] {
+function buildWarnings(
+  willCreate: number,
+  skips: Map<SkipReason, number>,
+  enrolledElsewhere: number,
+): string[] {
   const warnings: string[] = [];
 
   if (willCreate === 0) {
     warnings.push('Nothing will be generated. Every student in this scope was skipped.');
+  }
+
+  if (enrolledElsewhere > 0) {
+    // The single most confusing number in this product's first year: a school
+    // bills a new session and finds two students instead of seventeen. They
+    // are not lost and nothing is broken — they were never carried into the
+    // new year, because carrying them is a decision somebody makes. Said here,
+    // where the surprise happens, rather than left to be worked out.
+    warnings.push(
+      `${String(enrolledElsewhere)} ${enrolledElsewhere === 1 ? 'student is' : 'students are'} enrolled in a different session and will not be billed by this run. Move them across under Academics → Promote students.`,
+    );
   }
   const noFee = skips.get('NO_FEE_AGREED') ?? 0;
   if (noFee > 0) {

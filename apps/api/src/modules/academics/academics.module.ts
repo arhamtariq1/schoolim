@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { AcademicsController } from './academics.controller';
 import { AcademicsService } from './academics.service';
 import { HolidaysService } from './holidays.service';
+import { PromotionService } from './promotion.service';
 import { StructureService } from './structure.service';
 
 /**
@@ -14,7 +15,7 @@ import { StructureService } from './structure.service';
  */
 @Module({
   controllers: [AcademicsController],
-  providers: [AcademicsService, StructureService, HolidaysService],
+  providers: [AcademicsService, StructureService, HolidaysService, PromotionService],
   exports: [AcademicsService],
 })
 export class AcademicsModule {}

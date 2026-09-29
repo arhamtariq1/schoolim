@@ -3,6 +3,8 @@ import {
   createHolidaySchema,
   createSectionSchema,
   createSessionSchema,
+  promotionPreviewQuerySchema,
+  runPromotionSchema,
   ROUTES,
   setupQuerySchema,
   updateClassLevelSchema,
@@ -14,6 +16,8 @@ import {
   type ClassLevelWithSections,
   type CurrentSession,
   type Holiday,
+  type PromotionPreview,
+  type PromotionResult,
   type Section,
 } from '@ilm/contracts';
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
@@ -23,6 +27,7 @@ import { RequirePermission } from '../../shared/rbac/rbac.guard';
 
 import { AcademicsService } from './academics.service';
 import { HolidaysService } from './holidays.service';
+import { PromotionService } from './promotion.service';
 import { StructureService } from './structure.service';
 
 /**
@@ -41,6 +46,7 @@ export class AcademicsController {
     private readonly academics: AcademicsService,
     private readonly structure: StructureService,
     private readonly holidays: HolidaysService,
+    private readonly promotions: PromotionService,
   ) {}
 
   /**
@@ -129,6 +135,25 @@ export class AcademicsController {
   async deleteSession(@Param('id') id: string): Promise<{ data: { ok: true } }> {
     await this.structure.deleteSession(id);
     return { data: { ok: true } };
+  }
+
+  /**
+   * What carrying the school into the next session would do.
+   *
+   * A GET, so it can be reloaded and reasoned about — which somebody about to
+   * move two thousand children will want to do more than once. Readable by
+   * anyone who may see the structure; running it is a different permission.
+   */
+  @Get(ROUTES.academics.promotionPreview)
+  @RequirePermission('academics.structure.read')
+  async promotionPreview(@Query() query: unknown): Promise<{ data: PromotionPreview }> {
+    return { data: await this.promotions.preview(promotionPreviewQuerySchema.parse(query)) };
+  }
+
+  @Post(ROUTES.academics.promotions)
+  @RequirePermission('academics.structure.configure')
+  async promote(@Body() body: unknown): Promise<{ data: PromotionResult }> {
+    return { data: await this.promotions.run(runPromotionSchema.parse(body)) };
   }
 
   // --- Classes --------------------------------------------------------------
