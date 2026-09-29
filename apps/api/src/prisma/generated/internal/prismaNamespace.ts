@@ -437,7 +437,8 @@ export const ModelName = {
   StaffAttendanceRecord: 'StaffAttendanceRecord',
   SecurityDeposit: 'SecurityDeposit',
   SecurityDepositRefund: 'SecurityDepositRefund',
-  SchoolLogo: 'SchoolLogo'
+  SchoolLogo: 'SchoolLogo',
+  SchoolVoucherSettings: 'SchoolVoucherSettings'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -453,7 +454,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "platformUser" | "platformSession" | "signupIntent" | "schoolGroup" | "school" | "schoolDomain" | "user" | "userRole" | "session" | "invitation" | "passwordReset" | "authHandoff" | "emailVerification" | "schoolAgreement" | "auditLog" | "academicSession" | "classLevel" | "section" | "student" | "guardian" | "studentGuardian" | "enrollment" | "staff" | "expenseCategory" | "expense" | "holiday" | "feeHead" | "studentFee" | "numberSequence" | "jobRun" | "feeVoucher" | "feeVoucherLine" | "feeVoucherPeriod" | "feeVoucherArrear" | "feePayment" | "feePaymentAllocation" | "attendanceRecord" | "staffAttendanceRecord" | "securityDeposit" | "securityDepositRefund" | "schoolLogo"
+    modelProps: "platformUser" | "platformSession" | "signupIntent" | "schoolGroup" | "school" | "schoolDomain" | "user" | "userRole" | "session" | "invitation" | "passwordReset" | "authHandoff" | "emailVerification" | "schoolAgreement" | "auditLog" | "academicSession" | "classLevel" | "section" | "student" | "guardian" | "studentGuardian" | "enrollment" | "staff" | "expenseCategory" | "expense" | "holiday" | "feeHead" | "studentFee" | "numberSequence" | "jobRun" | "feeVoucher" | "feeVoucherLine" | "feeVoucherPeriod" | "feeVoucherArrear" | "feePayment" | "feePaymentAllocation" | "attendanceRecord" | "staffAttendanceRecord" | "securityDeposit" | "securityDepositRefund" | "schoolLogo" | "schoolVoucherSettings"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -3491,6 +3492,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    SchoolVoucherSettings: {
+      payload: Prisma.$SchoolVoucherSettingsPayload<ExtArgs>
+      fields: Prisma.SchoolVoucherSettingsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SchoolVoucherSettingsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolVoucherSettingsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SchoolVoucherSettingsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolVoucherSettingsPayload>
+        }
+        findFirst: {
+          args: Prisma.SchoolVoucherSettingsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolVoucherSettingsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SchoolVoucherSettingsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolVoucherSettingsPayload>
+        }
+        findMany: {
+          args: Prisma.SchoolVoucherSettingsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolVoucherSettingsPayload>[]
+        }
+        create: {
+          args: Prisma.SchoolVoucherSettingsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolVoucherSettingsPayload>
+        }
+        createMany: {
+          args: Prisma.SchoolVoucherSettingsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SchoolVoucherSettingsCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolVoucherSettingsPayload>[]
+        }
+        delete: {
+          args: Prisma.SchoolVoucherSettingsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolVoucherSettingsPayload>
+        }
+        update: {
+          args: Prisma.SchoolVoucherSettingsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolVoucherSettingsPayload>
+        }
+        deleteMany: {
+          args: Prisma.SchoolVoucherSettingsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SchoolVoucherSettingsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SchoolVoucherSettingsUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolVoucherSettingsPayload>[]
+        }
+        upsert: {
+          args: Prisma.SchoolVoucherSettingsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SchoolVoucherSettingsPayload>
+        }
+        aggregate: {
+          args: Prisma.SchoolVoucherSettingsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSchoolVoucherSettings>
+        }
+        groupBy: {
+          args: Prisma.SchoolVoucherSettingsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SchoolVoucherSettingsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SchoolVoucherSettingsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SchoolVoucherSettingsCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -4256,6 +4331,24 @@ export const SchoolLogoScalarFieldEnum = {
 export type SchoolLogoScalarFieldEnum = (typeof SchoolLogoScalarFieldEnum)[keyof typeof SchoolLogoScalarFieldEnum]
 
 
+export const SchoolVoucherSettingsScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  showLogo: 'showLogo',
+  footerNote: 'footerNote',
+  copyLabels: 'copyLabels',
+  kuickpayEnabled: 'kuickpayEnabled',
+  kuickpayPrefix: 'kuickpayPrefix',
+  kuickpayChannels: 'kuickpayChannels',
+  onelinkEnabled: 'onelinkEnabled',
+  onelinkInstitutionId: 'onelinkInstitutionId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SchoolVoucherSettingsScalarFieldEnum = (typeof SchoolVoucherSettingsScalarFieldEnum)[keyof typeof SchoolVoucherSettingsScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -4956,6 +5049,7 @@ export type GlobalOmitConfig = {
   securityDeposit?: Prisma.SecurityDepositOmit
   securityDepositRefund?: Prisma.SecurityDepositRefundOmit
   schoolLogo?: Prisma.SchoolLogoOmit
+  schoolVoucherSettings?: Prisma.SchoolVoucherSettingsOmit
 }
 
 /* Types for Logging */

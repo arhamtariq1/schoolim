@@ -1,6 +1,6 @@
 'use client';
 
-import { ROUTES, type Challan } from '@ilm/contracts';
+import { ROUTES, type Challan, type VoucherSettings } from '@ilm/contracts';
 import { Button } from '@ilm/ui';
 import { useEffect, useRef, useState } from 'react';
 
@@ -36,8 +36,15 @@ import { readPrintSelection } from '@/lib/print-handoff';
  */
 export function ChallanPrintView({
   school,
+  settings,
 }: {
-  readonly school: { name: string; address?: string | undefined; phone?: string | undefined };
+  readonly school: {
+    name: string;
+    address?: string | undefined;
+    phone?: string | undefined;
+    logoVersion?: string | undefined;
+  };
+  readonly settings: VoucherSettings;
 }) {
   const [challans, setChallans] = useState<Challan[] | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
@@ -106,7 +113,7 @@ export function ChallanPrintView({
 
       <div className="print-stack space-y-4 p-4">
         {challans.map((challan) => (
-          <VoucherChallan key={challan.id} voucher={challan} school={school} />
+          <VoucherChallan key={challan.id} voucher={challan} school={school} settings={settings} />
         ))}
       </div>
     </div>

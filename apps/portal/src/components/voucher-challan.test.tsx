@@ -1,0 +1,257 @@
+import { DEFAULT_VOUCHER_SETTINGS, type Challan, type VoucherSettings } from '@ilm/contracts';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
+
+import { VoucherChallan } from './voucher-challan';
+
+/**
+ * What ends up on the paper.
+ *
+ * A challan is the one artefact of this product that leaves the building. It is
+ * checked against a school's records by a clerk, scanned by a bank, and quoted
+ * at a Kuickpay counter by a parent who has no way to tell a rendering mistake
+ * from a fee they do not owe. So the things asserted here are not the layout —
+ * they are the figures and the identifiers, and the fact that nothing legible
+ * depends on a background tint that a photocopier will drop.
+ */
+
+const SCHOOL = {
+  name: 'Demo Public School',
+  address: '14-A Gulberg III, Lahore',
+  phone: '+924235771400',
+};
+
+const VOUCHER: Challan = {
+  id: 'v1',
+  voucherNo: 'OCT-0001',
+  status: 'UNPAID',
+  studentId: 's1',
+  studentName: 'Kaneez Fatima',
+  grNo: '810',
+  fatherName: 'Sohail Mustafa',
+  className: 'Grade 1',
+  sectionName: 'A',
+  sessionId: 'sess',
+  sessionName: '2026-2027',
+  issueDate: '2026-10-01',
+  dueDate: '2026-10-10',
+  validTill: '2026-10-25',
+  billMonths: ['2026-10-01'],
+  grossMinor: 1_000_000,
+  discountMinor: 0,
+  waiverMinor: 0,
+  arrearsMinor: 570_000,
+  netPayableMinor: 1_000_000,
+  totalPayableMinor: 1_570_000,
+  lateFeeMinor: 20_000,
+  paidMinor: 0,
+  balanceMinor: 1_570_000,
+  paidOn: null,
+  lateFeeAuto: true,
+  cancelReason: null,
+  lines: [
+    {
+      id: 'l1',
+      feeHeadId: 'h1',
+      kind: 'FEE',
+      label: 'Tuition Fee - October 2026',
+      billMonth: '2026-10-01',
+      amountMinor: 500_000,
+      discountMinor: 0,
+      sortOrder: 1,
+    },
+    {
+      id: 'l2',
+      feeHeadId: 'h2',
+      kind: 'FEE',
+      label: 'Annual Charges',
+      billMonth: null,
+      amountMinor: 600_000,
+      // The discounted figure is what a parent owes, so the row must read
+      // 5,000 — not 6,000 with a deduction printed somewhere below it.
+      discountMinor: 100_000,
+      sortOrder: 2,
+    },
+  ],
+  arrears: [
+    {
+      sourceVoucherId: 'v0',
+      sourceVoucherNo: 'SEP-0001',
+      sourceBillMonths: ['2026-09-01'],
+      amountMinor: 570_000,
+    },
+  ],
+};
+
+const KUICKPAY: VoucherSettings = {
+  ...DEFAULT_VOUCHER_SETTINGS,
+  kuickpayEnabled: true,
+  kuickpayPrefix: '1514',
+  kuickpayChannels: ['Meezan Bank', 'JazzCash'],
+};
+
+const BOTH: VoucherSettings = {
+  ...KUICKPAY,
+  onelinkEnabled: true,
+  onelinkInstitutionId: '100047',
+};
+
+// This project runs vitest with `globals: false`, so Testing Library's
+// automatic cleanup never registers itself. Without this line every render
+// accumulates in the same document and "three copies" counts fifty-four by the
+// end of the file — a failure that says nothing about the component.
+afterEach(cleanup);
+
+function paint(settings: VoucherSettings, voucher: Challan = VOUCHER, logoVersion?: string) {
+  return render(
+    <VoucherChallan
+      voucher={voucher}
+      school={{ ...SCHOOL, ...(logoVersion === undefined ? {} : { logoVersion }) }}
+      settings={settings}
+    />,
+  );
+}
+
+describe('the three copies', () => {
+  it('prints one per label, in the school’s own words', () => {
+    paint({ ...DEFAULT_VOUCHER_SETTINGS, copyLabels: ['Office', 'Bank', 'Parent'] });
+
+    for (const label of ['Office', 'Bank', 'Parent']) {
+      expect(screen.getByText(label)).toBeTruthy();
+    }
+    // Everything else appears three times, once per copy.
+    expect(screen.getAllByText('Kaneez Fatima')).toHaveLength(3);
+  });
+
+  it('prints three copies even when two share a name', () => {
+    // Labels are a school's own text and nothing stops two being identical, so
+    // the component cannot key on them.
+    paint({ ...DEFAULT_VOUCHER_SETTINGS, copyLabels: ['Copy', 'Copy', 'Copy'] });
+    expect(screen.getAllByText('Copy')).toHaveLength(3);
+  });
+});
+
+describe('the figures', () => {
+  it('prints each charge at what is actually owed for it', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS);
+
+    // 500,000 paisa = 5,000; and 600,000 less a 100,000 discount = 5,000 too.
+    expect(screen.getAllByText('5,000.00')).toHaveLength(6);
+  });
+
+  it('prints the two payable figures separately', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS);
+
+    // Within the due date: 10,000 of charges plus 5,700 of arrears.
+    expect(screen.getAllByText('15,700.00')).toHaveLength(3);
+    // After it: the same plus the 200 surcharge. A challan that prints one
+    // number cannot tell a parent that paying late costs more.
+    expect(screen.getAllByText('15,900.00')).toHaveLength(3);
+  });
+
+  it('names the voucher an arrear came from, so it can be questioned', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS);
+    expect(screen.getAllByText(/SEP-0001/)).toHaveLength(3);
+  });
+
+  it('does not print a discount line — the rows above are already net of it', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS);
+    expect(screen.queryByText(/Discount/i)).toBeNull();
+  });
+});
+
+describe('the logo', () => {
+  it('prints it when the school has one and asked for it', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, 'v7');
+
+    const images = screen.getAllByRole('presentation', { hidden: true });
+    expect(images).toHaveLength(3);
+    // Versioned, or a replaced mark stays cached on every challan printed since.
+    expect(images[0]?.getAttribute('src')).toContain('v=v7');
+  });
+
+  it('prints nothing when the school has never uploaded one', () => {
+    // `showLogo` is on by default, so the absence of an upload — not the
+    // setting — has to be what suppresses it. Otherwise every school that has
+    // not uploaded a mark prints a broken image on every challan.
+    paint(DEFAULT_VOUCHER_SETTINGS);
+    expect(screen.queryAllByRole('presentation', { hidden: true })).toHaveLength(0);
+  });
+
+  it('prints nothing when the school has one but turned it off', () => {
+    paint({ ...DEFAULT_VOUCHER_SETTINGS, showLogo: false }, VOUCHER, 'v7');
+    expect(screen.queryAllByRole('presentation', { hidden: true })).toHaveLength(0);
+  });
+});
+
+describe('the payment strip', () => {
+  it('is absent for a school with no arrangement', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS);
+
+    expect(screen.queryByText('Kuickpay')).toBeNull();
+    expect(screen.queryByText(/1LINK/)).toBeNull();
+  });
+
+  it('prints the consumer number derived from the prefix and the GR', () => {
+    paint(KUICKPAY);
+    expect(screen.getAllByText('15140810')).toHaveLength(3);
+  });
+
+  it('lists where a parent may pay', () => {
+    paint(KUICKPAY);
+    expect(screen.getAllByText(/Meezan Bank/)).toHaveLength(3);
+    expect(screen.getAllByText(/JazzCash/)).toHaveLength(3);
+  });
+
+  it('prints the 1LINK number in front of the Kuickpay one', () => {
+    paint(BOTH);
+    expect(screen.getAllByText('10004715140810')).toHaveLength(3);
+  });
+
+  it('prints no strip at all for a child with no GR number', () => {
+    // There is no consumer number to quote, and half a number is worse than
+    // none: a parent would be turned away at the counter having been given
+    // something that looks payable.
+    paint(BOTH, { ...VOUCHER, grNo: null });
+
+    expect(screen.queryByText('Kuickpay')).toBeNull();
+    expect(screen.queryByText(/1LINK/)).toBeNull();
+  });
+
+  it('keeps the consumer number legible without its background fill', () => {
+    // A printer with background graphics off, or any photocopier, drops the
+    // tint. The number must not be white-on-white when that happens, so it
+    // carries its own light background and dark text.
+    const { container } = paint(KUICKPAY);
+
+    const chip = container.querySelector('.challan-paybar > span:last-child');
+    expect(chip?.className).toContain('bg-white');
+    expect(chip?.className).toContain('text-black');
+  });
+});
+
+describe('the school’s own words', () => {
+  it('prints the footer note when there is one', () => {
+    paint({ ...DEFAULT_VOUCHER_SETTINGS, footerNote: 'Pay at any HBL branch.' });
+    expect(screen.getAllByText('Pay at any HBL branch.')).toHaveLength(3);
+  });
+
+  it('prints no empty box when there is not', () => {
+    const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
+    expect(container.textContent).not.toContain('undefined');
+    expect(container.textContent).not.toContain('null');
+  });
+
+  it('prints the letterhead on every copy', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS);
+    expect(screen.getAllByText('Demo Public School')).toHaveLength(3);
+    expect(screen.getAllByText(SCHOOL.address)).toHaveLength(3);
+  });
+
+  it('prints dashes, not blanks, for a child with no section or father recorded', () => {
+    // A blank on a printed document reads as an omission somebody should chase.
+    // An em dash reads as "nothing recorded", which is what it is.
+    paint(DEFAULT_VOUCHER_SETTINGS, { ...VOUCHER, sectionName: null, fatherName: null });
+    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(6);
+  });
+});

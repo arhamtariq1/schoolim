@@ -20,4 +20,5 @@ export * from './security-deposits';
 export * from './signup';
 export * from './staff';
 export * from './students';
+export * from './voucher-settings';
 export * from './vouchers';

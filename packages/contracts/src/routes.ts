@@ -129,6 +129,8 @@ export const ROUTES = {
     settings: `${API_PREFIX}/schools/settings`,
     /** The school's own colour. Its own path: a different decision from its name. */
     appearance: `${API_PREFIX}/schools/appearance`,
+    /** How the fee challan is laid out, and which payment channels it prints. */
+    voucherSettings: `${API_PREFIX}/schools/voucher-settings`,
   },
 
   /**

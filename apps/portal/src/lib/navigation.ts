@@ -246,6 +246,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
         icon: 'FeesIcon',
         permission: 'fees.plan.read',
       },
+      {
+        href: '/settings/voucher',
+        label: 'Fee challan',
+        icon: 'PrintIcon',
+        // Whoever may print a challan may see how it is laid out; changing it
+        // needs `settings.school.configure`, checked by the form and the API.
+        permission: 'fees.voucher.read',
+      },
     ],
   },
 ];

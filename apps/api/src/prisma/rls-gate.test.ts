@@ -60,6 +60,7 @@ const MODEL_TO_TABLE: Readonly<Record<string, string>> = {
   SecurityDeposit: 'security_deposits',
   SecurityDepositRefund: 'security_deposit_refunds',
   SchoolLogo: 'school_logos',
+  SchoolVoucherSettings: 'school_voucher_settings',
   NumberSequence: 'number_sequences',
 };
 

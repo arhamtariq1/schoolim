@@ -232,6 +232,7 @@ model School {
   securityDeposits       SecurityDeposit[]
   securityDepositRefunds SecurityDepositRefund[]
   logo                   SchoolLogo?
+  voucherSettings        SchoolVoucherSettings?
 
   @@index([schoolGroupId])
   @@index([status])
@@ -1661,4 +1662,38 @@ model SchoolLogo {
 
   @@index([schoolId])
   @@map("school_logos")
+}
+
+/// How a school's fee challan is laid out, and which payment channels it prints.
+///
+/// One row per school, created on first save. Absent means the product's
+/// defaults, which is what every school starts with and most keep.
+model SchoolVoucherSettings {
+  id       String  @id @default(uuid(7)) @db.Uuid
+  schoolId String  @unique @map("school_id") @db.Uuid
+
+  showLogo    Boolean  @default(true) @map("show_logo")
+  /// Printed under the signature line: the school's own note to parents.
+  footerNote  String?  @map("footer_note")
+  /// Three of them, enforced by a check constraint.
+  copyLabels  String[] @default(["School Copy", "Bank Copy", "Student Copy"]) @map("copy_labels")
+
+  kuickpayEnabled  Boolean  @default(false) @map("kuickpay_enabled")
+  /// The company prefix Kuickpay issues. The consumer number on a challan is
+  /// this followed by the child's zero-padded GR number, computed at render.
+  kuickpayPrefix   String?  @map("kuickpay_prefix")
+  /// Where parents may pay. Kuickpay's network changes without asking us.
+  kuickpayChannels String[] @default([]) @map("kuickpay_channels")
+
+  onelinkEnabled       Boolean @default(false) @map("onelink_enabled")
+  /// Printed in front of the Kuickpay consumer number.
+  onelinkInstitutionId String? @map("onelink_institution_id")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+  @@map("school_voucher_settings")
 }

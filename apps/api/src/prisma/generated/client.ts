@@ -374,3 +374,11 @@ export type SecurityDepositRefund = Prisma.SecurityDepositRefundModel
  * and what moving them out would cost.
  */
 export type SchoolLogo = Prisma.SchoolLogoModel
+/**
+ * Model SchoolVoucherSettings
+ * How a school's fee challan is laid out, and which payment channels it prints.
+ * 
+ * One row per school, created on first save. Absent means the product's
+ * defaults, which is what every school starts with and most keep.
+ */
+export type SchoolVoucherSettings = Prisma.SchoolVoucherSettingsModel

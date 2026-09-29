@@ -1,9 +1,13 @@
 import {
+  DEFAULT_VOUCHER_SETTINGS,
   MAX_PAGE_LIMIT,
   ROUTES,
   type AcademicSession,
   type ClassLevel,
   type FeeHead,
+  type SchoolLogoInfo,
+  type SchoolSettings,
+  type VoucherSettings,
   type VoucherSummary,
   type VoucherTotals,
 } from '@ilm/contracts';
@@ -50,7 +54,16 @@ export default async function VouchersPage({
     }
   }
 
-  const [session, listResult, sessionsResult, academicsResult, headsResult] = await Promise.all([
+  const [
+    session,
+    listResult,
+    sessionsResult,
+    academicsResult,
+    headsResult,
+    schoolResult,
+    voucherSettingsResult,
+    logoResult,
+  ] = await Promise.all([
     getSession(),
     apiFetch<{
       data: VoucherSummary[];
@@ -64,6 +77,13 @@ export default async function VouchersPage({
     // with the page rather than when the dialog opens: it is small, it is the
     // same for every row, and a request per dialog is a request per row edited.
     apiFetch<{ data: FeeHead[] }>(ROUTES.fees.heads),
+    // The challan preview shows the same document the printer will, so it
+    // needs the same three things the print page fetches. They go out with
+    // everything else rather than when the dialog opens: a preview that
+    // assembles itself after a click is a preview that flickers.
+    apiFetch<{ data: SchoolSettings }>(ROUTES.school.settings),
+    apiFetch<{ data: VoucherSettings }>(ROUTES.school.voucherSettings),
+    apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info),
   ]);
 
   const emptyTotals: VoucherTotals = {
@@ -92,11 +112,23 @@ export default async function VouchersPage({
         limit={listResult.ok ? listResult.data.meta.page.limit : limit}
         offset={listResult.ok ? listResult.data.meta.page.offset : offset}
         filters={filters}
-        school={{ name: session?.school.name ?? '' }}
+        school={{
+          name: schoolResult.ok ? schoolResult.data.data.name : (session?.school.name ?? ''),
+          address: schoolResult.ok ? (schoolResult.data.data.address ?? undefined) : undefined,
+          phone: schoolResult.ok ? (schoolResult.data.data.phone ?? undefined) : undefined,
+          logoVersion:
+            logoResult.ok && logoResult.data.data.present
+              ? (logoResult.data.data.version ?? '')
+              : undefined,
+        }}
+        voucherSettings={
+          voucherSettingsResult.ok ? voucherSettingsResult.data.data : DEFAULT_VOUCHER_SETTINGS
+        }
         error={listResult.ok ? undefined : listResult.message}
         canCollect={session?.permissions.includes('fees.payment.create') ?? false}
         canCancel={session?.permissions.includes('fees.voucher.cancel') ?? false}
         canEdit={session?.permissions.includes('fees.voucher.generate') ?? false}
+        canConfigureChallan={session?.permissions.includes('settings.school.configure') ?? false}
       />
     </AppShell>
   );

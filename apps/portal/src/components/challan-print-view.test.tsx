@@ -1,4 +1,4 @@
-import { ROUTES } from '@ilm/contracts';
+import { DEFAULT_VOUCHER_SETTINGS, ROUTES } from '@ilm/contracts';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -23,6 +23,7 @@ import { stashPrintSelection } from '@/lib/print-handoff';
  */
 
 const SCHOOL = { name: 'Demo Public School', address: '14-A Gulberg III', phone: '+924235771400' };
+const SETTINGS = DEFAULT_VOUCHER_SETTINGS;
 
 function challan(id: string, studentName: string) {
   return {
@@ -111,7 +112,7 @@ describe('opening the print view with a selection', () => {
 
     render(
       <StrictMode>
-        <ChallanPrintView school={SCHOOL} />
+        <ChallanPrintView school={SCHOOL} settings={SETTINGS} />
       </StrictMode>,
     );
 
@@ -128,7 +129,7 @@ describe('opening the print view with a selection', () => {
 
     render(
       <StrictMode>
-        <ChallanPrintView school={SCHOOL} />
+        <ChallanPrintView school={SCHOOL} settings={SETTINGS} />
       </StrictMode>,
     );
 
@@ -151,7 +152,7 @@ describe('opening the print view with a selection', () => {
 
     const first = render(
       <StrictMode>
-        <ChallanPrintView school={SCHOOL} />
+        <ChallanPrintView school={SCHOOL} settings={SETTINGS} />
       </StrictMode>,
     );
     await waitFor(() => {
@@ -162,7 +163,7 @@ describe('opening the print view with a selection', () => {
     window.history.replaceState({}, '', url);
     render(
       <StrictMode>
-        <ChallanPrintView school={SCHOOL} />
+        <ChallanPrintView school={SCHOOL} settings={SETTINGS} />
       </StrictMode>,
     );
 
@@ -172,20 +173,25 @@ describe('opening the print view with a selection', () => {
     expect(screen.queryByText(/print link has expired/i)).toBeNull();
   });
 
-  it('prints three copies of each challan — school, bank, parent', async () => {
+  it('prints one copy per label the school configured', async () => {
     selectAndOpen(['0001']);
 
     render(
       <StrictMode>
-        <ChallanPrintView school={SCHOOL} />
+        <ChallanPrintView school={SCHOOL} settings={SETTINGS} />
       </StrictMode>,
     );
 
+    // Read off the settings rather than spelled out here: the labels are a
+    // school's own text now, so hard-coding them is a test that fails the day
+    // the defaults are reworded and says nothing about the print view.
+    const [first, ...rest] = SETTINGS.copyLabels;
     await waitFor(() => {
-      expect(screen.getByText('School copy')).toBeDefined();
+      expect(screen.getByText(first ?? '')).toBeDefined();
     });
-    expect(screen.getByText('Bank copy')).toBeDefined();
-    expect(screen.getByText('Parent copy')).toBeDefined();
+    for (const label of rest) {
+      expect(screen.getByText(label)).toBeDefined();
+    }
   });
 
   it('does not print itself on load', async () => {
@@ -195,7 +201,7 @@ describe('opening the print view with a selection', () => {
 
     render(
       <StrictMode>
-        <ChallanPrintView school={SCHOOL} />
+        <ChallanPrintView school={SCHOOL} settings={SETTINGS} />
       </StrictMode>,
     );
 
@@ -216,7 +222,7 @@ describe('opening it without one', () => {
 
     render(
       <StrictMode>
-        <ChallanPrintView school={SCHOOL} />
+        <ChallanPrintView school={SCHOOL} settings={SETTINGS} />
       </StrictMode>,
     );
 
@@ -231,7 +237,7 @@ describe('opening it without one', () => {
 
     render(
       <StrictMode>
-        <ChallanPrintView school={SCHOOL} />
+        <ChallanPrintView school={SCHOOL} settings={SETTINGS} />
       </StrictMode>,
     );
 

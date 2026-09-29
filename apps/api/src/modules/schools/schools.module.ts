@@ -2,10 +2,12 @@ import {
   ROUTES,
   updateSchoolAppearanceSchema,
   updateSchoolSettingsSchema,
+  updateVoucherSettingsSchema,
   uploadSchoolLogoSchema,
   type SchoolAppearance,
   type SchoolLogoInfo,
   type SchoolSettings,
+  type VoucherSettings,
 } from '@ilm/contracts';
 import { Body, Controller, Delete, Get, Module, Put, Req, Res } from '@nestjs/common';
 import { type FastifyReply, type FastifyRequest } from 'fastify';
@@ -15,6 +17,7 @@ import { clockProvider } from '../../shared/time/clock.provider';
 
 import { SchoolLogoService } from './school-logo.service';
 import { SchoolAppearanceService, SchoolSettingsService } from './school-settings.service';
+import { VoucherSettingsService } from './voucher-settings.service';
 
 /**
  * The school's own settings — for now, its logo.
@@ -140,9 +143,45 @@ export class SchoolAppearanceController {
   }
 }
 
+/**
+ * How this school's fee challan is laid out.
+ *
+ * Reading is open to anyone who may see a voucher, because the challan renderer
+ * needs it on every print run — including the one a receptionist does. Writing
+ * is `settings.school.configure`: the payment IDs on here are what a parent
+ * quotes at a bank counter, and a wrong one is a fee nobody can pay.
+ */
+@Controller()
+export class VoucherSettingsController {
+  constructor(private readonly settings: VoucherSettingsService) {}
+
+  @Get(ROUTES.school.voucherSettings)
+  @RequirePermission('fees.voucher.read')
+  async get(): Promise<{ data: VoucherSettings }> {
+    return { data: await this.settings.get() };
+  }
+
+  @Put(ROUTES.school.voucherSettings)
+  @RequirePermission('settings.school.configure')
+  async set(@Body() body: unknown): Promise<{ data: VoucherSettings }> {
+    return { data: await this.settings.set(updateVoucherSettingsSchema.parse(body)) };
+  }
+}
+
 @Module({
-  controllers: [SchoolLogoController, SchoolSettingsController, SchoolAppearanceController],
-  providers: [clockProvider, SchoolLogoService, SchoolSettingsService, SchoolAppearanceService],
+  controllers: [
+    SchoolLogoController,
+    SchoolSettingsController,
+    SchoolAppearanceController,
+    VoucherSettingsController,
+  ],
+  providers: [
+    clockProvider,
+    SchoolLogoService,
+    SchoolSettingsService,
+    SchoolAppearanceService,
+    VoucherSettingsService,
+  ],
   exports: [SchoolLogoService],
 })
 export class SchoolsModule {}

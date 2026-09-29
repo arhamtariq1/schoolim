@@ -1,4 +1,4 @@
-import { FeesIcon, ChevronRightIcon, ICON_SIZE, SchoolIcon } from '@ilm/ui/icons';
+import { FeesIcon, ChevronRightIcon, ICON_SIZE, PrintIcon, SchoolIcon } from '@ilm/ui/icons';
 import Link from 'next/link';
 
 import { AppShell } from '@/components/app-shell';
@@ -30,6 +30,14 @@ const SECTIONS = [
     description: 'What your school charges. Admission forms fill themselves in from this list.',
     icon: FeesIcon,
     permission: 'fees.plan.read',
+  },
+  {
+    href: '/settings/voucher',
+    label: 'Fee challan',
+    description:
+      'How the printed challan is laid out, and the Kuickpay or 1LINK ID a parent pays with.',
+    icon: PrintIcon,
+    permission: 'fees.voucher.read',
   },
 ] as const;
 

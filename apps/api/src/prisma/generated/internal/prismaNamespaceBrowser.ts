@@ -91,7 +91,8 @@ export const ModelName = {
   StaffAttendanceRecord: 'StaffAttendanceRecord',
   SecurityDeposit: 'SecurityDeposit',
   SecurityDepositRefund: 'SecurityDepositRefund',
-  SchoolLogo: 'SchoolLogo'
+  SchoolLogo: 'SchoolLogo',
+  SchoolVoucherSettings: 'SchoolVoucherSettings'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -834,6 +835,24 @@ export const SchoolLogoScalarFieldEnum = {
 } as const
 
 export type SchoolLogoScalarFieldEnum = (typeof SchoolLogoScalarFieldEnum)[keyof typeof SchoolLogoScalarFieldEnum]
+
+
+export const SchoolVoucherSettingsScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  showLogo: 'showLogo',
+  footerNote: 'footerNote',
+  copyLabels: 'copyLabels',
+  kuickpayEnabled: 'kuickpayEnabled',
+  kuickpayPrefix: 'kuickpayPrefix',
+  kuickpayChannels: 'kuickpayChannels',
+  onelinkEnabled: 'onelinkEnabled',
+  onelinkInstitutionId: 'onelinkInstitutionId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SchoolVoucherSettingsScalarFieldEnum = (typeof SchoolVoucherSettingsScalarFieldEnum)[keyof typeof SchoolVoucherSettingsScalarFieldEnum]
 
 
 export const SortOrder = {

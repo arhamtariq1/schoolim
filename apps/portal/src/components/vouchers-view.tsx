@@ -4,6 +4,7 @@ import {
   MAX_BULK_VOUCHERS,
   type VoucherIds,
   ROUTES,
+  type VoucherSettings,
   VOUCHER_STATUSES,
   VOUCHER_STATUS_LABELS,
   type AcademicSession,
@@ -37,6 +38,7 @@ import {
 } from '@ilm/ui';
 import { DeleteIcon, EditIcon, ICON_SIZE, PrintIcon, SearchIcon, SpinnerIcon } from '@ilm/ui/icons';
 import { systemClock } from '@ilm/utils';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -83,11 +85,20 @@ export interface VouchersViewProps {
     from: string;
     to: string;
   };
-  school: { name: string; address?: string | undefined; phone?: string | undefined };
+  school: {
+    name: string;
+    address?: string | undefined;
+    phone?: string | undefined;
+    logoVersion?: string | undefined;
+  };
+  /** How this school’s challan is laid out. Defaults until they change it. */
+  voucherSettings: VoucherSettings;
   error?: string | undefined;
   canCollect: boolean;
   canCancel: boolean;
   canEdit: boolean;
+  /** Whether to offer the way to the challan's own settings from the preview. */
+  canConfigureChallan: boolean;
 }
 
 export function VouchersView({
@@ -101,10 +112,12 @@ export function VouchersView({
   offset,
   filters,
   school,
+  voucherSettings,
   error,
   canCollect,
   canCancel,
   canEdit,
+  canConfigureChallan,
 }: VouchersViewProps) {
   const router = useRouter();
   const tenantHref = useTenantHref();
@@ -603,15 +616,26 @@ export function VouchersView({
           <DialogHeader>
             <DialogTitle>Fee challan</DialogTitle>
             <DialogDescription>
-              Three copies on one page — school, bank and parent, which is what a counter accepts.
+              {/* The three copies are named by the school, so this no longer
+                  says "school, bank and parent" — that was true of the old
+                  fixed labels and is a sentence that can now be wrong. */}
+              Three copies on one page, which is what a bank counter accepts.
             </DialogDescription>
           </DialogHeader>
           <DialogBody>
             {previewing === undefined ? null : (
-              <VoucherChallan voucher={previewing} school={school} />
+              <VoucherChallan voucher={previewing} school={school} settings={voucherSettings} />
             )}
           </DialogBody>
           <DialogFooter>
+            {/* Looking at the challan is when somebody notices the logo is
+                missing or the Kuickpay ID is wrong, so the way to change it
+                belongs here rather than only under Settings. */}
+            {canConfigureChallan ? (
+              <Button tone="ghost" asChild className="me-auto">
+                <Link href={tenantHref('/settings/voucher')}>Customise this challan</Link>
+              </Button>
+            ) : null}
             <Button
               tone="ghost"
               onClick={() => {

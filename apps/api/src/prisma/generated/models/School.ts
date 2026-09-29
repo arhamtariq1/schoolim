@@ -413,6 +413,7 @@ export type SchoolWhereInput = {
   securityDeposits?: Prisma.SecurityDepositListRelationFilter
   securityDepositRefunds?: Prisma.SecurityDepositRefundListRelationFilter
   logo?: Prisma.XOR<Prisma.SchoolLogoNullableScalarRelationFilter, Prisma.SchoolLogoWhereInput> | null
+  voucherSettings?: Prisma.XOR<Prisma.SchoolVoucherSettingsNullableScalarRelationFilter, Prisma.SchoolVoucherSettingsWhereInput> | null
 }
 
 export type SchoolOrderByWithRelationInput = {
@@ -476,6 +477,7 @@ export type SchoolOrderByWithRelationInput = {
   securityDeposits?: Prisma.SecurityDepositOrderByRelationAggregateInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundOrderByRelationAggregateInput
   logo?: Prisma.SchoolLogoOrderByWithRelationInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsOrderByWithRelationInput
 }
 
 export type SchoolWhereUniqueInput = Prisma.AtLeast<{
@@ -542,6 +544,7 @@ export type SchoolWhereUniqueInput = Prisma.AtLeast<{
   securityDeposits?: Prisma.SecurityDepositListRelationFilter
   securityDepositRefunds?: Prisma.SecurityDepositRefundListRelationFilter
   logo?: Prisma.XOR<Prisma.SchoolLogoNullableScalarRelationFilter, Prisma.SchoolLogoWhereInput> | null
+  voucherSettings?: Prisma.XOR<Prisma.SchoolVoucherSettingsNullableScalarRelationFilter, Prisma.SchoolVoucherSettingsWhereInput> | null
 }, "id" | "slug">
 
 export type SchoolOrderByWithAggregationInput = {
@@ -666,6 +669,7 @@ export type SchoolCreateInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateInput = {
@@ -728,6 +732,7 @@ export type SchoolUncheckedCreateInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUpdateInput = {
@@ -790,6 +795,7 @@ export type SchoolUpdateInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateInput = {
@@ -852,6 +858,7 @@ export type SchoolUncheckedUpdateInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateManyInput = {
@@ -1599,6 +1606,20 @@ export type SchoolUpdateOneRequiredWithoutLogoNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.SchoolUpdateToOneWithWhereWithoutLogoInput, Prisma.SchoolUpdateWithoutLogoInput>, Prisma.SchoolUncheckedUpdateWithoutLogoInput>
 }
 
+export type SchoolCreateNestedOneWithoutVoucherSettingsInput = {
+  create?: Prisma.XOR<Prisma.SchoolCreateWithoutVoucherSettingsInput, Prisma.SchoolUncheckedCreateWithoutVoucherSettingsInput>
+  connectOrCreate?: Prisma.SchoolCreateOrConnectWithoutVoucherSettingsInput
+  connect?: Prisma.SchoolWhereUniqueInput
+}
+
+export type SchoolUpdateOneRequiredWithoutVoucherSettingsNestedInput = {
+  create?: Prisma.XOR<Prisma.SchoolCreateWithoutVoucherSettingsInput, Prisma.SchoolUncheckedCreateWithoutVoucherSettingsInput>
+  connectOrCreate?: Prisma.SchoolCreateOrConnectWithoutVoucherSettingsInput
+  upsert?: Prisma.SchoolUpsertWithoutVoucherSettingsInput
+  connect?: Prisma.SchoolWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.SchoolUpdateToOneWithWhereWithoutVoucherSettingsInput, Prisma.SchoolUpdateWithoutVoucherSettingsInput>, Prisma.SchoolUncheckedUpdateWithoutVoucherSettingsInput>
+}
+
 export type SchoolCreateWithoutSchoolGroupInput = {
   id?: string
   name: string
@@ -1658,6 +1679,7 @@ export type SchoolCreateWithoutSchoolGroupInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutSchoolGroupInput = {
@@ -1719,6 +1741,7 @@ export type SchoolUncheckedCreateWithoutSchoolGroupInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutSchoolGroupInput = {
@@ -1836,6 +1859,7 @@ export type SchoolCreateWithoutDomainsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutDomainsInput = {
@@ -1897,6 +1921,7 @@ export type SchoolUncheckedCreateWithoutDomainsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutDomainsInput = {
@@ -1974,6 +1999,7 @@ export type SchoolUpdateWithoutDomainsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutDomainsInput = {
@@ -2035,6 +2061,7 @@ export type SchoolUncheckedUpdateWithoutDomainsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutUsersInput = {
@@ -2096,6 +2123,7 @@ export type SchoolCreateWithoutUsersInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutUsersInput = {
@@ -2157,6 +2185,7 @@ export type SchoolUncheckedCreateWithoutUsersInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutUsersInput = {
@@ -2234,6 +2263,7 @@ export type SchoolUpdateWithoutUsersInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutUsersInput = {
@@ -2295,6 +2325,7 @@ export type SchoolUncheckedUpdateWithoutUsersInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutUserRolesInput = {
@@ -2356,6 +2387,7 @@ export type SchoolCreateWithoutUserRolesInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutUserRolesInput = {
@@ -2417,6 +2449,7 @@ export type SchoolUncheckedCreateWithoutUserRolesInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutUserRolesInput = {
@@ -2494,6 +2527,7 @@ export type SchoolUpdateWithoutUserRolesInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutUserRolesInput = {
@@ -2555,6 +2589,7 @@ export type SchoolUncheckedUpdateWithoutUserRolesInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutSessionsInput = {
@@ -2616,6 +2651,7 @@ export type SchoolCreateWithoutSessionsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutSessionsInput = {
@@ -2677,6 +2713,7 @@ export type SchoolUncheckedCreateWithoutSessionsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutSessionsInput = {
@@ -2754,6 +2791,7 @@ export type SchoolUpdateWithoutSessionsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutSessionsInput = {
@@ -2815,6 +2853,7 @@ export type SchoolUncheckedUpdateWithoutSessionsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutInvitationsInput = {
@@ -2876,6 +2915,7 @@ export type SchoolCreateWithoutInvitationsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutInvitationsInput = {
@@ -2937,6 +2977,7 @@ export type SchoolUncheckedCreateWithoutInvitationsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutInvitationsInput = {
@@ -3014,6 +3055,7 @@ export type SchoolUpdateWithoutInvitationsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutInvitationsInput = {
@@ -3075,6 +3117,7 @@ export type SchoolUncheckedUpdateWithoutInvitationsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutPasswordResetsInput = {
@@ -3136,6 +3179,7 @@ export type SchoolCreateWithoutPasswordResetsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutPasswordResetsInput = {
@@ -3197,6 +3241,7 @@ export type SchoolUncheckedCreateWithoutPasswordResetsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutPasswordResetsInput = {
@@ -3274,6 +3319,7 @@ export type SchoolUpdateWithoutPasswordResetsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutPasswordResetsInput = {
@@ -3335,6 +3381,7 @@ export type SchoolUncheckedUpdateWithoutPasswordResetsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutAuthHandoffsInput = {
@@ -3396,6 +3443,7 @@ export type SchoolCreateWithoutAuthHandoffsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutAuthHandoffsInput = {
@@ -3457,6 +3505,7 @@ export type SchoolUncheckedCreateWithoutAuthHandoffsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutAuthHandoffsInput = {
@@ -3534,6 +3583,7 @@ export type SchoolUpdateWithoutAuthHandoffsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutAuthHandoffsInput = {
@@ -3595,6 +3645,7 @@ export type SchoolUncheckedUpdateWithoutAuthHandoffsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutEmailVerificationsInput = {
@@ -3656,6 +3707,7 @@ export type SchoolCreateWithoutEmailVerificationsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutEmailVerificationsInput = {
@@ -3717,6 +3769,7 @@ export type SchoolUncheckedCreateWithoutEmailVerificationsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutEmailVerificationsInput = {
@@ -3794,6 +3847,7 @@ export type SchoolUpdateWithoutEmailVerificationsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutEmailVerificationsInput = {
@@ -3855,6 +3909,7 @@ export type SchoolUncheckedUpdateWithoutEmailVerificationsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutAgreementsInput = {
@@ -3916,6 +3971,7 @@ export type SchoolCreateWithoutAgreementsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutAgreementsInput = {
@@ -3977,6 +4033,7 @@ export type SchoolUncheckedCreateWithoutAgreementsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutAgreementsInput = {
@@ -4054,6 +4111,7 @@ export type SchoolUpdateWithoutAgreementsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutAgreementsInput = {
@@ -4115,6 +4173,7 @@ export type SchoolUncheckedUpdateWithoutAgreementsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutAcademicSessionsInput = {
@@ -4176,6 +4235,7 @@ export type SchoolCreateWithoutAcademicSessionsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutAcademicSessionsInput = {
@@ -4237,6 +4297,7 @@ export type SchoolUncheckedCreateWithoutAcademicSessionsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutAcademicSessionsInput = {
@@ -4314,6 +4375,7 @@ export type SchoolUpdateWithoutAcademicSessionsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutAcademicSessionsInput = {
@@ -4375,6 +4437,7 @@ export type SchoolUncheckedUpdateWithoutAcademicSessionsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutClassLevelsInput = {
@@ -4436,6 +4499,7 @@ export type SchoolCreateWithoutClassLevelsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutClassLevelsInput = {
@@ -4497,6 +4561,7 @@ export type SchoolUncheckedCreateWithoutClassLevelsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutClassLevelsInput = {
@@ -4574,6 +4639,7 @@ export type SchoolUpdateWithoutClassLevelsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutClassLevelsInput = {
@@ -4635,6 +4701,7 @@ export type SchoolUncheckedUpdateWithoutClassLevelsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutSchoolSectionsInput = {
@@ -4696,6 +4763,7 @@ export type SchoolCreateWithoutSchoolSectionsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutSchoolSectionsInput = {
@@ -4757,6 +4825,7 @@ export type SchoolUncheckedCreateWithoutSchoolSectionsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutSchoolSectionsInput = {
@@ -4834,6 +4903,7 @@ export type SchoolUpdateWithoutSchoolSectionsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutSchoolSectionsInput = {
@@ -4895,6 +4965,7 @@ export type SchoolUncheckedUpdateWithoutSchoolSectionsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutStudentsInput = {
@@ -4956,6 +5027,7 @@ export type SchoolCreateWithoutStudentsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutStudentsInput = {
@@ -5017,6 +5089,7 @@ export type SchoolUncheckedCreateWithoutStudentsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutStudentsInput = {
@@ -5094,6 +5167,7 @@ export type SchoolUpdateWithoutStudentsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutStudentsInput = {
@@ -5155,6 +5229,7 @@ export type SchoolUncheckedUpdateWithoutStudentsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutGuardiansInput = {
@@ -5216,6 +5291,7 @@ export type SchoolCreateWithoutGuardiansInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutGuardiansInput = {
@@ -5277,6 +5353,7 @@ export type SchoolUncheckedCreateWithoutGuardiansInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutGuardiansInput = {
@@ -5354,6 +5431,7 @@ export type SchoolUpdateWithoutGuardiansInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutGuardiansInput = {
@@ -5415,6 +5493,7 @@ export type SchoolUncheckedUpdateWithoutGuardiansInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutStudentGuardiansInput = {
@@ -5476,6 +5555,7 @@ export type SchoolCreateWithoutStudentGuardiansInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutStudentGuardiansInput = {
@@ -5537,6 +5617,7 @@ export type SchoolUncheckedCreateWithoutStudentGuardiansInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutStudentGuardiansInput = {
@@ -5614,6 +5695,7 @@ export type SchoolUpdateWithoutStudentGuardiansInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutStudentGuardiansInput = {
@@ -5675,6 +5757,7 @@ export type SchoolUncheckedUpdateWithoutStudentGuardiansInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutEnrollmentsInput = {
@@ -5736,6 +5819,7 @@ export type SchoolCreateWithoutEnrollmentsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutEnrollmentsInput = {
@@ -5797,6 +5881,7 @@ export type SchoolUncheckedCreateWithoutEnrollmentsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutEnrollmentsInput = {
@@ -5874,6 +5959,7 @@ export type SchoolUpdateWithoutEnrollmentsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutEnrollmentsInput = {
@@ -5935,6 +6021,7 @@ export type SchoolUncheckedUpdateWithoutEnrollmentsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutStaffInput = {
@@ -5996,6 +6083,7 @@ export type SchoolCreateWithoutStaffInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutStaffInput = {
@@ -6057,6 +6145,7 @@ export type SchoolUncheckedCreateWithoutStaffInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutStaffInput = {
@@ -6134,6 +6223,7 @@ export type SchoolUpdateWithoutStaffInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutStaffInput = {
@@ -6195,6 +6285,7 @@ export type SchoolUncheckedUpdateWithoutStaffInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutExpenseCategoriesInput = {
@@ -6256,6 +6347,7 @@ export type SchoolCreateWithoutExpenseCategoriesInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutExpenseCategoriesInput = {
@@ -6317,6 +6409,7 @@ export type SchoolUncheckedCreateWithoutExpenseCategoriesInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutExpenseCategoriesInput = {
@@ -6394,6 +6487,7 @@ export type SchoolUpdateWithoutExpenseCategoriesInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutExpenseCategoriesInput = {
@@ -6455,6 +6549,7 @@ export type SchoolUncheckedUpdateWithoutExpenseCategoriesInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutExpensesInput = {
@@ -6516,6 +6611,7 @@ export type SchoolCreateWithoutExpensesInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutExpensesInput = {
@@ -6577,6 +6673,7 @@ export type SchoolUncheckedCreateWithoutExpensesInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutExpensesInput = {
@@ -6654,6 +6751,7 @@ export type SchoolUpdateWithoutExpensesInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutExpensesInput = {
@@ -6715,6 +6813,7 @@ export type SchoolUncheckedUpdateWithoutExpensesInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutHolidaysInput = {
@@ -6776,6 +6875,7 @@ export type SchoolCreateWithoutHolidaysInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutHolidaysInput = {
@@ -6837,6 +6937,7 @@ export type SchoolUncheckedCreateWithoutHolidaysInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutHolidaysInput = {
@@ -6914,6 +7015,7 @@ export type SchoolUpdateWithoutHolidaysInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutHolidaysInput = {
@@ -6975,6 +7077,7 @@ export type SchoolUncheckedUpdateWithoutHolidaysInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutFeeHeadsInput = {
@@ -7036,6 +7139,7 @@ export type SchoolCreateWithoutFeeHeadsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutFeeHeadsInput = {
@@ -7097,6 +7201,7 @@ export type SchoolUncheckedCreateWithoutFeeHeadsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutFeeHeadsInput = {
@@ -7174,6 +7279,7 @@ export type SchoolUpdateWithoutFeeHeadsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutFeeHeadsInput = {
@@ -7235,6 +7341,7 @@ export type SchoolUncheckedUpdateWithoutFeeHeadsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutStudentFeesInput = {
@@ -7296,6 +7403,7 @@ export type SchoolCreateWithoutStudentFeesInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutStudentFeesInput = {
@@ -7357,6 +7465,7 @@ export type SchoolUncheckedCreateWithoutStudentFeesInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutStudentFeesInput = {
@@ -7434,6 +7543,7 @@ export type SchoolUpdateWithoutStudentFeesInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutStudentFeesInput = {
@@ -7495,6 +7605,7 @@ export type SchoolUncheckedUpdateWithoutStudentFeesInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutNumberSequencesInput = {
@@ -7556,6 +7667,7 @@ export type SchoolCreateWithoutNumberSequencesInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutNumberSequencesInput = {
@@ -7617,6 +7729,7 @@ export type SchoolUncheckedCreateWithoutNumberSequencesInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutNumberSequencesInput = {
@@ -7694,6 +7807,7 @@ export type SchoolUpdateWithoutNumberSequencesInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutNumberSequencesInput = {
@@ -7755,6 +7869,7 @@ export type SchoolUncheckedUpdateWithoutNumberSequencesInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutJobRunsInput = {
@@ -7816,6 +7931,7 @@ export type SchoolCreateWithoutJobRunsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutJobRunsInput = {
@@ -7877,6 +7993,7 @@ export type SchoolUncheckedCreateWithoutJobRunsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutJobRunsInput = {
@@ -7954,6 +8071,7 @@ export type SchoolUpdateWithoutJobRunsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutJobRunsInput = {
@@ -8015,6 +8133,7 @@ export type SchoolUncheckedUpdateWithoutJobRunsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutFeeVouchersInput = {
@@ -8076,6 +8195,7 @@ export type SchoolCreateWithoutFeeVouchersInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutFeeVouchersInput = {
@@ -8137,6 +8257,7 @@ export type SchoolUncheckedCreateWithoutFeeVouchersInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutFeeVouchersInput = {
@@ -8214,6 +8335,7 @@ export type SchoolUpdateWithoutFeeVouchersInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutFeeVouchersInput = {
@@ -8275,6 +8397,7 @@ export type SchoolUncheckedUpdateWithoutFeeVouchersInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutFeeVoucherLinesInput = {
@@ -8336,6 +8459,7 @@ export type SchoolCreateWithoutFeeVoucherLinesInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutFeeVoucherLinesInput = {
@@ -8397,6 +8521,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherLinesInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutFeeVoucherLinesInput = {
@@ -8474,6 +8599,7 @@ export type SchoolUpdateWithoutFeeVoucherLinesInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutFeeVoucherLinesInput = {
@@ -8535,6 +8661,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherLinesInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutFeeVoucherPeriodsInput = {
@@ -8596,6 +8723,7 @@ export type SchoolCreateWithoutFeeVoucherPeriodsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutFeeVoucherPeriodsInput = {
@@ -8657,6 +8785,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherPeriodsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutFeeVoucherPeriodsInput = {
@@ -8734,6 +8863,7 @@ export type SchoolUpdateWithoutFeeVoucherPeriodsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutFeeVoucherPeriodsInput = {
@@ -8795,6 +8925,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherPeriodsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutFeeVoucherArrearsInput = {
@@ -8856,6 +8987,7 @@ export type SchoolCreateWithoutFeeVoucherArrearsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutFeeVoucherArrearsInput = {
@@ -8917,6 +9049,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherArrearsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutFeeVoucherArrearsInput = {
@@ -8994,6 +9127,7 @@ export type SchoolUpdateWithoutFeeVoucherArrearsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutFeeVoucherArrearsInput = {
@@ -9055,6 +9189,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherArrearsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutFeePaymentsInput = {
@@ -9116,6 +9251,7 @@ export type SchoolCreateWithoutFeePaymentsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutFeePaymentsInput = {
@@ -9177,6 +9313,7 @@ export type SchoolUncheckedCreateWithoutFeePaymentsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutFeePaymentsInput = {
@@ -9254,6 +9391,7 @@ export type SchoolUpdateWithoutFeePaymentsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutFeePaymentsInput = {
@@ -9315,6 +9453,7 @@ export type SchoolUncheckedUpdateWithoutFeePaymentsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutFeePaymentAllocationsInput = {
@@ -9376,6 +9515,7 @@ export type SchoolCreateWithoutFeePaymentAllocationsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutFeePaymentAllocationsInput = {
@@ -9437,6 +9577,7 @@ export type SchoolUncheckedCreateWithoutFeePaymentAllocationsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutFeePaymentAllocationsInput = {
@@ -9514,6 +9655,7 @@ export type SchoolUpdateWithoutFeePaymentAllocationsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutFeePaymentAllocationsInput = {
@@ -9575,6 +9717,7 @@ export type SchoolUncheckedUpdateWithoutFeePaymentAllocationsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutAttendanceRecordsInput = {
@@ -9636,6 +9779,7 @@ export type SchoolCreateWithoutAttendanceRecordsInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutAttendanceRecordsInput = {
@@ -9697,6 +9841,7 @@ export type SchoolUncheckedCreateWithoutAttendanceRecordsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutAttendanceRecordsInput = {
@@ -9774,6 +9919,7 @@ export type SchoolUpdateWithoutAttendanceRecordsInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutAttendanceRecordsInput = {
@@ -9835,6 +9981,7 @@ export type SchoolUncheckedUpdateWithoutAttendanceRecordsInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutStaffAttendanceInput = {
@@ -9896,6 +10043,7 @@ export type SchoolCreateWithoutStaffAttendanceInput = {
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutStaffAttendanceInput = {
@@ -9957,6 +10105,7 @@ export type SchoolUncheckedCreateWithoutStaffAttendanceInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutStaffAttendanceInput = {
@@ -10034,6 +10183,7 @@ export type SchoolUpdateWithoutStaffAttendanceInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutStaffAttendanceInput = {
@@ -10095,6 +10245,7 @@ export type SchoolUncheckedUpdateWithoutStaffAttendanceInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutSecurityDepositsInput = {
@@ -10156,6 +10307,7 @@ export type SchoolCreateWithoutSecurityDepositsInput = {
   numberSequences?: Prisma.NumberSequenceCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutSecurityDepositsInput = {
@@ -10217,6 +10369,7 @@ export type SchoolUncheckedCreateWithoutSecurityDepositsInput = {
   numberSequences?: Prisma.NumberSequenceUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutSecurityDepositsInput = {
@@ -10294,6 +10447,7 @@ export type SchoolUpdateWithoutSecurityDepositsInput = {
   numberSequences?: Prisma.NumberSequenceUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutSecurityDepositsInput = {
@@ -10355,6 +10509,7 @@ export type SchoolUncheckedUpdateWithoutSecurityDepositsInput = {
   numberSequences?: Prisma.NumberSequenceUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutSecurityDepositRefundsInput = {
@@ -10416,6 +10571,7 @@ export type SchoolCreateWithoutSecurityDepositRefundsInput = {
   numberSequences?: Prisma.NumberSequenceCreateNestedManyWithoutSchoolInput
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutSecurityDepositRefundsInput = {
@@ -10477,6 +10633,7 @@ export type SchoolUncheckedCreateWithoutSecurityDepositRefundsInput = {
   numberSequences?: Prisma.NumberSequenceUncheckedCreateNestedManyWithoutSchoolInput
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutSecurityDepositRefundsInput = {
@@ -10554,6 +10711,7 @@ export type SchoolUpdateWithoutSecurityDepositRefundsInput = {
   numberSequences?: Prisma.NumberSequenceUpdateManyWithoutSchoolNestedInput
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutSecurityDepositRefundsInput = {
@@ -10615,6 +10773,7 @@ export type SchoolUncheckedUpdateWithoutSecurityDepositRefundsInput = {
   numberSequences?: Prisma.NumberSequenceUncheckedUpdateManyWithoutSchoolNestedInput
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateWithoutLogoInput = {
@@ -10676,6 +10835,7 @@ export type SchoolCreateWithoutLogoInput = {
   numberSequences?: Prisma.NumberSequenceCreateNestedManyWithoutSchoolInput
   securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolUncheckedCreateWithoutLogoInput = {
@@ -10737,6 +10897,7 @@ export type SchoolUncheckedCreateWithoutLogoInput = {
   numberSequences?: Prisma.NumberSequenceUncheckedCreateNestedManyWithoutSchoolInput
   securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
 }
 
 export type SchoolCreateOrConnectWithoutLogoInput = {
@@ -10814,6 +10975,7 @@ export type SchoolUpdateWithoutLogoInput = {
   numberSequences?: Prisma.NumberSequenceUpdateManyWithoutSchoolNestedInput
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutLogoInput = {
@@ -10875,6 +11037,271 @@ export type SchoolUncheckedUpdateWithoutLogoInput = {
   numberSequences?: Prisma.NumberSequenceUncheckedUpdateManyWithoutSchoolNestedInput
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
+}
+
+export type SchoolCreateWithoutVoucherSettingsInput = {
+  id?: string
+  name: string
+  slug: string
+  legalName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  timezone?: string
+  locale?: string
+  currency?: string
+  country?: string
+  city?: string | null
+  address?: string | null
+  phone?: string | null
+  email?: string | null
+  status?: $Enums.SchoolStatus
+  lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
+  attendanceBackdateDays?: number
+  onboardedAt?: Date | string | null
+  trialEndsAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  schoolGroup?: Prisma.SchoolGroupCreateNestedOneWithoutSchoolsInput
+  domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
+  users?: Prisma.UserCreateNestedManyWithoutSchoolInput
+  userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
+  passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
+  authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutSchoolInput
+  emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutSchoolInput
+  agreements?: Prisma.SchoolAgreementCreateNestedManyWithoutSchoolInput
+  academicSessions?: Prisma.AcademicSessionCreateNestedManyWithoutSchoolInput
+  classLevels?: Prisma.ClassLevelCreateNestedManyWithoutSchoolInput
+  schoolSections?: Prisma.SectionCreateNestedManyWithoutSchoolInput
+  students?: Prisma.StudentCreateNestedManyWithoutSchoolInput
+  guardians?: Prisma.GuardianCreateNestedManyWithoutSchoolInput
+  studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
+  enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
+  feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
+  staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
+  expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutSchoolInput
+  jobRuns?: Prisma.JobRunCreateNestedManyWithoutSchoolInput
+  feeVouchers?: Prisma.FeeVoucherCreateNestedManyWithoutSchoolInput
+  feeVoucherLines?: Prisma.FeeVoucherLineCreateNestedManyWithoutSchoolInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodCreateNestedManyWithoutSchoolInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSchoolInput
+  feePayments?: Prisma.FeePaymentCreateNestedManyWithoutSchoolInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutSchoolInput
+  attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutSchoolInput
+  staffAttendance?: Prisma.StaffAttendanceRecordCreateNestedManyWithoutSchoolInput
+  studentFees?: Prisma.StudentFeeCreateNestedManyWithoutSchoolInput
+  numberSequences?: Prisma.NumberSequenceCreateNestedManyWithoutSchoolInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
+  logo?: Prisma.SchoolLogoCreateNestedOneWithoutSchoolInput
+}
+
+export type SchoolUncheckedCreateWithoutVoucherSettingsInput = {
+  id?: string
+  schoolGroupId?: string | null
+  name: string
+  slug: string
+  legalName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  timezone?: string
+  locale?: string
+  currency?: string
+  country?: string
+  city?: string | null
+  address?: string | null
+  phone?: string | null
+  email?: string | null
+  status?: $Enums.SchoolStatus
+  lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
+  attendanceBackdateDays?: number
+  onboardedAt?: Date | string | null
+  trialEndsAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
+  userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
+  passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutSchoolInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutSchoolInput
+  agreements?: Prisma.SchoolAgreementUncheckedCreateNestedManyWithoutSchoolInput
+  academicSessions?: Prisma.AcademicSessionUncheckedCreateNestedManyWithoutSchoolInput
+  classLevels?: Prisma.ClassLevelUncheckedCreateNestedManyWithoutSchoolInput
+  schoolSections?: Prisma.SectionUncheckedCreateNestedManyWithoutSchoolInput
+  students?: Prisma.StudentUncheckedCreateNestedManyWithoutSchoolInput
+  guardians?: Prisma.GuardianUncheckedCreateNestedManyWithoutSchoolInput
+  studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
+  enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
+  staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
+  expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutSchoolInput
+  jobRuns?: Prisma.JobRunUncheckedCreateNestedManyWithoutSchoolInput
+  feeVouchers?: Prisma.FeeVoucherUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSchoolInput
+  feePayments?: Prisma.FeePaymentUncheckedCreateNestedManyWithoutSchoolInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutSchoolInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutSchoolInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUncheckedCreateNestedManyWithoutSchoolInput
+  studentFees?: Prisma.StudentFeeUncheckedCreateNestedManyWithoutSchoolInput
+  numberSequences?: Prisma.NumberSequenceUncheckedCreateNestedManyWithoutSchoolInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
+  logo?: Prisma.SchoolLogoUncheckedCreateNestedOneWithoutSchoolInput
+}
+
+export type SchoolCreateOrConnectWithoutVoucherSettingsInput = {
+  where: Prisma.SchoolWhereUniqueInput
+  create: Prisma.XOR<Prisma.SchoolCreateWithoutVoucherSettingsInput, Prisma.SchoolUncheckedCreateWithoutVoucherSettingsInput>
+}
+
+export type SchoolUpsertWithoutVoucherSettingsInput = {
+  update: Prisma.XOR<Prisma.SchoolUpdateWithoutVoucherSettingsInput, Prisma.SchoolUncheckedUpdateWithoutVoucherSettingsInput>
+  create: Prisma.XOR<Prisma.SchoolCreateWithoutVoucherSettingsInput, Prisma.SchoolUncheckedCreateWithoutVoucherSettingsInput>
+  where?: Prisma.SchoolWhereInput
+}
+
+export type SchoolUpdateToOneWithWhereWithoutVoucherSettingsInput = {
+  where?: Prisma.SchoolWhereInput
+  data: Prisma.XOR<Prisma.SchoolUpdateWithoutVoucherSettingsInput, Prisma.SchoolUncheckedUpdateWithoutVoucherSettingsInput>
+}
+
+export type SchoolUpdateWithoutVoucherSettingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  legalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  country?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
+  lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
+  attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
+  onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  trialEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  schoolGroup?: Prisma.SchoolGroupUpdateOneWithoutSchoolsNestedInput
+  domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
+  users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
+  userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
+  passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
+  authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutSchoolNestedInput
+  emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutSchoolNestedInput
+  agreements?: Prisma.SchoolAgreementUpdateManyWithoutSchoolNestedInput
+  academicSessions?: Prisma.AcademicSessionUpdateManyWithoutSchoolNestedInput
+  classLevels?: Prisma.ClassLevelUpdateManyWithoutSchoolNestedInput
+  schoolSections?: Prisma.SectionUpdateManyWithoutSchoolNestedInput
+  students?: Prisma.StudentUpdateManyWithoutSchoolNestedInput
+  guardians?: Prisma.GuardianUpdateManyWithoutSchoolNestedInput
+  studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
+  enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
+  feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
+  staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
+  expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
+  expenses?: Prisma.ExpenseUpdateManyWithoutSchoolNestedInput
+  jobRuns?: Prisma.JobRunUpdateManyWithoutSchoolNestedInput
+  feeVouchers?: Prisma.FeeVoucherUpdateManyWithoutSchoolNestedInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUpdateManyWithoutSchoolNestedInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUpdateManyWithoutSchoolNestedInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUpdateManyWithoutSchoolNestedInput
+  feePayments?: Prisma.FeePaymentUpdateManyWithoutSchoolNestedInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUpdateManyWithoutSchoolNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutSchoolNestedInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUpdateManyWithoutSchoolNestedInput
+  studentFees?: Prisma.StudentFeeUpdateManyWithoutSchoolNestedInput
+  numberSequences?: Prisma.NumberSequenceUpdateManyWithoutSchoolNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
+  logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+}
+
+export type SchoolUncheckedUpdateWithoutVoucherSettingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  legalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  country?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
+  lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
+  attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
+  onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  trialEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
+  userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
+  passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutSchoolNestedInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutSchoolNestedInput
+  agreements?: Prisma.SchoolAgreementUncheckedUpdateManyWithoutSchoolNestedInput
+  academicSessions?: Prisma.AcademicSessionUncheckedUpdateManyWithoutSchoolNestedInput
+  classLevels?: Prisma.ClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
+  schoolSections?: Prisma.SectionUncheckedUpdateManyWithoutSchoolNestedInput
+  students?: Prisma.StudentUncheckedUpdateManyWithoutSchoolNestedInput
+  guardians?: Prisma.GuardianUncheckedUpdateManyWithoutSchoolNestedInput
+  studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
+  enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
+  staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
+  expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutSchoolNestedInput
+  jobRuns?: Prisma.JobRunUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVouchers?: Prisma.FeeVoucherUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSchoolNestedInput
+  feePayments?: Prisma.FeePaymentUncheckedUpdateManyWithoutSchoolNestedInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutSchoolNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutSchoolNestedInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUncheckedUpdateManyWithoutSchoolNestedInput
+  studentFees?: Prisma.StudentFeeUncheckedUpdateManyWithoutSchoolNestedInput
+  numberSequences?: Prisma.NumberSequenceUncheckedUpdateManyWithoutSchoolNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
+  logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolCreateManySchoolGroupInput = {
@@ -10962,6 +11389,7 @@ export type SchoolUpdateWithoutSchoolGroupInput = {
   securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateWithoutSchoolGroupInput = {
@@ -11023,6 +11451,7 @@ export type SchoolUncheckedUpdateWithoutSchoolGroupInput = {
   securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
   securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
   logo?: Prisma.SchoolLogoUncheckedUpdateOneWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
 }
 
 export type SchoolUncheckedUpdateManyWithoutSchoolGroupInput = {
@@ -11440,6 +11869,7 @@ export type SchoolSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   securityDeposits?: boolean | Prisma.School$securityDepositsArgs<ExtArgs>
   securityDepositRefunds?: boolean | Prisma.School$securityDepositRefundsArgs<ExtArgs>
   logo?: boolean | Prisma.School$logoArgs<ExtArgs>
+  voucherSettings?: boolean | Prisma.School$voucherSettingsArgs<ExtArgs>
   _count?: boolean | Prisma.SchoolCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["school"]>
 
@@ -11564,6 +11994,7 @@ export type SchoolInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   securityDeposits?: boolean | Prisma.School$securityDepositsArgs<ExtArgs>
   securityDepositRefunds?: boolean | Prisma.School$securityDepositRefundsArgs<ExtArgs>
   logo?: boolean | Prisma.School$logoArgs<ExtArgs>
+  voucherSettings?: boolean | Prisma.School$voucherSettingsArgs<ExtArgs>
   _count?: boolean | Prisma.SchoolCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type SchoolIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -11612,6 +12043,7 @@ export type $SchoolPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     securityDeposits: Prisma.$SecurityDepositPayload<ExtArgs>[]
     securityDepositRefunds: Prisma.$SecurityDepositRefundPayload<ExtArgs>[]
     logo: Prisma.$SchoolLogoPayload<ExtArgs> | null
+    voucherSettings: Prisma.$SchoolVoucherSettingsPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -12085,6 +12517,7 @@ export interface Prisma__SchoolClient<T, Null = never, ExtArgs extends runtime.T
   securityDeposits<T extends Prisma.School$securityDepositsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$securityDepositsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SecurityDepositPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   securityDepositRefunds<T extends Prisma.School$securityDepositRefundsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$securityDepositRefundsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SecurityDepositRefundPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   logo<T extends Prisma.School$logoArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$logoArgs<ExtArgs>>): Prisma.Prisma__SchoolLogoClient<runtime.Types.Result.GetResult<Prisma.$SchoolLogoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  voucherSettings<T extends Prisma.School$voucherSettingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$voucherSettingsArgs<ExtArgs>>): Prisma.Prisma__SchoolVoucherSettingsClient<runtime.Types.Result.GetResult<Prisma.$SchoolVoucherSettingsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -13390,6 +13823,25 @@ export type School$logoArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    */
   include?: Prisma.SchoolLogoInclude<ExtArgs> | null
   where?: Prisma.SchoolLogoWhereInput
+}
+
+/**
+ * School.voucherSettings
+ */
+export type School$voucherSettingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SchoolVoucherSettings
+   */
+  select?: Prisma.SchoolVoucherSettingsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SchoolVoucherSettings
+   */
+  omit?: Prisma.SchoolVoucherSettingsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SchoolVoucherSettingsInclude<ExtArgs> | null
+  where?: Prisma.SchoolVoucherSettingsWhereInput
 }
 
 /**

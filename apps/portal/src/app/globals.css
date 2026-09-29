@@ -80,6 +80,24 @@
     color: #000;
   }
 
+  /* -----------------------------------------------------------------------
+     The one fill on the document: the Kuickpay bar.
+
+     Browsers drop background colours when printing unless asked, and a
+     printer's "background graphics" checkbox is off as often as not — so the
+     bar would come out white, with white text on it. `print-color-adjust`
+     asks for the fill anyway, which every current engine honours even with
+     that checkbox off.
+
+     It is a request, not a guarantee, so the component does not depend on it:
+     the consumer number is black on white inside the bar, and only the word
+     "Kuickpay" is reversed out. See `voucher-challan.tsx`.
+     --------------------------------------------------------------------- */
+  .challan-paybar {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
   @page {
     size: A4 landscape;
     margin: 8mm;

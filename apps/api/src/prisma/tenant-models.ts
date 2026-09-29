@@ -55,6 +55,7 @@ export const TENANT_MODELS = [
   'SecurityDeposit',
   'SecurityDepositRefund',
   'SchoolLogo',
+  'SchoolVoucherSettings',
   'NumberSequence',
 ] as const;
 
