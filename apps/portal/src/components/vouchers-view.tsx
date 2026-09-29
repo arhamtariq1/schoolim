@@ -36,7 +36,15 @@ import {
   type Column,
   useToast,
 } from '@ilm/ui';
-import { DeleteIcon, EditIcon, ICON_SIZE, PrintIcon, SearchIcon, SpinnerIcon } from '@ilm/ui/icons';
+import {
+  DeleteIcon,
+  EditIcon,
+  ExportIcon,
+  ICON_SIZE,
+  PrintIcon,
+  SearchIcon,
+  SpinnerIcon,
+} from '@ilm/ui/icons';
 import { systemClock } from '@ilm/utils';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -653,6 +661,15 @@ export function VouchersView({
               }}
             >
               Close
+            </Button>
+            <Button
+              tone="outline"
+              onClick={() => {
+                window.print();
+              }}
+            >
+              <ExportIcon className={ICON_SIZE.inline} aria-hidden />
+              Download PDF
             </Button>
             <Button
               onClick={() => {

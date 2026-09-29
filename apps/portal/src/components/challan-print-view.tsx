@@ -2,6 +2,7 @@
 
 import { ROUTES, type Challan, type VoucherSettings } from '@ilm/contracts';
 import { Button } from '@ilm/ui';
+import { ExportIcon, ICON_SIZE, PrintIcon } from '@ilm/ui/icons';
 import { useEffect, useRef, useState } from 'react';
 
 import { VoucherChallan } from './voucher-challan';
@@ -103,14 +104,36 @@ export function ChallanPrintView({
         <span className="text-sm font-medium text-foreground">
           {challans.length} {challans.length === 1 ? 'challan' : 'challans'}, in class order
         </span>
-        <Button
-          className="ms-auto"
-          onClick={() => {
-            window.print();
-          }}
-        >
-          Print
-        </Button>
+        {/* Two buttons for one browser dialog, because they are two different
+            intentions and a school should not have to know that Chrome treats
+            "save a PDF" as a kind of printer. The hint is what makes the
+            second one honest: there is no server-side PDF writer yet, so this
+            is the browser's, and it needs the destination changed once. */}
+        <span className="ms-auto flex flex-wrap items-center gap-3">
+          <span className="text-xs text-muted-foreground">
+            Prints on A4 — choose <strong className="font-medium">Save as PDF</strong> as the
+            destination to download.
+          </span>
+
+          <Button
+            tone="outline"
+            onClick={() => {
+              window.print();
+            }}
+          >
+            <ExportIcon className={ICON_SIZE.inline} aria-hidden />
+            Download PDF
+          </Button>
+
+          <Button
+            onClick={() => {
+              window.print();
+            }}
+          >
+            <PrintIcon className={ICON_SIZE.inline} aria-hidden />
+            Print
+          </Button>
+        </span>
       </div>
 
       <div className="print-stack space-y-4 p-4">

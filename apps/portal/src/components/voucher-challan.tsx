@@ -77,11 +77,10 @@ export function VoucherChallan({ voucher, school, settings }: ChallanProps) {
   return (
     <div
       className={`voucher-challan grid gap-3 ${
-        // `challan-landscape` is what turns the sheet, via a named `@page` in
-        // globals.css. Three copies across a landscape A4 gives each one a
-        // 92x194mm column; four on a portrait sheet gives 97x140mm. Both are
-        // tall and narrow, which is why one copy design serves both.
-        settings.copyCount === 4 ? 'grid-cols-2' : 'challan-landscape grid-cols-3'
+        // Landscape is the default page (globals.css), so three copies across
+        // print turned even where a named `@page` cannot apply. Only the 2x2
+        // asks for portrait, and it asks by name.
+        settings.copyCount === 4 ? 'challan-portrait grid-cols-2' : 'grid-cols-3'
       }`}
       // Set once on the container and inherited by every copy. They have to be
       // inline because the values are one school's data — the cast is how a
@@ -164,19 +163,7 @@ function ChallanCopy({ copy, voucher, school, settings }: ChallanProps & { copy:
 
       <Particulars voucher={voucher} />
 
-      {/* Grows, so any slack the ruled lines do not take lands here rather than
-          under the signature — the totals sit where the eye ends up. */}
-      <div className="flex-1">
-        <Charges
-          charges={charges}
-          voucher={voucher}
-          // How many ruled lines the copy has room for. A landscape column is
-          // 194mm tall and a portrait quarter 138mm, so the shorter one gets
-          // fewer — padding it to the same count would push the total off the
-          // bottom of the sheet.
-          ledgerRows={settings.copyCount === 4 ? 6 : 10}
-        />
-      </div>
+      <Charges charges={charges} voucher={voucher} />
 
       <Totals voucher={voucher} afterDue={afterDue} />
 
@@ -186,7 +173,11 @@ function ChallanCopy({ copy, voucher, school, settings }: ChallanProps & { copy:
         </p>
       )}
 
-      <div className="flex items-end justify-between gap-3 px-3.5 pt-3 pb-2">
+      {/* `mt-auto` puts the slack here rather than in the middle of the bill.
+          The charges and the total stay together the way an invoice reads, and
+          the space left over lands above the signature line — which is where a
+          counter stamp goes anyway, so it reads as room rather than as a gap. */}
+      <div className="mt-auto flex items-end justify-between gap-3 px-3.5 pt-3 pb-2">
         {showBank ? (
           <span className="flex min-w-0 items-center gap-1.5">
             {school.bankLogoVersion === undefined ? null : (
@@ -255,20 +246,7 @@ function Particulars({ voucher }: { voucher: Challan }) {
  * per figure, which is what this started as, cannot be made to fit beside a
  * label in 90mm.
  */
-function Charges({
-  charges,
-  voucher,
-  ledgerRows,
-}: {
-  charges: Challan['lines'];
-  voucher: Challan;
-  ledgerRows: number;
-}) {
-  // Arrears is always printed, even at zero — "you owe nothing from before" is
-  // information a parent wants — so it counts towards the ruled lines.
-  const printed = charges.length + (voucher.waiverMinor > 0 ? 1 : 0) + 1;
-  const blanks = Math.max(0, ledgerRows - printed);
-
+function Charges({ charges, voucher }: { charges: Challan['lines']; voucher: Challan }) {
   return (
     <table className="w-full table-fixed border-collapse">
       <colgroup>
@@ -312,19 +290,6 @@ function Charges({
           }
           minor={voucher.arrearsMinor}
         />
-
-        {/* Ruled blank lines to the foot of the ledger, the way a printed
-            challan has always been set. Without them a two-line bill leaves a
-            hand-span of white between the last charge and the total, which
-            reads as a page that failed to finish rather than one with nothing
-            more to say. They are decoration, so they are hidden from anyone
-            listening to the document rather than looking at it. */}
-        {Array.from({ length: blanks }, (_, index) => (
-          <tr key={`blank-${String(index)}`} aria-hidden className="border-b border-neutral-200">
-            <td className="px-3.5 py-[3.5px]">&nbsp;</td>
-            <td />
-          </tr>
-        ))}
       </tbody>
     </table>
   );

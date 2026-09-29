@@ -145,14 +145,15 @@ describe('the three copies', () => {
     expect(screen.getByText('Office Copy')).toBeTruthy();
     // Two across is the 2x2 on a portrait sheet; three go across a landscape one.
     expect(container.firstElementChild?.className).toContain('grid-cols-2');
-    expect(container.firstElementChild?.className).not.toContain('challan-landscape');
+    expect(container.firstElementChild?.className).toContain('challan-portrait');
   });
 
   it('puts three across a landscape sheet', () => {
     const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
     expect(container.firstElementChild?.className).toContain('grid-cols-3');
-    // And the sheet is turned for it — three columns need a landscape A4.
-    expect(container.firstElementChild?.className).toContain('challan-landscape');
+    // Landscape is the default page, so three-up asks for nothing — which is
+    // what makes it print turned even where a named `@page` cannot apply.
+    expect(container.firstElementChild?.className).not.toContain('challan-portrait');
   });
 });
 
@@ -230,30 +231,34 @@ describe('filling the sheet', () => {
     expect(container.firstElementChild?.getAttribute('style')).toContain('136mm');
   });
 
-  it('rules the ledger to the foot, so a short bill is not half a page of white', () => {
-    // Two charges and an arrears line on a 194mm column leaves a hand-span of
-    // nothing before the total. A printed challan has always been set with
-    // ruled blank lines instead.
+  it('prints one row per charge and nothing else', () => {
+    // An earlier cut padded the ledger with ruled blank lines to fill the
+    // column. On a real bill that read as a box of empty boxes, so the table
+    // now ends where the charges do and the slack goes elsewhere.
     const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
 
     // Scoped to one copy — the selector would otherwise count all three.
     const copy = container.querySelector('.challan-copy');
-    expect(copy?.querySelectorAll('tbody tr')).toHaveLength(10);
-    // The filler is decoration, so it is not read out to anyone listening.
-    expect(copy?.querySelectorAll('tbody tr[aria-hidden]')).toHaveLength(7);
+    // Two fee lines plus arrears, which is printed even at zero.
+    expect(copy?.querySelectorAll('tbody tr')).toHaveLength(3);
+    expect(copy?.querySelectorAll('tbody tr[aria-hidden]')).toHaveLength(0);
   });
 
-  it('rules fewer lines on the shorter copy, so the total stays on the paper', () => {
-    const { container } = paint({
-      ...DEFAULT_VOUCHER_SETTINGS,
-      copyCount: 4,
-      copyLabels: ['A', 'B', 'C', 'D'],
-    });
+  it('puts the slack above the signature, not inside the bill', () => {
+    // The charges and the total stay together the way an invoice reads; what
+    // is left over lands where a counter stamp goes.
+    const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
 
-    expect(container.querySelector('.challan-copy')?.querySelectorAll('tbody tr')).toHaveLength(6);
+    const copy = container.querySelector('.challan-copy');
+    const spacer = [...(copy?.children ?? [])].filter((child) =>
+      child.className.toString().includes('mt-auto'),
+    );
+
+    expect(spacer).toHaveLength(1);
+    expect(spacer[0]?.textContent).toContain('Signature');
   });
 
-  it('adds no filler when the bill already fills the ledger', () => {
+  it('grows past the minimum for a bill with many charges', () => {
     const many = Array.from({ length: 12 }, (_, index) => ({
       ...(VOUCHER.lines[0] as (typeof VOUCHER.lines)[number]),
       id: `line-${String(index)}`,
@@ -262,10 +267,8 @@ describe('filling the sheet', () => {
 
     const { container } = paint(DEFAULT_VOUCHER_SETTINGS, { ...VOUCHER, lines: many });
 
-    const copy = container.querySelector('.challan-copy');
-    expect(copy?.querySelectorAll('tbody tr[aria-hidden]')).toHaveLength(0);
-    // Twelve charges plus arrears — nothing is dropped to make room.
-    expect(copy?.querySelectorAll('tbody tr')).toHaveLength(13);
+    // Twelve charges plus arrears — nothing is dropped to fit the page.
+    expect(container.querySelector('.challan-copy')?.querySelectorAll('tbody tr')).toHaveLength(13);
   });
 });
 

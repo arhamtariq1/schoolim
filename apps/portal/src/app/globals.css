@@ -94,19 +94,32 @@
      that arrives as a blank grid. Rules, weight and spacing carry it instead,
      and the school's colour appears only as borders, which always print. */
 
-  /* Four copies in a 2x2 — the default, and what an unclassed challan gets. */
-  @page {
-    size: A4 portrait;
-    margin: 8mm;
-  }
+  /* -----------------------------------------------------------------------
+     The paper.
 
-  /* Three copies across, which needs the sheet turned. */
-  @page challan-landscape {
+     Landscape is the **default**, not a named page, and that is deliberate.
+     A named `@page` only takes effect for a box that generates a page box, and
+     the single-challan preview is lifted onto the sheet with
+     `position: absolute` — which generates none. Asking for landscape by name
+     therefore did nothing there, and a school printing one challan got a
+     portrait sheet with three columns huddled across the top of it.
+
+     So the common layout — three copies across — is what an unclassed challan
+     gets, and only the 2x2 asks for anything else. If a browser ignores named
+     pages entirely, every challan still prints landscape, which is right for
+     three of the two layouts' four copies and wrong for none of them badly.
+     --------------------------------------------------------------------- */
+  @page {
     size: A4 landscape;
     margin: 8mm;
   }
 
-  .challan-landscape {
-    page: challan-landscape;
+  @page challan-portrait {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+
+  .challan-portrait {
+    page: challan-portrait;
   }
 }
