@@ -31,8 +31,8 @@ export default async function OtpVerificationPage({
       title="Enter verification code"
       subtitle={
         isPasswordReset
-          ? 'We sent a 6-digit code to your email. Enter it to choose a new password.'
-          : 'We sent a 6-digit code to your email. It expires in a few minutes.'
+          ? 'Type or paste the 6-digit code from your email to choose a new password.'
+          : 'Type or paste the 6-digit code from your email. It expires in a few minutes.'
       }
       back={
         isPasswordReset ? (

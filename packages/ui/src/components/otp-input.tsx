@@ -133,50 +133,62 @@ export function OtpInput({
 
   const invalid = ariaInvalid === true;
 
+  const mid = Math.floor(length / 2);
+
   return (
     <div
       role="group"
       aria-describedby={ariaDescribedBy}
       {...props}
-      className={cn('flex w-full justify-center gap-2 pt-3 sm:gap-3', className)}
+      className={cn('flex w-full items-center justify-center gap-2 pt-2 sm:gap-2.5', className)}
     >
       {/* Keeps autocomplete / form submit happy without showing a second field. */}
       <input type="hidden" name={name} value={digits} readOnly />
 
       {slots.map((digit, index) => (
-        <input
-          key={index}
-          ref={(node) => {
-            refs.current[index] = node;
-          }}
-          id={index === 0 ? id : undefined}
-          type="text"
-          inputMode="numeric"
-          autoComplete={index === 0 ? 'one-time-code' : 'off'}
-          autoFocus={autoFocus && index === 0}
-          required={required && index === 0}
-          disabled={disabled}
-          maxLength={1}
-          aria-label={`Digit ${String(index + 1)} of ${String(length)}`}
-          aria-invalid={invalid}
-          value={digit}
-          onChange={(event) => {
-            handleChange(index, event.target.value);
-          }}
-          onKeyDown={(event) => {
-            handleKeyDown(index, event);
-          }}
-          onPaste={handlePaste}
-          onFocus={(event) => {
-            event.target.select();
-          }}
-          className={cn(
-            'h-12 w-10 shrink-0 rounded-lg border border-input bg-card text-center text-lg font-medium text-foreground tabular-nums sm:h-14 sm:w-12 sm:text-xl',
-            'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-            invalid && 'border-danger focus-visible:ring-danger',
-          )}
-        />
+        <span key={index} className="contents">
+          {index === mid ? (
+            <span
+              aria-hidden="true"
+              className="mx-0.5 select-none text-lg font-medium text-muted-foreground/45 sm:mx-1"
+            >
+              ·
+            </span>
+          ) : null}
+          <input
+            ref={(node) => {
+              refs.current[index] = node;
+            }}
+            id={index === 0 ? id : undefined}
+            type="text"
+            inputMode="numeric"
+            autoComplete={index === 0 ? 'one-time-code' : 'off'}
+            autoFocus={autoFocus && index === 0}
+            required={required && index === 0}
+            disabled={disabled}
+            maxLength={1}
+            aria-label={`Digit ${String(index + 1)} of ${String(length)}`}
+            aria-invalid={invalid}
+            value={digit}
+            onChange={(event) => {
+              handleChange(index, event.target.value);
+            }}
+            onKeyDown={(event) => {
+              handleKeyDown(index, event);
+            }}
+            onPaste={handlePaste}
+            onFocus={(event) => {
+              event.target.select();
+            }}
+            className={cn(
+              'h-12 w-10 shrink-0 rounded-lg border border-input bg-card text-center text-lg font-medium text-foreground tabular-nums transition-[border-color,background-color,box-shadow] duration-150 sm:h-14 sm:w-12 sm:text-xl',
+              'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+              'disabled:cursor-not-allowed disabled:opacity-50',
+              digit !== '' && !invalid && 'border-primary/35 bg-primary/5',
+              invalid && 'border-danger bg-danger/5 focus-visible:ring-danger',
+            )}
+          />
+        </span>
       ))}
     </div>
   );

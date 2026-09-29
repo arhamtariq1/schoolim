@@ -8,11 +8,9 @@ import {
   type SignupVerifyOtpResult,
 } from '@ilm/contracts';
 import { Button, Field, OtpInput, useToast } from '@ilm/ui';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 
-import { SignupAbandonControl } from './signup-abandon';
 import { SIGNUP_CONTEXT } from './signup-step-gate';
 
 import { clearSignupDraft } from '@/lib/signup-draft';
@@ -22,6 +20,9 @@ export const PASSWORD_RESET_CONTEXT = 'password-reset';
 
 /**
  * OTP entry for signup and password reset.
+ *
+ * Verify stays disabled until all six digits are in. Filling the last digit
+ * submits automatically — the usual pattern for short codes.
  */
 export function OtpVerificationForm({
   email,
@@ -32,6 +33,7 @@ export function OtpVerificationForm({
 }) {
   const toast = useToast();
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [code, setCode] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isPending, setIsPending] = useState(false);
@@ -39,6 +41,8 @@ export function OtpVerificationForm({
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const isSignup = context === SIGNUP_CONTEXT || context === 'signup';
   const isPasswordReset = context === PASSWORD_RESET_CONTEXT;
+  const digits = code.replace(/\D/g, '');
+  const isComplete = digits.length === 6;
 
   useEffect(() => {
     if (cooldownSeconds <= 0) {
@@ -74,12 +78,11 @@ export function OtpVerificationForm({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (isPending) {
+    if (isPending || !isComplete) {
       return;
     }
 
     setFieldErrors({});
-    const digits = code.replace(/\s/g, '');
     if (!/^\d{6}$/.test(digits)) {
       const message = 'Enter the 6-digit code.';
       setFieldErrors({ code: message });
@@ -251,21 +254,26 @@ export function OtpVerificationForm({
     }
   }
 
-  const startOverHref = isPasswordReset ? '/forgot-password' : '/signup';
   const resendDisabled = isResending || isPending || cooldownSeconds > 0;
 
   return (
     <form
+      ref={formRef}
       onSubmit={(event) => {
         void submit(event);
       }}
       noValidate
-      className="space-y-4"
+      className="space-y-6"
     >
       {email === undefined ? null : (
-        <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-          Code sent to <span className="font-medium text-foreground">{email}</span>
-        </p>
+        <div className="rounded-lg border border-border/70 bg-muted/35 px-4 py-3">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Code sent to
+          </p>
+          <p className="mt-1 truncate text-sm font-medium text-foreground" title={email}>
+            {email}
+          </p>
+        </div>
       )}
 
       <Field label="Verification code" error={fieldErrors['code']} required>
@@ -274,49 +282,57 @@ export function OtpVerificationForm({
           autoFocus
           value={code}
           disabled={isPending}
+          aria-invalid={fieldErrors['code'] !== undefined}
           onChange={(next) => {
             setCode(next);
             if (fieldErrors['code'] !== undefined) {
               setFieldErrors({});
             }
+            if (next.replace(/\D/g, '').length === 6) {
+              queueMicrotask(() => {
+                formRef.current?.requestSubmit();
+              });
+            }
           }}
         />
       </Field>
 
-      <Button type="submit" isPending={isPending} className="w-full" size="touch">
-        {isPending ? 'Verifying…' : 'Verify code'}
-      </Button>
+      <div className="space-y-4">
+        <Button
+          type="submit"
+          isPending={isPending}
+          disabled={!isComplete}
+          className="w-full"
+          size="touch"
+        >
+          {isPending ? 'Verifying…' : 'Verify code'}
+        </Button>
 
-      <p className="text-center text-sm text-muted-foreground">
-        {cooldownSeconds > 0 ? (
-          <span className="tabular-nums">Resend code in {String(cooldownSeconds)}s</span>
-        ) : (
-          <button
-            type="button"
-            className="font-medium text-primary hover:underline disabled:opacity-50"
-            disabled={resendDisabled}
-            onClick={() => {
-              void resend();
-            }}
-          >
-            {isResending ? 'Sending…' : 'Resend code'}
-          </button>
-        )}
-        {' · '}
-        {isSignup ? (
-          <SignupAbandonControl
-            href="/signup"
-            keepDraft={false}
-            className="font-medium text-primary hover:underline disabled:opacity-50"
-          >
-            Start over
-          </SignupAbandonControl>
-        ) : (
-          <Link href={startOverHref} className="font-medium text-primary hover:underline">
-            Start over
-          </Link>
-        )}
-      </p>
+        <p className="text-center text-sm text-muted-foreground">
+          {cooldownSeconds > 0 ? (
+            <>
+              Didn&apos;t get it?{' '}
+              <span className="tabular-nums text-foreground/80">
+                Resend in {String(cooldownSeconds)}s
+              </span>
+            </>
+          ) : (
+            <>
+              Didn&apos;t get it?{' '}
+              <button
+                type="button"
+                className="font-medium text-primary hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50"
+                disabled={resendDisabled}
+                onClick={() => {
+                  void resend();
+                }}
+              >
+                {isResending ? 'Sending…' : 'Resend code'}
+              </button>
+            </>
+          )}
+        </p>
+      </div>
     </form>
   );
 }
