@@ -426,7 +426,11 @@ export function VoucherSettingsForm({
             preview that stacks them is a preview of a different document. The
             white background is the paper, whatever theme the portal is in. */}
         <div className="overflow-x-auto rounded-xl border border-border bg-white p-3">
-          <div className="min-w-[44rem]">
+          {/* Wide enough that each copy is about the width it will be on A4
+              landscape. A narrower preview makes a challan look cramped that is
+              not, and a school would redesign around a problem it does not
+              have. */}
+          <div className="min-w-[54rem]">
             <VoucherChallan voucher={SAMPLE} school={school} settings={preview} />
           </div>
         </div>

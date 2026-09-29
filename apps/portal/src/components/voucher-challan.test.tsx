@@ -149,6 +149,39 @@ describe('the figures', () => {
     expect(screen.getAllByText('15,900.00')).toHaveLength(3);
   });
 
+  it('sets every amount in one fixed column rather than a box of its own', () => {
+    // This is the fix for what the first cut got wrong. Three copies across A4
+    // leave each about 90mm, and a box sized to hold "15,900.00" beside a label
+    // like "Amount payable within due date" does not fit — so the figures
+    // overflowed their borders. A single `table-fixed` column is the same width
+    // on every row and cannot be squeezed by a long fee name.
+    const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
+
+    const table = container.querySelector('table');
+    expect(table?.className).toContain('table-fixed');
+    expect(table?.querySelectorAll('col')).toHaveLength(2);
+    // Wide enough for a seven-figure fee at the total's type size.
+    expect(table?.querySelectorAll('col')[1]?.className).toContain('38%');
+  });
+
+  it('prints its own number, so a counter payment can be reconciled', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS);
+    expect(screen.getAllByText('OCT-0001')).toHaveLength(3);
+  });
+
+  it('gives the child’s name the full width, so a long one is not cut', () => {
+    // A challan that truncates the name is one the office cannot match to a
+    // record — and Pakistani names routinely run past half a copy.
+    paint(DEFAULT_VOUCHER_SETTINGS, {
+      ...VOUCHER,
+      studentName: 'Muhammad Abdul Rahman Siddiqui',
+    });
+
+    const cell = screen.getAllByText('Muhammad Abdul Rahman Siddiqui')[0];
+    expect(cell?.className).toContain('break-words');
+    expect(cell?.className).not.toContain('truncate');
+  });
+
   it('names the voucher an arrear came from, so it can be questioned', () => {
     paint(DEFAULT_VOUCHER_SETTINGS);
     expect(screen.getAllByText(/SEP-0001/)).toHaveLength(3);

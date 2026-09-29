@@ -19,18 +19,35 @@ import { Money } from '@ilm/ui';
  * on them are a school's own, because some say "Student Copy" and some say
  * "Parent Copy" and neither is ours to decide.
  *
- * ## Why it is built from boxes rather than a table
+ * ## Why it is a ruled document and not a grid of boxes
  *
- * A counter clerk reads this upside down, at speed, under a fluorescent light,
- * and a bank's scanner reads the amount out of a ruled box. So every figure
- * sits in its own bordered cell, labels are left and amounts are right, and the
- * whole thing is drawn in flat black on white. This is the one screen in the
- * product where the design constraint is a photocopier: background tints do not
- * survive one, so nothing here depends on a fill to be legible.
+ * The first cut drew a box around every figure. Three copies across A4 leaves
+ * each one about 90mm wide, and a box wide enough to hold "15,900.00" does not
+ * fit beside a label like "Amount payable within due date" — so the amounts
+ * overflowed their borders and the whole thing read as congested.
+ *
+ * A challan is a ledger, so it is set as one: a single amount **column**, ruled,
+ * right-aligned, the same width down the page. One column cannot overflow the
+ * way twelve independent boxes can, the eye reads straight down it, and the
+ * space it costs is taken once rather than per row.
+ *
+ * Everything else follows from the same constraint — a counter clerk reading
+ * this upside down, at speed, under a fluorescent light:
+ *
+ * - **Four bands, in order.** Which copy this is, whose school it is, whose
+ *   child it is, what is owed. Each is separated by a rule, so the eye can jump
+ *   to one without reading the others.
+ * - **Labels are small caps, values are bold.** The label is scenery; the value
+ *   is what is being read. Making them the same weight is what made the old
+ *   particulars block look mixed up.
+ * - **One figure is the biggest thing on the page** — the amount payable within
+ *   the due date. That is the number this document exists to communicate.
+ * - **Flat black on white.** Background tints do not survive a photocopier, so
+ *   nothing here depends on a fill to be legible.
  *
  * ## Two figures, deliberately
  *
- * "Payable within due date" and "payable after due date" are separate boxes,
+ * "Payable within due date" and "payable after due date" are separate rows,
  * because they are separate amounts and the surcharge applies only to one of
  * them. Printing a single total is how a parent who paid on time is charged a
  * late fee.
@@ -39,9 +56,9 @@ import { Money } from '@ilm/ui';
  *
  * A school with a Kuickpay arrangement prints a consumer number and the network
  * a parent can pay at; a single campus with a bank slip prints neither, and the
- * space goes back to the signature line a counter actually needs. Which of
- * those happens is `VoucherSettings` — CLAUDE.md R1, on the one page of this
- * product that crosses a bank counter.
+ * space goes back to the signature line a counter actually needs. Which of those
+ * happens is `VoucherSettings` — CLAUDE.md R1, on the one page of this product
+ * that crosses a bank counter.
  */
 
 export interface ChallanProps {
@@ -80,12 +97,7 @@ export function VoucherChallan({ voucher, school, settings }: ChallanProps) {
   );
 }
 
-function ChallanCopy({
-  copy,
-  voucher,
-  school,
-  settings,
-}: ChallanProps & { copy: string }) {
+function ChallanCopy({ copy, voucher, school, settings }: ChallanProps & { copy: string }) {
   const charges = voucher.lines.filter((line) => line.kind === 'FEE');
   const afterDue = voucher.totalPayableMinor + voucher.lateFeeMinor;
 
@@ -94,8 +106,14 @@ function ChallanCopy({
   const showLogo = settings.showLogo && school.logoVersion !== undefined;
 
   return (
-    <article className="challan-copy flex break-inside-avoid flex-col border border-black bg-white text-[10px] leading-tight text-black">
-      <header className="flex items-start gap-2 border-b border-black p-2">
+    <article className="challan-copy flex break-inside-avoid flex-col border border-black bg-white text-[9px] leading-snug text-black">
+      {/* Which copy this is, on its own line. It used to sit in the corner of
+          the letterhead, where it read as part of the school's name. */}
+      <p className="border-b border-black py-[3px] text-center text-[8px] font-bold tracking-[0.18em] uppercase">
+        {copy}
+      </p>
+
+      <header className="flex items-center gap-2 border-b border-black px-2 py-1.5">
         {showLogo ? (
           // A plain `img`: this is printed, so there is nothing for Next's
           // image pipeline to optimise, and a `next/image` here would be a
@@ -104,100 +122,144 @@ function ChallanCopy({
           <img
             src={`${ROUTES.schoolLogo.image}?v=${school.logoVersion ?? ''}`}
             alt=""
-            className="h-12 w-12 shrink-0 object-contain"
+            className="size-10 shrink-0 object-contain"
           />
         ) : null}
 
         <div className="min-w-0 flex-1 text-center">
-          <p className="text-right text-[9px] font-semibold">{copy}</p>
-          <h3 className="text-[13px] leading-tight font-bold tracking-tight uppercase">
+          <h3 className="text-[12px] leading-tight font-bold tracking-tight uppercase">
             {school.name}
           </h3>
-          {school.address === undefined ? null : <p className="text-[9px]">{school.address}</p>}
+          {school.address === undefined ? null : (
+            <p className="mt-0.5 text-[8px] leading-tight">{school.address}</p>
+          )}
           {school.phone === undefined ? null : (
-            <p className="text-[9px] font-semibold">Phone No. {school.phone}</p>
+            <p className="text-[8px] leading-tight">Ph: {school.phone}</p>
           )}
         </div>
+
+        {/* Balances the logo, so the letterhead stays optically centred whether
+            or not the school has uploaded one. */}
+        {showLogo ? <span className="size-10 shrink-0" aria-hidden="true" /> : null}
       </header>
 
-      <div className="flex justify-between gap-2 border-b border-black px-2 py-1">
-        <Field label="Issue Date" value={formatDate(voucher.issueDate)} />
-        <Field label="Due Date" value={formatDate(voucher.dueDate)} />
-      </div>
-
-      <dl className="border-b border-black px-2 py-1">
-        <div className="flex justify-between gap-2">
-          <Field label="GR No" value={voucher.grNo ?? '—'} wide />
-          <Field label="Session" value={voucher.sessionName} />
-        </div>
-        <Field label="Student's Name" value={voucher.studentName} wide />
-        <Field label="Father's Name" value={voucher.fatherName ?? '—'} wide />
-        <div className="flex justify-between gap-2">
-          <Field label="Class" value={voucher.className ?? '—'} wide />
-          <Field label="Sec" value={voucher.sectionName ?? '—'} />
-        </div>
+      {/* The names get the full width and are allowed to wrap. Half a copy is
+          about 40mm, and "Muhammad Abdul Rahman Siddiqui" does not fit in it —
+          a challan that truncates the child's name is one the office cannot
+          match to a record. */}
+      <dl className="grid grid-cols-[4.2rem_minmax(0,1fr)] gap-x-1 gap-y-[3px] border-b border-black px-2 py-1.5">
+        <Row label="Student" value={voucher.studentName} wrap />
+        <Row label="Father" value={voucher.fatherName ?? '—'} wrap />
       </dl>
 
-      {/* Every charge in its own ruled row, because that is how the amount is
-          read — and how it is checked against what was paid. */}
-      <div className="border-b border-black">
-        {charges.map((line) => (
-          <AmountRow
-            key={line.id}
-            label={line.label}
-            minor={line.amountMinor - line.discountMinor}
+      {/* Everything short, in two columns. Each is its own label/value grid, so
+          every value in a column starts on the same x however long its label. */}
+      <div className="grid grid-cols-2 divide-x divide-black border-b border-black">
+        <dl className="grid grid-cols-[3.4rem_minmax(0,1fr)] gap-x-1 gap-y-[3px] px-2 py-1.5">
+          <Row label="GR No" value={voucher.grNo ?? '—'} />
+          <Row label="Class" value={voucher.className ?? '—'} />
+          <Row label="Section" value={voucher.sectionName ?? '—'} />
+          <Row label="Session" value={voucher.sessionName} />
+        </dl>
+
+        <dl className="grid grid-cols-[3.4rem_minmax(0,1fr)] gap-x-1 gap-y-[3px] px-2 py-1.5">
+          {/* The challan's own number. Without it a school taking a payment at
+              the counter has nothing to reconcile it against. */}
+          <Row label="Voucher" value={voucher.voucherNo} />
+          <Row label="Issued" value={formatDate(voucher.issueDate)} />
+          <Row label="Due" value={formatDate(voucher.dueDate)} />
+          <Row label="Valid till" value={formatDate(voucher.validTill)} />
+        </dl>
+      </div>
+
+      {/* One amount column, ruled. `table-fixed` is what holds it to the same
+          width on every row — and what stops a long fee name from squeezing the
+          figure until it wraps. */}
+      <table className="w-full table-fixed border-collapse">
+        <colgroup>
+          <col />
+          <col className="w-[38%]" />
+        </colgroup>
+
+        <thead>
+          <tr className="border-b border-black">
+            <th className="px-2 py-[3px] text-left text-[8px] font-semibold tracking-wide uppercase">
+              Particulars
+            </th>
+            <th className="px-2 py-[3px] text-right text-[8px] font-semibold tracking-wide uppercase">
+              Amount (Rs.)
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {charges.map((line) => (
+            <Charge
+              key={line.id}
+              label={line.label}
+              // Each fee line is already the discounted figure a parent owes.
+              // No separate discount row: printing "−1,500" under a total that
+              // does not move looks like an arithmetic mistake on the school's
+              // own challan, and what was agreed privately with one family is
+              // not for a document that crosses a bank counter.
+              minor={line.amountMinor - line.discountMinor}
+            />
+          ))}
+
+          {voucher.waiverMinor > 0 ? (
+            <Charge label="Waived" minor={-voucher.waiverMinor} />
+          ) : null}
+
+          <Charge
+            label="Arrears"
+            hint={
+              voucher.arrears.length === 0
+                ? undefined
+                : voucher.arrears.map((entry) => entry.sourceVoucherNo).join(', ')
+            }
+            minor={voucher.arrearsMinor}
           />
-        ))}
+        </tbody>
 
-        {/* No discount row. Each fee line above is already the discounted
-            figure a parent owes, so printing "−1,500" underneath a total that
-            does not move looks like an arithmetic mistake on the school's own
-            challan. What was agreed privately with one family is also not
-            something to put on a document that crosses a bank counter. */}
-        {voucher.waiverMinor > 0 ? (
-          <AmountRow label="Waived" minor={-voucher.waiverMinor} />
-        ) : null}
-
-        <AmountRow
-          label="Arrears"
-          hint={
-            voucher.arrears.length === 0
-              ? undefined
-              : voucher.arrears.map((entry) => entry.sourceVoucherNo).join(', ')
-          }
-          minor={voucher.arrearsMinor}
-        />
-      </div>
-
-      <div className="border-b border-black">
-        <AmountRow label="Amount payable within due date" minor={voucher.totalPayableMinor} strong />
-        {/* Printed even when it equals the figure above: a parent who sees only
-            one number cannot tell whether paying late costs more. */}
-        <AmountRow label="Amount payable after due date" minor={afterDue} strong />
-      </div>
-
-      <p className="border-b border-black px-2 py-1 text-center text-[9px] font-semibold">
-        This challan is valid till {formatDate(voucher.validTill)}
-      </p>
+        <tfoot>
+          {/* The one figure this document exists to communicate, set as such. */}
+          <tr className="border-t-2 border-black">
+            <th className="px-2 py-1 text-left text-[9px] font-bold tracking-wide uppercase">
+              Payable within due date
+            </th>
+            <td className="px-2 py-1 text-right font-mono text-[12px] font-bold tabular-nums">
+              <Money valueMinor={voucher.totalPayableMinor} withSymbol={false} />
+            </td>
+          </tr>
+          {/* Printed even when it equals the figure above: a parent who sees
+              only one number cannot tell whether paying late costs more. */}
+          <tr className="border-t border-black">
+            <th className="px-2 py-[3px] text-left text-[8px] font-semibold">
+              Payable after {formatDate(voucher.dueDate)}
+            </th>
+            <td className="px-2 py-[3px] text-right font-mono text-[10px] font-semibold tabular-nums">
+              <Money valueMinor={afterDue} withSymbol={false} />
+            </td>
+          </tr>
+        </tfoot>
+      </table>
 
       {settings.footerNote === null ? null : (
-        <p className="border-b border-black px-2 py-1 text-[8px]">{settings.footerNote}</p>
+        <p className="border-t border-black px-2 py-1 text-[7.5px] leading-snug">
+          {settings.footerNote}
+        </p>
       )}
 
       {/* Pushed to the bottom so every copy signs on the same line, whatever
           number of fee rows each carries. */}
-      <div className="mt-auto px-2 pt-6 pb-1">
-        <p className="border-t border-black pt-0.5 text-center text-[9px]">
+      <div className="mt-auto px-2 pt-7 pb-1">
+        <p className="border-t border-black pt-0.5 text-center text-[8px]">
           Receiver&rsquo;s Signature &amp; Stamp
         </p>
       </div>
 
       {kuickpay === undefined ? null : (
-        <PaymentBlock
-          kuickpay={kuickpay}
-          onelink={onelink}
-          channels={settings.kuickpayChannels}
-        />
+        <PaymentBlock kuickpay={kuickpay} onelink={onelink} channels={settings.kuickpayChannels} />
       )}
     </article>
   );
@@ -242,10 +304,10 @@ function PaymentBlock({
 
       {channels.length === 0 ? null : (
         <div className="px-2 py-1">
-          <p className="text-[8px] font-semibold">Pay in cash using the Kuickpay ID at:</p>
+          <p className="text-[7.5px] font-semibold">Pay in cash using the Kuickpay ID at:</p>
           {/* Three columns, because twelve names down one side is a strip
               taller than the challan it belongs to. */}
-          <ul className="mt-0.5 grid grid-cols-3 gap-x-2 text-[7.5px] leading-snug">
+          <ul className="mt-0.5 grid grid-cols-3 gap-x-2 text-[7px] leading-snug">
             {channels.map((channel) => (
               <li key={channel} className="truncate">
                 • {channel}
@@ -256,7 +318,7 @@ function PaymentBlock({
       )}
 
       {onelink === undefined ? null : (
-        <p className="border-t border-black px-2 py-0.5 text-center text-[9px] font-semibold">
+        <p className="border-t border-black px-2 py-0.5 text-center text-[8px] font-semibold">
           1LINK ID: <span className="font-mono tracking-wider">{onelink}</span>
         </p>
       )}
@@ -264,45 +326,45 @@ function PaymentBlock({
   );
 }
 
-/** `Label : value`, the way a challan sets out a field. */
-function Field({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
+/**
+ * One particular of the child, as a label/value pair.
+ *
+ * The two cells are siblings in the parent's grid rather than a nested flex
+ * row, which is what makes every value in a column start on the same x however
+ * long its label is. A label that sets its own width is what made the old
+ * block look like it had been shaken.
+ */
+function Row({ label, value, wrap = false }: { label: string; value: string; wrap?: boolean }) {
   return (
-    <div className={`flex gap-1 ${wide ? 'min-w-0 flex-1' : 'shrink-0'}`}>
-      <dt className="shrink-0">{label}</dt>
-      <dd className="min-w-0 truncate font-bold">
-        <span className="me-1 font-normal">:</span>
-        {value}
-      </dd>
-    </div>
+    <>
+      <dt className="text-[7.5px] tracking-wide uppercase">{label}</dt>
+      {/* Short values truncate rather than reflow the grid; a name wraps,
+          because cutting one off is worse than an extra line. */}
+      <dd className={`font-bold ${wrap ? 'break-words' : 'truncate'}`}>{value}</dd>
+    </>
   );
 }
 
-/** A charge and its boxed amount, which is the unit a counter clerk reads. */
-function AmountRow({
+/** A charge and its amount, in the ledger column. */
+function Charge({
   label,
   hint,
   minor,
-  strong = false,
 }: {
   label: string;
   hint?: string | undefined;
   minor: number;
-  strong?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2 px-2 py-0.5">
-      <span className={`min-w-0 truncate ${strong ? 'font-semibold' : ''}`}>
+    <tr className="border-b border-black/25 last:border-b-0">
+      <td className="truncate px-2 py-[3px]">
         {label}
-        {hint === undefined ? null : <span className="ms-1 font-normal">({hint})</span>}
-      </span>
-      <span
-        className={`w-16 shrink-0 border px-1 py-0.5 text-right font-mono tabular-nums ${
-          strong ? 'border-black font-bold' : 'border-dashed border-black/60'
-        }`}
-      >
+        {hint === undefined ? null : <span className="ms-1 text-[8px]">({hint})</span>}
+      </td>
+      <td className="px-2 py-[3px] text-right font-mono tabular-nums">
         <Money valueMinor={minor} withSymbol={false} />
-      </span>
-    </div>
+      </td>
+    </tr>
   );
 }
 
