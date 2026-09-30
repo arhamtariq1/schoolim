@@ -292,6 +292,10 @@ export function PromoteStudents({ sessions, canConfigure, error }: PromoteStuden
           </section>
 
           <Note>
+            Sections come across with them — a child in Grade 3 section A lands in section A of
+            their new class, and {preview.to.name}’s sections are created as they are needed. Roll
+            numbers follow; renumber a register alphabetically afterwards if you want it tidy.
+            <br />
             No fees change, and students already enrolled in {preview.to.name} are skipped — so this
             is safe to run again.
             {willGraduate === 0
@@ -304,8 +308,11 @@ export function PromoteStudents({ sessions, canConfigure, error }: PromoteStuden
               {done.promoted} moved into {preview.to.name}
               {done.repeated === 0 ? '' : `, ${String(done.repeated)} repeating`}
               {done.graduated === 0 ? '' : `, ${String(done.graduated)} passed out`}
-              {done.skipped === 0 ? '' : `, ${String(done.skipped)} skipped`}. Assign their sections
-              next, then generate fees for the new session.
+              {done.skipped === 0 ? '' : `, ${String(done.skipped)} skipped`}
+              {done.sectionsCreated === 0
+                ? ''
+                : `, ${String(done.sectionsCreated)} ${done.sectionsCreated === 1 ? 'section' : 'sections'} created`}
+              . You can generate fees for {preview.to.name} now.
             </p>
           )}
 

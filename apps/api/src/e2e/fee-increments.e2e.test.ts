@@ -46,6 +46,20 @@ const PASSWORD = 'correct-horse-battery-staple';
 const ADMITTED = '2026-04-01';
 const AGREED_FROM = '2026-04-01';
 
+/**
+ * A date that is still in the future whenever this suite runs.
+ *
+ * `pendingFeeMinor` means "agreed, not yet in force", so a *fixed* date stops
+ * being pending the day the wall clock reaches it. This suite used 2026-10-01
+ * and went green for months before going red, on its own, on 2026-10-01 —
+ * without a line of the product changing. A scheduled increase that has arrived
+ * is no longer pending, which is correct behaviour and a broken assertion.
+ *
+ * Far enough out that no clock will reach it, and the tests that care about
+ * *ordering* still pass their own explicit dates.
+ */
+const STILL_PENDING = '2099-01-01';
+
 let app: NestFastifyApplication;
 let admin: PrismaClient;
 let jar = '';
@@ -248,7 +262,7 @@ async function apply(
       feeHeadId: HEAD_TUITION,
       direction: 'INCREASE',
       amountMinor: 50_000,
-      effectiveFrom: '2026-10-01',
+      effectiveFrom: STILL_PENDING,
       idempotencyKey: `increment-e2e-key-${String(keySeq).padStart(4, '0')}`,
       ...body,
     },

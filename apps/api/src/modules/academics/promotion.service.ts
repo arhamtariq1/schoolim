@@ -57,6 +57,111 @@ import { TenantContextService } from '../../shared/tenancy/tenant-context.servic
  */
 const JOB_KIND = 'student-promotion';
 
+interface Totals {
+  promoted: number;
+  repeated: number;
+  graduated: number;
+  skipped: number;
+  /** Next year's sections created because a class was receiving students. */
+  sectionsCreated: number;
+}
+
+interface SectionRow {
+  readonly id: string;
+  readonly classLevelId: string;
+  readonly name: string;
+  readonly capacity: number | null;
+  readonly room: string | null;
+}
+
+/**
+ * Both sessions' sections, indexed for the two questions the run asks: "what is
+ * this child's section called" and "does the target class have one by that name
+ * yet".
+ */
+interface SectionIndex {
+  readonly toSessionId: string;
+  /** Outgoing sections by id — a child's own, and the template if it is needed. */
+  readonly fromById: Map<string, SectionRow>;
+  readonly fromByKey: Map<string, SectionRow>;
+  /** Incoming sections, filled in as the run creates them. */
+  readonly toByKey: Map<string, string>;
+}
+
+/** A class and a section name identify a section within one session. */
+function sectionKey(classLevelId: string, name: string): string {
+  return `${classLevelId}:${name}`;
+}
+
+interface Placement {
+  readonly enrolment: { id: string; studentId: string; sectionId: string | null };
+  readonly classLevelId: string;
+  readonly repeats: boolean;
+  readonly sectionId: string | undefined;
+  rollNo?: number;
+}
+
+/**
+ * Roll numbers, a section at a time.
+ *
+ * ## Why not one child at a time
+ *
+ * A roll is unique per section, enforced by a partial unique index, so it has
+ * to be allocated under the same lock an admission takes — otherwise two
+ * writers hand out the same number and one of them fails. Doing that per child
+ * is a lock and a count per child; doing it per section is one of each for the
+ * whole batch, and the lock is held for a shorter time by a run that is
+ * touching every child in the school.
+ *
+ * ## Why they continue rather than start at one
+ *
+ * A school may already have admitted new children directly into next year, and
+ * they have rolls. Promotion appends to that register rather than colliding
+ * with it.
+ *
+ * The order is the order children were admitted, which is the same order a
+ * register is in before anybody tidies it. `renumberSection` sorts a register
+ * alphabetically, and its own comment says schools do that "again after
+ * promotion" — so this deliberately does not try to guess the final order.
+ */
+async function allocateRolls(
+  tx: TransactionClient,
+  toSessionId: string,
+  placements: readonly Placement[],
+): Promise<void> {
+  const bySection = new Map<string, Placement[]>();
+
+  for (const placement of placements) {
+    if (placement.sectionId === undefined) {
+      continue;
+    }
+    const group = bySection.get(placement.sectionId);
+    if (group === undefined) {
+      bySection.set(placement.sectionId, [placement]);
+    } else {
+      group.push(placement);
+    }
+  }
+
+  for (const [sectionId, group] of bySection) {
+    // The same lock admission and renumbering take, for the same reason: a
+    // roll handed out while somebody is being admitted into this section would
+    // otherwise be one the admission has already used.
+    await tx.$queryRaw`SELECT id FROM sections WHERE id = ${sectionId}::uuid FOR UPDATE`;
+
+    const highest = await tx.enrollment.aggregate({
+      where: { sessionId: toSessionId, sectionId },
+      _max: { rollNo: true },
+    });
+
+    let next = (highest._max.rollNo ?? 0) + 1;
+    for (const placement of group) {
+      placement.rollNo = next;
+      next += 1;
+    }
+  }
+}
+
 /**
  * How many students one transaction moves.
  *
@@ -235,12 +340,17 @@ export class PromotionService {
     jobRunId: string,
     /** The outgoing year's last day: when a leaver actually left. */
     finishedOn: Date,
-  ): Promise<{ promoted: number; repeated: number; graduated: number; skipped: number }> {
+  ): Promise<Totals> {
     const actions = new Map(input.moves.map((move) => [move.fromClassLevelId, move] as const));
     const repeating = new Set(input.repeat);
     const excluded = new Set(input.exclude);
 
-    const totals = { promoted: 0, repeated: 0, graduated: 0, skipped: 0 };
+    // Read once for the whole run, not once per batch. A school has tens of
+    // sections and thousands of children; holding the section map in memory
+    // turns "which section does this child go to" from a query into a lookup.
+    const sections = await this.readSections(input.fromSessionId, input.toSessionId);
+
+    const totals: Totals = { promoted: 0, repeated: 0, graduated: 0, skipped: 0, sectionsCreated: 0 };
     let cursor: string | undefined;
 
     for (;;) {
@@ -251,7 +361,7 @@ export class PromotionService {
             status: 'ENROLLED',
             ...(cursor === undefined ? {} : { studentId: { gt: cursor } }),
           },
-          select: { id: true, studentId: true, classLevelId: true },
+          select: { id: true, studentId: true, classLevelId: true, sectionId: true },
           orderBy: { studentId: 'asc' },
           take: BATCH_SIZE,
         });
@@ -274,6 +384,15 @@ export class PromotionService {
             })
           ).map((row) => row.studentId),
         );
+
+        // --- Decide, before writing anything -----------------------------
+        //
+        // Two passes over the batch. The first works out where everybody is
+        // going; the second writes them. Separating them is what lets roll
+        // numbers be allocated a section at a time instead of a child at a
+        // time — one lock and one count per section per batch, rather than two
+        // queries per child.
+        const placements: Placement[] = [];
 
         for (const enrolment of batch) {
           if (settled.has(enrolment.studentId) || excluded.has(enrolment.studentId)) {
@@ -302,36 +421,49 @@ export class PromotionService {
             continue;
           }
 
-          const target = repeats
+          const classLevelId = repeats
             ? enrolment.classLevelId
             : action?.action === 'MOVE'
               ? action.toClassLevelId
               : undefined;
 
-          if (target === undefined) {
+          if (classLevelId === undefined) {
             totals.skipped += 1;
             continue;
           }
 
+          placements.push({
+            enrolment,
+            classLevelId,
+            repeats,
+            sectionId: await this.sectionFor(tx, sections, enrolment, classLevelId, totals),
+          });
+        }
+
+        await allocateRolls(tx, input.toSessionId, placements);
+
+        // --- Write -------------------------------------------------------
+        for (const placement of placements) {
           await tx.enrollment.create({
             data: {
               schoolId: this.context.schoolId,
-              studentId: enrolment.studentId,
+              studentId: placement.enrolment.studentId,
               sessionId: input.toSessionId,
-              classLevelId: target,
-              // No section and so no roll number: sections belong to a session,
-              // and next year's do not exist until the school makes them.
+              classLevelId: placement.classLevelId,
+              ...(placement.sectionId === undefined
+                ? {}
+                : { sectionId: placement.sectionId, rollNo: placement.rollNo }),
               status: 'ENROLLED',
               enrolledOn: null,
             } as never,
           });
 
           await tx.enrollment.update({
-            where: { id: enrolment.id },
-            data: { status: repeats ? 'REPEATED' : 'PROMOTED' },
+            where: { id: placement.enrolment.id },
+            data: { status: placement.repeats ? 'REPEATED' : 'PROMOTED' },
           });
 
-          if (repeats) {
+          if (placement.repeats) {
             totals.repeated += 1;
           } else {
             totals.promoted += 1;
@@ -357,6 +489,119 @@ export class PromotionService {
         return totals;
       }
     }
+  }
+
+  /**
+   * Both sessions' sections, indexed for the two questions the run asks.
+   *
+   * Read once, outside the batch loop. A school has tens of sections and this
+   * is otherwise a query per child.
+   */
+  private async readSections(fromSessionId: string, toSessionId: string): Promise<SectionIndex> {
+    return this.prisma.tenant(async (tx) => {
+      const rows = await tx.section.findMany({
+        where: { sessionId: { in: [fromSessionId, toSessionId] } },
+        select: {
+          id: true,
+          sessionId: true,
+          classLevelId: true,
+          name: true,
+          capacity: true,
+          room: true,
+        },
+      });
+
+      const index: SectionIndex = {
+        toSessionId,
+        fromById: new Map(),
+        fromByKey: new Map(),
+        toByKey: new Map(),
+      };
+
+      for (const row of rows) {
+        if (row.sessionId === fromSessionId) {
+          index.fromById.set(row.id, row);
+          index.fromByKey.set(sectionKey(row.classLevelId, row.name), row);
+        } else {
+          index.toByKey.set(sectionKey(row.classLevelId, row.name), row.id);
+        }
+      }
+
+      return index;
+    });
+  }
+
+  /**
+   * Where this child sits next year.
+   *
+   * ## Section A stays section A
+   *
+   * A child in Grade 3 section A moves to Grade 4 section A. Matching by
+   * **name** is the rule, because that is the rule schools already use — nobody
+   * re-sorts a year group at rollover, and asking an office to place two
+   * thousand children one at a time is asking them not to use the product.
+   *
+   * ## The section is created if it does not exist
+   *
+   * Next year's sections are different rows — a section belongs to a session —
+   * so the first rollover into a new year finds none of them. Rather than
+   * leaving every class saying "no sections in this session, students cannot be
+   * admitted", the run creates the one it needs, copying capacity and room from
+   * the same-named section of the **target** class last year, or failing that
+   * from the child's own outgoing section.
+   *
+   * Created on demand rather than mirroring the whole structure: a class nobody
+   * is moving into does not need an empty section, and a school that retired a
+   * class should not find it resurrected.
+   *
+   * A child with no section keeps none — there is nothing to match on, and a
+   * roll is a place on a register.
+   */
+  private async sectionFor(
+    tx: TransactionClient,
+    sections: SectionIndex,
+    enrolment: { sectionId: string | null },
+    classLevelId: string,
+    totals: Totals,
+  ): Promise<string | undefined> {
+    if (enrolment.sectionId === null) {
+      return undefined;
+    }
+
+    const own = sections.fromById.get(enrolment.sectionId);
+    if (own === undefined) {
+      return undefined;
+    }
+
+    const key = sectionKey(classLevelId, own.name);
+    const existing = sections.toByKey.get(key);
+    if (existing !== undefined) {
+      return existing;
+    }
+
+    // Grade 4's own section A last year knows Grade 4's room and size. The
+    // child's outgoing Grade 3 section A is the fallback, which at least keeps
+    // a school's usual class size rather than defaulting to unlimited.
+    const template = sections.fromByKey.get(key) ?? own;
+
+    const created = await tx.section.create({
+      data: {
+        schoolId: this.context.schoolId,
+        sessionId: sections.toSessionId,
+        classLevelId,
+        name: own.name,
+        capacity: template.capacity,
+        room: template.room,
+      } as never,
+      select: { id: true },
+    });
+
+    // Added to the index, so the next child in the same class finds it rather
+    // than racing to create a second one with the same name.
+    sections.toByKey.set(key, created.id);
+    totals.sectionsCreated += 1;
+
+    return created.id;
   }
 
   /**
@@ -427,6 +672,7 @@ export class PromotionService {
             repeated?: number;
             graduated?: number;
             skipped?: number;
+            sectionsCreated?: number;
           } | null;
 
           return {
@@ -437,6 +683,7 @@ export class PromotionService {
               repeated: result?.repeated ?? 0,
               graduated: result?.graduated ?? 0,
               skipped: result?.skipped ?? 0,
+              sectionsCreated: result?.sectionsCreated ?? 0,
             },
           };
         }

@@ -152,6 +152,8 @@ async function signIn(host: string, identifier: string): Promise<string> {
  */
 async function seedRoll(): Promise<void> {
   await admin.$executeRaw`DELETE FROM enrollments WHERE school_id = ${SCHOOL_A}::uuid`;
+  // Sections after enrolments, which reference them.
+  await admin.$executeRaw`DELETE FROM sections WHERE school_id = ${SCHOOL_A}::uuid`;
   await admin.$executeRaw`DELETE FROM students WHERE school_id = ${SCHOOL_A}::uuid`;
   await admin.$executeRaw`DELETE FROM job_runs WHERE school_id = ${SCHOOL_A}::uuid`;
   await admin.$executeRaw`DELETE FROM audit_logs WHERE school_id = ${SCHOOL_A}::uuid`;
@@ -594,6 +596,273 @@ describe('the top class, whatever a school calls it', () => {
 
     expect(data?.totalToMove).toBe(10);
     expect(data?.totalToGraduate).toBe(5);
+  });
+});
+
+/**
+ * Sections, which is what makes a promoted year group usable.
+ *
+ * A section belongs to a session, so next year's are different rows and the
+ * first rollover into a new year finds none of them. Leaving students
+ * unsectioned meant every class read "no sections in this session — students
+ * cannot be admitted into this class yet", and an office facing two thousand
+ * children one at a time is an office that stops using the product.
+ */
+describe('carrying sections forward', () => {
+  /** Grade 1 has A and B; Grade 3 has A. Grade 2 has none — nobody is in it. */
+  const G1A = '88888888-8888-4888-8888-888888888801';
+  const G1B = '88888888-8888-4888-8888-888888888802';
+  const G3A = '88888888-8888-4888-8888-888888888803';
+
+  beforeEach(async () => {
+    await admin.$executeRaw`
+      INSERT INTO sections (id, school_id, session_id, class_level_id, name, capacity, room, created_at, updated_at) VALUES
+        (${G1A}::uuid, ${SCHOOL_A}::uuid, ${OLD_SESSION}::uuid, ${GRADE_1}::uuid, 'A', 30, 'Room 1', now(), now()),
+        (${G1B}::uuid, ${SCHOOL_A}::uuid, ${OLD_SESSION}::uuid, ${GRADE_1}::uuid, 'B', 25, 'Room 2', now(), now()),
+        (${G3A}::uuid, ${SCHOOL_A}::uuid, ${OLD_SESSION}::uuid, ${GRADE_3}::uuid, 'A', 20, 'Room 9', now(), now())
+    `;
+
+    // Children 1-6 in Grade 1 A, 7-10 in Grade 1 B, 11-15 in Grade 3 A.
+    for (let n = 1; n <= 15; n += 1) {
+      await admin.$executeRawUnsafe(
+        `UPDATE enrollments SET section_id = $1::uuid, roll_no = $2
+          WHERE session_id = $3::uuid AND student_id = $4::uuid`,
+        n <= 6 ? G1A : n <= 10 ? G1B : G3A,
+        n <= 6 ? n : n <= 10 ? n - 6 : n - 10,
+        OLD_SESSION,
+        studentId(n),
+      );
+    }
+  });
+
+  async function sectionsOf(sessionId: string) {
+    return admin.$queryRawUnsafe<
+      { id: string; class_level_id: string; name: string; capacity: number | null; room: string | null }[]
+    >(
+      `SELECT id, class_level_id, name, capacity, room FROM sections
+        WHERE session_id = $1::uuid ORDER BY class_level_id, name`,
+      sessionId,
+    );
+  }
+
+  it('keeps a child in the section they were in', async () => {
+    // Grade 1 A becomes Grade 2 A. This is the whole ask: nobody re-sorts a
+    // year group at rollover.
+    const { data } = await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111601',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+    });
+
+    expect(data?.sectionsCreated).toBe(2);
+
+    const created = await sectionsOf(NEW_SESSION);
+    const grade2 = created.filter((row) => row.class_level_id === GRADE_2);
+    expect(grade2.map((row) => row.name)).toEqual(['A', 'B']);
+
+    const roll = await admin.$queryRawUnsafe<{ student_id: string; name: string }[]>(
+      `SELECT e.student_id, s.name FROM enrollments e
+         JOIN sections s ON s.id = e.section_id
+        WHERE e.session_id = $1::uuid ORDER BY e.student_id`,
+      NEW_SESSION,
+    );
+
+    expect(roll.filter((row) => row.name === 'A')).toHaveLength(6);
+    expect(roll.filter((row) => row.name === 'B')).toHaveLength(4);
+  });
+
+  it('copies the target class’s own room and size when it had that section', async () => {
+    // Grade 2 had no sections last year, so the child's own Grade 1 A is the
+    // template — which at least keeps the school's usual class size.
+    await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111602',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+    });
+
+    const created = await sectionsOf(NEW_SESSION);
+    const a = created.find((row) => row.class_level_id === GRADE_2 && row.name === 'A');
+    expect(a?.capacity).toBe(30);
+    expect(a?.room).toBe('Room 1');
+
+    const b = created.find((row) => row.class_level_id === GRADE_2 && row.name === 'B');
+    expect(b?.capacity).toBe(25);
+  });
+
+  it('gives every promoted child a roll number', async () => {
+    await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111603',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+    });
+
+    const rolls = await admin.$queryRawUnsafe<{ section_id: string; roll_no: number }[]>(
+      `SELECT section_id, roll_no FROM enrollments
+        WHERE session_id = $1::uuid AND section_id IS NOT NULL ORDER BY section_id, roll_no`,
+      NEW_SESSION,
+    );
+
+    expect(rolls.every((row) => row.roll_no > 0)).toBe(true);
+    // Unique within a section — the partial index says so, and a duplicate
+    // would have failed the insert rather than reaching here.
+    const perSection = new Map<string, number[]>();
+    for (const row of rolls) {
+      perSection.set(row.section_id, [...(perSection.get(row.section_id) ?? []), row.roll_no]);
+    }
+    for (const [, numbers] of perSection) {
+      expect(new Set(numbers).size).toBe(numbers.length);
+      // 1..n, because these sections are new and start empty.
+      expect([...numbers].sort((a, b) => a - b)).toEqual(
+        Array.from({ length: numbers.length }, (_, i) => i + 1),
+      );
+    }
+  });
+
+  it('continues the register rather than colliding with it', async () => {
+    // Somebody already admitted two children straight into next year. If they
+    // are in the section promotion is filling, the promoted children have to
+    // come after them, not start again at 1.
+    const existing = '88888888-8888-4888-8888-888888888810';
+    await admin.$executeRaw`
+      INSERT INTO sections (id, school_id, session_id, class_level_id, name, created_at, updated_at)
+      VALUES (${existing}::uuid, ${SCHOOL_A}::uuid, ${NEW_SESSION}::uuid, ${GRADE_2}::uuid, 'A', now(), now())
+    `;
+    await admin.$executeRawUnsafe(
+      `UPDATE enrollments SET class_level_id = $1::uuid, section_id = $2::uuid, roll_no = 7
+        WHERE session_id = $3::uuid AND student_id = $4::uuid`,
+      GRADE_2,
+      existing,
+      NEW_SESSION,
+      studentId(16),
+    );
+
+    await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111604',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+    });
+
+    const rolls = await admin.$queryRawUnsafe<{ roll_no: number }[]>(
+      `SELECT roll_no FROM enrollments
+        WHERE session_id = $1::uuid AND section_id = $2::uuid ORDER BY roll_no`,
+      NEW_SESSION,
+      existing,
+    );
+
+    // The child already there keeps 7; the six promoted take 8..13.
+    expect(rolls.map((row) => row.roll_no)).toEqual([7, 8, 9, 10, 11, 12, 13]);
+  });
+
+  it('reuses a section the school already made rather than duplicating it', async () => {
+    // The state in the screenshot: somebody created next year's section by
+    // hand before running the rollover.
+    const made = '88888888-8888-4888-8888-888888888811';
+    await admin.$executeRaw`
+      INSERT INTO sections (id, school_id, session_id, class_level_id, name, created_at, updated_at)
+      VALUES (${made}::uuid, ${SCHOOL_A}::uuid, ${NEW_SESSION}::uuid, ${GRADE_2}::uuid, 'A', now(), now())
+    `;
+
+    const { data } = await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111605',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+    });
+
+    // Only B was missing.
+    expect(data?.sectionsCreated).toBe(1);
+
+    const grade2 = (await sectionsOf(NEW_SESSION)).filter(
+      (row) => row.class_level_id === GRADE_2,
+    );
+    expect(grade2.filter((row) => row.name === 'A')).toHaveLength(1);
+  });
+
+  it('creates no section for a class nobody is moving into', async () => {
+    // Grade 3's children pass out, so Grade 3 needs nothing next year. A
+    // retired class must not be resurrected by a rollover.
+    await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111606',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+    });
+
+    const created = await sectionsOf(NEW_SESSION);
+    expect(created.filter((row) => row.class_level_id === GRADE_3)).toHaveLength(0);
+  });
+
+  it('keeps a repeating child in their own section', async () => {
+    await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111607',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+      repeat: [studentId(7)],
+    });
+
+    const placed = await admin.$queryRawUnsafe<{ class_level_id: string; name: string }[]>(
+      `SELECT e.class_level_id, s.name FROM enrollments e
+         JOIN sections s ON s.id = e.section_id
+        WHERE e.session_id = $1::uuid AND e.student_id = $2::uuid`,
+      NEW_SESSION,
+      studentId(7),
+    );
+
+    // Grade 1 B again, not Grade 2 B.
+    expect(placed[0]?.class_level_id).toBe(GRADE_1);
+    expect(placed[0]?.name).toBe('B');
+  });
+
+  it('leaves an unsectioned child unsectioned', async () => {
+    // A roll is a place on a register; with no register there is no place, and
+    // nothing to match a name against either.
+    await admin.$executeRawUnsafe(
+      `UPDATE enrollments SET section_id = NULL, roll_no = NULL
+        WHERE session_id = $1::uuid AND student_id = $2::uuid`,
+      OLD_SESSION,
+      studentId(1),
+    );
+
+    await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111608',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+    });
+
+    const placed = await admin.$queryRawUnsafe<{ section_id: string | null; roll_no: number | null }[]>(
+      `SELECT section_id, roll_no FROM enrollments
+        WHERE session_id = $1::uuid AND student_id = $2::uuid`,
+      NEW_SESSION,
+      studentId(1),
+    );
+
+    expect(placed[0]?.section_id).toBeNull();
+    expect(placed[0]?.roll_no).toBeNull();
+  });
+
+  it('creates nothing extra on a second run', async () => {
+    await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111609',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+    });
+
+    const again = await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111610',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+    });
+
+    expect(again.data?.sectionsCreated).toBe(0);
+    expect(await sectionsOf(NEW_SESSION)).toHaveLength(2);
   });
 });
 

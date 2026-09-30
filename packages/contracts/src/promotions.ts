@@ -190,6 +190,14 @@ export const promotionResultSchema = z.object({
    * already handled" rather than failing on a unique constraint.
    */
   skipped: z.int().min(0),
+  /**
+   * Sections created in the new session because a class was receiving
+   * students — Grade 4 section A, when last year only Grade 3 had one.
+   *
+   * Reported so a school can see the structure came across rather than
+   * wondering why it did not have to rebuild it.
+   */
+  sectionsCreated: z.int().min(0),
   /** True when this key had already run and the result is the earlier one. */
   replayed: z.boolean(),
 });
