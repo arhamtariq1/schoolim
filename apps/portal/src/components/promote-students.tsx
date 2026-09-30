@@ -47,7 +47,14 @@ import { mutate } from '@/lib/mutate';
  * it.
  */
 
-const NOT_CARRIED = 'none';
+/**
+ * The two non-class choices in the dropdown.
+ *
+ * Sentinel strings rather than a second piece of state, because a `Select` has
+ * one value and "where does this class go" genuinely has one answer.
+ */
+const GRADUATE = 'graduate';
+const LEAVE_ALONE = 'none';
 
 export interface PromoteStudentsProps {
   readonly sessions: readonly AcademicSession[];
@@ -107,7 +114,11 @@ export function PromoteStudents({ sessions, canConfigure, error }: PromoteStuden
           Object.fromEntries(
             body.data.classes.map((row) => [
               row.classLevelId,
-              row.suggestedToClassLevelId ?? NOT_CARRIED,
+              // The top class defaults to passing out, whatever the school
+              // calls it — O3, Grade 10, or Grade 5 at a primary school.
+              row.suggestedAction === 'GRADUATE'
+                ? GRADUATE
+                : (row.suggestedToClassLevelId ?? LEAVE_ALONE),
             ]),
           ),
         );
@@ -128,14 +139,26 @@ export function PromoteStudents({ sessions, canConfigure, error }: PromoteStuden
     };
   }, [fromId, toId]);
 
-  const moves: ClassMove[] = Object.entries(targets).map(([fromClassLevelId, target]) => ({
-    fromClassLevelId,
-    toClassLevelId: target === NOT_CARRIED ? null : target,
-  }));
+  // A class left alone sends nothing at all: the server treats an absent class
+  // as "do not touch these children", so there is no third action to encode.
+  const moves: ClassMove[] = Object.entries(targets).flatMap<ClassMove>(
+    ([fromClassLevelId, target]) => {
+      if (target === LEAVE_ALONE) {
+        return [];
+      }
+      return target === GRADUATE
+        ? [{ fromClassLevelId, action: 'GRADUATE' }]
+        : [{ fromClassLevelId, action: 'MOVE', toClassLevelId: target }];
+    },
+  );
 
-  const willMove = (preview?.classes ?? [])
-    .filter((row) => (targets[row.classLevelId] ?? NOT_CARRIED) !== NOT_CARRIED)
-    .reduce((sum, row) => sum + row.toMove, 0);
+  const counted = (predicate: (target: string) => boolean): number =>
+    (preview?.classes ?? [])
+      .filter((row) => predicate(targets[row.classLevelId] ?? LEAVE_ALONE))
+      .reduce((sum, row) => sum + row.toMove, 0);
+
+  const willMove = counted((target) => target !== LEAVE_ALONE && target !== GRADUATE);
+  const willGraduate = counted((target) => target === GRADUATE);
 
   async function run(): Promise<void> {
     if (isRunning || preview === undefined) {
@@ -226,7 +249,7 @@ export function PromoteStudents({ sessions, canConfigure, error }: PromoteStuden
                     </td>
                     <td className="px-4 py-2">
                       <Select
-                        value={targets[row.classLevelId] ?? NOT_CARRIED}
+                        value={targets[row.classLevelId] ?? LEAVE_ALONE}
                         onValueChange={(next) => {
                           setTargets((current) => ({ ...current, [row.classLevelId]: next }));
                         }}
@@ -253,7 +276,12 @@ export function PromoteStudents({ sessions, canConfigure, error }: PromoteStuden
                               {row.suggestedToClassName}
                             </SelectItem>
                           )}
-                          <SelectItem value={NOT_CARRIED}>Not carried forward</SelectItem>
+                          {/* Passing out and not having decided yet are two
+                              different statements, so they are two options. The
+                              first ends the child's time at the school; the
+                              second does nothing at all. */}
+                          <SelectItem value={GRADUATE}>Passed out (leaves the school)</SelectItem>
+                          <SelectItem value={LEAVE_ALONE}>Leave them for now</SelectItem>
                         </SelectContent>
                       </Select>
                     </td>
@@ -264,25 +292,37 @@ export function PromoteStudents({ sessions, canConfigure, error }: PromoteStuden
           </section>
 
           <Note>
-            Nobody is marked as having left, and no fees change. Students already enrolled in{' '}
-            {preview.to.name} are skipped, so this is safe to run again.
+            No fees change, and students already enrolled in {preview.to.name} are skipped — so this
+            is safe to run again.
+            {willGraduate === 0
+              ? null
+              : ` ${String(willGraduate)} will pass out: their record becomes Graduated and they drop off every later register and fee run.`}
           </Note>
 
           {done === undefined ? null : (
             <p className="rounded-md border border-success/30 bg-success/10 p-3 text-sm text-foreground">
               {done.promoted} moved into {preview.to.name}
               {done.repeated === 0 ? '' : `, ${String(done.repeated)} repeating`}
+              {done.graduated === 0 ? '' : `, ${String(done.graduated)} passed out`}
               {done.skipped === 0 ? '' : `, ${String(done.skipped)} skipped`}. Assign their sections
               next, then generate fees for the new session.
             </p>
           )}
 
           {canConfigure ? (
-            <Button onClick={() => void run()} isPending={isRunning} disabled={willMove === 0}>
+            <Button
+              onClick={() => void run()}
+              isPending={isRunning}
+              disabled={willMove + willGraduate === 0}
+            >
               <ForwardIcon className={ICON_SIZE.inline} aria-hidden />
-              {willMove === 0
-                ? 'Nobody to move'
-                : `Move ${String(willMove)} into ${preview.to.name}`}
+              {willMove + willGraduate === 0
+                ? 'Nothing to do'
+                : willMove === 0
+                  ? `Pass out ${String(willGraduate)}`
+                  : `Move ${String(willMove)} into ${preview.to.name}${
+                      willGraduate === 0 ? '' : `, pass out ${String(willGraduate)}`
+                    }`}
             </Button>
           ) : (
             <p className="text-sm text-muted-foreground">

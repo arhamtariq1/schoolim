@@ -237,9 +237,17 @@ async function rollOf(sessionId: string): Promise<{ student_id: string; class_le
   );
 }
 
-const MOVE_EVERYTHING = [
-  { fromClassLevelId: GRADE_1, toClassLevelId: GRADE_2 },
-  { fromClassLevelId: GRADE_3, toClassLevelId: null },
+/**
+ * The ordinary rollover: everyone up one, and the top form passes out.
+ *
+ * Grade 3 is the top class here, which is the whole of what makes it the
+ * graduating one. The same shape covers O3 at an O-Level school, Grade 10 at a
+ * matriculation one, and Grade 5 at a primary — the product never learns which
+ * system it is looking at.
+ */
+const ORDINARY_ROLLOVER = [
+  { fromClassLevelId: GRADE_1, action: 'MOVE' as const, toClassLevelId: GRADE_2 },
+  { fromClassLevelId: GRADE_3, action: 'GRADUATE' as const },
 ];
 
 describe('the preview', () => {
@@ -290,14 +298,15 @@ describe('running it', () => {
       idempotencyKey: '11111111-1111-4111-8111-111111111101',
       fromSessionId: OLD_SESSION,
       toSessionId: NEW_SESSION,
-      moves: MOVE_EVERYTHING,
+      moves: ORDINARY_ROLLOVER,
     });
 
     // 201: a promotion run creates a job run, and Nest answers POST that way.
     expect(status).toBe(201);
     expect(data?.promoted).toBe(10);
-    // Grade 3 leads nowhere, so its five are not carried forward.
-    expect(data?.skipped).toBe(5);
+    // Grade 3 is the top form, so its five pass out rather than being skipped.
+    expect(data?.graduated).toBe(5);
+    expect(data?.skipped).toBe(0);
 
     const roll = await rollOf(NEW_SESSION);
     // Ten promoted into Grade 2, plus the two already admitted.
@@ -312,7 +321,7 @@ describe('running it', () => {
       idempotencyKey: '11111111-1111-4111-8111-111111111102',
       fromSessionId: OLD_SESSION,
       toSessionId: NEW_SESSION,
-      moves: MOVE_EVERYTHING,
+      moves: ORDINARY_ROLLOVER,
     });
 
     const statuses = await admin.$queryRawUnsafe<{ status: string; n: bigint }[]>(
@@ -322,20 +331,21 @@ describe('running it', () => {
     );
 
     expect(Object.fromEntries(statuses.map((row) => [row.status, Number(row.n)]))).toEqual({
-      // The five in the top class were never touched.
-      ENROLLED: 5,
-      PROMOTED: 10,
+      // Ten moved up and five passed out. Graduating *promotes* an enrolment
+      // out of its class — the enrolment's own vocabulary, not the student's,
+      // and the same one `StudentsService.setStatus` already uses.
+      PROMOTED: 15,
     });
   });
 
   it('never marks anybody as having left', async () => {
-    // Leaving is recorded on the student by somebody who meant it, not as a
-    // side effect of a screen that moves the whole school.
+    // A child who was not carried forward is not a child who left. Leaving is
+    // recorded on the student by somebody who meant it.
     await promote({
       idempotencyKey: '11111111-1111-4111-8111-111111111103',
       fromSessionId: OLD_SESSION,
       toSessionId: NEW_SESSION,
-      moves: MOVE_EVERYTHING,
+      moves: [{ fromClassLevelId: GRADE_1, action: 'MOVE', toClassLevelId: GRADE_2 }],
     });
 
     const left = await admin.$queryRawUnsafe<{ n: bigint }[]>(
@@ -350,7 +360,7 @@ describe('running it', () => {
       idempotencyKey: '11111111-1111-4111-8111-111111111104',
       fromSessionId: OLD_SESSION,
       toSessionId: NEW_SESSION,
-      moves: MOVE_EVERYTHING,
+      moves: ORDINARY_ROLLOVER,
       repeat: [studentId(1)],
     });
 
@@ -373,7 +383,7 @@ describe('running it', () => {
       idempotencyKey: '11111111-1111-4111-8111-111111111105',
       fromSessionId: OLD_SESSION,
       toSessionId: NEW_SESSION,
-      moves: MOVE_EVERYTHING,
+      moves: ORDINARY_ROLLOVER,
       exclude: [studentId(2)],
     });
 
@@ -393,7 +403,7 @@ describe('running it', () => {
       idempotencyKey: '11111111-1111-4111-8111-111111111106',
       fromSessionId: OLD_SESSION,
       toSessionId: NEW_SESSION,
-      moves: [{ fromClassLevelId: GRADE_3, toClassLevelId: GRADE_1 }],
+      moves: [{ fromClassLevelId: GRADE_3, action: 'MOVE', toClassLevelId: GRADE_1 }],
     });
 
     // Grade 1 was left out of `moves`, so its ten stay where they are.
@@ -406,7 +416,7 @@ describe('running it', () => {
       idempotencyKey: '11111111-1111-4111-8111-111111111107',
       fromSessionId: OLD_SESSION,
       toSessionId: NEW_SESSION,
-      moves: MOVE_EVERYTHING,
+      moves: ORDINARY_ROLLOVER,
     });
 
     const entries = await admin.$queryRawUnsafe<{ after: unknown }[]>(
@@ -420,6 +430,173 @@ describe('running it', () => {
   });
 });
 
+/**
+ * The top of the school.
+ *
+ * Whatever a school calls its last class — O3, Grade 10, Grade 5 at a primary —
+ * it is the one with no class above it, and that single rule is the whole of
+ * the product's knowledge of school structures. Nothing here knows what
+ * "O-Level" or "matriculation" means, and nothing needs to.
+ */
+describe('passing out', () => {
+  const KEY = '11111111-1111-4111-8111-111111111501';
+
+  it('marks the student GRADUATED and ends their enrolment', async () => {
+    await promote({
+      idempotencyKey: KEY,
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+    });
+
+    const leaver = await admin.$queryRawUnsafe<{ status: string; left_on: Date | null }[]>(
+      `SELECT status, left_on FROM students WHERE id = $1::uuid`,
+      studentId(11),
+    );
+
+    expect(leaver[0]?.status).toBe('GRADUATED');
+    // The outgoing year's last day, not today: a rollover run in August must
+    // not record thirty children as having left in August.
+    expect(leaver[0]?.left_on?.toISOString().slice(0, 10)).toBe('2026-06-30');
+
+    const enrolment = await admin.$queryRawUnsafe<{ status: string; ended_on: Date | null }[]>(
+      `SELECT status, ended_on FROM enrollments WHERE session_id = $1::uuid AND student_id = $2::uuid`,
+      OLD_SESSION,
+      studentId(11),
+    );
+    expect(enrolment[0]?.status).toBe('PROMOTED');
+    expect(enrolment[0]?.ended_on?.toISOString().slice(0, 10)).toBe('2026-06-30');
+  });
+
+  it('does not enrol a leaver in the new session', async () => {
+    await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111502',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+    });
+
+    const roll = await rollOf(NEW_SESSION);
+    expect(roll.map((row) => row.student_id)).not.toContain(studentId(11));
+  });
+
+  it('holds back a repeating student rather than passing them out with their year', async () => {
+    // The case that would be a quiet disaster: a child kept down in the top
+    // form, marked as having finished the school alongside the classmates they
+    // were held back from.
+    await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111503',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+      repeat: [studentId(11)],
+    });
+
+    const student = await admin.$queryRawUnsafe<{ status: string }[]>(
+      `SELECT status FROM students WHERE id = $1::uuid`,
+      studentId(11),
+    );
+    expect(student[0]?.status).toBe('ACTIVE');
+
+    const roll = await rollOf(NEW_SESSION);
+    expect(roll.find((row) => row.student_id === studentId(11))?.class_level_id).toBe(GRADE_3);
+  });
+
+  it('leaves an excluded top-form student entirely alone', async () => {
+    await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111504',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+      exclude: [studentId(12)],
+    });
+
+    const student = await admin.$queryRawUnsafe<{ status: string }[]>(
+      `SELECT status FROM students WHERE id = $1::uuid`,
+      studentId(12),
+    );
+    expect(student[0]?.status).toBe('ACTIVE');
+  });
+
+  it('does not pass out a class that was only left undecided', async () => {
+    // An absent class means "do not touch these children". A year group nobody
+    // has decided about is not a year group that has finished.
+    await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111505',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: [{ fromClassLevelId: GRADE_1, action: 'MOVE', toClassLevelId: GRADE_2 }],
+    });
+
+    const graduated = await admin.$queryRawUnsafe<{ n: bigint }[]>(
+      `SELECT count(*) AS n FROM students WHERE school_id = $1::uuid AND status = 'GRADUATED'`,
+      SCHOOL_A,
+    );
+    expect(Number(graduated[0]?.n)).toBe(0);
+  });
+
+  it('cannot pass the same child out twice', async () => {
+    await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111506',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+    });
+
+    // A fresh key over an already-rolled school. Their enrolment is no longer
+    // ENROLLED, so the batch query cannot see them at all.
+    const again = await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111507',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+    });
+
+    expect(again.data?.graduated).toBe(0);
+  });
+
+  it('keeps a leaver out of every later fee run', async () => {
+    // The reason this matters at all: a passed-out child who stays ACTIVE is a
+    // child whose family keeps receiving vouchers.
+    await promote({
+      idempotencyKey: '11111111-1111-4111-8111-111111111508',
+      fromSessionId: OLD_SESSION,
+      toSessionId: NEW_SESSION,
+      moves: ORDINARY_ROLLOVER,
+    });
+
+    const active = await admin.$queryRawUnsafe<{ n: bigint }[]>(
+      `SELECT count(*) AS n FROM students WHERE school_id = $1::uuid AND status = 'ACTIVE'`,
+      SCHOOL_A,
+    );
+    // Seventeen on the roll, five passed out.
+    expect(Number(active[0]?.n)).toBe(12);
+  });
+});
+
+describe('the top class, whatever a school calls it', () => {
+  it('suggests passing out from the highest class the school created', async () => {
+    const { data } = await preview();
+
+    // Grade 3 here. At an O-Level school it is O3; at a matriculation school
+    // Grade 10; at a primary school that stops at Grade 5, Grade 5. The rule
+    // is the same one in every case.
+    const top = data?.classes.find((row) => row.classLevelId === GRADE_3);
+    expect(top?.suggestedAction).toBe('GRADUATE');
+    expect(top?.suggestedToClassLevelId).toBeNull();
+
+    const middle = data?.classes.find((row) => row.classLevelId === GRADE_1);
+    expect(middle?.suggestedAction).toBe('MOVE');
+  });
+
+  it('counts the leavers separately from the movers', async () => {
+    const { data } = await preview();
+
+    expect(data?.totalToMove).toBe(10);
+    expect(data?.totalToGraduate).toBe(5);
+  });
+});
+
 describe('pressing it twice', () => {
   const KEY = '11111111-1111-4111-8111-111111111201';
 
@@ -428,7 +605,7 @@ describe('pressing it twice', () => {
       idempotencyKey: KEY,
       fromSessionId: OLD_SESSION,
       toSessionId: NEW_SESSION,
-      moves: MOVE_EVERYTHING,
+      moves: ORDINARY_ROLLOVER,
     };
 
     const first = await promote(body);
@@ -451,14 +628,14 @@ describe('pressing it twice', () => {
       idempotencyKey: '11111111-1111-4111-8111-111111111202',
       fromSessionId: OLD_SESSION,
       toSessionId: NEW_SESSION,
-      moves: MOVE_EVERYTHING,
+      moves: ORDINARY_ROLLOVER,
     });
 
     const again = await promote({
       idempotencyKey: '11111111-1111-4111-8111-111111111203',
       fromSessionId: OLD_SESSION,
       toSessionId: NEW_SESSION,
-      moves: MOVE_EVERYTHING,
+      moves: ORDINARY_ROLLOVER,
     });
 
     expect(again.status).toBe(201);
@@ -483,7 +660,7 @@ describe('what it refuses', () => {
       idempotencyKey: '11111111-1111-4111-8111-111111111302',
       fromSessionId: OLD_SESSION,
       toSessionId: NEW_SESSION,
-      moves: MOVE_EVERYTHING,
+      moves: ORDINARY_ROLLOVER,
       repeat: [studentId(1)],
       exclude: [studentId(1)],
     });
@@ -496,7 +673,7 @@ describe('what it refuses', () => {
         idempotencyKey: '11111111-1111-4111-8111-111111111303',
         fromSessionId: OLD_SESSION,
         toSessionId: NEW_SESSION,
-        moves: MOVE_EVERYTHING,
+        moves: ORDINARY_ROLLOVER,
       },
       teacherA,
     );
@@ -510,7 +687,7 @@ describe('what it refuses', () => {
       idempotencyKey: '11111111-1111-4111-8111-111111111304',
       fromSessionId: OLD_SESSION,
       toSessionId: NEW_SESSION,
-      moves: MOVE_EVERYTHING,
+      moves: ORDINARY_ROLLOVER,
       alsoBillThem: true,
     });
     expect(status).toBe(400);
@@ -523,7 +700,7 @@ describe('tenant isolation', () => {
       idempotencyKey: '11111111-1111-4111-8111-111111111401',
       fromSessionId: OLD_SESSION,
       toSessionId: B_SESSION,
-      moves: MOVE_EVERYTHING,
+      moves: ORDINARY_ROLLOVER,
     });
 
     // A foreign key check does not apply RLS, so this has to be refused by
@@ -539,7 +716,7 @@ describe('tenant isolation', () => {
       idempotencyKey: '11111111-1111-4111-8111-111111111402',
       fromSessionId: OLD_SESSION,
       toSessionId: NEW_SESSION,
-      moves: MOVE_EVERYTHING,
+      moves: ORDINARY_ROLLOVER,
     });
 
     expect((await preview(OLD_SESSION, NEW_SESSION, ownerB, HOST_B)).status).toBe(404);

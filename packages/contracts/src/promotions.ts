@@ -32,17 +32,40 @@ import { idSchema } from './primitives';
  * screen, for the same reason this one exists.
  */
 
-/** What happens to one class's worth of children. */
-export const classMoveSchema = z.object({
-  fromClassLevelId: idSchema,
-  /**
-   * Where they go. Null means "not carried forward" — the top class of a
-   * school, or a class being retired.
-   */
-  toClassLevelId: idSchema.nullable(),
-});
+/**
+ * What happens to one class's worth of children.
+ *
+ * Two outcomes, and a class left out of the list entirely is a third:
+ *
+ * - `MOVE` — into the named class. The same class means they repeat it.
+ * - `GRADUATE` — they have finished the school. The student becomes
+ *   `GRADUATED` and their enrolment ends, which is the same vocabulary the
+ *   student record already uses when somebody marks one child as passed out by
+ *   hand.
+ * - **Absent** — nothing happens to them at all, which is what a school wants
+ *   for a class it has not decided about yet.
+ *
+ * Graduating is deliberately not "no target class". A school that has not made
+ * up its mind and a school that is passing thirty children out of the top form
+ * are saying different things, and a run that treated them the same would
+ * either strand a year group or mark it as finished on a shrug.
+ */
+export const classMoveSchema = z.discriminatedUnion('action', [
+  z.object({
+    fromClassLevelId: idSchema,
+    action: z.literal('MOVE'),
+    toClassLevelId: idSchema,
+  }),
+  z.object({
+    fromClassLevelId: idSchema,
+    action: z.literal('GRADUATE'),
+  }),
+]);
 
 export type ClassMove = z.infer<typeof classMoveSchema>;
+
+export const classActionSchema = z.enum(['MOVE', 'GRADUATE']);
+export type ClassAction = z.infer<typeof classActionSchema>;
 
 export const promotionPreviewQuerySchema = z.object({
   fromSessionId: idSchema,
@@ -69,6 +92,20 @@ export const promotionClassSchema = z.object({
   /** The class above this one, by `numericOrder`. Null at the top. */
   suggestedToClassLevelId: idSchema.nullable(),
   suggestedToClassName: z.string().nullable(),
+  /**
+   * What the screen fills in: `MOVE` when there is a class above, `GRADUATE`
+   * when there is not.
+   *
+   * That single rule covers every structure a school can have, because it reads
+   * the classes the school actually created. O-Level ends at O3, matriculation
+   * at Grade 10, a primary school at Grade 5 — in each case the top class is
+   * the one with no class above it, and nothing in the product has to know
+   * which system it is looking at.
+   *
+   * It is a suggestion. A school that created classes it does not teach can say
+   * otherwise on any row.
+   */
+  suggestedAction: classActionSchema,
 });
 
 export type PromotionClass = z.infer<typeof promotionClassSchema>;
@@ -80,6 +117,8 @@ export const promotionPreviewSchema = z.object({
   /** Across every class, so the button can say what it is about to do. */
   totalToMove: z.int().min(0),
   totalAlreadyThere: z.int().min(0),
+  /** How many would pass out, under the suggested actions. */
+  totalToGraduate: z.int().min(0),
 });
 
 export type PromotionPreview = z.infer<typeof promotionPreviewSchema>;
@@ -136,6 +175,14 @@ export const promotionResultSchema = z.object({
   /** Enrolled into the new session by this run. */
   promoted: z.int().min(0),
   repeated: z.int().min(0),
+  /**
+   * Passed out of the school.
+   *
+   * Their student record becomes `GRADUATED` and their enrolment ends, so no
+   * later fee run, register or count includes them — which is the whole point,
+   * and the reason this is a separate number from `skipped`.
+   */
+  graduated: z.int().min(0),
   /**
    * Already in the new session, so nothing was done for them.
    *

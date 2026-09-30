@@ -142,10 +142,8 @@ export class PromotionService {
         // nobody in either session is noise on a screen that is already a list
         // of every class the school runs.
         .filter((level) => outgoingIds.has(level.id) || alreadyByClass.has(level.id))
-        .map((level, index, shown) => {
+        .map((level) => {
           const next = nextClass(classes, level.numericOrder);
-          void index;
-          void shown;
 
           return {
             classLevelId: level.id,
@@ -155,6 +153,9 @@ export class PromotionService {
             alreadyThere: alreadyByClass.get(level.id) ?? 0,
             suggestedToClassLevelId: next?.id ?? null,
             suggestedToClassName: next?.name ?? null,
+            // No class above means this is the top of the school, whatever the
+            // school calls it — O3, Grade 10 or Grade 5.
+            suggestedAction: next === undefined ? ('GRADUATE' as const) : ('MOVE' as const),
           };
         });
 
@@ -162,8 +163,13 @@ export class PromotionService {
         from: { id: from.id, name: from.name },
         to: { id: to.id, name: to.name },
         classes: rows,
-        totalToMove: rows.reduce((sum, row) => sum + row.toMove, 0),
+        totalToMove: rows
+          .filter((row) => row.suggestedAction === 'MOVE')
+          .reduce((sum, row) => sum + row.toMove, 0),
         totalAlreadyThere: rows.reduce((sum, row) => sum + row.alreadyThere, 0),
+        totalToGraduate: rows
+          .filter((row) => row.suggestedAction === 'GRADUATE')
+          .reduce((sum, row) => sum + row.toMove, 0),
       };
     });
   }
@@ -175,7 +181,7 @@ export class PromotionService {
     }
 
     try {
-      const totals = await this.move(input, claimed.jobRunId);
+      const totals = await this.move(input, claimed.jobRunId, claimed.finishedOn);
 
       await this.prisma.tenant(async (tx) => {
         await tx.jobRun.update({
@@ -227,12 +233,14 @@ export class PromotionService {
   private async move(
     input: RunPromotion,
     jobRunId: string,
-  ): Promise<{ promoted: number; repeated: number; skipped: number }> {
-    const moves = new Map(input.moves.map((move) => [move.fromClassLevelId, move.toClassLevelId]));
+    /** The outgoing year's last day: when a leaver actually left. */
+    finishedOn: Date,
+  ): Promise<{ promoted: number; repeated: number; graduated: number; skipped: number }> {
+    const actions = new Map(input.moves.map((move) => [move.fromClassLevelId, move] as const));
     const repeating = new Set(input.repeat);
     const excluded = new Set(input.exclude);
 
-    const totals = { promoted: 0, repeated: 0, skipped: 0 };
+    const totals = { promoted: 0, repeated: 0, graduated: 0, skipped: 0 };
     let cursor: string | undefined;
 
     for (;;) {
@@ -276,13 +284,31 @@ export class PromotionService {
             continue;
           }
 
+          // Repeating beats everything the class was told to do. A child held
+          // back in the top form must not be passed out with their year.
           const repeats = repeating.has(enrolment.studentId);
-          const target = repeats ? enrolment.classLevelId : moves.get(enrolment.classLevelId);
+          const action = actions.get(enrolment.classLevelId);
 
-          if (target === undefined || target === null) {
-            // A class nobody was asked to move, or one that leads nowhere —
-            // the top of the school. Their old enrolment is left exactly as it
-            // is; leaving is not this run's decision to make.
+          if (!repeats && action === undefined) {
+            // A class nobody was asked to do anything with. Left exactly as it
+            // is — an undecided year group is not a finished one.
+            totals.skipped += 1;
+            continue;
+          }
+
+          if (!repeats && action?.action === 'GRADUATE') {
+            await this.graduate(tx, enrolment, finishedOn);
+            totals.graduated += 1;
+            continue;
+          }
+
+          const target = repeats
+            ? enrolment.classLevelId
+            : action?.action === 'MOVE'
+              ? action.toClassLevelId
+              : undefined;
+
+          if (target === undefined) {
             totals.skipped += 1;
             continue;
           }
@@ -318,7 +344,8 @@ export class PromotionService {
           where: { id: jobRunId },
           data: {
             cursor: cursor ?? null,
-            processed: totals.promoted + totals.repeated + totals.skipped,
+            processed:
+              totals.promoted + totals.repeated + totals.graduated + totals.skipped,
           },
         });
 
@@ -333,6 +360,37 @@ export class PromotionService {
   }
 
   /**
+   * A child who has finished the school.
+   *
+   * Exactly what `StudentsService.setStatus` writes when somebody marks one
+   * child passed out by hand — the same two rows, the same two dates, the same
+   * two vocabularies. A second definition of "graduated" is how a school ends
+   * up with leavers who still appear in a fee run because they left through the
+   * wrong door.
+   *
+   * `endedOn` and `leftOn` are the outgoing year's last day rather than today:
+   * a rollover run in August must not record thirty children as having left in
+   * August when they finished in June.
+   */
+  private async graduate(
+    tx: TransactionClient,
+    enrolment: { id: string; studentId: string },
+    finishedOn: Date,
+  ): Promise<void> {
+    await tx.enrollment.update({
+      where: { id: enrolment.id },
+      // The enrolment's own vocabulary, which is not the student's: graduating
+      // *promotes* the enrolment out of its class. There is no COMPLETED here.
+      data: { status: 'PROMOTED', endedOn: finishedOn },
+    });
+
+    await tx.student.update({
+      where: { id: enrolment.studentId },
+      data: { status: 'GRADUATED', leftOn: finishedOn },
+    });
+  }
+
+  /**
    * Take the idempotency key, or hand back what the key already produced.
    *
    * The unique index on `(school_id, kind, idempotency_key)` is what makes this
@@ -341,12 +399,15 @@ export class PromotionService {
    */
   private async claimRun(input: RunPromotion): Promise<{
     jobRunId: string;
+    /** The outgoing session's last day, for anybody leaving. */
+    finishedOn: Date;
     replay?: Omit<PromotionResult, 'jobRunId' | 'replayed'>;
   }> {
     return this.prisma.tenant(async (tx) => {
       // Both sessions have to exist and belong to this school before a job run
       // is recorded against them, or a typo leaves a RUNNING row behind.
-      await readSessions(tx, input.fromSessionId, input.toSessionId);
+      const { from } = await readSessions(tx, input.fromSessionId, input.toSessionId);
+      const finishedOn = from.endDate;
 
       const prior = await tx.jobRun.findFirst({
         where: { kind: JOB_KIND, idempotencyKey: input.idempotencyKey },
@@ -364,14 +425,17 @@ export class PromotionService {
           const result = prior.result as {
             promoted?: number;
             repeated?: number;
+            graduated?: number;
             skipped?: number;
           } | null;
 
           return {
             jobRunId: prior.id,
+            finishedOn,
             replay: {
               promoted: result?.promoted ?? 0,
               repeated: result?.repeated ?? 0,
+              graduated: result?.graduated ?? 0,
               skipped: result?.skipped ?? 0,
             },
           };
@@ -394,7 +458,7 @@ export class PromotionService {
         select: { id: true },
       });
 
-      return { jobRunId: run.id };
+      return { jobRunId: run.id, finishedOn };
     });
   }
 
@@ -429,10 +493,13 @@ async function readSessions(
   tx: TransactionClient,
   fromSessionId: string,
   toSessionId: string,
-): Promise<{ from: { id: string; name: string }; to: { id: string; name: string } }> {
+): Promise<{
+  from: { id: string; name: string; endDate: Date };
+  to: { id: string; name: string };
+}> {
   const sessions = await tx.academicSession.findMany({
     where: { id: { in: [fromSessionId, toSessionId] } },
-    select: { id: true, name: true },
+    select: { id: true, name: true, endDate: true },
   });
 
   const from = sessions.find((session) => session.id === fromSessionId);
