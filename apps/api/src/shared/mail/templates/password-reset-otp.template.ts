@@ -41,7 +41,7 @@ export function passwordResetOtpTemplate(input: {
   <meta name="supported-color-schemes" content="light" />
   <title>${escapeHtml(subject)}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f0f3f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1d21;-webkit-font-smoothing:antialiased;">
+<body style="margin:0;padding:0;background-color:#f0f3f5;font-family:'Noto Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1d21;-webkit-font-smoothing:antialiased;">
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f0f3f5;">
     <tr>
       <td align="center" style="padding:40px 16px;">

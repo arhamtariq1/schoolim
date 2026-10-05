@@ -2,9 +2,12 @@
 
 import { resetPasswordRequestSchema, ROUTES } from '@ilm/contracts';
 import { Button, Field, PasswordInput, useToast } from '@ilm/ui';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+
+import { AuthFormActions } from './auth-form-actions';
+import { AuthInlineLink } from './auth-inline-link';
+import { PasswordRequirements } from './password-requirements';
 
 /**
  * Choose a new password after the reset OTP succeeds.
@@ -97,7 +100,7 @@ export function NewPasswordForm({
         void submit(event);
       }}
       noValidate
-      className="space-y-4"
+      className="space-y-3.5"
     >
       {email === undefined ? null : (
         <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
@@ -105,24 +108,22 @@ export function NewPasswordForm({
         </p>
       )}
 
-      <Field
-        label="New password"
-        error={fieldErrors['password']}
-        hint="At least 8 characters, with upper and lower case, a number and a symbol — e.g. Abde@112."
-        required
-      >
-        <PasswordInput
-          name="password"
-          autoComplete="new-password"
-          autoFocus
-          placeholder="Create a password"
-          value={password}
-          disabled={isPending}
-          onChange={(event) => {
-            setPassword(event.target.value);
-          }}
-        />
-      </Field>
+      <div className="space-y-1.5">
+        <Field label="New password" error={fieldErrors['password']} required>
+          <PasswordInput
+            name="password"
+            autoComplete="new-password"
+            autoFocus
+            placeholder="Create a password"
+            value={password}
+            disabled={isPending}
+            onChange={(event) => {
+              setPassword(event.target.value);
+            }}
+          />
+        </Field>
+        <PasswordRequirements password={password} />
+      </div>
 
       <Field label="Confirm password" error={fieldErrors['confirm']} required>
         <PasswordInput
@@ -137,15 +138,17 @@ export function NewPasswordForm({
         />
       </Field>
 
-      <Button type="submit" isPending={isPending} className="w-full" size="touch">
-        {isPending ? 'Saving…' : 'Save new password'}
-      </Button>
-
-      <p className="text-center text-sm text-muted-foreground">
-        <Link href="/login" className="font-medium text-primary hover:underline">
-          Back to sign in
-        </Link>
-      </p>
+      <AuthFormActions
+        footer={
+          <p className="text-center text-sm text-muted-foreground">
+            <AuthInlineLink href="/login">Back to sign in</AuthInlineLink>
+          </p>
+        }
+      >
+        <Button type="submit" isPending={isPending} className="w-full" size="touch">
+          {isPending ? 'Saving…' : 'Save new password'}
+        </Button>
+      </AuthFormActions>
     </form>
   );
 }

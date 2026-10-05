@@ -6,21 +6,8 @@ import { Toaster as SonnerToaster, toast as sonner } from 'sonner';
 /**
  * Toasts, on **sonner** — the library docs/16 §2 locks in.
  *
- * ## Placement and surface
- *
- * **Top right**, minimal card: white (`bg-card`), thin border, soft shadow,
- * status icon on the left, dismiss control on the right. Keeps the centre of
- * auth and work screens clear.
- *
- * ## Close control
- *
- * Sonner paints the dismiss button `position: absolute`, which is why long
- * titles ran under the ×. The styles below put it back in the flex row so the
- * text and the button never share the same pixels.
- *
- * ## Duration
- *
- * Every toast disappears after three seconds.
+ * **Top center**, title only (no description line). Icon, left-aligned copy,
+ * dismiss — same row as before.
  */
 
 export type ToastTone = 'success' | 'error' | 'warning';
@@ -40,11 +27,23 @@ export interface ToastApi {
 
 const TOAST_MS = 3_000;
 
+function push(tone: ToastTone, title: string, description?: string) {
+  const message =
+    description === undefined || description === '' ? title : `${title} — ${description}`;
+  const options = {
+    duration: TOAST_MS,
+  };
+  if (tone === 'success') {
+    sonner.success(message, options);
+  } else if (tone === 'error') {
+    sonner.error(message, options);
+  } else {
+    sonner.warning(message, options);
+  }
+}
+
 /**
  * No context, no provider lookup — sonner's `toast()` is callable anywhere.
- *
- * The hook stays because every call site uses it, and because it keeps the
- * option open of swapping the implementation again without touching them.
  */
 export function useToast(): ToastApi {
   return TOAST;
@@ -52,42 +51,24 @@ export function useToast(): ToastApi {
 
 const TOAST: ToastApi = {
   show: ({ tone, title, description }) => {
-    const options = {
-      duration: TOAST_MS,
-      ...(description === undefined ? {} : { description }),
-    };
-    if (tone === 'success') {
-      sonner.success(title, options);
-    } else if (tone === 'error') {
-      sonner.error(title, options);
-    } else {
-      sonner.warning(title, options);
-    }
+    push(tone, title, description);
   },
   success: (title, description) => {
-    TOAST.show({ tone: 'success', title, ...(description === undefined ? {} : { description }) });
+    push('success', title, description);
   },
   error: (title, description) => {
-    TOAST.show({ tone: 'error', title, ...(description === undefined ? {} : { description }) });
+    push('error', title, description);
   },
   warning: (title, description) => {
-    TOAST.show({ tone: 'warning', title, ...(description === undefined ? {} : { description }) });
+    push('warning', title, description);
   },
 };
 
-/**
- * Mounted once at the root.
- *
- * Kept named `ToastProvider` so `app/layout.tsx` did not have to change, and
- * because it still is one conceptually — it just no longer carries state.
- */
 export function ToastProvider({ children }: { children?: ReactNode }) {
   return (
     <>
       {children}
       <style>{`
-        /* Three columns: icon | copy | dismiss. Absolute close was painting
-           over the title; grid keeps each piece in its own cell. */
         [data-sonner-toast] {
           display: grid !important;
           grid-template-columns: auto minmax(0, 1fr) auto !important;
@@ -113,6 +94,14 @@ export function ToastProvider({ children }: { children?: ReactNode }) {
           max-width: 100% !important;
           padding: 0 !important;
           margin: 0 !important;
+          text-align: left !important;
+        }
+        [data-sonner-toast] [data-title] {
+          text-align: left !important;
+          width: 100% !important;
+        }
+        [data-sonner-toast] [data-description] {
+          display: none !important;
         }
         [data-sonner-toaster] [data-close-button] {
           grid-column: 3 !important;
@@ -128,6 +117,11 @@ export function ToastProvider({ children }: { children?: ReactNode }) {
           background: var(--muted) !important;
           color: var(--muted-fg) !important;
         }
+        [data-sonner-toast] [data-title],
+        [data-sonner-toast] [data-description] {
+          overflow-wrap: anywhere;
+          word-break: break-word;
+        }
         [data-sonner-toaster] [data-close-button]:hover {
           background: var(--muted) !important;
           color: var(--fg) !important;
@@ -141,25 +135,23 @@ export function ToastProvider({ children }: { children?: ReactNode }) {
         [data-sonner-toast][data-type=warning] [data-icon] {
           color: var(--warning);
         }
-        [data-sonner-toast] [data-title],
-        [data-sonner-toast] [data-description] {
-          overflow-wrap: anywhere;
-          word-break: break-word;
-        }
       `}</style>
       <SonnerToaster
-        position="top-right"
+        position="top-center"
+        expand
         closeButton
+        richColors={false}
         duration={TOAST_MS}
         offset={16}
-        gap={10}
+        gap={12}
+        visibleToasts={3}
         toastOptions={{
           duration: TOAST_MS,
           classNames: {
             toast:
               'group rounded-lg border border-border bg-card text-foreground shadow-md',
             title: 'text-sm font-normal text-foreground',
-            description: 'text-sm text-muted-foreground',
+            description: 'hidden',
             icon: 'shrink-0',
             content: 'min-w-0 flex-1',
             closeButton: 'shrink-0',

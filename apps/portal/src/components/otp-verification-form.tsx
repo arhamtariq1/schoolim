@@ -11,6 +11,8 @@ import { Button, Field, OtpInput, useToast } from '@ilm/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
+import { AuthFormActions } from './auth-form-actions';
+import { AuthInlineLink, AuthSecondaryNav } from './auth-inline-link';
 import { SIGNUP_CONTEXT } from './signup-step-gate';
 
 import { clearSignupDraft } from '@/lib/signup-draft';
@@ -164,10 +166,11 @@ export function OtpVerificationForm({
 
       const body = (await response.json()) as { data: SignupVerifyOtpResult };
       clearSignupDraft();
-      toast.success('Email confirmed', 'Opening your school portal…');
-      // Cross-host handoff (ADR-0009) — must be a full navigation so the
-      // session cookies land on the school host, not the apex.
-      window.location.assign(body.data.continueTo.continueUrl);
+      const params = new URLSearchParams({
+        verified: '1',
+        email: body.data.email,
+      });
+      router.replace(`/login?${params.toString()}`);
     } catch {
       toast.error('Could not reach the server. Check your connection and try again.');
     } finally {
@@ -263,7 +266,7 @@ export function OtpVerificationForm({
         void submit(event);
       }}
       noValidate
-      className="space-y-6"
+      className="space-y-3.5"
     >
       {email === undefined ? null : (
         <div className="rounded-lg border border-border/70 bg-muted/35 px-4 py-3">
@@ -297,7 +300,15 @@ export function OtpVerificationForm({
         />
       </Field>
 
-      <div className="space-y-4">
+      <AuthFormActions
+        nav={
+          <AuthSecondaryNav
+            left={<AuthInlineLink href="/login">Sign in</AuthInlineLink>}
+            right={<AuthInlineLink href="/signup">Create account</AuthInlineLink>}
+          />
+        }
+        showDivider={false}
+      >
         <Button
           type="submit"
           isPending={isPending}
@@ -307,8 +318,9 @@ export function OtpVerificationForm({
         >
           {isPending ? 'Verifying…' : 'Verify code'}
         </Button>
+      </AuthFormActions>
 
-        <p className="text-center text-sm text-muted-foreground">
+      <p className="text-center text-sm text-muted-foreground">
           {cooldownSeconds > 0 ? (
             <>
               Didn&apos;t get it?{' '}
@@ -332,7 +344,6 @@ export function OtpVerificationForm({
             </>
           )}
         </p>
-      </div>
     </form>
   );
 }

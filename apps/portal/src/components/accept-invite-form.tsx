@@ -5,6 +5,10 @@ import { Button, Field, PasswordInput, useToast } from '@ilm/ui';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
+import { AuthFormActions } from './auth-form-actions';
+import { AuthInlineLink, AuthSecondaryNav } from './auth-inline-link';
+import { PasswordRequirements } from './password-requirements';
+
 /**
  * "Set your password" — the other end of a staff invitation.
  *
@@ -100,7 +104,7 @@ export function AcceptInviteForm({
         void submit(event);
       }}
       noValidate
-      className="space-y-5"
+      className="space-y-3.5"
     >
       <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
         Setting up <span className="font-medium text-foreground">{email}</span>
@@ -115,22 +119,20 @@ export function AcceptInviteForm({
         </p>
       )}
 
-      <Field
-        label="Choose a password"
-        hint="At least 8 characters, with upper and lower case, a number and a symbol — e.g. Abde@112."
-        error={fieldErrors['password']}
-        required
-      >
-        <PasswordInput
-          autoComplete="new-password"
-          autoFocus
-          placeholder="Create a password"
-          value={password}
-          onChange={(event) => {
-            setPassword(event.target.value);
-          }}
-        />
-      </Field>
+      <div className="space-y-1.5">
+        <Field label="Choose a password" error={fieldErrors['password']} required>
+          <PasswordInput
+            autoComplete="new-password"
+            autoFocus
+            placeholder="Create a password"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+            }}
+          />
+        </Field>
+        <PasswordRequirements password={password} />
+      </div>
 
       <Field label="Confirm password" error={fieldErrors['confirm']} required>
         <PasswordInput
@@ -143,9 +145,23 @@ export function AcceptInviteForm({
         />
       </Field>
 
-      <Button type="submit" isPending={isPending} className="w-full" size="touch">
-        {isPending ? 'Setting up…' : 'Set password and continue'}
-      </Button>
+      <AuthFormActions
+        nav={
+          <AuthSecondaryNav
+            left={<AuthInlineLink href="/login">Sign in</AuthInlineLink>}
+            right={<AuthInlineLink href="/signup">Create account</AuthInlineLink>}
+          />
+        }
+        footer={
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account? <AuthInlineLink href="/login">Sign in</AuthInlineLink>
+          </p>
+        }
+      >
+        <Button type="submit" isPending={isPending} className="w-full" size="touch">
+          {isPending ? 'Setting up…' : 'Set password and continue'}
+        </Button>
+      </AuthFormActions>
     </form>
   );
 }

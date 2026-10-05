@@ -6,10 +6,13 @@ import {
   signupStartRequestSchema,
   type SignupStartResult,
 } from '@ilm/contracts';
-import { Button, CheckboxField, Field, Input, PasswordInput, useToast } from '@ilm/ui';
+import { Button, Checkbox, Field, Input, PasswordInput, useToast } from '@ilm/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
+import { AuthFormActions } from './auth-form-actions';
+import { AuthInlineLink } from './auth-inline-link';
+import { PasswordRequirements } from './password-requirements';
 import { SIGNUP_CONTEXT } from './signup-step-gate';
 
 import { readSignupDraft, saveSignupDraft } from '@/lib/signup-draft';
@@ -107,9 +110,7 @@ export function SignupCredentialsForm() {
       }
       setFieldErrors(next);
       toast.error(
-        accepted
-          ? (parsed.error.issues[0]?.message ?? 'Check the highlighted fields.')
-          : 'Accept the terms to continue.',
+        !accepted ? 'Accept the terms to continue.' : 'Check the highlighted fields below.',
       );
       return;
     }
@@ -155,9 +156,9 @@ export function SignupCredentialsForm() {
         void submit(event);
       }}
       noValidate
-      className="space-y-4"
+      className="space-y-3.5"
     >
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3.5 sm:grid-cols-2">
         <Field label="First name" error={fieldErrors['firstName']} required>
           <Input
             name="firstName"
@@ -200,23 +201,21 @@ export function SignupCredentialsForm() {
         />
       </Field>
 
-      <Field
-        label="Password"
-        error={fieldErrors['password']}
-        hint="At least 8 characters, with upper and lower case, a number and a symbol — e.g. Abde@112."
-        required
-      >
-        <PasswordInput
-          name="password"
-          autoComplete="new-password"
-          placeholder="Create a password"
-          value={password}
-          disabled={isPending}
-          onChange={(event) => {
-            setPassword(event.target.value);
-          }}
-        />
-      </Field>
+      <div className="space-y-1.5">
+        <Field label="Password" error={fieldErrors['password']} required>
+          <PasswordInput
+            name="password"
+            autoComplete="new-password"
+            placeholder="Create a password"
+            value={password}
+            disabled={isPending}
+            onChange={(event) => {
+              setPassword(event.target.value);
+            }}
+          />
+        </Field>
+        <PasswordRequirements password={password} dense />
+      </div>
 
       <Field label="Confirm password" error={fieldErrors['confirmPassword']} required>
         <PasswordInput
@@ -231,27 +230,42 @@ export function SignupCredentialsForm() {
         />
       </Field>
 
-      <CheckboxField
-        label="I accept the Terms & Conditions."
-        id="accepted-terms"
-        name="acceptedTerms"
-        className="whitespace-nowrap"
-        checked={accepted}
-        disabled={isPending}
-        onCheckedChange={(next) => {
-          setAccepted(next === true);
-        }}
-      />
-
-      <Button
-        type="submit"
-        isPending={isPending}
-        disabled={!accepted}
-        className="w-full"
-        size="touch"
+      <label
+        htmlFor="accepted-terms"
+        className="flex cursor-pointer items-center gap-2.5 py-0.5 select-none"
       >
-        {isPending ? 'Sending code…' : 'Continue'}
-      </Button>
+        <Checkbox
+          id="accepted-terms"
+          name="acceptedTerms"
+          checked={accepted}
+          disabled={isPending}
+          onCheckedChange={(next) => {
+            setAccepted(next === true);
+          }}
+        />
+        <span className="text-sm leading-snug text-foreground">
+          I accept the{' '}
+          <span className="font-medium text-primary">Terms &amp; Conditions.</span>
+        </span>
+      </label>
+
+      <AuthFormActions
+        footer={
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account? <AuthInlineLink href="/login">Sign in</AuthInlineLink>
+          </p>
+        }
+      >
+        <Button
+          type="submit"
+          isPending={isPending}
+          disabled={!accepted}
+          className="w-full"
+          size="touch"
+        >
+          {isPending ? 'Sending code…' : 'Continue'}
+        </Button>
+      </AuthFormActions>
     </form>
   );
 }

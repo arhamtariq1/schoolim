@@ -24,13 +24,12 @@ import { localKey } from '../../shared/storage/database.store';
 import { verifyImage } from '../../shared/storage/image-bytes';
 import { STORAGE_PROVIDERS } from '../../shared/storage/storage.port';
 import { schoolOrigin } from '../../shared/tenancy/school-origin';
-import { HandoffService } from '../auth/handoff.service';
 
 /**
- * Self-serve signup — credentials → OTP (creates tenant) → /profile onboarding.
+ * Self-serve signup — credentials → OTP (creates tenant) → sign in at apex.
  *
- * Runs on the **admin** connection until the school exists; after OTP the owner
- * holds a real session on the school host.
+ * Runs on the **admin** connection until the school exists. OTP verification does
+ * not mint a session; the owner signs in manually, then completes `/profile/create`.
  */
 
 /** Overall intent lifetime. Restart from /signup after this. */
@@ -59,7 +58,6 @@ export class SignupService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwords: PasswordService,
-    private readonly handoffs: HandoffService,
     @Inject(MAIL) private readonly mail: MailPort,
     @Inject(ENV) private readonly env: Env,
   ) {}
@@ -356,24 +354,9 @@ export class SignupService {
       'School provisioned after signup OTP',
     );
 
-    const token = await this.handoffs.mint(created.school.id, created.ownerId, now, context);
-    const origin = schoolOrigin(
-      created.school.slug,
-      this.env.APP_DOMAIN,
-      this.env.WEB_URL,
-      this.env.PORTAL_TENANT_MODE,
-    );
-
     return {
       email: intent.email,
       verified: true,
-      continueTo: {
-        schoolId: created.school.id,
-        name: created.school.name,
-        slug: created.school.slug,
-        // Land on /profile so onboarding is the first authenticated screen.
-        continueUrl: `${origin}/auth/continue?t=${token}&next=${encodeURIComponent('/profile/create')}`,
-      },
     };
   }
 

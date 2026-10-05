@@ -8,7 +8,7 @@ import { createAdminClient, type PrismaClient } from '../prisma';
 import { PasswordService } from '../shared/auth/password.service';
 import { MAIL } from '../shared/mail/mail.port';
 
-import { RecordingMailer, runSignupFlow } from './signup-flow';
+import { RecordingMailer, runSignupFlow, schoolSlugForUserEmail } from './signup-flow';
 
 /**
  * Sign in with email and password alone (ADR-0009), and self-serve signup
@@ -319,7 +319,7 @@ describe('self-serve signup', () => {
     },
   };
 
-  it('provisions the school after credentials and OTP, with a portal handoff', async () => {
+  it('provisions the school after credentials and OTP without minting a session', async () => {
     const response = await runSignupFlow(app, mailer, flow, APEX);
 
     expect(response.statusCode).toBe(201);
@@ -328,20 +328,19 @@ describe('self-serve signup', () => {
       data: {
         email: string;
         verified: true;
-        continueTo: { schoolId: string; name: string; slug: string; continueUrl: string };
       };
     }>().data;
 
     expect(body.email).toBe(flow.email);
     expect(body.verified).toBe(true);
-    expect(body.continueTo.continueUrl).toContain('/auth/continue?t=');
-    expect(body.continueTo.continueUrl).toContain('next=%2Fprofile%2Fcreate');
+
+    const slug = await schoolSlugForUserEmail(admin, flow.email);
 
     const school = await admin.$queryRaw<
       { id: string; status: string; trial_ends_at: Date | null; onboarded_at: Date | null }[]
     >`
       SELECT id::text, status::text, trial_ends_at, onboarded_at
-      FROM schools WHERE slug = ${body.continueTo.slug}
+      FROM schools WHERE slug = ${slug}
     `;
     expect(school[0]?.status).toBe('TRIAL');
     expect(school[0]?.trial_ends_at).not.toBeNull();
@@ -404,18 +403,10 @@ describe('self-serve signup', () => {
     );
 
     expect(response.statusCode).toBe(201);
-    const body = response.json<{
-      data: { continueTo: { slug: string } };
-    }>().data;
-    expect(body.continueTo.slug).toBeTruthy();
-    expect(body.continueTo.slug).not.toBe(
-      (
-        await admin.$queryRaw<{ slug: string }[]>`
-          SELECT slug FROM schools
-          WHERE id IN (SELECT school_id FROM users WHERE email = ${flow.email})
-        `
-      )[0]?.slug,
-    );
+    const otherSlug = await schoolSlugForUserEmail(admin, 'other@signup-e2e.test');
+    const firstSlug = await schoolSlugForUserEmail(admin, flow.email);
+    expect(otherSlug).toBeTruthy();
+    expect(otherSlug).not.toBe(firstSlug);
   });
 
   it('provisions even when a reserved name appears only in the unused school payload', async () => {

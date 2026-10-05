@@ -1,9 +1,8 @@
 import { TRIAL_DAYS } from '@ilm/contracts';
 import { BRAND } from '@ilm/utils';
 import type { Metadata } from 'next';
-import Link from 'next/link';
-
 import { AuthLayout } from '@/components/auth-layout';
+import { authScreenLayout } from '@/components/auth-screen-props';
 import { SignupCredentialsForm } from '@/components/signup-credentials-form';
 
 export const metadata: Metadata = {
@@ -14,15 +13,10 @@ export const metadata: Metadata = {
 export default function SignupPage() {
   return (
     <AuthLayout
+      {...authScreenLayout}
       title="Create your account"
-      footer={
-        <>
-          Already have an account?{' '}
-          <Link href="/login" className="font-medium text-primary hover:underline">
-            Sign in
-          </Link>
-        </>
-      }
+      subtitle="Create your account in minutes."
+      fitViewport
     >
       <SignupCredentialsForm />
     </AuthLayout>

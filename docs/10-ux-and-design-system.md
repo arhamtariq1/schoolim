@@ -110,7 +110,7 @@ that tells the user what to do next. No exceptions.
   --color-brand-50 … --color-brand-950;   /* per-school, overridden at runtime */
   --color-success / warning / danger / info;
   --radius-card: 0.75rem;
-  --font-sans: "Inter", system-ui;
+  --font-sans: "Noto Sans", system-ui;
   --font-urdu: "Noto Nastaliq Urdu";
   --font-mono: "JetBrains Mono";          /* all money and IDs */
 }

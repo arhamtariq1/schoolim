@@ -1,6 +1,7 @@
 import { COOKIES, CURRENT_TERMS_VERSION, ROUTES } from '@ilm/contracts';
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
 
+import { type PrismaClient } from '../prisma';
 import { type MailMessage, type MailPort, type MailResult } from '../shared/mail/mail.port';
 
 /** Records outbound mail so e2e can read OTP codes and verify-email links. */
@@ -90,11 +91,26 @@ export interface SignupFlowInput {
   };
 }
 
+/** Provisional school slug allocated when OTP verifies the signup intent. */
+export async function schoolSlugForUserEmail(admin: PrismaClient, email: string): Promise<string> {
+  const rows = await admin.$queryRaw<{ slug: string }[]>`
+    SELECT s.slug FROM schools s
+    INNER JOIN users u ON u.school_id = s.id
+    WHERE u.email = ${email}
+    LIMIT 1
+  `;
+  const slug = rows[0]?.slug;
+  if (slug === undefined || slug === '') {
+    throw new Error(`no school provisioned for ${email}`);
+  }
+  return slug;
+}
+
 /**
- * Walk credentials → OTP (provisions tenant + handoff).
+ * Walk credentials → OTP (provisions tenant, no session).
  *
  * School details are finished later via `/me/onboarding` inside the portal.
- * Returns the OTP verify response (includes `continueTo`).
+ * Returns the OTP verify response (`email`, `verified`).
  */
 export async function runSignupFlow(
   app: NestFastifyApplication,

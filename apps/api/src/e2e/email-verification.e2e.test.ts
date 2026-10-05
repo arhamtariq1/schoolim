@@ -9,7 +9,7 @@ import { EmailVerificationService } from '../modules/auth/email-verification.ser
 import { createAdminClient, type PrismaClient } from '../prisma';
 import { MAIL } from '../shared/mail/mail.port';
 
-import { RecordingMailer, runSignupFlow } from './signup-flow';
+import { RecordingMailer, runSignupFlow, schoolSlugForUserEmail } from './signup-flow';
 
 /**
  * Email verification — ADR-0012.
@@ -57,7 +57,7 @@ const PASSWORD = 'Abde@11234';
 const ALL_EMAILS = [OWNER_EMAIL, OTHER_EMAIL, RESEND_EMAIL];
 
 /**
- * Filled in by `beforeAll`, from each signup's `continueTo.slug`.
+ * Filled in by `beforeAll`, from each provisioned school's slug (by owner email).
  *
  * `let`, and deliberately so: a `const` here would be a guess about what the
  * server named the school, which is exactly the assumption that used to make
@@ -203,8 +203,8 @@ beforeAll(async () => {
     );
     expect(response.statusCode).toBe(201);
 
-    const { continueTo } = response.json<{ data: { continueTo: { slug: string } } }>().data;
-    hosts.push(`${continueTo.slug}.localhost`);
+    const slug = await schoolSlugForUserEmail(admin, email);
+    hosts.push(`${slug}.localhost`);
   }
 
   [HOST, OTHER_HOST, RESEND_HOST] = hosts as [string, string, string];

@@ -1,9 +1,8 @@
 import { schoolSlugFromHost } from '@ilm/utils';
 import { headers } from 'next/headers';
-import Link from 'next/link';
-
 import { AuthLayout } from '@/components/auth-layout';
 import { LoginForm } from '@/components/login-form';
+import { authScreenLayout } from '@/components/auth-screen-props';
 
 /**
  * Sign in.
@@ -41,40 +40,44 @@ export default async function LoginPage({
   // "that link has expired" reads as a mistake when you did not follow a link.
   const sessionEnded = query['session'] === 'expired';
   const emailParam = typeof query['email'] === 'string' ? query['email'] : '';
-  const notice = unreachable
-    ? 'Could not reach the server. Try signing in again.'
-    : expired
-      ? 'That sign-in link has expired. Sign in again.'
-      : sessionEnded
-        ? 'You were signed out. Sign in to pick up where you left off.'
-        : undefined;
+  const emailVerified = query['verified'] === '1';
+  const notice = emailVerified
+    ? 'Email verified successfully. Please sign in to continue.'
+    : unreachable
+      ? 'Could not reach the server. Try signing in again.'
+      : expired
+        ? 'That sign-in link has expired. Sign in again.'
+        : sessionEnded
+          ? 'You were signed out. Sign in to pick up where you left off.'
+          : undefined;
+  const noticeTone = emailVerified ? 'success' : 'warning';
 
   return (
     <AuthLayout
+      {...authScreenLayout}
+      fitViewport
       title="Welcome back"
-      subtitle={slug === undefined ? 'Sign in to your school’s portal.' : `Sign in to ${slug}.`}
+      subtitle={
+        slug === undefined
+          ? 'Sign in to continue to your school portal.'
+          : `Sign in to ${slug}.`
+      }
       notice={
         notice === undefined ? undefined : (
           <div
             role="status"
-            className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm"
+            className={
+              noticeTone === 'success'
+                ? 'rounded-md border border-success/30 bg-success/10 px-3 py-2 text-sm text-foreground'
+                : 'rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm'
+            }
           >
             {notice}
           </div>
         )
       }
-      footer={
-        slug === undefined ? (
-          <>
-            New here?{' '}
-            <Link href="/signup" className="font-medium text-primary hover:underline">
-              Set up your school
-            </Link>
-          </>
-        ) : undefined
-      }
     >
-      <LoginForm initialEmail={emailParam} />
+      <LoginForm initialEmail={emailParam} showCreateAccountLink={slug === undefined} />
     </AuthLayout>
   );
 }

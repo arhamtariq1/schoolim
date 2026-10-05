@@ -51,7 +51,7 @@ export function verifyEmailTemplate(input: {
 
   const html = `<!doctype html>
 <html lang="en">
-  <body style="margin:0;padding:24px;background:#f6f7f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1f2328;">
+  <body style="margin:0;padding:24px;background:#f6f7f9;font-family:'Noto Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#1f2328;">
     <table role="presentation" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e4e7eb;border-radius:12px;">
       <tr>
         <td style="padding:32px;">

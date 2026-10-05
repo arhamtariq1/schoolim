@@ -2,6 +2,7 @@ import { BRAND } from '@ilm/utils';
 import type { Metadata } from 'next';
 
 import { AuthLayout } from '@/components/auth-layout';
+import { authScreenLayout } from '@/components/auth-screen-props';
 import { NewPasswordForm } from '@/components/new-password-form';
 
 export const metadata: Metadata = {
@@ -21,6 +22,8 @@ export default async function NewPasswordPage({
 
   return (
     <AuthLayout
+      {...authScreenLayout}
+      fitViewport
       title="Set a new password"
       subtitle="Choose a password you have not used on another site."
     >

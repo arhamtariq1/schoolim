@@ -19,7 +19,10 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const apiDir = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'apps', 'api');
-const entry = join(apiDir, 'dist', 'main.js');
+// `dist/src`, not `dist`: tsconfig compiles `prisma/` alongside `src/`, so the
+// output keeps the `src` segment. Waiting on `dist/main.js` only ever worked on
+// a machine with a stale file left there by an older build.
+const entry = join(apiDir, 'dist', 'src', 'main.js');
 
 const children = [];
 

@@ -2,9 +2,11 @@
 
 import { loginRequestSchema, ROUTES, type LoginOutcome, type SchoolChoice } from '@ilm/contracts';
 import { Button, Field, Input, PasswordInput, useToast } from '@ilm/ui';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+
+import { AuthFormActions } from './auth-form-actions';
+import { AuthInlineLink } from './auth-inline-link';
 
 interface Problem {
   code?: string;
@@ -18,7 +20,13 @@ interface Problem {
  * errors stay under the inputs for assistive tech. `isPending` disables the
  * button so a double click cannot fire two sign-ins.
  */
-export function LoginForm({ initialEmail = '' }: { initialEmail?: string }) {
+export function LoginForm({
+  initialEmail = '',
+  showCreateAccountLink = false,
+}: {
+  readonly initialEmail?: string;
+  readonly showCreateAccountLink?: boolean;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [identifier, setIdentifier] = useState(initialEmail);
@@ -106,7 +114,7 @@ export function LoginForm({ initialEmail = '' }: { initialEmail?: string }) {
           void submit(event);
         }}
         noValidate
-        className="space-y-4"
+        className="space-y-3.5"
       >
         <Field label="Email or phone" error={fieldErrors['identifier']} required>
           <Input
@@ -114,7 +122,7 @@ export function LoginForm({ initialEmail = '' }: { initialEmail?: string }) {
             name="identifier"
             autoComplete="username"
             autoFocus
-            placeholder="Email or phone"
+            placeholder="you@school.edu.pk"
             value={identifier}
             disabled={isPending}
             onChange={(event) => {
@@ -136,18 +144,25 @@ export function LoginForm({ initialEmail = '' }: { initialEmail?: string }) {
           />
         </Field>
 
-        <div className="flex justify-end">
-          <Link
-            href="/forgot-password"
-            className="text-sm font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            Forgot password?
-          </Link>
-        </div>
-
-        <Button type="submit" isPending={isPending} className="w-full" size="touch">
-          {isPending ? 'Signing in…' : 'Sign in'}
-        </Button>
+        <AuthFormActions
+          nav={
+            <div className="flex justify-end text-sm">
+              <AuthInlineLink href="/forgot-password">Forgot password?</AuthInlineLink>
+            </div>
+          }
+          showDivider={showCreateAccountLink}
+          footer={
+            showCreateAccountLink ? (
+              <p className="text-center text-sm text-muted-foreground">
+                New here? <AuthInlineLink href="/signup">Create account</AuthInlineLink>
+              </p>
+            ) : undefined
+          }
+        >
+          <Button type="submit" isPending={isPending} className="w-full" size="touch">
+            {isPending ? 'Signing in…' : 'Sign in'}
+          </Button>
+        </AuthFormActions>
       </form>
     </>
   );

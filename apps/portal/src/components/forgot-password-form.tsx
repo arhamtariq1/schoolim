@@ -6,10 +6,11 @@ import {
   type ForgotPasswordResult,
 } from '@ilm/contracts';
 import { Button, Field, Input, useToast } from '@ilm/ui';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
+import { AuthFormActions } from './auth-form-actions';
+import { AuthInlineLink } from './auth-inline-link';
 import { PASSWORD_RESET_CONTEXT } from './otp-verification-form';
 
 /**
@@ -83,7 +84,7 @@ export function ForgotPasswordForm() {
         void submit(event);
       }}
       noValidate
-      className="space-y-4"
+      className="space-y-3.5"
     >
       <Field label="Email" error={fieldErrors['email']} required>
         <Input
@@ -100,16 +101,17 @@ export function ForgotPasswordForm() {
         />
       </Field>
 
-      <Button type="submit" isPending={isPending} className="w-full" size="touch">
-        {isPending ? 'Sending…' : 'Send reset code'}
-      </Button>
-
-      <p className="text-center text-sm text-muted-foreground">
-        Remembered it?{' '}
-        <Link href="/login" className="font-medium text-primary hover:underline">
-          Sign in
-        </Link>
-      </p>
+      <AuthFormActions
+        footer={
+          <p className="text-center text-sm text-muted-foreground">
+            Remembered it? <AuthInlineLink href="/login">Sign in</AuthInlineLink>
+          </p>
+        }
+      >
+        <Button type="submit" isPending={isPending} className="w-full" size="touch">
+          {isPending ? 'Sending…' : 'Send reset code'}
+        </Button>
+      </AuthFormActions>
     </form>
   );
 }

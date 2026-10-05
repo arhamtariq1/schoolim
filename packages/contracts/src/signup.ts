@@ -86,11 +86,6 @@ export type SignupVerifyOtpRequest = z.infer<typeof signupVerifyOtpRequestSchema
 export const signupVerifyOtpResultSchema = z.object({
   email: emailSchema,
   verified: z.literal(true),
-  /**
-   * Absolute handoff URL onto the new school's host, landing at `/profile`.
-   * The browser must navigate here so session cookies are host-only (ADR-0009).
-   */
-  continueTo: schoolChoiceSchema,
 });
 
 export type SignupVerifyOtpResult = z.infer<typeof signupVerifyOtpResultSchema>;

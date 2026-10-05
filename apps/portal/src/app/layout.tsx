@@ -8,6 +8,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
 import { THEME_STORAGE_KEY } from '@/components/theme-toggle';
+import { sansFont } from '@/lib/fonts';
 
 export const metadata: Metadata = {
   title: BRAND.name,
@@ -63,7 +64,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     // `dir` is set here rather than hard-coded in components so an Urdu tenant
     // flips to RTL without touching one (docs/16 §14).
-    <html lang="en" dir="ltr" suppressHydrationWarning>
+    <html lang="en" dir="ltr" suppressHydrationWarning className={sansFont.variable}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH }} />
       </head>
@@ -82,7 +83,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         Without it the body is as tall as whatever is actually in flow, so the
         document scrolls only when a page genuinely has more than fits.
       */}
-      <body className="bg-background text-foreground antialiased">
+      <body className={`${sansFont.className} bg-background text-foreground antialiased`}>
         {/* At the root, not per page: a toast fired while navigating away must
             outlive the page that fired it, or the confirmation of what someone
             just did disappears with the screen they did it on. */}
