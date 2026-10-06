@@ -7,6 +7,7 @@ import { BRAND } from '@ilm/utils';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
+import { DashboardChrome } from '@/components/dashboard-chrome';
 import { THEME_STORAGE_KEY } from '@/components/theme-toggle';
 import { sansFont } from '@/lib/fonts';
 
@@ -87,7 +88,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {/* At the root, not per page: a toast fired while navigating away must
             outlive the page that fired it, or the confirmation of what someone
             just did disappears with the screen they did it on. */}
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          <DashboardChrome>{children}</DashboardChrome>
+        </ToastProvider>
       </body>
     </html>
   );

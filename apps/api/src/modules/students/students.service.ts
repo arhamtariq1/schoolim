@@ -698,6 +698,7 @@ function toListItem(row: StudentRow): StudentListItem {
     // raised by an aunt still needs a name printed next to them.
     fatherName: row.father_name ?? row.guardian_name,
     admittedOn: asCalendarDate(row.admitted_on),
+    photoUrl: row.photo_url,
     tuitionFeeMinor: decimalToMinor(row.tuition_fee),
   };
 }

@@ -2,7 +2,6 @@
 
 import { ROUTES } from '@ilm/contracts';
 import {
-  Button,
   ConfirmDialog,
   DropdownMenu,
   DropdownMenuContent,
@@ -11,15 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Hint,
-  Separator,
   TooltipProvider,
   cn,
   useToast,
 } from '@ilm/ui';
 import {
+  AccountIcon,
   ChevronDownIcon,
   CloseIcon,
-  EditIcon,
   ICON_SIZE,
   MenuIcon,
   MessagesIcon,
@@ -28,14 +26,12 @@ import {
   SearchIcon,
   SettingsIcon,
   SignOutIcon,
-  ViewIcon,
 } from '@ilm/ui/icons';
 import { BRAND } from '@ilm/utils';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
-import { AppSearch } from '@/components/app-search';
 import { BrandTheme } from '@/components/brand-theme';
 import { NAV_ICONS } from '@/components/nav-icons';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -78,8 +74,8 @@ const NAV_LEAF_HREFS: readonly string[] = (() => {
  * **the API decides** — every route behind these is permission-checked on the
  * server regardless.
  *
- * Until `profileCompleted` is true, every nav item except Set up profile is
- * visually disabled and non-navigable; the proxy enforces the same gate on URLs.
+ * Until `profileCompleted` is true, nav items stay visible but disabled; the
+ * proxy sends incomplete profiles to `/profile/create` (not listed in the sidebar).
  */
 
 export interface AppShellProps {
@@ -87,8 +83,8 @@ export interface AppShellProps {
   school: { name: string };
   permissions: readonly string[];
   /**
-   * False until the first-login profile form is saved. Disables every nav item
-   * except Set up profile and keeps the person on `/profile/create`.
+   * False until the first-login profile form is saved. Disables sidebar nav
+   * until onboarding is done; `/profile/create` is reached via login/proxy only.
    */
   profileCompleted?: boolean;
   /**
@@ -108,17 +104,14 @@ export interface AppShellProps {
    * page, and the shell already has the session in its hands.
    */
   brandColor?: string | undefined;
+  /** Setup-style pages: no max-width column — content aligns with the shell edge. */
+  contentWidth?: 'default' | 'full';
   children: ReactNode;
 }
 
-const PROFILE_SETUP_ITEM: NavItem = {
-  href: '/profile/create',
-  label: 'Set up profile',
-  icon: 'AccountIcon',
-  // Permission is ignored while the profile is incomplete — the item is
-  // injected explicitly so every role can finish onboarding.
-  permission: 'dashboard.workspace.read',
-};
+/** Header icon buttons that are visible but not interactive yet. */
+const HEADER_ICON_DISABLED =
+  'inline-flex size-9 cursor-not-allowed items-center justify-center rounded-md text-muted-foreground opacity-50';
 
 export function AppShell({
   user,
@@ -127,11 +120,14 @@ export function AppShell({
   profileCompleted = true,
   unverifiedEmail,
   brandColor,
+  contentWidth = 'default',
   children,
 }: AppShellProps) {
-  const baseItems = visibleNavItems(permissions);
-  const items = profileCompleted ? baseItems : [PROFILE_SETUP_ITEM, ...baseItems];
+  const items = visibleNavItems(permissions);
   const pathname = usePathname();
+  const canonicalPath = useCanonicalPathname();
+  /** Lock nav only on the setup gate; after redirect home, links work even if RSC session props lag. */
+  const navLocked = !profileCompleted && canonicalPath === '/profile/create';
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const scrollport = useRef<HTMLElement>(null);
@@ -174,8 +170,7 @@ export function AppShell({
           className="hidden md:flex"
           items={items}
           school={school}
-          user={user}
-          profileCompleted={profileCompleted}
+          navLocked={navLocked}
         />
 
         {drawerOpen ? (
@@ -192,8 +187,7 @@ export function AppShell({
               className="relative flex h-full animate-in fade-in-0 slide-in-from-left-2"
               items={items}
               school={school}
-              user={user}
-              profileCompleted={profileCompleted}
+              navLocked={navLocked}
               onClose={() => {
                 setDrawerOpen(false);
               }}
@@ -205,15 +199,23 @@ export function AppShell({
           <AppHeader
             schoolName={school.name}
             user={user}
-            permissions={permissions}
-            profileCompleted={profileCompleted}
+            settingsEnabled={!navLocked}
             onOpenMenu={() => {
               setDrawerOpen(true);
             }}
           />
 
-          <main ref={scrollport} className="min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
-            <div className="mx-auto w-full max-w-7xl space-y-6 p-4 pb-24 md:p-6 md:pb-6">
+          <main
+            ref={scrollport}
+            className="scrollbar-hidden min-w-0 flex-1 overflow-y-auto overscroll-y-contain bg-muted/30"
+          >
+            <div
+              className={
+                contentWidth === 'full'
+                  ? 'w-full pb-24 md:pb-6'
+                  : 'mx-auto w-full max-w-6xl space-y-6 p-4 pb-24 md:p-5 md:pb-6 lg:px-6 lg:py-6 xl:max-w-7xl 2xl:max-w-[84rem]'
+              }
+            >
               {unverifiedEmail === undefined ? null : <VerifyEmailBanner email={unverifiedEmail} />}
               {children}
             </div>
@@ -221,15 +223,10 @@ export function AppShell({
 
           <nav
             aria-label="Main"
-            className="flex shrink-0 items-center justify-around border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+            className="flex shrink-0 items-center justify-around border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
           >
             {items.slice(0, 5).map((item) => (
-              <NavLink
-                key={item.href}
-                item={firstLeaf(item)}
-                compact
-                disabled={!profileCompleted && item.href !== PROFILE_SETUP_ITEM.href}
-              />
+              <NavLink key={item.href} item={firstLeaf(item)} compact disabled={navLocked} />
             ))}
           </nav>
         </div>
@@ -241,80 +238,63 @@ export function AppShell({
 function AppHeader({
   schoolName,
   user,
-  permissions,
-  profileCompleted,
+  settingsEnabled = false,
   onOpenMenu,
 }: {
   schoolName: string;
   user: { name: string; email?: string; roleLabel: string };
-  permissions: readonly string[];
-  profileCompleted: boolean;
+  settingsEnabled?: boolean;
   onOpenMenu: () => void;
 }) {
   const tenantHref = useTenantHref();
-  const toast = useToast();
-
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-surface px-3 md:px-4">
+    <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-3 md:gap-4 md:px-5">
       <button
         type="button"
         aria-label="Open menu"
         onClick={onOpenMenu}
-        className="-ms-1 inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:hidden"
+        className="-ms-1 inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:hidden"
       >
         <MenuIcon className={ICON_SIZE.nav} aria-hidden="true" />
       </button>
 
       <span className="truncate text-sm font-semibold md:hidden">{schoolName}</span>
 
-      <AppSearch permissions={permissions}>
-        {(openSearch) => (
-          <button
-            type="button"
-            onClick={openSearch}
-            disabled={!profileCompleted}
-            className="hidden h-9 w-full max-w-sm items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm text-muted-foreground transition-colors hover:border-input hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 md:flex"
-          >
-            <SearchIcon className="size-4 shrink-0" aria-hidden="true" />
-            <span>Search pages, students…</span>
-            <kbd className="ms-auto rounded border border-border bg-muted px-1.5 font-mono text-xs text-muted-foreground">
-              ⌘K
-            </kbd>
-          </button>
-        )}
-      </AppSearch>
+      <div className="hidden min-w-0 flex-1 md:block md:max-w-xl">
+        <button
+          type="button"
+          disabled
+          aria-label="Search"
+          className={cn(
+            HEADER_ICON_DISABLED,
+            'flex h-10 w-full items-center gap-2 rounded-xl border-0 bg-muted/60 px-3.5 text-sm',
+          )}
+        >
+          <SearchIcon className="size-4 shrink-0" aria-hidden="true" />
+          <span className="truncate">Search pages, students…</span>
+          <kbd className="ms-auto hidden rounded-md border border-border bg-background px-1.5 font-mono text-xs text-muted-foreground lg:inline">
+            ⌘K
+          </kbd>
+        </button>
+      </div>
 
-      <div className="ms-auto flex items-center gap-0.5">
+      <div className="ms-auto flex items-center gap-1 md:gap-2">
         <ThemeToggle />
 
-        <Hint label="Messages">
-          <button
-            type="button"
-            aria-label="Messages"
-            onClick={() => {
-              toast.warning('Messages', 'Coming soon.');
-            }}
-            className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
+        <Hint label="Messages (coming soon)">
+          <button type="button" disabled aria-label="Messages" className={HEADER_ICON_DISABLED}>
             <MessagesIcon className="size-4" aria-hidden="true" />
           </button>
         </Hint>
 
-        <Hint label="Notifications">
-          <button
-            type="button"
-            aria-label="Notifications"
-            onClick={() => {
-              toast.warning('Notifications', 'Coming soon.');
-            }}
-            className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
+        <Hint label="Notifications (coming soon)">
+          <button type="button" disabled aria-label="Notifications" className={HEADER_ICON_DISABLED}>
             <NotificationsIcon className="size-4" aria-hidden="true" />
           </button>
         </Hint>
 
-        <Hint label="Settings">
-          {profileCompleted ? (
+        {settingsEnabled ? (
+          <Hint label="Settings">
             <Link
               href={tenantHref('/settings')}
               aria-label="Settings"
@@ -322,31 +302,29 @@ function AppHeader({
             >
               <SettingsIcon className="size-4" aria-hidden="true" />
             </Link>
-          ) : (
-            <button
-              type="button"
-              aria-label="Settings"
-              disabled
-              className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground opacity-50"
-            >
+          </Hint>
+        ) : (
+          <Hint label="Complete setup to open settings">
+            <button type="button" disabled aria-label="Settings" className={HEADER_ICON_DISABLED}>
               <SettingsIcon className="size-4" aria-hidden="true" />
             </button>
-          )}
-        </Hint>
+          </Hint>
+        )}
 
-        <ProfileMenu user={user} profileCompleted={profileCompleted} />
+        <span aria-hidden="true" className="mx-1 hidden h-8 w-px bg-border sm:block" />
+
+        <div className="hidden min-w-0 text-end sm:block">
+          <span className="block truncate text-sm font-medium text-foreground">{user.name}</span>
+          <span className="block truncate text-xs text-muted-foreground">{user.roleLabel}</span>
+        </div>
+
+        <ProfileMenu user={user} />
       </div>
     </header>
   );
 }
 
-function ProfileMenu({
-  user,
-  profileCompleted,
-}: {
-  user: { name: string; email?: string };
-  profileCompleted: boolean;
-}) {
+function ProfileMenu({ user }: { user: { name: string; email?: string } }) {
   const tenantHref = useTenantHref();
   const [askingSignOut, setAskingSignOut] = useState(false);
 
@@ -362,46 +340,35 @@ function ProfileMenu({
             {initials(user.name)}
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel className="font-normal">
-            <span className="block truncate text-sm font-medium text-foreground">{user.name}</span>
+        <DropdownMenuContent align="end" className="w-64 p-0">
+          <DropdownMenuLabel className="px-3 py-3 font-normal">
+            <span className="block truncate text-sm font-semibold text-foreground">{user.name}</span>
             {user.email === undefined || user.email === '' ? null : (
-              <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
+              <span className="mt-0.5 block truncate text-xs text-muted-foreground">{user.email}</span>
             )}
           </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {profileCompleted ? (
-            <>
-              <DropdownMenuItem asChild>
-                <Link href={tenantHref('/profile')} className="cursor-pointer">
-                  <ViewIcon className="size-4" aria-hidden="true" />
-                  View Profile
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={tenantHref('/profile/edit')} className="cursor-pointer">
-                  <EditIcon className="size-4" aria-hidden="true" />
-                  Edit Profile
-                </Link>
-              </DropdownMenuItem>
-            </>
-          ) : (
+          <DropdownMenuSeparator className="mx-0 my-0" />
+          <div className="p-1">
             <DropdownMenuItem asChild>
-              <Link href={tenantHref('/profile/create')} className="cursor-pointer">
-                <EditIcon className="size-4" aria-hidden="true" />
-                Set up profile
+              <Link href={tenantHref('/profile')} className="cursor-pointer px-2 py-2.5">
+                <AccountIcon aria-hidden="true" />
+                Profile
               </Link>
             </DropdownMenuItem>
-          )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onSelect={() => {
-              setAskingSignOut(true);
-            }}
-          >
-            <SignOutIcon className="size-4" aria-hidden="true" />
-            Logout
-          </DropdownMenuItem>
+          </div>
+          <DropdownMenuSeparator className="mx-0 my-0" />
+          <div className="p-1">
+            <DropdownMenuItem
+              destructive
+              className="px-2 py-2.5"
+              onSelect={() => {
+                setAskingSignOut(true);
+              }}
+            >
+              <SignOutIcon aria-hidden="true" />
+              Logout
+            </DropdownMenuItem>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -413,28 +380,29 @@ function ProfileMenu({
 function Sidebar({
   items,
   school,
-  user,
-  profileCompleted,
+  navLocked,
   className,
   onClose,
 }: {
   items: readonly NavItem[];
   school: { name: string };
-  user: { name: string; email?: string; roleLabel: string };
-  profileCompleted: boolean;
+  navLocked: boolean;
   className?: string;
   onClose?: () => void;
 }) {
   return (
     <aside
-      className={cn('w-64 shrink-0 flex-col border-e border-border bg-surface md:flex', className)}
+      className={cn(
+        'flex w-60 shrink-0 flex-col border-e border-border bg-card md:flex',
+        className,
+      )}
     >
-      <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-border px-3">
+      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-border px-4">
         <span
           aria-hidden="true"
-          className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+          className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-raised"
         >
-          <SchoolIcon className="size-4" />
+          <SchoolIcon className="size-5" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm leading-tight font-semibold" title={school.name}>
@@ -449,75 +417,22 @@ function Sidebar({
             type="button"
             aria-label="Close menu"
             onClick={onClose}
-            className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             <CloseIcon className="size-4" aria-hidden="true" />
           </button>
         )}
       </div>
 
-      <nav aria-label="Main" className="flex-1 space-y-0.5 overflow-y-auto p-2">
+      <nav aria-label="Main" className="scrollbar-hidden flex-1 space-y-1 overflow-y-auto px-3 py-4">
+        <p className="px-2 pb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+          Menu
+        </p>
         {items.map((item) => (
-          <NavBranch
-            key={item.href}
-            item={item}
-            disabled={!profileCompleted && item.href !== PROFILE_SETUP_ITEM.href}
-          />
+          <NavBranch key={item.href} item={item} disabled={navLocked} />
         ))}
       </nav>
-
-      <AccountBlock user={user} />
     </aside>
-  );
-}
-
-function AccountBlock({ user }: { user: { name: string; roleLabel: string } }) {
-  return (
-    <div className="shrink-0 p-2">
-      <Separator className="mb-2" />
-      <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-          {initials(user.name)}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm leading-tight font-medium" title={user.name}>
-            {user.name}
-          </span>
-          <span
-            className="block truncate text-xs leading-tight text-muted-foreground"
-            title={user.roleLabel}
-          >
-            {roleLabel(user.roleLabel)}
-          </span>
-        </span>
-      </div>
-      <div className="mt-1.5">
-        <SignOutButton />
-      </div>
-    </div>
-  );
-}
-
-function SignOutButton({ compact = false }: { compact?: boolean }) {
-  const [asking, setAsking] = useState(false);
-
-  return (
-    <>
-      <Button
-        type="button"
-        tone={compact ? 'ghost' : 'outline'}
-        size={compact ? 'sm' : 'default'}
-        className={compact ? undefined : 'w-full'}
-        onClick={() => {
-          setAsking(true);
-        }}
-      >
-        <SignOutIcon className="size-4" aria-hidden="true" />
-        Sign out
-      </Button>
-
-      <SignOutConfirm open={asking} onOpenChange={setAsking} />
-    </>
   );
 }
 
@@ -555,9 +470,10 @@ function SignOutConfirm({
     <ConfirmDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Sign out?"
-      description="Anything you have typed and not saved will be lost."
-      confirmLabel="Sign out"
+      title="Are you sure you want to log out?"
+      description="You will need to sign in again to continue."
+      confirmLabel="Logout"
+      cancelLabel="Cancel"
       tone="primary"
       onConfirm={signOut}
     />
@@ -572,15 +488,6 @@ function initials(name: string): string {
   const first = parts[0]?.[0] ?? '';
   const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '';
   return (first + last).toUpperCase();
-}
-
-function roleLabel(raw: string): string {
-  return raw
-    .split(',')
-    .map((role) => role.trim())
-    .filter(Boolean)
-    .map((role) => role.charAt(0) + role.slice(1).toLowerCase().replace('_', ' '))
-    .join(' · ');
 }
 
 function NavLink({
@@ -603,8 +510,8 @@ function NavLink({
         aria-disabled="true"
         title="Complete your profile to unlock this"
         className={cn(
-          'group relative flex cursor-not-allowed items-center gap-3 rounded-lg text-sm font-medium text-muted-foreground/50',
-          compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : 'px-3 py-2',
+          'group relative flex cursor-not-allowed items-center gap-3 rounded-xl text-sm font-medium text-muted-foreground/50',
+          compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : 'px-3 py-2.5',
         )}
       >
         {Icon === undefined ? null : <Icon className="size-5 shrink-0" />}
@@ -618,19 +525,13 @@ function NavLink({
       href={tenantHref(item.href)}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'group relative flex items-center gap-3 rounded-lg text-sm font-medium transition-colors duration-150',
-        compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : 'px-3 py-2',
+        'flex items-center gap-3 rounded-xl text-sm font-medium transition-colors duration-150',
+        compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : 'px-3 py-2.5',
         isActive
-          ? 'bg-primary/10 text-primary'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+          ? 'bg-primary/10 text-primary shadow-sm'
+          : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
       )}
     >
-      {isActive && !compact ? (
-        <span
-          aria-hidden="true"
-          className="absolute inset-y-1.5 start-0 w-0.5 rounded-full bg-primary"
-        />
-      ) : null}
       {Icon === undefined ? null : <Icon className="size-5 shrink-0" />}
       <span className={compact ? 'truncate' : undefined}>{item.label}</span>
     </Link>
@@ -669,12 +570,12 @@ function NavBranch({
           setOverridden(!isOpen);
         }}
         className={cn(
-          'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150',
+          'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150',
           disabled
             ? 'cursor-not-allowed text-muted-foreground/50'
             : containsCurrent
-              ? 'text-foreground'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              ? 'bg-muted/60 text-foreground'
+              : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
         )}
       >
         {Icon === undefined ? null : <Icon className="size-5 shrink-0" />}
@@ -691,8 +592,8 @@ function NavBranch({
       {isOpen && !disabled ? (
         <div
           className={cn(
-            'mt-0.5 space-y-0.5 border-s border-border',
-            depth === 0 ? 'ms-5 ps-2' : 'ms-3 ps-2',
+            'mt-1 space-y-0.5 border-s-2 border-primary/15',
+            depth === 0 ? 'ms-4 ps-2.5' : 'ms-3 ps-2',
           )}
         >
           {children.map((child) => (

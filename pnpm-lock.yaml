@@ -235,12 +235,18 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.102.3
         version: 5.102.3(react@19.2.8)
+      apexcharts:
+        specifier: ^7.8.0
+        version: 7.8.0
       next:
         specifier: ^16.3.2
         version: 16.3.2(@types/node@26.3.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.8
         version: 19.2.8
+      react-apexcharts:
+        specifier: ^2.1.1
+        version: 2.1.1(apexcharts@7.8.0)(react@19.2.8)
       react-dom:
         specifier: ^19.2.8
         version: 19.2.8(react@19.2.8)
@@ -2891,6 +2897,13 @@ packages:
     resolution: {integrity: sha512-HqZ5rWlFjGiV0tDm3UxxgNRqsOTniqoKZu0pIAfh7TZQMGuZK+hH0drySty0si0QXj1ieop4+SkSfPZBPPkHig==}
     engines: {node: '>=14'}
 
+  apex-commons@0.8.1:
+    resolution: {integrity: sha512-F7fqJVh0smeTu1d86uuRSNNZvaM/l11GNQMbu6oAiSvuXp+K8KCufg0oZTy2VQBEEipRLAdFqkHnphlVpTG0Gw==}
+
+  apexcharts@7.8.0:
+    resolution: {integrity: sha512-UxzR7IDXs3HDaOoxTsdn7L2dw9TdYp347uiU7WvjKuzCQqODmO7l63rxMmLwtbYrZPd+0Vd7v5VINzJgPyqmIw==}
+    engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
+
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
 
@@ -4159,6 +4172,10 @@ packages:
   long@5.3.2:
     resolution: {integrity: sha512-mNAgZ1GmyNhD7AuqnTG3/VQ26o760+ZYBPKjPvugO8+nLbYfX6TVpJPseBvopbdY+qpZ/lKUnmEc1LeZYS3QAA==}
 
+  loose-envify@1.4.0:
+    resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
+    hasBin: true
+
   loupe@3.2.1:
     resolution: {integrity: sha512-CdzqowRJCeLU72bHvWqwRBBlLcMEtIvGrlvef74kMnV2AolS9Y8xUv1I0U/MNAWMhBlKIoyuEgoJ0t/bbwHbLQ==}
 
@@ -4323,6 +4340,10 @@ packages:
   nodemailer@9.1.1:
     resolution: {integrity: sha512-izw9mVKFix6YSnC9eLgV6g1opl9DUlRio9ZNcq+Wu9Ujn2UwF+8Nl0B8nz22kEC+CTZCvinkxwJ0DeFbb6NwcQ==}
     engines: {node: '>=6.0.0'}
+
+  object-assign@4.1.1:
+    resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
+    engines: {node: '>=0.10.0'}
 
   object-inspect@1.13.4:
     resolution: {integrity: sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew==}
@@ -4628,6 +4649,9 @@ packages:
   process-warning@5.1.0:
     resolution: {integrity: sha512-jQSaVHsPgtyw60e1rQ/A+/ArPEj/S8pS/vFnyGa/gYFXrKk/6RuDkoqVDQ5NI5MmS01698ltlAk0NoDBNLujRw==}
 
+  prop-types@15.8.1:
+    resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}
+
   proper-lockfile@4.1.2:
     resolution: {integrity: sha512-TjNPblN4BwAWMXU8s9AEz4JmQxnD1NNL7bNOY/AKUzyamc379FWASUhc/K1pL2noVb+XmZKLL68cjzLsiOAMaA==}
 
@@ -4646,6 +4670,12 @@ packages:
 
   rc9@3.0.1:
     resolution: {integrity: sha512-gMDyleLWVE+i6Sgtc0QbbY6pEKqYs97NGi6isHQPqYlLemPoO8dxQ3uGi0f4NiP98c+jMW6cG1Kx9dDwfvqARQ==}
+
+  react-apexcharts@2.1.1:
+    resolution: {integrity: sha512-aV25n+1ZdAzRG0KhODVC48K8WbhMKBAr3yWSeaaBqM1ySn22kSSKblsNCUvlwegsT+cdMLuOrK9xGZb+IK+OkQ==}
+    peerDependencies:
+      apexcharts: '>=5.10.1'
+      react: '>=16.8.0'
 
   react-day-picker@10.0.1:
     resolution: {integrity: sha512-eNh6BlwcYInWaJtRv18mXQ06Ys/H6rdTZAnTaSdOYJuTpwP1JMCHNd1FDRadA+gbeinq+psdULN5Xnowy9mV8w==}
@@ -4667,6 +4697,9 @@ packages:
     engines: {node: '>=18.0.0'}
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
+
+  react-is@16.13.1:
+    resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
@@ -7776,6 +7809,12 @@ snapshots:
 
   ansis@4.2.0: {}
 
+  apex-commons@0.8.1: {}
+
+  apexcharts@7.8.0:
+    dependencies:
+      apex-commons: 0.8.1
+
   argparse@2.0.1: {}
 
   aria-hidden@1.2.6:
@@ -9151,6 +9190,10 @@ snapshots:
 
   long@5.3.2: {}
 
+  loose-envify@1.4.0:
+    dependencies:
+      js-tokens: 4.0.0
+
   loupe@3.2.1: {}
 
   lru-cache@11.5.2: {}
@@ -9294,6 +9337,8 @@ snapshots:
   node-releases@2.0.53: {}
 
   nodemailer@9.1.1: {}
+
+  object-assign@4.1.1: {}
 
   object-inspect@1.13.4: {}
 
@@ -9578,6 +9623,12 @@ snapshots:
 
   process-warning@5.1.0: {}
 
+  prop-types@15.8.1:
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
+      react-is: 16.13.1
+
   proper-lockfile@4.1.2:
     dependencies:
       graceful-fs: 4.2.11
@@ -9600,6 +9651,12 @@ snapshots:
       defu: 6.1.7
       destr: 2.0.5
 
+  react-apexcharts@2.1.1(apexcharts@7.8.0)(react@19.2.8):
+    dependencies:
+      apexcharts: 7.8.0
+      prop-types: 15.8.1
+      react: 19.2.8
+
   react-day-picker@10.0.1(@types/react@19.2.18)(react@19.2.8):
     dependencies:
       '@date-fns/tz': 1.5.0
@@ -9616,6 +9673,8 @@ snapshots:
   react-hook-form@7.86.0(react@19.2.8):
     dependencies:
       react: 19.2.8
+
+  react-is@16.13.1: {}
 
   react-is@17.0.2: {}
 

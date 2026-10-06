@@ -74,6 +74,8 @@ export const studentListItemSchema = z.object({
    */
   fatherName: z.string().nullable(),
   admittedOn: calendarDateSchema.nullable(),
+  /** Student photograph when uploaded; null on the list when none on file. */
+  photoUrl: z.string().nullable(),
   /**
    * Integer paisa payable for the `TUITION` head, after any discount.
    *
@@ -89,7 +91,6 @@ export type StudentListItem = z.infer<typeof studentListItemSchema>;
 
 export const studentDetailSchema = studentListItemSchema.extend({
   dateOfBirth: calendarDateSchema.nullable(),
-  photoUrl: z.string().nullable(),
   religion: z.string().nullable(),
   bloodGroup: z.string().nullable(),
   nationality: z.string().nullable(),

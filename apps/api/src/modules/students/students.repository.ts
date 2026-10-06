@@ -28,6 +28,7 @@ export interface StudentRow {
   guardian_phone: string | null;
   father_name: string | null;
   admitted_on: Date | null;
+  photo_url: string | null;
   /**
    * `numeric(14,2)` rupees, converted to paisa in `toListItem`.
    *
@@ -176,7 +177,7 @@ export class StudentsRepository {
               s.gender::text AS gender,
               cl.name AS class_name, sec.name AS section_name, e.roll_no,
               g.name AS guardian_name, g.phone AS guardian_phone,
-              s.admitted_on,
+              s.admitted_on, s.photo_url,
               -- Scalar subqueries, deliberately, not joins.
               --
               -- A child has several fee lines and often more than one guardian,

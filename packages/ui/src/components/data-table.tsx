@@ -88,6 +88,8 @@ export interface DataTableProps<TRow> {
   readonly renderExpanded?: ((row: TRow) => ReactNode) | undefined;
 
   readonly caption?: string;
+  /** `plain` drops the outer frame — for tables embedded inside a card. */
+  readonly frame?: 'bordered' | 'plain';
 }
 
 export function DataTable<TRow>({
@@ -104,6 +106,7 @@ export function DataTable<TRow>({
   selection,
   renderExpanded,
   caption,
+  frame = 'bordered',
 }: DataTableProps<TRow>) {
   if (error !== undefined) {
     return <ErrorState description={error} {...(onRetry === undefined ? {} : { onRetry })} />;
@@ -166,10 +169,21 @@ export function DataTable<TRow>({
     <>
       {/* Desktop. Scrolls INSIDE its own container so the page body never
           scrolls sideways (docs/16 §9). */}
-      <div className="hidden overflow-x-auto rounded-xl border border-border md:block">
+      <div
+        className={cn(
+          'hidden overflow-x-auto md:block',
+          frame === 'bordered' ? 'rounded-xl border border-border' : undefined,
+        )}
+      >
         <table className="w-full border-collapse text-sm">
           {caption === undefined ? null : <caption className="sr-only">{caption}</caption>}
-          <thead className="sticky top-0 bg-muted/50">
+          <thead
+            className={cn(
+              frame === 'plain'
+                ? 'border-b border-border bg-muted/30'
+                : 'sticky top-0 bg-muted/50',
+            )}
+          >
             <tr>
               {selection === undefined ? null : (
                 <th scope="col" className="w-10 px-3 py-2">
@@ -187,7 +201,9 @@ export function DataTable<TRow>({
                   key={column.key}
                   scope="col"
                   className={cn(
-                    'px-3 py-2 text-xs font-medium whitespace-nowrap text-muted-foreground',
+                    frame === 'plain' ? 'px-4 py-3' : 'px-3 py-2',
+                    'text-xs font-medium whitespace-nowrap',
+                    frame === 'plain' ? 'text-foreground' : 'text-muted-foreground',
                     column.align === 'end' ? 'text-end' : 'text-start',
                   )}
                 >
@@ -220,7 +236,7 @@ export function DataTable<TRow>({
                     }
                     className={cn(
                       'border-t border-border',
-                      onRowClick === undefined ? '' : 'cursor-pointer hover:bg-muted/50',
+                      onRowClick === undefined ? '' : 'cursor-pointer hover:bg-muted/40',
                       selection?.selected.has(rowKey(row)) === true ? 'bg-primary/5' : '',
                     )}
                   >
@@ -246,7 +262,7 @@ export function DataTable<TRow>({
                       <td
                         key={column.key}
                         className={cn(
-                          'px-3 py-2',
+                          frame === 'plain' ? 'px-4 py-3' : 'px-3 py-2',
                           column.align === 'end' ? 'text-end' : 'text-start',
                         )}
                       >
@@ -274,7 +290,7 @@ export function DataTable<TRow>({
           <li
             key={rowKey(row)}
             className={cn(
-              'rounded-xl border border-border p-3',
+              frame === 'plain' ? 'rounded-lg bg-muted/20 p-3' : 'rounded-xl border border-border p-3',
               selection?.selected.has(rowKey(row)) === true ? 'bg-primary/5' : '',
             )}
           >
