@@ -8,7 +8,9 @@ import {
   FeesIcon,
   FinanceIcon,
   HolidayIcon,
+  PrintIcon,
   RequestsIcon,
+  SchoolIcon,
   SessionIcon,
   SettingsIcon,
   StudentsIcon,
@@ -45,4 +47,6 @@ export const NAV_ICONS: Record<string, ComponentType<{ className?: string }>> = 
   FinanceIcon,
   RequestsIcon,
   SettingsIcon,
+  SchoolIcon,
+  PrintIcon,
 };

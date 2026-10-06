@@ -96,14 +96,20 @@ export function ThemeToggle() {
         type="button"
         onClick={toggle}
         aria-label={label}
-        className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="inline-flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         {/* Both are rendered and one is hidden, rather than branching on
             `choice`: before the effect runs `choice` is undefined, and an icon
             that pops in a beat after the header is worse than one that is
             simply correct from the first frame. */}
-        <LightModeIcon className={choice === 'dark' ? 'size-4' : 'hidden size-4'} aria-hidden="true" />
-        <DarkModeIcon className={choice === 'dark' ? 'hidden size-4' : 'size-4'} aria-hidden="true" />
+        <LightModeIcon
+          className={choice === 'dark' ? 'size-5 shrink-0' : 'hidden size-5 shrink-0'}
+          aria-hidden="true"
+        />
+        <DarkModeIcon
+          className={choice === 'dark' ? 'hidden size-5 shrink-0' : 'size-5 shrink-0'}
+          aria-hidden="true"
+        />
       </button>
     </Hint>
   );

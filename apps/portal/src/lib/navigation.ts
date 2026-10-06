@@ -231,41 +231,37 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: 'RequestsIcon',
     permission: 'workflow.request.create',
   },
+];
+
+/**
+ * Settings lives in the header menu, not the sidebar (docs/08: hourly work in
+ * the capped nav; configuration in the gear).
+ */
+export const SETTINGS_MENU_ITEMS: readonly NavItem[] = [
   {
-    href: '/settings',
-    label: 'Settings',
-    icon: 'SettingsIcon',
-    // The section opens for anyone who may configure *something* under it. The
-    // index filters itself by each entry's own permission, and every page
-    // behind it is checked again on the server.
-    permission: 'settings.school.configure',
-    children: [
-      {
-        href: '/settings/school',
-        label: 'School',
-        icon: 'SchoolIcon',
-        // Reading the school's own name and phone number is not a privilege —
-        // it is on the letterhead. Changing them needs
-        // `settings.school.configure`, which the form and the API both check.
-        permission: 'dashboard.workspace.read',
-      },
-      {
-        href: '/settings/fees',
-        label: 'Fee types',
-        icon: 'FeesIcon',
-        permission: 'fees.plan.read',
-      },
-      {
-        href: '/settings/voucher',
-        label: 'Fee challan',
-        icon: 'PrintIcon',
-        // Whoever may print a challan may see how it is laid out; changing it
-        // needs `settings.school.configure`, checked by the form and the API.
-        permission: 'fees.voucher.read',
-      },
-    ],
+    href: '/settings/school',
+    label: 'School',
+    icon: 'SchoolIcon',
+    permission: 'dashboard.workspace.read',
+  },
+  {
+    href: '/settings/fees',
+    label: 'Fee types',
+    icon: 'FeesIcon',
+    permission: 'fees.plan.read',
+  },
+  {
+    href: '/settings/voucher',
+    label: 'Fee challan',
+    icon: 'PrintIcon',
+    permission: 'fees.voucher.read',
   },
 ];
+
+export function visibleSettingsMenuItems(permissions: readonly string[]): readonly NavItem[] {
+  const held = new Set(permissions);
+  return SETTINGS_MENU_ITEMS.filter((item) => held.has(item.permission));
+}
 
 /**
  * The items a set of permissions reveals.

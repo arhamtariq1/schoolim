@@ -71,16 +71,12 @@ export function CommandPalette({
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
 
         <DialogPrimitive.Content
-          // Seated above centre rather than in the middle of the screen. A
-          // palette drops from the top; centring it means the list grows
-          // downward from a box that is already halfway down, and on a laptop
-          // the last results fall off the bottom.
           className={cn(
-            'fixed start-1/2 top-[12vh] z-50 w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2',
+            'fixed start-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2',
             'overflow-hidden rounded-xl border border-border bg-card shadow-overlay',
-            'data-[state=closed]:animate-out data-[state=open]:animate-in',
-            'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-            'data-[state=open]:slide-in-from-bottom-4',
+            'data-[state=open]:animate-in data-[state=closed]:animate-out',
+            'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
+            'data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95',
           )}
         >
           {/* Radix requires a title on every dialog; this one is visually the

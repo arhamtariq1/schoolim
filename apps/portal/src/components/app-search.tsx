@@ -10,11 +10,10 @@ import {
   CommandPalette,
   Money,
 } from '@ilm/ui';
-import { ICON_SIZE, StudentsIcon } from '@ilm/ui/icons';
+import { ChevronRightIcon, ICON_SIZE, StudentsIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
-import { NAV_ICONS } from '@/components/nav-icons';
 import { searchDestinations } from '@/lib/search-destinations';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
@@ -170,7 +169,7 @@ export function AppSearch({ permissions, children }: AppSearchProps) {
             </span>
             <span className="flex items-center gap-1.5">
               <CommandKey>↵</CommandKey>
-              to open
+              Go to page
             </span>
             <span className="ms-auto flex items-center gap-1.5">
               <CommandKey>esc</CommandKey>
@@ -189,9 +188,8 @@ export function AppSearch({ permissions, children }: AppSearchProps) {
         ) : null}
 
         {matchedPages.length === 0 ? null : (
-          <CommandGroup heading={term === '' ? 'Go to' : 'Pages'}>
+          <CommandGroup heading="Pages">
             {matchedPages.map((entry) => {
-              const Icon = NAV_ICONS[entry.icon];
               return (
                 <CommandItem
                   key={entry.href}
@@ -200,12 +198,10 @@ export function AppSearch({ permissions, children }: AppSearchProps) {
                     go(entry.href);
                   }}
                 >
-                  {Icon === undefined ? null : (
-                    <Icon
-                      className={`${ICON_SIZE.inline} shrink-0 text-muted-foreground`}
-                      aria-hidden
-                    />
-                  )}
+                  <ChevronRightIcon
+                    className={`${ICON_SIZE.inline} shrink-0 text-muted-foreground`}
+                    aria-hidden
+                  />
                   <span className="truncate">{entry.label}</span>
                   {entry.section === undefined ? null : (
                     <span className="ms-auto shrink-0 text-xs text-muted-foreground">

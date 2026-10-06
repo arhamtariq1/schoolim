@@ -16,27 +16,34 @@ import {
 } from '@ilm/ui';
 import {
   AccountIcon,
+  AttendanceIcon,
+  CalendarIcon,
   ChevronDownIcon,
   CloseIcon,
+  FeesIcon,
+  FinanceIcon,
   ICON_SIZE,
   MenuIcon,
-  MessagesIcon,
   NotificationsIcon,
+  PrintIcon,
   SchoolIcon,
   SearchIcon,
   SettingsIcon,
   SignOutIcon,
+  StudentsIcon,
+  TrendUpIcon,
 } from '@ilm/ui/icons';
 import { BRAND } from '@ilm/utils';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
 
+import { AppSearch } from '@/components/app-search';
 import { BrandTheme } from '@/components/brand-theme';
 import { NAV_ICONS } from '@/components/nav-icons';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { VerifyEmailBanner } from '@/components/verify-email-banner';
-import { NAV_ITEMS, visibleNavItems, type NavItem } from '@/lib/navigation';
+import { NAV_ITEMS, visibleNavItems, visibleSettingsMenuItems, type NavItem } from '@/lib/navigation';
 import { useCanonicalPathname, useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -111,7 +118,7 @@ export interface AppShellProps {
 
 /** Header icon buttons that are visible but not interactive yet. */
 const HEADER_ICON_DISABLED =
-  'inline-flex size-9 cursor-not-allowed items-center justify-center rounded-md text-muted-foreground opacity-50';
+  'inline-flex size-10 cursor-not-allowed items-center justify-center rounded-lg text-muted-foreground opacity-50';
 
 export function AppShell({
   user,
@@ -199,6 +206,7 @@ export function AppShell({
           <AppHeader
             schoolName={school.name}
             user={user}
+            permissions={permissions}
             settingsEnabled={!navLocked}
             onOpenMenu={() => {
               setDrawerOpen(true);
@@ -238,15 +246,16 @@ export function AppShell({
 function AppHeader({
   schoolName,
   user,
+  permissions,
   settingsEnabled = false,
   onOpenMenu,
 }: {
   schoolName: string;
   user: { name: string; email?: string; roleLabel: string };
+  permissions: readonly string[];
   settingsEnabled?: boolean;
   onOpenMenu: () => void;
 }) {
-  const tenantHref = useTenantHref();
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-3 md:gap-4 md:px-5">
       <button
@@ -261,62 +270,32 @@ function AppHeader({
       <span className="truncate text-sm font-semibold md:hidden">{schoolName}</span>
 
       <div className="hidden min-w-0 flex-1 md:block md:max-w-xl">
-        <button
-          type="button"
-          disabled
-          aria-label="Search"
-          className={cn(
-            HEADER_ICON_DISABLED,
-            'flex h-10 w-full items-center gap-2 rounded-xl border-0 bg-muted/60 px-3.5 text-sm',
+        <AppSearch permissions={permissions}>
+          {(openSearch) => (
+            <button
+              type="button"
+              aria-label="Search pages and students"
+              onClick={openSearch}
+              className="flex h-10 w-full cursor-pointer items-center gap-2.5 rounded-xl border border-border bg-muted/40 px-3.5 text-sm text-muted-foreground transition-colors hover:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <SearchIcon className="size-4 shrink-0 opacity-80" aria-hidden="true" />
+              <span className="truncate text-start">Search pages, students…</span>
+              <kbd className="ms-auto hidden rounded-md border border-border bg-background px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground lg:inline">
+                ⌘K
+              </kbd>
+            </button>
           )}
-        >
-          <SearchIcon className="size-4 shrink-0" aria-hidden="true" />
-          <span className="truncate">Search pages, students…</span>
-          <kbd className="ms-auto hidden rounded-md border border-border bg-background px-1.5 font-mono text-xs text-muted-foreground lg:inline">
-            ⌘K
-          </kbd>
-        </button>
+        </AppSearch>
       </div>
 
       <div className="ms-auto flex items-center gap-1 md:gap-2">
         <ThemeToggle />
 
-        <Hint label="Messages (coming soon)">
-          <button type="button" disabled aria-label="Messages" className={HEADER_ICON_DISABLED}>
-            <MessagesIcon className="size-4" aria-hidden="true" />
-          </button>
-        </Hint>
+        <HeaderNotificationsMenu />
 
-        <Hint label="Notifications (coming soon)">
-          <button type="button" disabled aria-label="Notifications" className={HEADER_ICON_DISABLED}>
-            <NotificationsIcon className="size-4" aria-hidden="true" />
-          </button>
-        </Hint>
-
-        {settingsEnabled ? (
-          <Hint label="Settings">
-            <Link
-              href={tenantHref('/settings')}
-              aria-label="Settings"
-              className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            >
-              <SettingsIcon className="size-4" aria-hidden="true" />
-            </Link>
-          </Hint>
-        ) : (
-          <Hint label="Complete setup to open settings">
-            <button type="button" disabled aria-label="Settings" className={HEADER_ICON_DISABLED}>
-              <SettingsIcon className="size-4" aria-hidden="true" />
-            </button>
-          </Hint>
-        )}
+        <HeaderSettingsMenu permissions={permissions} disabled={!settingsEnabled} />
 
         <span aria-hidden="true" className="mx-1 hidden h-8 w-px bg-border sm:block" />
-
-        <div className="hidden min-w-0 text-end sm:block">
-          <span className="block truncate text-sm font-medium text-foreground">{user.name}</span>
-          <span className="block truncate text-xs text-muted-foreground">{user.roleLabel}</span>
-        </div>
 
         <ProfileMenu user={user} />
       </div>
@@ -324,10 +303,195 @@ function AppHeader({
   );
 }
 
-function ProfileMenu({ user }: { user: { name: string; email?: string } }) {
+function HeaderSettingsMenu({
+  permissions,
+  disabled,
+}: {
+  permissions: readonly string[];
+  disabled: boolean;
+}) {
+  const tenantHref = useTenantHref();
+  const items = visibleSettingsMenuItems(permissions);
+  const hasItems = items.length > 0;
+
+  if (disabled || !hasItems) {
+    return (
+      <Hint label={disabled ? 'Complete setup to open settings' : 'No settings available'}>
+        <button type="button" disabled aria-label="Settings" className={HEADER_ICON_DISABLED}>
+          <SettingsIcon className={HEADER_ICON_CLASS} aria-hidden="true" />
+        </button>
+      </Hint>
+    );
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" aria-label="Settings" className={HEADER_ACTION_CLASS}>
+          <SettingsIcon className={HEADER_ICON_CLASS} aria-hidden="true" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={6} className="min-w-44 p-1">
+        {items.map((item) => {
+          const Icon = NAV_ICONS[item.icon] ?? SettingsIcon;
+          return (
+            <DropdownMenuItem key={item.href} asChild className="rounded-md px-2.5 py-2">
+              <Link href={tenantHref(item.href)} className="cursor-pointer">
+                <Icon aria-hidden="true" className="text-muted-foreground" />
+                {item.label}
+              </Link>
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+const HEADER_ICON_CLASS = 'size-5 shrink-0';
+
+const HEADER_ACTION_CLASS =
+  'inline-flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
+
+type HeaderNotificationIcon = ComponentType<{ className?: string }>;
+
+const STATIC_HEADER_NOTIFICATIONS: readonly {
+  id: string;
+  title: string;
+  detail: string;
+  time: string;
+  unread: boolean;
+  icon: HeaderNotificationIcon;
+}[] = [
+  {
+    id: 'n1',
+    title: 'Fee payment recorded',
+    detail: 'GR 1042 — Rs 12,500 received at reception.',
+    time: 'Today, 9:14 AM',
+    unread: true,
+    icon: FeesIcon,
+  },
+  {
+    id: 'n2',
+    title: 'New admission',
+    detail: 'Ayesha Khan enrolled in Grade 1 · A.',
+    time: 'Yesterday, 4:30 PM',
+    unread: true,
+    icon: StudentsIcon,
+  },
+  {
+    id: 'n3',
+    title: 'Attendance not marked',
+    detail: '3 classes still unmarked for today.',
+    time: 'Yesterday, 8:00 AM',
+    unread: true,
+    icon: AttendanceIcon,
+  },
+  {
+    id: 'n4',
+    title: 'Voucher batch ready',
+    detail: 'October tuition vouchers are ready to print.',
+    time: 'Mon, 6 Oct',
+    unread: false,
+    icon: PrintIcon,
+  },
+  {
+    id: 'n5',
+    title: 'Session calendar updated',
+    detail: 'Mid-term break added to the academic calendar.',
+    time: 'Fri, 3 Oct',
+    unread: false,
+    icon: CalendarIcon,
+  },
+];
+
+function HeaderNotificationsMenu() {
+  const unreadCount = STATIC_HEADER_NOTIFICATIONS.filter((entry) => entry.unread).length;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" aria-label="Notifications" className={cn(HEADER_ACTION_CLASS, 'relative')}>
+          <NotificationsIcon className={HEADER_ICON_CLASS} aria-hidden="true" />
+          {unreadCount === 0 ? null : (
+            <span className="absolute end-0.5 top-0.5 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-semibold tabular-nums leading-none text-primary-foreground ring-2 ring-card">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="w-[min(100vw-2rem,24rem)] overflow-hidden rounded-xl border border-border p-0 shadow-raised"
+      >
+        <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/30 px-4 py-3">
+          <span className="text-sm font-semibold text-foreground">Notifications</span>
+          {unreadCount === 0 ? null : (
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+              {unreadCount} new
+            </span>
+          )}
+        </div>
+        <ul
+          className="scrollbar-hidden max-h-[min(20rem,70vh)] divide-y divide-border overflow-y-auto overscroll-y-contain"
+          aria-label="Recent notifications"
+        >
+          {STATIC_HEADER_NOTIFICATIONS.map((entry) => {
+            const ItemIcon = entry.icon;
+            return (
+              <li key={entry.id}>
+                <button
+                  type="button"
+                  className={cn(
+                    'flex w-full gap-3 px-4 py-3 text-start transition-colors hover:bg-muted/50',
+                    entry.unread ? 'bg-primary/[0.04]' : undefined,
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'relative flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary',
+                      entry.unread ? 'ring-2 ring-primary/20' : undefined,
+                    )}
+                  >
+                    <ItemIcon className="size-4 shrink-0" aria-hidden="true" />
+                    {entry.unread ? (
+                      <span
+                        aria-hidden="true"
+                        className="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-primary ring-2 ring-card"
+                      />
+                    ) : null}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-start justify-between gap-2">
+                      <span className="text-sm font-medium text-foreground">{entry.title}</span>
+                      <span className="shrink-0 text-[11px] whitespace-nowrap text-muted-foreground">
+                        {entry.time}
+                      </span>
+                    </span>
+                    <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
+                      {entry.detail}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="border-t border-border bg-muted/20 px-4 py-2.5 text-center text-xs text-muted-foreground">
+          Live feed coming soon
+        </p>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function ProfileMenu({
+  user,
+}: {
+  user: { name: string; email?: string; roleLabel: string };
+}) {
   const tenantHref = useTenantHref();
   const [askingSignOut, setAskingSignOut] = useState(false);
-
   return (
     <>
       <DropdownMenu>
@@ -335,40 +499,64 @@ function ProfileMenu({ user }: { user: { name: string; email?: string } }) {
           <button
             type="button"
             aria-label="Account menu"
-            className="ms-1 inline-flex size-9 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="inline-flex max-w-[12rem] items-center gap-2 rounded-lg py-1 ps-0.5 pe-1 transition-colors hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:max-w-xs"
           >
-            {initials(user.name)}
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+              {initials(user.name)}
+            </span>
+            <span className="hidden min-w-0 text-start sm:block">
+              <span className="block truncate text-sm font-medium text-foreground">{user.name}</span>
+              <span className="block truncate text-xs text-muted-foreground">{user.roleLabel}</span>
+            </span>
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-64 p-0">
-          <DropdownMenuLabel className="px-3 py-3 font-normal">
-            <span className="block truncate text-sm font-semibold text-foreground">{user.name}</span>
-            {user.email === undefined || user.email === '' ? null : (
-              <span className="mt-0.5 block truncate text-xs text-muted-foreground">{user.email}</span>
-            )}
+        <DropdownMenuContent align="end" sideOffset={6} className="min-w-52 p-1">
+          <DropdownMenuLabel className="px-2.5 py-2 font-normal">
+            <span className="flex items-center gap-3">
+              <span
+                aria-hidden="true"
+                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
+              >
+                {initials(user.name)}
+              </span>
+              <span className="min-w-0 flex-1 text-start">
+                <span className="block truncate text-sm font-medium text-foreground">{user.name}</span>
+                {user.email === undefined || user.email === '' ? null : (
+                  <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
+                )}
+              </span>
+            </span>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator className="mx-0 my-0" />
-          <div className="p-1">
-            <DropdownMenuItem asChild>
-              <Link href={tenantHref('/profile')} className="cursor-pointer px-2 py-2.5">
-                <AccountIcon aria-hidden="true" />
-                Profile
-              </Link>
-            </DropdownMenuItem>
-          </div>
-          <DropdownMenuSeparator className="mx-0 my-0" />
-          <div className="p-1">
-            <DropdownMenuItem
-              destructive
-              className="px-2 py-2.5"
-              onSelect={() => {
-                setAskingSignOut(true);
-              }}
-            >
-              <SignOutIcon aria-hidden="true" />
-              Logout
-            </DropdownMenuItem>
-          </div>
+          <DropdownMenuSeparator className="mx-0" />
+          <DropdownMenuItem asChild className="rounded-md px-2.5 py-2">
+            <Link href={tenantHref('/profile')} className="cursor-pointer">
+              <AccountIcon aria-hidden="true" className="text-muted-foreground" />
+              Profile
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="rounded-md px-2.5 py-2">
+            <Link href={tenantHref('/pricing')} className="cursor-pointer">
+              <TrendUpIcon aria-hidden="true" className="text-muted-foreground" />
+              Pricing
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="rounded-md px-2.5 py-2">
+            <Link href={tenantHref('/billing')} className="cursor-pointer">
+              <FinanceIcon aria-hidden="true" className="text-muted-foreground" />
+              Billing
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator className="mx-0" />
+          <DropdownMenuItem
+            destructive
+            className="rounded-md px-2.5 py-2"
+            onSelect={() => {
+              setAskingSignOut(true);
+            }}
+          >
+            <SignOutIcon aria-hidden="true" />
+            Logout
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -528,7 +716,7 @@ function NavLink({
         'flex items-center gap-3 rounded-xl text-sm font-medium transition-colors duration-150',
         compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : 'px-3 py-2.5',
         isActive
-          ? 'bg-primary/10 text-primary shadow-sm'
+          ? 'bg-primary/10 text-primary'
           : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
       )}
     >

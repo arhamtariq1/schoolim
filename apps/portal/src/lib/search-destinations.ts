@@ -1,4 +1,4 @@
-import { visibleNavItems, type NavItem } from './navigation';
+import { visibleNavItems, visibleSettingsMenuItems, type NavItem } from './navigation';
 
 /**
  * The navigation tree, flattened into the places ⌘K can take you.
@@ -35,7 +35,10 @@ export interface Destination {
  * leaf carries its parent's name to tell two similar page names apart.
  */
 export function searchDestinations(permissions: readonly string[]): Destination[] {
-  return flatten(visibleNavItems(permissions));
+  return [
+    ...flatten(visibleNavItems(permissions)),
+    ...flatten(visibleSettingsMenuItems(permissions), 'Settings'),
+  ];
 }
 
 /** Exported for the tests, which build trees the real navigation does not have. */
