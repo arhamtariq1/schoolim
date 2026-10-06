@@ -1,10 +1,13 @@
-import { PageHeaderSkeleton, ProfileViewSkeleton } from '@/components/profile-skeletons';
+import { ProfilePageLayout } from '@/components/profile-page-layout';
+import { ProfileViewSkeleton } from '@/components/profile-skeletons';
 
 export default function ProfileLoading() {
   return (
-    <div className="space-y-6">
-      <PageHeaderSkeleton withActions />
+    <ProfilePageLayout
+      title="Profile"
+      description="Manage your account and school information."
+    >
       <ProfileViewSkeleton />
-    </div>
+    </ProfilePageLayout>
   );
 }

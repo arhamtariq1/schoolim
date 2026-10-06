@@ -239,12 +239,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
  */
 export const SETTINGS_MENU_ITEMS: readonly NavItem[] = [
   {
-    href: '/settings/school',
-    label: 'School',
-    icon: 'SchoolIcon',
-    permission: 'dashboard.workspace.read',
-  },
-  {
     href: '/settings/fees',
     label: 'Fee types',
     icon: 'FeesIcon',

@@ -37,7 +37,12 @@ export async function DashboardChrome({ children }: { children: ReactNode }) {
   }
 
   const contentWidth =
-    innerPath === '/profile/create' || innerPath === '/' ? 'full' : 'default';
+    innerPath === '/' ||
+    innerPath === '/profile' ||
+    innerPath === '/profile/edit' ||
+    innerPath === '/profile/create'
+      ? 'full'
+      : 'default';
 
   return (
     <AppShell {...appShellPropsFromSession(session, { contentWidth })}>{children}</AppShell>

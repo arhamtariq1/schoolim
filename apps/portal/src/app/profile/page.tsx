@@ -1,39 +1,35 @@
 import { ROUTES, type UserProfile } from '@ilm/contracts';
-import { Button } from '@ilm/ui';
-import { EditIcon, ICON_SIZE } from '@ilm/ui/icons';
-import Link from 'next/link';
 
-import { PageHeader } from '@/components/page-header';
-import { ProfileView } from '@/components/profile-view';
+import { ProfilePageLayout } from '@/components/profile-page-layout';
+import { ProfileWorkspaceEditor } from '@/components/profile-workspace-editor';
 import { apiFetch } from '@/lib/api';
+import { loadProfileSchoolWorkspace } from '@/lib/profile-school-workspace';
+import { getSession } from '@/lib/session';
 
-/**
- * Read-only profile. Incomplete sessions never land here — the proxy and
- * `requireSchoolSession` send them to `/profile/create`.
- */
+const PROFILE_DESCRIPTION = 'Manage your account and school information.';
+
 export default async function ProfilePage() {
-  const result = await apiFetch<{ data: UserProfile }>(ROUTES.me.profile);
+  const session = await getSession();
+  const [profileResult, workspace] = await Promise.all([
+    apiFetch<{ data: UserProfile }>(ROUTES.me.profile),
+    loadProfileSchoolWorkspace(),
+  ]);
+
+  const roleLabel = session?.roles.join(', ') ?? '';
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Profile"
-        description="Your account details at this school."
-        actions={
-          <Button asChild>
-            <Link href="/profile/edit" className="cursor-pointer">
-              <EditIcon className={ICON_SIZE.inline} aria-hidden="true" />
-              Edit profile
-            </Link>
-          </Button>
-        }
-      />
-      {result.ok ? (
-        <ProfileView profile={result.data.data} />
+    <ProfilePageLayout title="Profile" description={PROFILE_DESCRIPTION}>
+      {profileResult.ok ? (
+        <ProfileWorkspaceEditor
+          mode="view"
+          profile={profileResult.data.data}
+          workspace={workspace}
+          roleLabel={roleLabel}
+        />
       ) : (
-        <p className="text-sm text-danger">{result.message}</p>
+        <p className="text-sm text-danger">{profileResult.message}</p>
       )}
-    </div>
+    </ProfilePageLayout>
   );
 }
 

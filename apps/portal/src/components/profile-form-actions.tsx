@@ -1,4 +1,5 @@
 import { Button } from '@ilm/ui';
+import { SaveIcon, ICON_SIZE } from '@ilm/ui/icons';
 import type { ReactNode } from 'react';
 
 /** Primary / secondary actions aligned like the reference profile editor footer. */
@@ -27,7 +28,14 @@ export function ProfileFormActions({
           </Button>
         )}
         <Button type="submit" disabled={primaryPending} className="min-w-36">
-          {primaryPending ? 'Saving…' : primaryLabel}
+          {primaryPending ? (
+            'Saving…'
+          ) : (
+            <>
+              <SaveIcon className={ICON_SIZE.inline} aria-hidden="true" />
+              {primaryLabel}
+            </>
+          )}
         </Button>
       </div>
     </div>

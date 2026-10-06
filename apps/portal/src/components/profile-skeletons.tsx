@@ -18,55 +18,39 @@ export function PageHeaderSkeleton({ withActions = false }: { withActions?: bool
   );
 }
 
-/** Read-only `/profile` — matches `ProfileView` two-column layout. */
+/** Profile workspace — two reference-style section cards. */
 export function ProfileViewSkeleton() {
   return (
-    <div
-      className="mx-auto grid w-full max-w-3xl gap-6 lg:grid-cols-5"
-      role="status"
-      aria-label="Loading profile"
-    >
-      <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:col-span-3">
-        <div className="flex items-start gap-4 border-b border-border bg-muted/30 px-4 py-5 sm:px-6">
-          <Skeleton className="size-14 shrink-0 rounded-full" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-4 w-56" />
-          </div>
-          <Skeleton className="h-9 w-14 shrink-0 rounded-md" />
-        </div>
-        <div className="divide-y divide-border">
-          <DetailRowSkeleton />
-          <DetailRowSkeleton />
-          <DetailRowSkeleton />
-        </div>
-        <div className="border-t border-border px-4 py-3 sm:px-6">
-          <Skeleton className="h-3 w-32" />
-        </div>
-      </section>
-
-      <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:col-span-2">
-        <div className="flex items-start gap-3 border-b border-border bg-muted/30 px-4 py-4 sm:px-5">
-          <Skeleton className="size-9 shrink-0 rounded-lg" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-3 w-24" />
-          </div>
-          <Skeleton className="h-9 w-16 shrink-0 rounded-md" />
-        </div>
-        <div className="divide-y divide-border">
-          <DetailRowSkeleton />
-          <DetailRowSkeleton />
-          <DetailRowSkeleton />
-          <DetailRowSkeleton />
-          <DetailRowSkeleton />
-        </div>
-        <div className="border-t border-border px-4 py-3 sm:px-5">
-          <Skeleton className="h-3 w-36" />
-        </div>
-      </section>
+    <div className="grid w-full gap-4 lg:grid-cols-2" role="status" aria-label="Loading profile">
+      <ReferenceSectionSkeleton />
+      <ReferenceSectionSkeleton tall />
     </div>
+  );
+}
+
+function ReferenceSectionSkeleton({ tall = false }: { tall?: boolean }) {
+  return (
+    <section className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
+      <div className="mb-5 flex gap-3 border-b border-border/70 pb-5">
+        <Skeleton className="size-10 rounded-lg" />
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-4 w-56" />
+        </div>
+      </div>
+      <div className="mb-6 flex gap-4">
+        <Skeleton className="size-20 rounded-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-36" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+      </div>
+      <div className="space-y-4">
+        {Array.from({ length: tall ? 6 : 4 }, (_, index) => (
+          <Skeleton key={index} className="h-10 w-full rounded-lg" />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -162,15 +146,6 @@ function FieldSkeleton({ withHint = false }: { withHint?: boolean }) {
       <Skeleton className="h-4 w-28" />
       <Skeleton className="h-10 w-full rounded-lg" />
       {withHint ? <Skeleton className="h-3 w-full max-w-xs" /> : null}
-    </div>
-  );
-}
-
-function DetailRowSkeleton() {
-  return (
-    <div className="flex justify-between gap-4 px-4 py-3 sm:px-6">
-      <Skeleton className="h-4 w-20" />
-      <Skeleton className="h-4 w-32 max-w-[50%]" />
     </div>
   );
 }

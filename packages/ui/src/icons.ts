@@ -57,6 +57,12 @@ export {
   // --- Account and session --------------------------------------------------
   LogOut as SignOutIcon,
   User as AccountIcon,
+  Mail as EmailIcon,
+  Phone as PhoneIcon,
+  Briefcase as DesignationIcon,
+  Globe as WebIcon,
+  MapPin as LocationIcon,
+  Save as SaveIcon,
   Eye as ShowPasswordIcon,
   EyeOff as HidePasswordIcon,
 

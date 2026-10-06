@@ -110,7 +110,10 @@ export function BrandColourCard({ appearance, canConfigure, error }: BrandColour
   }
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4" aria-labelledby="brand-colour">
+    <section
+      className="h-full rounded-xl border border-border bg-card p-4 shadow-raised"
+      aria-labelledby="brand-colour"
+    >
       <h2 id="brand-colour" className="text-base font-medium text-foreground">
         Portal colour
       </h2>

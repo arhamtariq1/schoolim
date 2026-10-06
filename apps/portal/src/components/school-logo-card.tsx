@@ -99,7 +99,10 @@ export function SchoolLogoCard({
   }
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4" aria-labelledby={headingId}>
+    <section
+      className="h-full rounded-xl border border-border bg-card p-4 shadow-raised"
+      aria-labelledby={headingId}
+    >
       <h2 id={headingId} className="text-base font-medium text-foreground">
         {title}
       </h2>

@@ -1,82 +1,8 @@
-import { ROUTES, type SchoolLogoInfo, type SchoolSettings } from '@ilm/contracts';
+import { redirect } from 'next/navigation';
 
-import { BrandColourCard } from '@/components/brand-colour-card';
-import { SchoolLogoCard } from '@/components/school-logo-card';
-import { SchoolSettingsForm } from '@/components/school-settings-form';
-import { apiFetch } from '@/lib/api';
-import { getSession } from '@/lib/session';
+import { tenantHref } from '@/lib/tenant-server';
 
-/**
- * Settings › School — the school's own record.
- *
- * Both reads go out together rather than one after the other: they are
- * independent, and awaiting them in sequence would make the page take the sum
- * of two round trips to render something neither half depends on.
- *
- * Fetched on the server so the first paint carries the real values. A settings
- * form that opens empty and then fills in is a form somebody starts typing into
- * before it is ready, and loses what they typed (docs/16 §7).
- */
-export default async function SchoolSettingsPage() {
-  const [session, settingsResult, logoResult] = await Promise.all([
-    getSession(),
-    apiFetch<{ data: SchoolSettings }>(ROUTES.school.settings),
-    apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info),
-  ]);
-
-  const permissions = session?.permissions ?? [];
-  const canConfigure = permissions.includes('settings.school.configure');
-
-  // The session already carries the school's name, so a failed read still
-  // renders a form with the one field everybody recognises filled in, and the
-  // reason above it — rather than an error page with nothing on it.
-  const settings: SchoolSettings = settingsResult.ok
-    ? settingsResult.data.data
-    : {
-        name: session?.school.name ?? '',
-        legalName: null,
-        slug: session?.school.slug ?? '',
-        address: null,
-        city: null,
-        schoolLevels: [],
-        phone: null,
-        email: null,
-        timezone: session?.school.timezone ?? 'Asia/Karachi',
-        locale: session?.school.locale ?? 'en',
-        currency: 'PKR',
-        country: 'PK',
-        primaryColor: session?.school.primaryColor ?? null,
-      };
-
-  return (
-    <div className="max-w-3xl space-y-6">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">School</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Your school’s name, address and mark — everything printed on a challan or a receipt.
-          </p>
-        </div>
-
-        <SchoolSettingsForm
-          settings={settings}
-          canConfigure={canConfigure}
-          error={settingsResult.ok ? undefined : settingsResult.message}
-        />
-
-        <BrandColourCard
-          appearance={{ primaryColor: settings.primaryColor }}
-          canConfigure={canConfigure}
-        />
-
-        <SchoolLogoCard
-          info={
-            logoResult.ok
-              ? logoResult.data.data
-              : { present: false, mimeType: null, byteSize: null, version: null }
-          }
-          canConfigure={canConfigure}
-          error={logoResult.ok ? undefined : logoResult.message}
-        />
-      </div>
-  );
+/** School settings now live under Profile. */
+export default async function SchoolSettingsRedirectPage() {
+  redirect(await tenantHref('/profile/edit'));
 }
