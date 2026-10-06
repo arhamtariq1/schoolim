@@ -1,6 +1,5 @@
 import { MAX_PAGE_LIMIT, ROUTES, type StaffListItem } from '@ilm/contracts';
 
-import { AppShell } from '@/components/app-shell';
 import { StaffTable } from '@/components/staff-table';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
@@ -35,15 +34,7 @@ export default async function StaffPage({
   ]);
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <StaffTable
+    <StaffTable
         rows={result.ok ? result.data.data : []}
         total={result.ok ? result.data.meta.page.total : 0}
         limit={result.ok ? result.data.meta.page.limit : limit}
@@ -53,7 +44,6 @@ export default async function StaffPage({
         role={role}
         canManage={session?.permissions.includes('staff.record.update') ?? false}
       />
-    </AppShell>
   );
 }
 

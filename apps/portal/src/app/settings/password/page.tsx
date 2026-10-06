@@ -9,7 +9,7 @@ import { BRAND } from '@ilm/utils';
  *
  * ## Why this one deliberately has no sidebar
  *
- * Every other screen is wrapped in `<AppShell>`; this is the exception, and on
+ * Every other screen is wrapped in ``; this is the exception, and on
  * purpose. It is a gate: the person is here because they may not use the
  * product until they have set a password. Handing them a full navigation menu
  * invites them to click past the thing they are required to do, and then every

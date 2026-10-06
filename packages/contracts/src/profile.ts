@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { emailSchema, phoneSchema, schoolSlugSchema, textSchema, timeZoneSchema } from './primitives';
+import { schoolLevelsSchema } from './school-levels';
 import { uploadSchoolLogoSchema } from './school-logo';
 
 /**
@@ -22,8 +23,10 @@ export const userProfileSchema = z.object({
     name: z.string(),
     slug: z.string(),
     city: z.string().nullable(),
+    address: z.string().nullable(),
     phone: z.string().nullable(),
     email: z.string().nullable(),
+    schoolLevels: z.array(z.string()),
     /** False until the owner finishes the first-login school form. */
     onboarded: z.boolean(),
   }),
@@ -62,8 +65,10 @@ export const completeOnboardingSchema = z
         name: textSchema(160),
         slug: schoolSlugSchema,
         city: textSchema(80),
+        address: textSchema(240),
         phone: phoneSchema,
         email: emailSchema,
+        schoolLevels: schoolLevelsSchema,
         timezone: timeZoneSchema.default('Asia/Karachi'),
         locale: z.enum(['en', 'ur']).default('en'),
       })

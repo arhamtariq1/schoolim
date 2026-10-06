@@ -46,7 +46,7 @@ export interface NavItem {
 export const NAV_ITEMS: readonly NavItem[] = [
   {
     href: '/',
-    label: 'Home',
+    label: 'Dashboard',
     icon: 'DashboardIcon',
     permission: 'dashboard.workspace.read',
   },

@@ -13,7 +13,6 @@ import {
 } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
-import { AppShell } from '@/components/app-shell';
 import { VouchersView } from '@/components/vouchers-view';
 import { apiFetch } from '@/lib/api';
 import { clampInt, readParam } from '@/lib/search-params';
@@ -96,15 +95,7 @@ export default async function VouchersPage({
   };
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <VouchersView
+    <VouchersView
         rows={listResult.ok ? listResult.data.data : []}
         sessions={sessionsResult.ok ? sessionsResult.data.data : []}
         classes={academicsResult.ok ? academicsResult.data.data.classes : []}
@@ -139,6 +130,5 @@ export default async function VouchersPage({
         canEdit={session?.permissions.includes('fees.voucher.generate') ?? false}
         canConfigureChallan={session?.permissions.includes('settings.school.configure') ?? false}
       />
-    </AppShell>
   );
 }

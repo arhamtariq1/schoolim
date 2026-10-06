@@ -76,7 +76,7 @@ export const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(25
 export const phoneSchema = z
   .string()
   .trim()
-  .regex(/^\+[1-9]\d{7,14}$/, 'expected an E.164 phone number, for example +923001234567');
+  .regex(/^\+[1-9]\d{7,14}$/, 'Enter a valid phone number, for example 03001234567.');
 
 /** URL-safe identifier used for school subdomains. */
 export const slugSchema = z

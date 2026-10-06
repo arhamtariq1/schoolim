@@ -1,7 +1,6 @@
 import { ROUTES, type AcademicSession, type Holiday } from '@ilm/contracts';
 
 import { HolidaysManager } from '@/components/holidays-manager';
-import { SchoolShell } from '@/components/school-shell';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -31,8 +30,7 @@ export default async function HolidaysPage({
         );
 
   return (
-    <SchoolShell>
-      <HolidaysManager
+    <HolidaysManager
         holidays={holidaysResult?.ok === true ? holidaysResult.data.data : []}
         sessions={sessions}
         activeSessionId={activeSessionId}
@@ -41,6 +39,5 @@ export default async function HolidaysPage({
         }
         canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
       />
-    </SchoolShell>
   );
 }

@@ -1,7 +1,6 @@
 import { FeesIcon, ChevronRightIcon, ICON_SIZE, PrintIcon, SchoolIcon } from '@ilm/ui/icons';
 import Link from 'next/link';
 
-import { AppShell } from '@/components/app-shell';
 import { getSession } from '@/lib/session';
 
 /**
@@ -47,15 +46,7 @@ export default async function SettingsPage() {
   const visible = SECTIONS.filter((entry) => permissions.includes(entry.permission));
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={permissions}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-6">
         <div>
           <h1 className="text-xl font-semibold text-foreground">Settings</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -86,6 +77,5 @@ export default async function SettingsPage() {
           ))}
         </ul>
       </div>
-    </AppShell>
   );
 }

@@ -32,11 +32,22 @@ export interface LogoPickerProps {
   readonly disabled?: boolean;
   /** Shown under the control; the caller knows whether this is signup or not. */
   readonly hint?: string;
+  /** Circular avatar row like the reference profile photo block. */
+  readonly variant?: 'default' | 'profile';
+  readonly title?: string;
 }
 
 const ACCEPT = LOGO_MIME_TYPES.join(',');
 
-export function LogoPicker({ value, onChange, currentSrc, disabled, hint }: LogoPickerProps) {
+export function LogoPicker({
+  value,
+  onChange,
+  currentSrc,
+  disabled,
+  hint,
+  variant = 'default',
+  title = 'School logo',
+}: LogoPickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
@@ -83,45 +94,67 @@ export function LogoPicker({ value, onChange, currentSrc, disabled, hint }: Logo
     onChange(undefined);
   }
 
+  const previewClass =
+    variant === 'profile'
+      ? 'size-24 rounded-full border border-dashed border-input bg-muted/30'
+      : 'size-16 rounded-xl border border-dashed border-input bg-muted/40';
+
   return (
     <div>
-      <div className="flex items-center gap-4">
-        <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-input bg-muted/40">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div
+          className={`flex shrink-0 items-center justify-center overflow-hidden ${previewClass}`}
+        >
           {shown === undefined ? (
             <ImportIcon className={`${ICON_SIZE.heading} text-muted-foreground`} aria-hidden />
           ) : (
-            // A plain <img>, not next/image: the source is either a blob URL
-            // from the file the person just chose or a same-origin endpoint
-            // that streams bytes, and the optimiser can do nothing with either.
-            <img src={shown} alt="" className="size-full object-contain" />
+            <img
+              src={shown}
+              alt=""
+              className={`size-full object-cover ${variant === 'profile' ? '' : 'object-contain'}`}
+            />
           )}
         </div>
 
-        <div className="min-w-0">
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              tone="outline"
-              size="sm"
-              disabled={disabled}
-              onClick={() => {
-                inputRef.current?.click();
-              }}
-            >
-              {shown === undefined ? 'Choose a logo' : 'Replace'}
-            </Button>
-
-            {value === undefined && currentSrc === undefined ? null : (
-              <Button type="button" tone="ghost" size="sm" disabled={disabled} onClick={clear}>
-                <DeleteIcon className={ICON_SIZE.inline} aria-hidden />
-                Remove
+        <div className="min-w-0 flex-1">
+          {variant === 'profile' ? (
+            <p className="text-sm font-medium text-foreground">{title}</p>
+          ) : null}
+          <div className={variant === 'profile' ? 'mt-2' : undefined}>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                tone="outline"
+                size="sm"
+                disabled={disabled}
+                onClick={() => {
+                  inputRef.current?.click();
+                }}
+              >
+                {shown === undefined ? 'Choose image' : 'Replace image'}
               </Button>
-            )}
-          </div>
 
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            {hint ?? `PNG, JPEG or WebP, up to ${describeSize(MAX_LOGO_BYTES)}.`}
-          </p>
+              {value === undefined && currentSrc === undefined ? null : variant === 'profile' ? (
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={clear}
+                  className="text-sm font-medium text-danger hover:underline disabled:opacity-50"
+                >
+                  Remove
+                </button>
+              ) : (
+                <Button type="button" tone="ghost" size="sm" disabled={disabled} onClick={clear}>
+                  <DeleteIcon className={ICON_SIZE.inline} aria-hidden />
+                  Remove
+                </Button>
+              )}
+            </div>
+
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              {hint ?? `PNG, JPEG or WebP, up to ${describeSize(MAX_LOGO_BYTES)}.`}
+            </p>
+          </div>
         </div>
       </div>
 

@@ -2,7 +2,6 @@ import { MAX_PAGE_LIMIT, ROUTES, type ClassLevel, type DefaulterList } from '@il
 import { systemClock } from '@ilm/utils';
 import type { Metadata } from 'next';
 
-import { AppShell } from '@/components/app-shell';
 import { DefaultersView } from '@/components/defaulters-view';
 import { apiFetch } from '@/lib/api';
 import { clampInt, readParam } from '@/lib/search-params';
@@ -65,15 +64,7 @@ export default async function DefaultersPage({
   };
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <DefaultersView
+    <DefaultersView
         page={listResult.ok ? listResult.data.data : empty}
         classes={academicsResult.ok ? academicsResult.data.data.classes : []}
         limit={limit}
@@ -81,6 +72,5 @@ export default async function DefaultersPage({
         filters={filters}
         error={listResult.ok ? undefined : listResult.message}
       />
-    </AppShell>
   );
 }

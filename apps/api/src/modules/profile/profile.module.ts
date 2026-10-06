@@ -65,8 +65,10 @@ export class ProfileService {
           name: true,
           slug: true,
           city: true,
+          address: true,
           phone: true,
           email: true,
+          schoolLevels: true,
           onboardedAt: true,
         },
       });
@@ -96,8 +98,10 @@ export class ProfileService {
           name: true,
           slug: true,
           city: true,
+          address: true,
           phone: true,
           email: true,
+          schoolLevels: true,
           onboardedAt: true,
         },
       });
@@ -208,8 +212,10 @@ export class ProfileService {
             name: true,
             slug: true,
             city: true,
+            address: true,
             phone: true,
             email: true,
+            schoolLevels: true,
             timezone: true,
             locale: true,
             onboardedAt: true,
@@ -256,8 +262,10 @@ export class ProfileService {
             name: input.school.name,
             slug: input.school.slug,
             city: input.school.city,
+            address: input.school.address,
             phone: input.school.phone,
             email: input.school.email,
+            schoolLevels: [...input.school.schoolLevels],
             timezone: input.school.timezone,
             locale: input.school.locale,
             onboardedAt: now,
@@ -266,8 +274,10 @@ export class ProfileService {
             name: true,
             slug: true,
             city: true,
+            address: true,
             phone: true,
             email: true,
+            schoolLevels: true,
             onboardedAt: true,
           },
         });
@@ -332,16 +342,20 @@ export class ProfileService {
               name: schoolBefore.name,
               slug: schoolBefore.slug,
               city: schoolBefore.city,
+              address: schoolBefore.address,
               phone: schoolBefore.phone,
               email: schoolBefore.email,
+              schoolLevels: schoolBefore.schoolLevels,
               onboardedAt: null,
             },
             after: {
               name: school.name,
               slug: school.slug,
               city: school.city,
+              address: school.address,
               phone: school.phone,
               email: school.email,
+              schoolLevels: school.schoolLevels,
               onboardedAt: school.onboardedAt?.toISOString() ?? null,
             },
             at: now,
@@ -465,8 +479,10 @@ function toProfile(
     name: string;
     slug: string;
     city: string | null;
+    address: string | null;
     phone: string | null;
     email: string | null;
+    schoolLevels: string[];
     onboardedAt: Date | null;
   },
 ): UserProfile {
@@ -482,8 +498,10 @@ function toProfile(
       name: school.name,
       slug: school.slug,
       city: school.city,
+      address: school.address,
       phone: school.phone,
       email: school.email,
+      schoolLevels: school.schoolLevels,
       onboarded: school.onboardedAt !== null,
     },
   };

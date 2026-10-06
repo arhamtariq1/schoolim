@@ -107,6 +107,7 @@ export type SchoolCountAggregateOutputType = {
   country: number
   city: number
   address: number
+  schoolLevels: number
   phone: number
   email: number
   status: number
@@ -202,6 +203,7 @@ export type SchoolCountAggregateInputType = {
   country?: true
   city?: true
   address?: true
+  schoolLevels?: true
   phone?: true
   email?: true
   status?: true
@@ -316,6 +318,7 @@ export type SchoolGroupByOutputType = {
   country: string
   city: string | null
   address: string | null
+  schoolLevels: string[]
   phone: string | null
   email: string | null
   status: $Enums.SchoolStatus
@@ -366,6 +369,7 @@ export type SchoolWhereInput = {
   country?: Prisma.StringFilter<"School"> | string
   city?: Prisma.StringNullableFilter<"School"> | string | null
   address?: Prisma.StringNullableFilter<"School"> | string | null
+  schoolLevels?: Prisma.StringNullableListFilter<"School">
   phone?: Prisma.StringNullableFilter<"School"> | string | null
   email?: Prisma.StringNullableFilter<"School"> | string | null
   status?: Prisma.EnumSchoolStatusFilter<"School"> | $Enums.SchoolStatus
@@ -430,6 +434,7 @@ export type SchoolOrderByWithRelationInput = {
   country?: Prisma.SortOrder
   city?: Prisma.SortOrderInput | Prisma.SortOrder
   address?: Prisma.SortOrderInput | Prisma.SortOrder
+  schoolLevels?: Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -497,6 +502,7 @@ export type SchoolWhereUniqueInput = Prisma.AtLeast<{
   country?: Prisma.StringFilter<"School"> | string
   city?: Prisma.StringNullableFilter<"School"> | string | null
   address?: Prisma.StringNullableFilter<"School"> | string | null
+  schoolLevels?: Prisma.StringNullableListFilter<"School">
   phone?: Prisma.StringNullableFilter<"School"> | string | null
   email?: Prisma.StringNullableFilter<"School"> | string | null
   status?: Prisma.EnumSchoolStatusFilter<"School"> | $Enums.SchoolStatus
@@ -561,6 +567,7 @@ export type SchoolOrderByWithAggregationInput = {
   country?: Prisma.SortOrder
   city?: Prisma.SortOrderInput | Prisma.SortOrder
   address?: Prisma.SortOrderInput | Prisma.SortOrder
+  schoolLevels?: Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -596,6 +603,7 @@ export type SchoolScalarWhereWithAggregatesInput = {
   country?: Prisma.StringWithAggregatesFilter<"School"> | string
   city?: Prisma.StringNullableWithAggregatesFilter<"School"> | string | null
   address?: Prisma.StringNullableWithAggregatesFilter<"School"> | string | null
+  schoolLevels?: Prisma.StringNullableListFilter<"School">
   phone?: Prisma.StringNullableWithAggregatesFilter<"School"> | string | null
   email?: Prisma.StringNullableWithAggregatesFilter<"School"> | string | null
   status?: Prisma.EnumSchoolStatusWithAggregatesFilter<"School"> | $Enums.SchoolStatus
@@ -622,6 +630,7 @@ export type SchoolCreateInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -686,6 +695,7 @@ export type SchoolUncheckedCreateInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -748,6 +758,7 @@ export type SchoolUpdateInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -812,6 +823,7 @@ export type SchoolUncheckedUpdateInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -875,6 +887,7 @@ export type SchoolCreateManyInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -901,6 +914,7 @@ export type SchoolUpdateManyMutationInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -928,6 +942,7 @@ export type SchoolUncheckedUpdateManyInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -949,6 +964,14 @@ export type SchoolListRelationFilter = {
 
 export type SchoolOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type StringNullableListFilter<$PrismaModel = never> = {
+  equals?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel> | null
+  has?: string | Prisma.StringFieldRefInput<$PrismaModel> | null
+  hasEvery?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  hasSome?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  isEmpty?: boolean
 }
 
 export type IntNullableListFilter<$PrismaModel = never> = {
@@ -973,6 +996,7 @@ export type SchoolCountOrderByAggregateInput = {
   country?: Prisma.SortOrder
   city?: Prisma.SortOrder
   address?: Prisma.SortOrder
+  schoolLevels?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   email?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -1099,8 +1123,17 @@ export type SchoolUncheckedUpdateManyWithoutSchoolGroupNestedInput = {
   deleteMany?: Prisma.SchoolScalarWhereInput | Prisma.SchoolScalarWhereInput[]
 }
 
+export type SchoolCreateschoolLevelsInput = {
+  set: string[]
+}
+
 export type SchoolCreateworkingDaysInput = {
   set: number[]
+}
+
+export type SchoolUpdateschoolLevelsInput = {
+  set?: string[]
+  push?: string | string[]
 }
 
 export type DecimalFieldUpdateOperationsInput = {
@@ -1633,6 +1666,7 @@ export type SchoolCreateWithoutSchoolGroupInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -1695,6 +1729,7 @@ export type SchoolUncheckedCreateWithoutSchoolGroupInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -1787,6 +1822,7 @@ export type SchoolScalarWhereInput = {
   country?: Prisma.StringFilter<"School"> | string
   city?: Prisma.StringNullableFilter<"School"> | string | null
   address?: Prisma.StringNullableFilter<"School"> | string | null
+  schoolLevels?: Prisma.StringNullableListFilter<"School">
   phone?: Prisma.StringNullableFilter<"School"> | string | null
   email?: Prisma.StringNullableFilter<"School"> | string | null
   status?: Prisma.EnumSchoolStatusFilter<"School"> | $Enums.SchoolStatus
@@ -1813,6 +1849,7 @@ export type SchoolCreateWithoutDomainsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -1876,6 +1913,7 @@ export type SchoolUncheckedCreateWithoutDomainsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -1953,6 +1991,7 @@ export type SchoolUpdateWithoutDomainsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -2016,6 +2055,7 @@ export type SchoolUncheckedUpdateWithoutDomainsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -2077,6 +2117,7 @@ export type SchoolCreateWithoutUsersInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -2140,6 +2181,7 @@ export type SchoolUncheckedCreateWithoutUsersInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -2217,6 +2259,7 @@ export type SchoolUpdateWithoutUsersInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -2280,6 +2323,7 @@ export type SchoolUncheckedUpdateWithoutUsersInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -2341,6 +2385,7 @@ export type SchoolCreateWithoutUserRolesInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -2404,6 +2449,7 @@ export type SchoolUncheckedCreateWithoutUserRolesInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -2481,6 +2527,7 @@ export type SchoolUpdateWithoutUserRolesInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -2544,6 +2591,7 @@ export type SchoolUncheckedUpdateWithoutUserRolesInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -2605,6 +2653,7 @@ export type SchoolCreateWithoutSessionsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -2668,6 +2717,7 @@ export type SchoolUncheckedCreateWithoutSessionsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -2745,6 +2795,7 @@ export type SchoolUpdateWithoutSessionsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -2808,6 +2859,7 @@ export type SchoolUncheckedUpdateWithoutSessionsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -2869,6 +2921,7 @@ export type SchoolCreateWithoutInvitationsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -2932,6 +2985,7 @@ export type SchoolUncheckedCreateWithoutInvitationsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -3009,6 +3063,7 @@ export type SchoolUpdateWithoutInvitationsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -3072,6 +3127,7 @@ export type SchoolUncheckedUpdateWithoutInvitationsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -3133,6 +3189,7 @@ export type SchoolCreateWithoutPasswordResetsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -3196,6 +3253,7 @@ export type SchoolUncheckedCreateWithoutPasswordResetsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -3273,6 +3331,7 @@ export type SchoolUpdateWithoutPasswordResetsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -3336,6 +3395,7 @@ export type SchoolUncheckedUpdateWithoutPasswordResetsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -3397,6 +3457,7 @@ export type SchoolCreateWithoutAuthHandoffsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -3460,6 +3521,7 @@ export type SchoolUncheckedCreateWithoutAuthHandoffsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -3537,6 +3599,7 @@ export type SchoolUpdateWithoutAuthHandoffsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -3600,6 +3663,7 @@ export type SchoolUncheckedUpdateWithoutAuthHandoffsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -3661,6 +3725,7 @@ export type SchoolCreateWithoutEmailVerificationsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -3724,6 +3789,7 @@ export type SchoolUncheckedCreateWithoutEmailVerificationsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -3801,6 +3867,7 @@ export type SchoolUpdateWithoutEmailVerificationsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -3864,6 +3931,7 @@ export type SchoolUncheckedUpdateWithoutEmailVerificationsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -3925,6 +3993,7 @@ export type SchoolCreateWithoutAgreementsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -3988,6 +4057,7 @@ export type SchoolUncheckedCreateWithoutAgreementsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -4065,6 +4135,7 @@ export type SchoolUpdateWithoutAgreementsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -4128,6 +4199,7 @@ export type SchoolUncheckedUpdateWithoutAgreementsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -4189,6 +4261,7 @@ export type SchoolCreateWithoutAcademicSessionsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -4252,6 +4325,7 @@ export type SchoolUncheckedCreateWithoutAcademicSessionsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -4329,6 +4403,7 @@ export type SchoolUpdateWithoutAcademicSessionsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -4392,6 +4467,7 @@ export type SchoolUncheckedUpdateWithoutAcademicSessionsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -4453,6 +4529,7 @@ export type SchoolCreateWithoutClassLevelsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -4516,6 +4593,7 @@ export type SchoolUncheckedCreateWithoutClassLevelsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -4593,6 +4671,7 @@ export type SchoolUpdateWithoutClassLevelsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -4656,6 +4735,7 @@ export type SchoolUncheckedUpdateWithoutClassLevelsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -4717,6 +4797,7 @@ export type SchoolCreateWithoutSchoolSectionsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -4780,6 +4861,7 @@ export type SchoolUncheckedCreateWithoutSchoolSectionsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -4857,6 +4939,7 @@ export type SchoolUpdateWithoutSchoolSectionsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -4920,6 +5003,7 @@ export type SchoolUncheckedUpdateWithoutSchoolSectionsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -4981,6 +5065,7 @@ export type SchoolCreateWithoutStudentsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -5044,6 +5129,7 @@ export type SchoolUncheckedCreateWithoutStudentsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -5121,6 +5207,7 @@ export type SchoolUpdateWithoutStudentsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -5184,6 +5271,7 @@ export type SchoolUncheckedUpdateWithoutStudentsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -5245,6 +5333,7 @@ export type SchoolCreateWithoutGuardiansInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -5308,6 +5397,7 @@ export type SchoolUncheckedCreateWithoutGuardiansInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -5385,6 +5475,7 @@ export type SchoolUpdateWithoutGuardiansInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -5448,6 +5539,7 @@ export type SchoolUncheckedUpdateWithoutGuardiansInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -5509,6 +5601,7 @@ export type SchoolCreateWithoutStudentGuardiansInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -5572,6 +5665,7 @@ export type SchoolUncheckedCreateWithoutStudentGuardiansInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -5649,6 +5743,7 @@ export type SchoolUpdateWithoutStudentGuardiansInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -5712,6 +5807,7 @@ export type SchoolUncheckedUpdateWithoutStudentGuardiansInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -5773,6 +5869,7 @@ export type SchoolCreateWithoutEnrollmentsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -5836,6 +5933,7 @@ export type SchoolUncheckedCreateWithoutEnrollmentsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -5913,6 +6011,7 @@ export type SchoolUpdateWithoutEnrollmentsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -5976,6 +6075,7 @@ export type SchoolUncheckedUpdateWithoutEnrollmentsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -6037,6 +6137,7 @@ export type SchoolCreateWithoutStaffInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -6100,6 +6201,7 @@ export type SchoolUncheckedCreateWithoutStaffInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -6177,6 +6279,7 @@ export type SchoolUpdateWithoutStaffInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -6240,6 +6343,7 @@ export type SchoolUncheckedUpdateWithoutStaffInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -6301,6 +6405,7 @@ export type SchoolCreateWithoutExpenseCategoriesInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -6364,6 +6469,7 @@ export type SchoolUncheckedCreateWithoutExpenseCategoriesInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -6441,6 +6547,7 @@ export type SchoolUpdateWithoutExpenseCategoriesInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -6504,6 +6611,7 @@ export type SchoolUncheckedUpdateWithoutExpenseCategoriesInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -6565,6 +6673,7 @@ export type SchoolCreateWithoutExpensesInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -6628,6 +6737,7 @@ export type SchoolUncheckedCreateWithoutExpensesInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -6705,6 +6815,7 @@ export type SchoolUpdateWithoutExpensesInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -6768,6 +6879,7 @@ export type SchoolUncheckedUpdateWithoutExpensesInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -6829,6 +6941,7 @@ export type SchoolCreateWithoutHolidaysInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -6892,6 +7005,7 @@ export type SchoolUncheckedCreateWithoutHolidaysInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -6969,6 +7083,7 @@ export type SchoolUpdateWithoutHolidaysInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -7032,6 +7147,7 @@ export type SchoolUncheckedUpdateWithoutHolidaysInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -7093,6 +7209,7 @@ export type SchoolCreateWithoutFeeHeadsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -7156,6 +7273,7 @@ export type SchoolUncheckedCreateWithoutFeeHeadsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -7233,6 +7351,7 @@ export type SchoolUpdateWithoutFeeHeadsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -7296,6 +7415,7 @@ export type SchoolUncheckedUpdateWithoutFeeHeadsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -7357,6 +7477,7 @@ export type SchoolCreateWithoutStudentFeesInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -7420,6 +7541,7 @@ export type SchoolUncheckedCreateWithoutStudentFeesInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -7497,6 +7619,7 @@ export type SchoolUpdateWithoutStudentFeesInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -7560,6 +7683,7 @@ export type SchoolUncheckedUpdateWithoutStudentFeesInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -7621,6 +7745,7 @@ export type SchoolCreateWithoutNumberSequencesInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -7684,6 +7809,7 @@ export type SchoolUncheckedCreateWithoutNumberSequencesInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -7761,6 +7887,7 @@ export type SchoolUpdateWithoutNumberSequencesInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -7824,6 +7951,7 @@ export type SchoolUncheckedUpdateWithoutNumberSequencesInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -7885,6 +8013,7 @@ export type SchoolCreateWithoutJobRunsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -7948,6 +8077,7 @@ export type SchoolUncheckedCreateWithoutJobRunsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -8025,6 +8155,7 @@ export type SchoolUpdateWithoutJobRunsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -8088,6 +8219,7 @@ export type SchoolUncheckedUpdateWithoutJobRunsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -8149,6 +8281,7 @@ export type SchoolCreateWithoutFeeVouchersInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -8212,6 +8345,7 @@ export type SchoolUncheckedCreateWithoutFeeVouchersInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -8289,6 +8423,7 @@ export type SchoolUpdateWithoutFeeVouchersInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -8352,6 +8487,7 @@ export type SchoolUncheckedUpdateWithoutFeeVouchersInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -8413,6 +8549,7 @@ export type SchoolCreateWithoutFeeVoucherLinesInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -8476,6 +8613,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherLinesInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -8553,6 +8691,7 @@ export type SchoolUpdateWithoutFeeVoucherLinesInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -8616,6 +8755,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherLinesInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -8677,6 +8817,7 @@ export type SchoolCreateWithoutFeeVoucherPeriodsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -8740,6 +8881,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherPeriodsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -8817,6 +8959,7 @@ export type SchoolUpdateWithoutFeeVoucherPeriodsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -8880,6 +9023,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherPeriodsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -8941,6 +9085,7 @@ export type SchoolCreateWithoutFeeVoucherArrearsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -9004,6 +9149,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherArrearsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -9081,6 +9227,7 @@ export type SchoolUpdateWithoutFeeVoucherArrearsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -9144,6 +9291,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherArrearsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -9205,6 +9353,7 @@ export type SchoolCreateWithoutFeePaymentsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -9268,6 +9417,7 @@ export type SchoolUncheckedCreateWithoutFeePaymentsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -9345,6 +9495,7 @@ export type SchoolUpdateWithoutFeePaymentsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -9408,6 +9559,7 @@ export type SchoolUncheckedUpdateWithoutFeePaymentsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -9469,6 +9621,7 @@ export type SchoolCreateWithoutFeePaymentAllocationsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -9532,6 +9685,7 @@ export type SchoolUncheckedCreateWithoutFeePaymentAllocationsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -9609,6 +9763,7 @@ export type SchoolUpdateWithoutFeePaymentAllocationsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -9672,6 +9827,7 @@ export type SchoolUncheckedUpdateWithoutFeePaymentAllocationsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -9733,6 +9889,7 @@ export type SchoolCreateWithoutAttendanceRecordsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -9796,6 +9953,7 @@ export type SchoolUncheckedCreateWithoutAttendanceRecordsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -9873,6 +10031,7 @@ export type SchoolUpdateWithoutAttendanceRecordsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -9936,6 +10095,7 @@ export type SchoolUncheckedUpdateWithoutAttendanceRecordsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -9997,6 +10157,7 @@ export type SchoolCreateWithoutStaffAttendanceInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -10060,6 +10221,7 @@ export type SchoolUncheckedCreateWithoutStaffAttendanceInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -10137,6 +10299,7 @@ export type SchoolUpdateWithoutStaffAttendanceInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -10200,6 +10363,7 @@ export type SchoolUncheckedUpdateWithoutStaffAttendanceInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -10261,6 +10425,7 @@ export type SchoolCreateWithoutSecurityDepositsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -10324,6 +10489,7 @@ export type SchoolUncheckedCreateWithoutSecurityDepositsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -10401,6 +10567,7 @@ export type SchoolUpdateWithoutSecurityDepositsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -10464,6 +10631,7 @@ export type SchoolUncheckedUpdateWithoutSecurityDepositsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -10525,6 +10693,7 @@ export type SchoolCreateWithoutSecurityDepositRefundsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -10588,6 +10757,7 @@ export type SchoolUncheckedCreateWithoutSecurityDepositRefundsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -10665,6 +10835,7 @@ export type SchoolUpdateWithoutSecurityDepositRefundsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -10728,6 +10899,7 @@ export type SchoolUncheckedUpdateWithoutSecurityDepositRefundsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -10789,6 +10961,7 @@ export type SchoolCreateWithoutImagesInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -10852,6 +11025,7 @@ export type SchoolUncheckedCreateWithoutImagesInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -10929,6 +11103,7 @@ export type SchoolUpdateWithoutImagesInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -10992,6 +11167,7 @@ export type SchoolUncheckedUpdateWithoutImagesInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -11053,6 +11229,7 @@ export type SchoolCreateWithoutVoucherSettingsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -11116,6 +11293,7 @@ export type SchoolUncheckedCreateWithoutVoucherSettingsInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -11193,6 +11371,7 @@ export type SchoolUpdateWithoutVoucherSettingsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -11256,6 +11435,7 @@ export type SchoolUncheckedUpdateWithoutVoucherSettingsInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -11317,6 +11497,7 @@ export type SchoolCreateManySchoolGroupInput = {
   country?: string
   city?: string | null
   address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
   phone?: string | null
   email?: string | null
   status?: $Enums.SchoolStatus
@@ -11343,6 +11524,7 @@ export type SchoolUpdateWithoutSchoolGroupInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -11405,6 +11587,7 @@ export type SchoolUncheckedUpdateWithoutSchoolGroupInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -11467,6 +11650,7 @@ export type SchoolUncheckedUpdateManyWithoutSchoolGroupInput = {
   country?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
@@ -11831,6 +12015,7 @@ export type SchoolSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   country?: boolean
   city?: boolean
   address?: boolean
+  schoolLevels?: boolean
   phone?: boolean
   email?: boolean
   status?: boolean
@@ -11896,6 +12081,7 @@ export type SchoolSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   country?: boolean
   city?: boolean
   address?: boolean
+  schoolLevels?: boolean
   phone?: boolean
   email?: boolean
   status?: boolean
@@ -11924,6 +12110,7 @@ export type SchoolSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   country?: boolean
   city?: boolean
   address?: boolean
+  schoolLevels?: boolean
   phone?: boolean
   email?: boolean
   status?: boolean
@@ -11952,6 +12139,7 @@ export type SchoolSelectScalar = {
   country?: boolean
   city?: boolean
   address?: boolean
+  schoolLevels?: boolean
   phone?: boolean
   email?: boolean
   status?: boolean
@@ -11965,7 +12153,7 @@ export type SchoolSelectScalar = {
   updatedAt?: boolean
 }
 
-export type SchoolOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolGroupId" | "name" | "slug" | "legalName" | "logoUrl" | "primaryColor" | "timezone" | "locale" | "currency" | "country" | "city" | "address" | "phone" | "email" | "status" | "lateFeePercent" | "lateFeeFlat" | "workingDays" | "attendanceBackdateDays" | "onboardedAt" | "trialEndsAt" | "createdAt" | "updatedAt", ExtArgs["result"]["school"]>
+export type SchoolOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolGroupId" | "name" | "slug" | "legalName" | "logoUrl" | "primaryColor" | "timezone" | "locale" | "currency" | "country" | "city" | "address" | "schoolLevels" | "phone" | "email" | "status" | "lateFeePercent" | "lateFeeFlat" | "workingDays" | "attendanceBackdateDays" | "onboardedAt" | "trialEndsAt" | "createdAt" | "updatedAt", ExtArgs["result"]["school"]>
 export type SchoolInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   schoolGroup?: boolean | Prisma.School$schoolGroupArgs<ExtArgs>
   domains?: boolean | Prisma.School$domainsArgs<ExtArgs>
@@ -12075,6 +12263,10 @@ export type $SchoolPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     country: string
     city: string | null
     address: string | null
+    /**
+     * Levels offered — e.g. primary, secondary. Stored as stable slugs from `@ilm/contracts`.
+     */
+    schoolLevels: string[]
     phone: string | null
     email: string | null
     status: $Enums.SchoolStatus
@@ -12572,6 +12764,7 @@ export interface SchoolFieldRefs {
   readonly country: Prisma.FieldRef<"School", 'String'>
   readonly city: Prisma.FieldRef<"School", 'String'>
   readonly address: Prisma.FieldRef<"School", 'String'>
+  readonly schoolLevels: Prisma.FieldRef<"School", 'String[]'>
   readonly phone: Prisma.FieldRef<"School", 'String'>
   readonly email: Prisma.FieldRef<"School", 'String'>
   readonly status: Prisma.FieldRef<"School", 'SchoolStatus'>

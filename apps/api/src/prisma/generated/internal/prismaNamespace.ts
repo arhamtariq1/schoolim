@@ -3692,6 +3692,7 @@ export const SchoolScalarFieldEnum = {
   country: 'country',
   city: 'city',
   address: 'address',
+  schoolLevels: 'schoolLevels',
   phone: 'phone',
   email: 'email',
   status: 'status',

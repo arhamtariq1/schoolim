@@ -2,7 +2,6 @@ import { ROUTES, type Roster } from '@ilm/contracts';
 import { systemClock } from '@ilm/utils';
 import type { Metadata } from 'next';
 
-import { AppShell } from '@/components/app-shell';
 import { AttendanceRoster } from '@/components/attendance-roster';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
@@ -41,21 +40,12 @@ export default async function ClassRosterPage({
   };
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
         <AttendanceRoster
           roster={result.ok ? result.data.data : empty}
           canMark={session?.permissions.includes('attendance.record.create') ?? false}
           error={result.ok ? undefined : result.message}
         />
       </div>
-    </AppShell>
   );
 }

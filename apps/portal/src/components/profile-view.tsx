@@ -1,4 +1,4 @@
-import type { UserProfile } from '@ilm/contracts';
+import { SCHOOL_LEVEL_LABELS, type SchoolLevelId, type UserProfile } from '@ilm/contracts';
 import { AccountIcon, ICON_SIZE, SchoolIcon, SuccessIcon } from '@ilm/ui/icons';
 import Link from 'next/link';
 
@@ -66,6 +66,11 @@ export function ProfileView({ profile }: { profile: UserProfile }) {
               in on. The street address lives on Settings › School. */}
           <DetailRow label="Web address" value={profile.school.slug} mono />
           <DetailRow label="City" value={profile.school.city ?? '—'} />
+          <DetailRow label="Address" value={profile.school.address ?? '—'} />
+          <DetailRow
+            label="Levels"
+            value={formatSchoolLevels(profile.school.schoolLevels)}
+          />
           <DetailRow label="Phone" value={profile.school.phone ?? '—'} />
           <DetailRow label="Email" value={profile.school.email ?? '—'} />
         </dl>
@@ -98,6 +103,15 @@ function DetailRow({
       </dd>
     </div>
   );
+}
+
+function formatSchoolLevels(levels: readonly string[]): string {
+  if (levels.length === 0) {
+    return '—';
+  }
+  return levels
+    .map((id) => SCHOOL_LEVEL_LABELS[id as SchoolLevelId] ?? id)
+    .join(', ');
 }
 
 function initials(name: string): string {

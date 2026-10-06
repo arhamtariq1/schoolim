@@ -1,8 +1,6 @@
 import { EmptyState } from '@ilm/ui';
 
-import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
-import { getSession } from '@/lib/session';
 
 /**
  * Requests — not built yet, but reachable from the sidebar, so it has to be a
@@ -14,17 +12,8 @@ import { getSession } from '@/lib/session';
  * fine thing to say; stranding somebody is not.
  */
 export default async function RequestsPage() {
-  const session = await getSession();
-
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
+    <div className="space-y-6">
       <PageHeader
         title="Requests"
         description="Leave, transfers and approvals — the things a school routes to somebody for a decision."
@@ -34,6 +23,6 @@ export default async function RequestsPage() {
         title="Requests is not built yet"
         description="The foundations are in place — tenant isolation, authentication and the permission model. This module arrives with its phase in docs/14."
       />
-    </AppShell>
+    </div>
   );
 }

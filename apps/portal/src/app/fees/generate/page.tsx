@@ -1,7 +1,6 @@
 import { ROUTES, type AcademicSession, type ClassLevel, type FeeHead } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
-import { AppShell } from '@/components/app-shell';
 import { GenerateFee } from '@/components/generate-fee';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
@@ -29,15 +28,7 @@ export default async function GenerateFeePage() {
   const failure = [academics, sessions, heads].find((result) => !result.ok);
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <GenerateFee
+    <GenerateFee
         sessions={sessions.ok ? sessions.data.data : []}
         classes={setup.classes}
         heads={heads.ok ? heads.data.data : []}
@@ -45,6 +36,5 @@ export default async function GenerateFeePage() {
         canGenerate={session?.permissions.includes('fees.voucher.generate') ?? false}
         error={failure === undefined || failure.ok ? undefined : failure.message}
       />
-    </AppShell>
   );
 }

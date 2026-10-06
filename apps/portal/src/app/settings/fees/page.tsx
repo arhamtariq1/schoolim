@@ -1,6 +1,5 @@
 import { ROUTES, type FeeHead, type LateFeePolicy } from '@ilm/contracts';
 
-import { AppShell } from '@/components/app-shell';
 import { FeeHeadsManager } from '@/components/fee-heads-manager';
 import { LateFeePolicyCard } from '@/components/late-fee-policy-card';
 import { apiFetch } from '@/lib/api';
@@ -38,15 +37,7 @@ export default async function FeeSettingsPage() {
   const canConfigure = session?.permissions.includes('fees.plan.configure') ?? false;
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
         <FeeHeadsManager
           initialHeads={result.ok ? result.data.data : []}
           error={result.ok ? undefined : result.message}
@@ -58,6 +49,5 @@ export default async function FeeSettingsPage() {
           error={lateFeeResult.ok ? undefined : lateFeeResult.message}
         />
       </div>
-    </AppShell>
   );
 }

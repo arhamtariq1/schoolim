@@ -1,11 +1,10 @@
 import { ROUTES, type UserProfile } from '@ilm/contracts';
-import { Button, Skeleton } from '@ilm/ui';
+import { Button } from '@ilm/ui';
 import { EditIcon, ICON_SIZE } from '@ilm/ui/icons';
 import Link from 'next/link';
 
 import { PageHeader } from '@/components/page-header';
 import { ProfileView } from '@/components/profile-view';
-import { SchoolShell } from '@/components/school-shell';
 import { apiFetch } from '@/lib/api';
 
 /**
@@ -16,7 +15,7 @@ export default async function ProfilePage() {
   const result = await apiFetch<{ data: UserProfile }>(ROUTES.me.profile);
 
   return (
-    <SchoolShell>
+    <div className="space-y-6">
       <PageHeader
         title="Profile"
         description="Your account details at this school."
@@ -34,15 +33,8 @@ export default async function ProfilePage() {
       ) : (
         <p className="text-sm text-danger">{result.message}</p>
       )}
-    </SchoolShell>
-  );
-}
-
-export function ProfilePageSkeleton() {
-  return (
-    <div className="mx-auto w-full max-w-3xl space-y-4" role="status" aria-label="Loading profile">
-      <Skeleton className="h-8 w-40" />
-      <Skeleton className="h-48 w-full" />
     </div>
   );
 }
+
+export { ProfileViewSkeleton as ProfilePageSkeleton } from '@/components/profile-skeletons';

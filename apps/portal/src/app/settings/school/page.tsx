@@ -1,6 +1,5 @@
 import { ROUTES, type SchoolLogoInfo, type SchoolSettings } from '@ilm/contracts';
 
-import { AppShell } from '@/components/app-shell';
 import { BrandColourCard } from '@/components/brand-colour-card';
 import { SchoolLogoCard } from '@/components/school-logo-card';
 import { SchoolSettingsForm } from '@/components/school-settings-form';
@@ -39,6 +38,7 @@ export default async function SchoolSettingsPage() {
         slug: session?.school.slug ?? '',
         address: null,
         city: null,
+        schoolLevels: [],
         phone: null,
         email: null,
         timezone: session?.school.timezone ?? 'Asia/Karachi',
@@ -49,19 +49,7 @@ export default async function SchoolSettingsPage() {
       };
 
   return (
-    <AppShell
-      user={{
-        name: session?.name ?? '',
-        email: session?.email ?? '',
-        roleLabel: session?.roles.join(', ') ?? '',
-      }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={permissions}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <div className="max-w-3xl space-y-6">
+    <div className="max-w-3xl space-y-6">
         <div>
           <h1 className="text-xl font-semibold text-foreground">School</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -90,6 +78,5 @@ export default async function SchoolSettingsPage() {
           error={logoResult.ok ? undefined : logoResult.message}
         />
       </div>
-    </AppShell>
   );
 }

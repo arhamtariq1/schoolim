@@ -7,7 +7,6 @@ import {
   type ExpenseTotals,
 } from '@ilm/contracts';
 
-import { AppShell } from '@/components/app-shell';
 import { ExpensesView } from '@/components/expenses-view';
 import { FinanceTabs } from '@/components/tab-links';
 import { apiFetch } from '@/lib/api';
@@ -61,15 +60,7 @@ export default async function ExpensesPage({
   const emptyTotals: ExpenseTotals = { totalMinor: 0, count: 0 };
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
         <FinanceTabs />
         <ExpensesView
           rows={listResult.ok ? listResult.data.data : []}
@@ -84,7 +75,6 @@ export default async function ExpensesPage({
           canManage={session?.permissions.includes('finance.expense.create') ?? false}
         />
       </div>
-    </AppShell>
   );
 }
 

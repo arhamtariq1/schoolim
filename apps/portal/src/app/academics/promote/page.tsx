@@ -1,7 +1,6 @@
 import { ROUTES, type AcademicSession } from '@ilm/contracts';
 
 import { PromoteStudents } from '@/components/promote-students';
-import { SchoolShell } from '@/components/school-shell';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -20,12 +19,10 @@ export default async function PromotePage() {
   ]);
 
   return (
-    <SchoolShell>
-      <PromoteStudents
+    <PromoteStudents
         sessions={result.ok ? result.data.data : []}
         error={result.ok ? undefined : result.message}
         canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
       />
-    </SchoolShell>
   );
 }

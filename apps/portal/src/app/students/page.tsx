@@ -1,6 +1,5 @@
 import { MAX_PAGE_LIMIT, ROUTES, type StudentListItem } from '@ilm/contracts';
 
-import { AppShell } from '@/components/app-shell';
 import { StudentsTable } from '@/components/students-table';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
@@ -83,15 +82,7 @@ export default async function StudentsPage({
   };
 
   return (
-    <AppShell
-      user={{ name: session.name, email: session.email, roleLabel: session.roles.join(', ') }}
-      school={{ name: session.school.name }}
-      permissions={session.permissions}
-      profileCompleted={session.profileCompleted}
-      unverifiedEmail={session.emailVerified ? undefined : session.email}
-      brandColor={session.school.primaryColor ?? undefined}
-    >
-      <StudentsTable
+    <StudentsTable
         rows={result.ok ? result.data.data : []}
         total={result.ok ? result.data.meta.page.total : 0}
         aggregates={result.ok ? result.data.meta.aggregates : {}}
@@ -105,7 +96,6 @@ export default async function StudentsPage({
         offset={result.ok ? result.data.meta.page.offset : offset}
         can={can}
       />
-    </AppShell>
   );
 }
 

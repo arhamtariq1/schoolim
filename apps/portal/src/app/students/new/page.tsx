@@ -11,7 +11,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { AdmissionForm } from '@/components/admission-form';
-import { AppShell } from '@/components/app-shell';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 import { tenantHref } from '@/lib/tenant-server';
@@ -61,15 +60,7 @@ export default async function NewStudentPage() {
   const catalogue = fees.ok ? fees.data.data.filter((head) => head.isActive) : [];
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
         <div>
           <Link
             href={studentsHref}
@@ -97,6 +88,5 @@ export default async function NewStudentPage() {
           canSetFees={session?.permissions.includes('fees.discount.create') ?? false}
         />
       </div>
-    </AppShell>
   );
 }

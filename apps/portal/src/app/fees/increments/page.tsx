@@ -7,7 +7,6 @@ import {
 } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
-import { AppShell } from '@/components/app-shell';
 import { FeeIncrementsView } from '@/components/fee-increments-view';
 import { apiFetch } from '@/lib/api';
 import { clampInt, readParam } from '@/lib/search-params';
@@ -71,15 +70,7 @@ export default async function FeeIncrementsPage({
   const page = listResult.ok ? listResult.data.data : empty;
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <FeeIncrementsView
+    <FeeIncrementsView
         page={page}
         sessions={sessionsResult.ok ? sessionsResult.data.data : []}
         classes={academicsResult.ok ? academicsResult.data.data.classes : []}
@@ -90,6 +81,5 @@ export default async function FeeIncrementsPage({
         error={listResult.ok ? undefined : listResult.message}
         canApply={session?.permissions.includes('fees.increment.generate') ?? false}
       />
-    </AppShell>
   );
 }

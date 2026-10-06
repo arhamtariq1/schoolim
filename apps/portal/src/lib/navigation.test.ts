@@ -119,7 +119,7 @@ describe('the sidebar as a whole', () => {
       'attendance.record.read',
     ]);
 
-    expect(labels(teacher)).toEqual(['Home', 'Students', 'Attendance']);
+    expect(labels(teacher)).toEqual(['Dashboard', 'Students', 'Attendance']);
   });
 
   it('never offers an item whose permission is not held', () => {

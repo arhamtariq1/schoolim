@@ -3,38 +3,50 @@
 import {
   completeOnboardingSchema,
   ROUTES,
+  SCHOOL_LEVEL_IDS,
   type CompleteOnboarding,
+  type SchoolLevelId,
   type SlugAvailability,
   type UploadSchoolLogo,
   type UserProfile,
 } from '@ilm/contracts';
-import { Button, Field, Input, useToast } from '@ilm/ui';
-import {
-  AccountIcon,
-  ErrorIcon,
-  ICON_SIZE,
-  SchoolIcon,
-  SpinnerIcon,
-  SuccessIcon,
-} from '@ilm/ui/icons';
+import { Field, Input, SearchableSelect, Textarea, useToast } from '@ilm/ui';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 
+import { useTenantHref } from '@/lib/use-tenant-href';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+
+import { FormSectionCard, SetupFormFooter } from '@/components/form-section-card';
 import { LogoPicker } from './logo-picker';
-
+import { ProfileFormActions } from '@/components/profile-form-actions';
+import { ProfilePersonFields } from '@/components/profile-person-fields';
+import { SchoolLevelPicker } from '@/components/school-level-picker';
+import { SchoolSlugField } from '@/components/school-slug-field';
+import {
+  citiesForPakistanProvince,
+  PAKISTAN_COUNTRY_LABEL,
+  PAKISTAN_PROVINCES,
+  provinceForPakistanCity,
+} from '@/lib/pakistan-locations';
+import {
+  FORM_VALIDATION_TOAST,
+  fieldErrorsFromZod,
+  humanizeFieldErrors,
+  phoneDisplayError,
+  withoutFieldErrors,
+} from '@/lib/form-validation';
+import { displayPhone, phoneDigits, toE164 } from '@/lib/phone-format';
 import { mutate } from '@/lib/mutate';
-import { TENANT_MODE } from '@/lib/tenant-mode';
 
 /**
  * First-login form after signup OTP — school details + owner profile.
- *
- * Saving unlocks the rest of the portal. Personal-only edits after that use
- * `ProfileForm` on `/profile/edit`.
  */
 export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
   const toast = useToast();
   const router = useRouter();
+  const tenantHref = useTenantHref();
 
+  const initialCity = initial.school.city ?? '';
   const [personName, setPersonName] = useState(initial.name);
   const [personPhone, setPersonPhone] = useState(displayPhone(initial.phone ?? ''));
   const [designation, setDesignation] = useState(initial.designation ?? '');
@@ -44,7 +56,12 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
   );
   const [slug, setSlug] = useState(initial.school.slug);
   const [slugTouched, setSlugTouched] = useState(Boolean(initial.school.slug));
-  const [city, setCity] = useState(initial.school.city ?? '');
+  const [province, setProvince] = useState(() => provinceForPakistanCity(initialCity) ?? '');
+  const [city, setCity] = useState(initialCity);
+  const [address, setAddress] = useState(initial.school.address ?? '');
+  const [schoolLevels, setSchoolLevels] = useState<SchoolLevelId[]>(() =>
+    parseSchoolLevels(initial.school.schoolLevels ?? []),
+  );
   const [schoolPhone, setSchoolPhone] = useState(displayPhone(initial.school.phone ?? ''));
   const [schoolEmail, setSchoolEmail] = useState(initial.school.email ?? initial.email);
   const [availability, setAvailability] = useState<SlugAvailability | undefined>(undefined);
@@ -54,6 +71,7 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
   const [isPending, setIsPending] = useState(false);
 
   const effectiveSlug = slugTouched ? slug : slugify(schoolName);
+  const cityOptions = useMemo(() => citiesForPakistanProvince(province), [province]);
 
   useEffect(() => {
     if (effectiveSlug.length < 2) {
@@ -96,6 +114,33 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
     };
   }, [effectiveSlug, initial.school.slug]);
 
+  function clearErrors(...keys: string[]): void {
+    setFieldErrors((current) => withoutFieldErrors(current, ...keys));
+  }
+
+  function onProvinceChange(next: string): void {
+    setProvince(next);
+    setCity('');
+    clearErrors('school.province', 'school.city');
+  }
+
+  async function signOut(): Promise<void> {
+    try {
+      const response = await fetch(ROUTES.auth.logout, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        toast.error('Could not sign you out. Try again.');
+        return;
+      }
+      router.replace('/login');
+      router.refresh();
+    } catch {
+      toast.error('Could not reach the server.');
+    }
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isPending) {
@@ -103,6 +148,28 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
     }
 
     setFieldErrors({});
+
+    const clientErrors: Record<string, string> = {};
+    const personPhoneError = phoneDisplayError(personPhone);
+    if (personPhoneError !== undefined) {
+      clientErrors['person.phone'] = personPhoneError;
+    }
+    const schoolPhoneError = phoneDisplayError(schoolPhone);
+    if (schoolPhoneError !== undefined) {
+      clientErrors['school.phone'] = schoolPhoneError;
+    }
+    if (province === '') {
+      clientErrors['school.province'] = 'Select a province or state.';
+    }
+    if (city.trim() === '') {
+      clientErrors['school.city'] = 'Select a city.';
+    }
+    if (address.trim() === '') {
+      clientErrors['school.address'] = 'Enter the school’s complete address.';
+    }
+    if (schoolLevels.length === 0) {
+      clientErrors['school.schoolLevels'] = 'Select at least one school level.';
+    }
 
     const payload: CompleteOnboarding = {
       person: {
@@ -113,9 +180,11 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
       school: {
         name: schoolName,
         slug: effectiveSlug,
-        city,
+        city: city.trim(),
+        address: address.trim(),
         phone: toE164(schoolPhone),
         email: schoolEmail,
+        schoolLevels: [...schoolLevels],
         timezone: 'Asia/Karachi',
         locale: 'en',
       },
@@ -123,13 +192,12 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
     };
 
     const parsed = completeOnboardingSchema.safeParse(payload);
-    if (!parsed.success) {
-      const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        next[issue.path.join('.')] = issue.message;
-      }
-      setFieldErrors(next);
-      toast.error(parsed.error.issues[0]?.message ?? 'Check the highlighted fields.');
+    const schemaErrors = parsed.success ? {} : fieldErrorsFromZod(parsed.error);
+    const nextErrors = { ...schemaErrors, ...clientErrors };
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      toast.error(FORM_VALIDATION_TOAST);
       return;
     }
 
@@ -139,7 +207,7 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
       effectiveSlug !== initial.school.slug
     ) {
       setFieldErrors({ 'school.slug': 'That web address is already taken.' });
-      toast.error('Choose another web address.');
+      toast.error(FORM_VALIDATION_TOAST);
       return;
     }
 
@@ -151,8 +219,10 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
         parsed.data,
       );
       if (!result.ok) {
-        setFieldErrors(result.fieldErrors);
-        toast.error(result.message);
+        setFieldErrors(humanizeFieldErrors(result.fieldErrors));
+        toast.error(
+          Object.keys(result.fieldErrors).length > 0 ? FORM_VALIDATION_TOAST : result.message,
+        );
         return;
       }
 
@@ -160,13 +230,10 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
 
       const relocateTo = result.data.relocateTo;
       if (relocateTo !== undefined && relocateTo !== '') {
-        // Slug changed — session cookies stay on the old host. Follow the
-        // handoff URL so the new host issues its own (ADR-0009).
         window.location.assign(relocateTo);
         return;
       }
 
-      // Same host: refresh so the `pc` claim flips, then open the dashboard.
       const refreshed = await fetch(ROUTES.auth.refresh, {
         method: 'POST',
         credentials: 'include',
@@ -178,8 +245,7 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
         );
       }
 
-      router.replace('/');
-      router.refresh();
+      window.location.assign(tenantHref('/'));
     } finally {
       setIsPending(false);
     }
@@ -198,50 +264,61 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
         void submit(event);
       }}
       noValidate
-      className="mx-auto w-full max-w-3xl space-y-6 pb-24"
+      className="w-full space-y-5 pb-6"
     >
-      <ol className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
-        <li className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-primary">
-          <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-            1
-          </span>
-          School
-        </li>
-        <li aria-hidden="true" className="h-px w-6 bg-border" />
-        <li className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1">
-          <span className="flex size-5 items-center justify-center rounded-full bg-muted-foreground/20 text-[10px] text-foreground">
-            2
-          </span>
-          About you
-        </li>
-      </ol>
+      <FormSectionCard
+        variant="setup"
+        title="Profile information"
+        description="Your account details as they appear across the school portal."
+      >
+        <ProfilePersonFields
+          name={personName}
+          onNameChange={(value) => {
+            setPersonName(value);
+            clearErrors('person.name', 'name');
+          }}
+          phone={personPhone}
+          onPhoneChange={(value) => {
+            setPersonPhone(phoneDigits(value));
+            clearErrors('person.phone', 'phone');
+          }}
+          designation={designation}
+          onDesignationChange={(value) => {
+            setDesignation(value);
+            clearErrors('person.designation', 'designation');
+          }}
+          email={initial.email}
+          fieldErrors={fieldErrors}
+          disabled={isPending}
+          autoFocusName
+        />
+      </FormSectionCard>
 
-      <FormSection
-        icon={<SchoolIcon className={ICON_SIZE.nav} aria-hidden="true" />}
-        title="Your school"
-        description="How parents and staff will find you. The web address is permanent."
+      <FormSectionCard
+        variant="setup"
+        title="School information"
+        description="How your school appears to staff and parents — you can update these later in Settings."
       >
         <fieldset disabled={isPending} className="space-y-5">
-          <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4">
-            <p className="mb-3 text-sm font-medium text-foreground">School logo</p>
-            <LogoPicker
-              value={logo}
-              onChange={setLogo}
-              disabled={isPending}
-              hint="Optional. PNG, JPEG or WebP, up to 512 KB."
-            />
-          </div>
+          <LogoPicker
+            variant="profile"
+            title="School logo"
+            value={logo}
+            onChange={setLogo}
+            disabled={isPending}
+            hint="Optional. PNG, JPEG or WebP, up to 512 KB."
+          />
 
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-3 lg:gap-5">
             <Field label="School name" error={fieldErrors['school.name']} required>
               <Input
                 name="schoolName"
                 autoComplete="organization"
-                autoFocus
                 placeholder="e.g. Beacon Academy"
                 value={schoolName}
                 onChange={(event) => {
                   setSchoolName(event.target.value);
+                  clearErrors('school.name');
                 }}
               />
             </Field>
@@ -254,26 +331,13 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
                 value={schoolEmail}
                 onChange={(event) => {
                   setSchoolEmail(event.target.value);
-                }}
-              />
-            </Field>
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="City" error={fieldErrors['school.city']} required>
-              <Input
-                name="city"
-                autoComplete="address-level2"
-                placeholder="e.g. Lahore"
-                value={city}
-                onChange={(event) => {
-                  setCity(event.target.value);
+                  clearErrors('school.email');
                 }}
               />
             </Field>
 
             <Field
-              label="School phone"
+              label="School contact number"
               error={fieldErrors['school.phone']}
               hint="Local numbers starting with 03 are fine."
               required
@@ -287,158 +351,104 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
                 value={schoolPhone}
                 onChange={(event) => {
                   setSchoolPhone(phoneDigits(event.target.value));
+                  clearErrors('school.phone');
                 }}
               />
             </Field>
           </div>
 
-          <div className="space-y-2">
+          <div className="rounded-xl border border-border/60 bg-muted/25 p-4 sm:p-5">
+            <p className="mb-4 text-sm font-semibold text-foreground">Location</p>
+            <div className="grid gap-4 lg:grid-cols-3 lg:gap-5">
+              <Field label="Country" hint="Fixed for schools on this product.">
+                <Input readOnly disabled value={PAKISTAN_COUNTRY_LABEL} />
+              </Field>
+
+              <Field label="State / Province" error={fieldErrors['school.province']} required>
+                <SearchableSelect
+                  value={province}
+                  onValueChange={onProvinceChange}
+                  options={PAKISTAN_PROVINCES}
+                  placeholder="Select province"
+                  searchPlaceholder="Search provinces…"
+                />
+              </Field>
+
+              <Field label="City" error={fieldErrors['school.city']} required>
+                <SearchableSelect
+                  value={city}
+                  onValueChange={(value) => {
+                    setCity(value);
+                    clearErrors('school.city');
+                  }}
+                  options={cityOptions}
+                  placeholder={province === '' ? 'Select province first' : 'Select city'}
+                  searchPlaceholder="Search cities…"
+                  disabled={province === ''}
+                />
+              </Field>
+            </div>
+
             <Field
-              label="Web address"
-              error={fieldErrors['school.slug']}
-              hint="Choose carefully — this is where everyone signs in."
+              label="Complete address"
+              error={fieldErrors['school.address']}
+              hint="Street, area or block — as parents would write it."
               required
             >
-              <Input
-                name="slug"
-                autoComplete="off"
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                className="font-mono text-sm"
-                value={effectiveSlug}
+              <Textarea
+                name="schoolAddress"
+                rows={2}
+                autoComplete="street-address"
+                placeholder="Block 15, Gulshan-e-Iqbal, Karachi"
+                value={address}
                 onChange={(event) => {
-                  setSlugTouched(true);
-                  setSlug(slugify(event.target.value));
+                  setAddress(event.target.value);
+                  clearErrors('school.address');
                 }}
               />
             </Field>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border/80 bg-muted/40 px-3 py-2 text-xs">
-              <span className="font-mono text-muted-foreground">
-                {schoolAddress(effectiveSlug === '' ? 'your-school' : effectiveSlug)}
-              </span>
-              {slugHint === undefined ? null : (
-                <span
-                  className={`inline-flex items-center gap-1 ${
-                    slugHint.tone === 'ok'
-                      ? 'text-success'
-                      : slugHint.tone === 'bad'
-                        ? 'text-danger'
-                        : 'text-muted-foreground'
-                  }`}
-                >
-                  {slugHint.tone === 'ok' ? (
-                    <SuccessIcon className={ICON_SIZE.inline} aria-hidden="true" />
-                  ) : slugHint.tone === 'bad' ? (
-                    <ErrorIcon className={ICON_SIZE.inline} aria-hidden="true" />
-                  ) : (
-                    <SpinnerIcon
-                      className={`${ICON_SIZE.inline} animate-spin`}
-                      aria-hidden="true"
-                    />
-                  )}
-                  {slugHint.text}
-                </span>
-              )}
+          </div>
+
+          <SchoolLevelPicker
+            value={schoolLevels}
+            onChange={(next) => {
+              setSchoolLevels(next);
+              clearErrors('school.schoolLevels');
+            }}
+            error={fieldErrors['school.schoolLevels']}
+            disabled={isPending}
+          />
+
+          <div className="grid gap-4 lg:grid-cols-3 lg:gap-5">
+            <div className="lg:col-span-2">
+              <SchoolSlugField
+                value={effectiveSlug}
+                onChange={(next) => {
+                  setSlugTouched(true);
+                  setSlug(slugify(next));
+                  clearErrors('school.slug');
+                }}
+                error={fieldErrors['school.slug']}
+                availability={slugHint}
+                disabled={isPending}
+              />
             </div>
           </div>
         </fieldset>
-      </FormSection>
+      </FormSectionCard>
 
-      <FormSection
-        icon={<AccountIcon className={ICON_SIZE.nav} aria-hidden="true" />}
-        title="About you"
-        description="Your details as the school owner. You can change these later."
-      >
-        <fieldset disabled={isPending} className="space-y-5">
-          <Field label="Full name" error={fieldErrors['person.name']} required>
-            <Input
-              name="personName"
-              autoComplete="name"
-              value={personName}
-              onChange={(event) => {
-                setPersonName(event.target.value);
-              }}
-            />
-          </Field>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field
-              label="Phone"
-              error={fieldErrors['person.phone']}
-              hint="Include country code, or start with 03."
-              required
-            >
-              <Input
-                name="personPhone"
-                type="tel"
-                autoComplete="tel"
-                inputMode="tel"
-                placeholder="03XX XXXXXXX"
-                value={personPhone}
-                onChange={(event) => {
-                  setPersonPhone(phoneDigits(event.target.value));
-                }}
-              />
-            </Field>
-
-            <Field
-              label="Designation"
-              error={fieldErrors['person.designation']}
-              hint="Optional."
-            >
-              <Input
-                name="designation"
-                autoComplete="organization-title"
-                placeholder="e.g. Principal"
-                value={designation}
-                onChange={(event) => {
-                  setDesignation(event.target.value);
-                }}
-              />
-            </Field>
-          </div>
-        </fieldset>
-      </FormSection>
-
-      <div className="sticky bottom-0 z-10 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:-mx-6 md:px-6">
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">
-            After saving, the rest of the portal unlocks.
-          </p>
-          <Button type="submit" disabled={isPending} className="min-w-44">
-            {isPending ? 'Saving…' : 'Save and open dashboard'}
-          </Button>
-        </div>
-      </div>
+      <SetupFormFooter>
+        <ProfileFormActions
+          primaryLabel="Save changes"
+          primaryPending={isPending}
+          cancelLabel="Cancel"
+          onCancel={() => {
+            void signOut();
+          }}
+          hint="After saving, the rest of the portal unlocks."
+        />
+      </SetupFormFooter>
     </form>
-  );
-}
-
-function FormSection({
-  icon,
-  title,
-  description,
-  children,
-}: {
-  icon: ReactNode;
-  title: string;
-  description: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-      <header className="flex items-start gap-3 border-b border-border bg-muted/30 px-4 py-4 sm:px-6">
-        <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          {icon}
-        </span>
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
-        </div>
-      </header>
-      <div className="p-4 sm:p-6">{children}</div>
-    </section>
   );
 }
 
@@ -451,9 +461,10 @@ function slugify(value: string): string {
     .slice(0, 48);
 }
 
-function schoolAddress(slug: string): string {
-  const domain = process.env['NEXT_PUBLIC_APP_DOMAIN'] ?? 'localhost';
-  return TENANT_MODE === 'path' ? `${domain}/${slug}` : `${slug}.${domain}`;
+function parseSchoolLevels(values: readonly string[]): SchoolLevelId[] {
+  return values.filter((value): value is SchoolLevelId =>
+    (SCHOOL_LEVEL_IDS as readonly string[]).includes(value),
+  );
 }
 
 function describeAvailability(
@@ -478,34 +489,4 @@ function describeAvailability(
     return { text: 'Available', tone: 'ok' };
   }
   return { text: 'Already taken', tone: 'bad' };
-}
-
-function displayPhone(value: string): string {
-  if (value.startsWith('+92') && value.length === 13) {
-    return `0${value.slice(3)}`;
-  }
-  return value;
-}
-
-/** Digits, spaces, and an optional leading +. Letters are stripped as you type. */
-function phoneDigits(value: string): string {
-  const cleaned = value.replace(/[^\d+\s]/g, '');
-  const plus = cleaned.startsWith('+') ? '+' : '';
-  const rest = cleaned.replace(/\+/g, '');
-  return plus + rest;
-}
-
-function toE164(input: string): string {
-  const trimmed = input.trim();
-  if (trimmed.startsWith('+')) {
-    return trimmed.replace(/\s/g, '');
-  }
-  const digits = trimmed.replace(/\D/g, '');
-  if (digits.startsWith('92') && digits.length >= 12) {
-    return `+${digits}`;
-  }
-  if (digits.startsWith('0')) {
-    return `+92${digits.slice(1)}`;
-  }
-  return digits === '' ? trimmed : `+${digits}`;
 }

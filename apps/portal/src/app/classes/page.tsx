@@ -1,7 +1,6 @@
 import { ROUTES, type AcademicSession, type ClassLevel } from '@ilm/contracts';
 
 import { ClassesManager } from '@/components/classes-manager';
-import { SchoolShell } from '@/components/school-shell';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -35,8 +34,7 @@ export default async function ClassesPage({
   );
 
   return (
-    <SchoolShell>
-      <ClassesManager
+    <ClassesManager
         classes={classesResult.ok ? classesResult.data.data : []}
         sessions={sessions}
         activeSessionId={activeSessionId}
@@ -44,6 +42,5 @@ export default async function ClassesPage({
         canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
         canRenumber={session?.permissions.includes('students.student.update') ?? false}
       />
-    </SchoolShell>
   );
 }

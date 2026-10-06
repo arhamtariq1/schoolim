@@ -1,7 +1,6 @@
 import { MAX_PAGE_LIMIT, ROUTES, type ClassLevel, type SecurityDepositList } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
-import { AppShell } from '@/components/app-shell';
 import { SecurityDepositsView } from '@/components/security-deposits-view';
 import { apiFetch } from '@/lib/api';
 import { clampInt, readParam } from '@/lib/search-params';
@@ -60,15 +59,7 @@ export default async function SecurityDepositsPage({
   };
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <SecurityDepositsView
+    <SecurityDepositsView
         page={listResult.ok ? listResult.data.data : empty}
         classes={academicsResult.ok ? academicsResult.data.data.classes : []}
         limit={limit}
@@ -77,6 +68,5 @@ export default async function SecurityDepositsPage({
         error={listResult.ok ? undefined : listResult.message}
         canRefund={session?.permissions.includes('fees.deposit.update') ?? false}
       />
-    </AppShell>
   );
 }

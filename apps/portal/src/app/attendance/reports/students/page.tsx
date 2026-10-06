@@ -1,7 +1,6 @@
 import { ROUTES, type ClassOverview } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
-import { AppShell } from '@/components/app-shell';
 import { AttendanceClassGrid } from '@/components/attendance-class-grid';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
@@ -22,15 +21,7 @@ export default async function StudentReportIndexPage() {
   ]);
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
         <AttendanceClassGrid
           overview={result.ok ? result.data.data : EMPTY}
           hrefPrefix="/attendance/reports/students"
@@ -42,6 +33,5 @@ export default async function StudentReportIndexPage() {
           error={result.ok ? undefined : result.message}
         />
       </div>
-    </AppShell>
   );
 }

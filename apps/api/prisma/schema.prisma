@@ -177,6 +177,8 @@ model School {
   country                String       @default("PK")
   city                   String?
   address                String?
+  /// Levels offered — e.g. primary, secondary. Stored as stable slugs from `@ilm/contracts`.
+  schoolLevels           String[]     @default([]) @map("school_levels")
   phone                  String?
   email                  String?
   status                 SchoolStatus @default(TRIAL)

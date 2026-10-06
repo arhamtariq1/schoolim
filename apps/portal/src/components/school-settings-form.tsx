@@ -2,16 +2,19 @@
 
 import {
   ROUTES,
+  SCHOOL_LEVEL_IDS,
   updateSchoolSettingsSchema,
+  type SchoolLevelId,
   type SchoolSettings,
   type UpdateSchoolSettings,
 } from '@ilm/contracts';
 import { Button, Field, Input, SimpleSelect, Textarea, useToast } from '@ilm/ui';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 
+import { SchoolLevelPicker } from '@/components/school-level-picker';
 import { mutate } from '@/lib/mutate';
-import { TENANT_MODE } from '@/lib/tenant-mode';
+import { schoolSlugAffixes } from '@/lib/school-slug-preview';
 
 /**
  * Settings › School — the details that sit at the top of every printed page.
@@ -72,6 +75,9 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
   const toast = useToast();
 
   const [draft, setDraft] = useState(() => toDraft(settings));
+  const [schoolLevels, setSchoolLevels] = useState<SchoolLevelId[]>(() =>
+    parseSchoolLevels(settings.schoolLevels),
+  );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
@@ -84,7 +90,11 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
     : [{ value: settings.timezone, label: settings.timezone }, ...TIME_ZONES];
 
   const saved = toDraft(settings);
-  const isDirty = (Object.keys(saved) as DraftKey[]).some((key) => draft[key] !== saved[key]);
+  const savedLevels = useMemo(() => parseSchoolLevels(settings.schoolLevels), [settings.schoolLevels]);
+  const isDirty =
+    (Object.keys(saved) as DraftKey[]).some((key) => draft[key] !== saved[key]) ||
+    !levelsEqual(schoolLevels, savedLevels);
+  const slugAffix = schoolSlugAffixes();
 
   function set(key: DraftKey, value: string): void {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -101,7 +111,7 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
 
     // Parsed here as well as on the server so a typo lands beside the input
     // that caused it rather than as one sentence above the whole form.
-    const parsed = updateSchoolSettingsSchema.safeParse(toPayload(draft));
+    const parsed = updateSchoolSettingsSchema.safeParse(toPayload(draft, schoolLevels));
 
     if (!parsed.success) {
       const next: Record<string, string> = {};
@@ -173,6 +183,13 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
             />
           </Field>
         </div>
+
+        <SchoolLevelPicker
+          value={schoolLevels}
+          onChange={setSchoolLevels}
+          error={fieldErrors['schoolLevels']}
+          disabled={!canConfigure || isSaving}
+        />
 
         <Field
           label="Street address"
@@ -264,7 +281,11 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
           </Field>
 
           <Field label="Web address" hint="Fixed. Everyone signs in here.">
-            <Input readOnly value={schoolAddress(settings.slug)} className="font-mono" />
+            <Input
+              readOnly
+              value={`${slugAffix.prefix}${settings.slug}${slugAffix.suffix}`}
+              className="font-mono text-sm"
+            />
           </Field>
         </div>
       </fieldset>
@@ -284,6 +305,7 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
               tone="ghost"
               onClick={() => {
                 setDraft(saved);
+                setSchoolLevels(savedLevels);
                 setFieldErrors({});
                 setFormError(undefined);
               }}
@@ -331,7 +353,7 @@ function toDraft(settings: SchoolSettings): Draft {
 }
 
 /** Form shape → wire shape. Blank optional fields are absent, not empty. */
-function toPayload(draft: Draft): UpdateSchoolSettings {
+function toPayload(draft: Draft, levels: SchoolLevelId[]): UpdateSchoolSettings {
   return {
     name: draft.name,
     legalName: draft.legalName.trim() === '' ? null : draft.legalName,
@@ -339,9 +361,25 @@ function toPayload(draft: Draft): UpdateSchoolSettings {
     city: draft.city,
     phone: toE164(draft.phone),
     email: draft.email,
+    schoolLevels: [...levels],
     timezone: draft.timezone,
     locale: draft.locale === 'ur' ? 'ur' : 'en',
   };
+}
+
+function parseSchoolLevels(values: readonly string[]): SchoolLevelId[] {
+  return values.filter((value): value is SchoolLevelId =>
+    (SCHOOL_LEVEL_IDS as readonly string[]).includes(value),
+  );
+}
+
+function levelsEqual(a: readonly SchoolLevelId[], b: readonly SchoolLevelId[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  const sortedA = [...a].sort();
+  const sortedB = [...b].sort();
+  return sortedA.every((value, index) => value === sortedB[index]);
 }
 
 /**
@@ -361,7 +399,3 @@ function toE164(input: string): string {
   return digits;
 }
 
-function schoolAddress(slug: string): string {
-  const domain = process.env['NEXT_PUBLIC_APP_DOMAIN'] ?? 'localhost';
-  return TENANT_MODE === 'path' ? `${domain}/${slug}` : `${slug}.${domain}`;
-}

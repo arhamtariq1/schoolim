@@ -6,7 +6,6 @@ import {
   type VoucherSettings,
 } from '@ilm/contracts';
 
-import { AppShell } from '@/components/app-shell';
 import { SchoolLogoCard } from '@/components/school-logo-card';
 import { VoucherSettingsForm } from '@/components/voucher-settings-form';
 import { apiFetch } from '@/lib/api';
@@ -47,19 +46,7 @@ export default async function VoucherSettingsPage() {
     : { present: false, mimeType: null, byteSize: null, version: null };
 
   return (
-    <AppShell
-      user={{
-        name: session?.name ?? '',
-        email: session?.email ?? '',
-        roleLabel: session?.roles.join(', ') ?? '',
-      }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={permissions}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="max-w-2xl">
           <h1 className="text-xl font-semibold text-foreground">Fee challan</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -99,6 +86,5 @@ export default async function VoucherSettingsPage() {
           />
         </div>
       </div>
-    </AppShell>
   );
 }
