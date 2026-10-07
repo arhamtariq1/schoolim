@@ -3,16 +3,9 @@ import { systemClock } from '@ilm/utils';
 type DashboardHeaderBandProps = {
   greeting: string;
   schoolName: string;
-  sessionLabel: string | undefined;
-  dateLabel: string;
 };
 
-export function DashboardHeaderBand({
-  greeting,
-  schoolName,
-  sessionLabel,
-  dateLabel,
-}: DashboardHeaderBandProps) {
+export function DashboardHeaderBand({ greeting, schoolName }: DashboardHeaderBandProps) {
   return (
     <header className="flex flex-wrap items-stretch justify-between gap-4">
       <div className="min-w-0 flex-1 space-y-1 py-1">
@@ -21,13 +14,6 @@ export function DashboardHeaderBand({
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground md:text-base">
           Here&apos;s what&apos;s happening at {schoolName} today.
-        </p>
-        {/* The session and the date were already being computed and passed in,
-            and then dropped on the floor by a refactor. Which academic year
-            you are looking at is not decoration on a screen whose next click
-            might be "generate fees". */}
-        <p className="text-xs text-muted-foreground">
-          {[sessionLabel, dateLabel].filter((part) => part !== undefined).join('  ·  ')}
         </p>
       </div>
     </header>

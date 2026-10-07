@@ -10,7 +10,6 @@ import { DashboardExpenseBreakdownChart } from '@/components/dashboard/dashboard
 import { DashboardFeesCollectionCard } from '@/components/dashboard/dashboard-fees-collection-card';
 import {
   DashboardHeaderBand,
-  formatDashboardDate,
   timeBasedGreeting,
 } from '@/components/dashboard/dashboard-header-band';
 import { DashboardMonthCalendar } from '@/components/dashboard/dashboard-month-calendar';
@@ -76,12 +75,7 @@ export function HomeDashboard({
     <div className="w-full space-y-3 bg-slate-50 p-2 sm:p-2.5 md:p-3 lg:p-4">
       {verifyBanner}
 
-      <DashboardHeaderBand
-        greeting={greeting}
-        schoolName={session.school.name}
-        sessionLabel={snapshot.currentSessionLabel}
-        dateLabel={formatDashboardDate(snapshot.todayDate)}
-      />
+      <DashboardHeaderBand greeting={greeting} schoolName={session.school.name} />
 
       {snapshot.issues.length > 0 ? (
         <div

@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 
 import { DashboardLoading } from '@/components/dashboard/dashboard-loading';
 import { HomeDashboard } from '@/components/dashboard/home-dashboard';
-import { loadDashboardSnapshot } from '@/lib/dashboard-data';
+import { loadDashboardDemoSnapshot } from '@/lib/dashboard-demo-data';
 import { requireSchoolSession } from '@/lib/require-session';
 import { tenantSlugFromHeaders } from '@/lib/tenant-from-request';
 
@@ -12,10 +12,8 @@ async function HomeDashboardContent({
   verifyOutcome: string | undefined;
 }) {
   const session = await requireSchoolSession();
-  const [snapshot, tenantSlug] = await Promise.all([
-    loadDashboardSnapshot(session),
-    tenantSlugFromHeaders(),
-  ]);
+  const snapshot = loadDashboardDemoSnapshot(session);
+  const tenantSlug = await tenantSlugFromHeaders();
 
   const verifyBanner =
     verifyOutcome === undefined ? null : (
@@ -46,22 +44,25 @@ async function HomeDashboardContent({
 }
 
 /**
- * Home — permission-aware summary built from existing list endpoints.
+ * Home — the dashboard.
  *
- * ## Real figures only
+ * ## Deliberately static, for now
  *
- * This reads `loadDashboardSnapshot`, which asks the same list endpoints the
- * rest of the portal uses. It briefly rendered `loadDashboardDemoSnapshot`
- * instead — invented revenue, invented admissions, invented defaulters — which
- * is the one thing a fee-management product must never do: a head teacher has
- * no way to tell a placeholder from a collection figure, and "Rs 1,250,000
- * collected" is a number somebody acts on.
+ * This renders `loadDashboardDemoSnapshot`: a fixed payload, not the school's
+ * own figures. That is a decision, not an oversight. Half of this screen —
+ * revenue trend, monthly expenses, expense breakdown, weekly attendance, recent
+ * fee payments — has no endpoint behind it yet, and `HomeDashboard` hides any
+ * widget whose data is empty. Wired to the live loader today it would show four
+ * cards and a lot of white space, which is not the product being demonstrated.
  *
- * The widgets with no endpoint behind them yet (revenue trend, expense
- * breakdown, weekly attendance) are each guarded on `.length > 0` in
- * `HomeDashboard`, so they stay hidden rather than drawing an empty chart. The
- * demo loader is kept for designing those screens; it must not be imported
- * here.
+ * `loadDashboardSnapshot` in `@/lib/dashboard-data` is the real thing and is
+ * already written: it asks the same list endpoints the rest of the portal uses,
+ * permission-gated and in parallel. **Swap the import below for it once the
+ * summary endpoints exist** — nothing else on this page has to change, because
+ * both return the same `DashboardSnapshot`.
+ *
+ * Until then the figures here are invented, so this screen must not be used to
+ * answer a question about a real school's money.
  */
 export default async function HomePage({
   searchParams,
