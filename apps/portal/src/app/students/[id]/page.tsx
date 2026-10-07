@@ -1,4 +1,4 @@
-import { ROUTES, type StudentProfile } from '@ilm/contracts';
+import { ROUTES, type FeeHead, type StudentProfile } from '@ilm/contracts';
 import { EmptyState } from '@ilm/ui';
 import { notFound } from 'next/navigation';
 
@@ -25,7 +25,17 @@ export default async function StudentProfilePage({ params }: { params: Promise<{
     return <SignedOut />;
   }
 
-  const result = await apiFetch<{ data: StudentProfile }>(ROUTES.students.profile(id));
+  const canSetFees = session.permissions.includes('fees.discount.create');
+
+  // The catalogue goes out with the profile rather than when the fee dialog
+  // opens: it is the same short list for every student, and fetching it on a
+  // click is a dialog that opens empty and fills in underneath the cursor.
+  const [result, headsResult] = await Promise.all([
+    apiFetch<{ data: StudentProfile }>(ROUTES.students.profile(id)),
+    canSetFees
+      ? apiFetch<{ data: FeeHead[] }>(ROUTES.fees.heads)
+      : Promise.resolve({ ok: false as const, status: 403, message: '' }),
+  ]);
 
   if (!result.ok && result.status === 404) {
     notFound();
@@ -34,10 +44,15 @@ export default async function StudentProfilePage({ params }: { params: Promise<{
   const can = {
     update: session.permissions.includes('students.student.update'),
     guardians: session.permissions.includes('students.guardian.update'),
+    fees: canSetFees,
   };
 
   return result.ok ? (
-    <StudentProfileView student={result.data.data} can={can} />
+    <StudentProfileView
+      student={result.data.data}
+      heads={headsResult.ok ? headsResult.data.data : []}
+      can={can}
+    />
   ) : (
     <EmptyState title="That did not load" description={result.message} />
   );

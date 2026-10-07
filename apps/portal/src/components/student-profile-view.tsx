@@ -1,11 +1,19 @@
 'use client';
 
 
-import { ROUTES, type StudentGuardian, type StudentProfile } from '@ilm/contracts';
+import {
+  ROUTES,
+  type FeeHead,
+  type FeeTotals,
+  type StudentFee,
+  type StudentGuardian,
+  type StudentProfile,
+} from '@ilm/contracts';
 import {
   Button,
   ConfirmDialog,
   DateDisplay,
+  Money,
   StatusBadge,
   useToast,
   type StatusTone,
@@ -16,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { EditStudentDialog } from './edit-student-dialog';
+import { EditStudentFeesDialog } from './edit-student-fees-dialog';
 import { GuardianDialog } from './guardian-dialog';
 
 import { mutateOrThrow } from '@/lib/mutate';
@@ -47,14 +56,17 @@ function humanise(value: string): string {
 
 export interface StudentProfileViewProps {
   readonly student: StudentProfile;
-  readonly can: { update: boolean; guardians: boolean };
+  /** The catalogue, so the fee editor can offer heads this child is not on. */
+  readonly heads: readonly FeeHead[];
+  readonly can: { update: boolean; guardians: boolean; fees: boolean };
 }
 
-export function StudentProfileView({ student, can }: StudentProfileViewProps) {
+export function StudentProfileView({ student, heads, can }: StudentProfileViewProps) {
   const router = useRouter();
   const tenantHref = useTenantHref();
   const toast = useToast();
   const [editing, setEditing] = useState(false);
+  const [editingFees, setEditingFees] = useState(false);
   const [guardianDialog, setGuardianDialog] = useState<
     { mode: 'add' } | { mode: 'edit'; guardian: StudentGuardian } | undefined
   >(undefined);
@@ -140,8 +152,26 @@ export function StudentProfileView({ student, can }: StudentProfileViewProps) {
         </div>
       ) : null}
 
-      {/* --- Guardians. Above details, because this is the section people open
-          the page for. --- */}
+      {/* Two columns from `xl`.
+
+          Everything used to be one tall stack, so the things a school opens
+          this page for — what the family pays, who to ring — were a scroll
+          away from the name at the top, and the details nobody reads twice a
+          term took up as much room as either. The left column is the working
+          half; the right is reference. */}
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+        <div className="space-y-6">
+          {/* --- Fees. First, because "what does this child pay" is the
+              question this screen could not answer at all. --- */}
+          <StudentFeesCard
+            fees={student.fees}
+            totals={student.feeTotals}
+            canEdit={can.fees}
+            onEdit={() => {
+              setEditingFees(true);
+            }}
+          />
+
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold">Guardians</h2>
@@ -254,6 +284,7 @@ export function StudentProfileView({ student, can }: StudentProfileViewProps) {
       <section className="space-y-3">
         <h2 className="text-base font-semibold">Enrolment history</h2>
 
+
         {student.enrollments.length === 0 ? (
           <p className="text-sm text-muted-foreground">Not enrolled in any session yet.</p>
         ) : (
@@ -284,29 +315,44 @@ export function StudentProfileView({ student, can }: StudentProfileViewProps) {
         )}
       </section>
 
-      {/* --- The rest. Looked at rarely, so it sits last. --- */}
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold">Details</h2>
-        <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Detail label="Date of birth">
-            {student.dateOfBirth === null ? null : <DateDisplay value={student.dateOfBirth} />}
-          </Detail>
-          <Detail label="Gender">
-            {student.gender === null ? null : humanise(student.gender)}
-          </Detail>
-          <Detail label="Admitted on">
-            {student.admittedOn === null ? null : <DateDisplay value={student.admittedOn} />}
-          </Detail>
-          <Detail label="Blood group">{student.bloodGroup}</Detail>
-          <Detail label="Religion">{student.religion}</Detail>
-          <Detail label="Nationality">{student.nationality}</Detail>
-          <Detail label="City">{student.city}</Detail>
-          <Detail label="Address">{student.address}</Detail>
-          <Detail label="Emergency contact">{student.emergencyContact}</Detail>
-        </dl>
-      </section>
+        </div>
+
+        {/* --- Reference. Read once at admission and rarely again, so it sits
+            beside the working half rather than under it. --- */}
+        <section className="space-y-3 xl:sticky xl:top-4 xl:self-start">
+          <h2 className="text-base font-semibold">Details</h2>
+          <dl className="grid gap-x-8 gap-y-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 xl:grid-cols-1">
+            <Detail label="Date of birth">
+              {student.dateOfBirth === null ? null : <DateDisplay value={student.dateOfBirth} />}
+            </Detail>
+            <Detail label="Gender">
+              {student.gender === null ? null : humanise(student.gender)}
+            </Detail>
+            <Detail label="Admitted on">
+              {student.admittedOn === null ? null : <DateDisplay value={student.admittedOn} />}
+            </Detail>
+            <Detail label="Blood group">{student.bloodGroup}</Detail>
+            <Detail label="Religion">{student.religion}</Detail>
+            <Detail label="Nationality">{student.nationality}</Detail>
+            <Detail label="City">{student.city}</Detail>
+            <Detail label="Address">{student.address}</Detail>
+            <Detail label="Emergency contact">{student.emergencyContact}</Detail>
+          </dl>
+        </section>
+      </div>
 
       <EditStudentDialog student={student} open={editing} onOpenChange={setEditing} />
+
+      {can.fees ? (
+        <EditStudentFeesDialog
+          studentId={student.id}
+          studentName={`${student.firstName} ${student.lastName}`}
+          fees={student.fees}
+          heads={heads}
+          open={editingFees}
+          onOpenChange={setEditingFees}
+        />
+      ) : null}
 
       {guardianDialog === undefined ? null : (
         <GuardianDialog
@@ -359,6 +405,95 @@ export function StudentProfileView({ student, can }: StudentProfileViewProps) {
 }
 
 /** A labelled value, with an explicit dash rather than a blank when unknown. */
+/**
+ * What this child is charged, and what their family agreed to pay.
+ *
+ * The profile endpoint has always returned `fees` and `feeTotals`; this screen
+ * simply never rendered them, so the amount settled at admission could be set
+ * and then never seen again except on a voucher.
+ *
+ * Both columns are shown, always — a structure with no discount is a row where
+ * the two figures match, which is a fact worth being able to see rather than a
+ * column worth hiding.
+ */
+function StudentFeesCard({
+  fees,
+  totals,
+  canEdit,
+  onEdit,
+}: {
+  readonly fees: readonly StudentFee[];
+  readonly totals: FeeTotals;
+  readonly canEdit: boolean;
+  readonly onEdit: () => void;
+}) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-base font-semibold">Fees</h2>
+        {canEdit ? (
+          <Button tone="outline" size="sm" onClick={onEdit}>
+            <EditIcon className="size-4" aria-hidden="true" />
+            Edit fees
+          </Button>
+        ) : null}
+      </div>
+
+      {fees.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          No fees agreed for this child. Nothing will be billed until one is set — a fee run skips
+          them and says so.
+        </p>
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <table className="w-full text-sm">
+            <thead className="border-b border-border text-xs text-muted-foreground uppercase">
+              <tr>
+                <th className="px-4 py-2 text-left font-medium">Fee</th>
+                <th className="px-4 py-2 text-right font-medium">Standard</th>
+                <th className="px-4 py-2 text-right font-medium">Agreed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {fees.map((fee) => (
+                <tr key={fee.feeHeadId} className="border-b border-border last:border-b-0">
+                  <td className="px-4 py-2">
+                    <span className="font-medium text-foreground">{fee.name}</span>
+                    {fee.discountReason === null ? null : (
+                      <span className="block text-xs text-muted-foreground">
+                        {fee.discountReason}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2 text-right font-mono tabular-nums text-muted-foreground">
+                    <Money valueMinor={fee.amountMinor} />
+                  </td>
+                  <td className="px-4 py-2 text-right font-mono font-medium tabular-nums">
+                    <Money valueMinor={fee.payableMinor} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot className="border-t border-border bg-muted/40">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
+                  {totals.discountMinor > 0 ? 'Payable after discount' : 'Payable'}
+                </th>
+                <td className="px-4 py-2 text-right font-mono tabular-nums text-muted-foreground">
+                  <Money valueMinor={totals.grossMinor} />
+                </td>
+                <td className="px-4 py-2 text-right font-mono font-semibold tabular-nums">
+                  <Money valueMinor={totals.payableMinor} />
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
   const empty = children === null || children === undefined || children === '';
   return (
