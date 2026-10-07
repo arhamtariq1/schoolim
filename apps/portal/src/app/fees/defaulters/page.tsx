@@ -47,7 +47,7 @@ export default async function DefaultersPage({
     }
   }
 
-  const [session, listResult, academicsResult] = await Promise.all([
+  const [, listResult, academicsResult] = await Promise.all([
     getSession(),
     apiFetch<{ data: DefaulterList }>(`${ROUTES.defaulters.list}?${query.toString()}`),
     apiFetch<{ data: { session: { id: string } | null; classes: ClassLevel[] } }>(

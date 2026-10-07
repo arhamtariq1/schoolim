@@ -1,8 +1,9 @@
 import { schoolSlugFromHost } from '@ilm/utils';
 import { headers } from 'next/headers';
+
 import { AuthLayout } from '@/components/auth-layout';
-import { LoginForm } from '@/components/login-form';
 import { authScreenLayout } from '@/components/auth-screen-props';
+import { LoginForm } from '@/components/login-form';
 
 /**
  * Sign in.

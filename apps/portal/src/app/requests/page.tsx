@@ -11,7 +11,7 @@ import { PageHeader } from '@/components/page-header';
  * name and no way back except the browser's Back button. An unbuilt module is a
  * fine thing to say; stranding somebody is not.
  */
-export default async function RequestsPage() {
+export default function RequestsPage() {
   return (
     <div className="space-y-6">
       <PageHeader

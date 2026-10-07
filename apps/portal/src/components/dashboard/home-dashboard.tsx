@@ -1,29 +1,30 @@
 import type { SessionUser } from '@ilm/contracts';
+import { DEFAULT_TIMEZONE } from '@ilm/utils';
+import type { Route } from 'next';
 import type { ReactNode } from 'react';
 
-import { DashboardRecentAdmissionsTable } from '@/components/dashboard/dashboard-recent-admissions-table';
-import { DashboardRecentFeePaymentsTable } from '@/components/dashboard/dashboard-recent-fee-payments-table';
 import { DashboardAttendanceWeekChart } from '@/components/dashboard/dashboard-attendance-week-chart';
+import { formatMinorCompact } from '@/components/dashboard/dashboard-chart-theme';
 import { DashboardDefaulterCard } from '@/components/dashboard/dashboard-defaulter-card';
-import { DashboardRevenueChart } from '@/components/dashboard/dashboard-revenue-chart';
-import { DashboardVouchersCard } from '@/components/dashboard/dashboard-vouchers-card';
 import { DashboardExpenseBreakdownChart } from '@/components/dashboard/dashboard-expense-breakdown-chart';
 import { DashboardFeesCollectionCard } from '@/components/dashboard/dashboard-fees-collection-card';
-import { DashboardMonthlyExpensesChart } from '@/components/dashboard/dashboard-monthly-expenses-chart';
 import {
   DashboardHeaderBand,
   formatDashboardDate,
   timeBasedGreeting,
 } from '@/components/dashboard/dashboard-header-band';
+import { DashboardMonthCalendar } from '@/components/dashboard/dashboard-month-calendar';
+import { DashboardMonthlyExpensesChart } from '@/components/dashboard/dashboard-monthly-expenses-chart';
+import { DashboardRecentAdmissionsTable } from '@/components/dashboard/dashboard-recent-admissions-table';
+import { DashboardRecentFeePaymentsTable } from '@/components/dashboard/dashboard-recent-fee-payments-table';
+import { DashboardRevenueChart } from '@/components/dashboard/dashboard-revenue-chart';
 import {
   DashboardStatCard,
   type DashboardStatIconName,
 } from '@/components/dashboard/dashboard-stat-card';
-import { DashboardMonthCalendar } from '@/components/dashboard/dashboard-month-calendar';
-import { formatMinorCompact } from '@/components/dashboard/dashboard-chart-theme';
+import { DashboardVouchersCard } from '@/components/dashboard/dashboard-vouchers-card';
 import type { DashboardSnapshot, DashboardStatTrend } from '@/lib/dashboard-data';
 import { withTenantPrefix } from '@/lib/tenant-mode';
-import type { Route } from 'next';
 
 type HomeDashboardProps = {
   session: SessionUser;
@@ -68,7 +69,7 @@ export function HomeDashboard({
 }: HomeDashboardProps) {
   const permissions = session.permissions;
   const firstName = session.name.trim().split(/\s+/)[0] ?? '';
-  const greeting = timeBasedGreeting(firstName);
+  const greeting = timeBasedGreeting(firstName, session.school.timezone ?? DEFAULT_TIMEZONE);
   const statCards = buildStatCards(snapshot, permissions, tenantSlug);
 
   return (

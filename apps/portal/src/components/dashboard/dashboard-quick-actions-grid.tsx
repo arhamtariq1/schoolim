@@ -10,7 +10,6 @@ import {
   StudentsIcon,
 } from '@ilm/ui/icons';
 import Link from 'next/link';
-import type { Route } from 'next';
 import type { ComponentType } from 'react';
 
 import type {
@@ -46,7 +45,7 @@ export function DashboardQuickActionsGrid({ actions }: DashboardQuickActionsGrid
           return (
             <Link
               key={`${action.href}-${action.label}`}
-              href={action.href as Route}
+              href={action.href}
               className={cn(
                 'flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl border border-border',
                 'bg-card p-3 text-center text-xs font-semibold text-foreground transition-colors',

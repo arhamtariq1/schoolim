@@ -2,9 +2,9 @@
 
 import type { StudentListItem } from '@ilm/contracts';
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, DataTable, DateDisplay, StatusBadge } from '@ilm/ui';
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { Route } from 'next';
 
 import { useTenantHref } from '@/lib/use-tenant-href';
 
@@ -33,11 +33,11 @@ export function DashboardStudentsTable({
         </div>
         <div className="flex flex-wrap gap-2">
           <Button tone="ghost" size="sm" asChild>
-            <Link href={listHref as Route}>All students</Link>
+            <Link href={listHref}>All students</Link>
           </Button>
           {canCreate ? (
             <Button size="sm" asChild>
-              <Link href={newHref as Route}>Add admission</Link>
+              <Link href={newHref}>Add admission</Link>
             </Button>
           ) : null}
         </div>
@@ -91,7 +91,7 @@ export function DashboardStudentsTable({
             description: 'Admissions you record will appear in this table.',
             action: canCreate ? (
               <Button size="sm" asChild>
-                <Link href={newHref as Route}>Add admission</Link>
+                <Link href={newHref}>Add admission</Link>
               </Button>
             ) : undefined,
           }}

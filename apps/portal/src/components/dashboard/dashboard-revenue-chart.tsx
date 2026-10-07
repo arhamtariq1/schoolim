@@ -3,15 +3,17 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ilm/ui';
 import { FinanceIcon } from '@ilm/ui/icons';
 import { formatMoney, minorUnits } from '@ilm/utils';
+import type { ApexOptions } from 'apexcharts';
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
-import type { ApexOptions } from 'apexcharts';
 
 import {
   DASHBOARD_FINANCE_CHART_HEIGHT,
   dashboardChartAxisPadding,
   formatMinorCompact,
   formatRupeesCompact,
+  minorToRupees,
+  roundToNearest,
 } from '@/components/dashboard/dashboard-chart-theme';
 import { useDashboardChartTheme } from '@/components/dashboard/use-dashboard-chart-theme';
 import type { DashboardRevenueMonth } from '@/lib/dashboard-data';
@@ -36,11 +38,12 @@ export function DashboardRevenueChart({ trend }: DashboardRevenueChartProps) {
 
   const { options, series } = useMemo(() => {
     const categories = trend.map((entry) => entry.label);
-    const net = trend.map((entry) => Math.round(entry.netRevenueMinor / 100));
+    const net = trend.map((entry) => minorToRupees(entry.netRevenueMinor));
 
     const minNet = net.length === 0 ? 0 : Math.min(...net);
     const maxNet = net.length === 0 ? 0 : Math.max(...net);
-    const yPadding = maxNet > minNet ? Math.round((maxNet - minNet) * 0.12) : Math.round(maxNet * 0.05);
+    const yPadding =
+      maxNet > minNet ? roundToNearest((maxNet - minNet) * 0.12) : roundToNearest(maxNet * 0.05);
 
     return {
       series: [{ name: 'Net revenue', data: net }],
@@ -174,7 +177,7 @@ function formatMonthChange(
   previousMinor: number,
 ): { label: string; positive: boolean } {
   const delta = latestMinor - previousMinor;
-  const pct = Math.round((Math.abs(delta) / previousMinor) * 100);
+  const pct = roundToNearest((Math.abs(delta) / previousMinor) * 100);
   if (delta === 0) {
     return { label: 'Flat vs last month', positive: true };
   }

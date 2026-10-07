@@ -177,9 +177,21 @@ export function DashboardMonthCalendar({
   );
 }
 
+/**
+ * `2026-10-01` → `{ year: 2026, month: 10 }`.
+ *
+ * The caller always passes the snapshot's `todayDate`, which is a calendar date
+ * in the school's timezone — so a malformed string is a bug, not a state to
+ * paper over with the viewer's clock. Reading `new Date()` here was the banned
+ * pattern that would have put a browser in another country on a different
+ * month to the school.
+ */
 function parseYearMonth(iso: string): { year: number; month: number } {
   const [y, m] = iso.split('-').map(Number);
-  return { year: y ?? new Date().getFullYear(), month: m ?? 1 };
+  return {
+    year: Number.isFinite(y) ? (y ?? 0) : 0,
+    month: Number.isFinite(m) && m !== undefined && m >= 1 && m <= 12 ? m : 1,
+  };
 }
 
 function buildMonthCells(year: number, month: number): { iso: string | null; day: number; index: number }[] {

@@ -9,13 +9,12 @@ import { Field, Input, SearchableSelect, Textarea } from '@ilm/ui';
 import { EmailIcon, PhoneIcon, SchoolIcon } from '@ilm/ui/icons';
 import { useMemo } from 'react';
 
+import { InputWithIcon } from '@/components/input-with-icon';
+import { LogoPicker } from '@/components/logo-picker';
 import {
   ProfileDisplayField,
   ProfileDisplayLevelBadges,
 } from '@/components/profile-display-field';
-import { InputWithIcon } from '@/components/input-with-icon';
-import { schoolSlugAffixes } from '@/lib/school-slug-preview';
-import { LogoPicker } from '@/components/logo-picker';
 import { SchoolLevelPicker } from '@/components/school-level-picker';
 import { SchoolSlugField } from '@/components/school-slug-field';
 import {
@@ -24,6 +23,7 @@ import {
   PAKISTAN_PROVINCES,
 } from '@/lib/pakistan-locations';
 import { displayPhone, phoneDigits } from '@/lib/phone-format';
+import { schoolSlugAffixes } from '@/lib/school-slug-preview';
 
 export type ProfileSchoolEditorValues = {
   name: string;
@@ -78,7 +78,6 @@ export function ProfileSchoolEditorFields({
       <div className="space-y-5">
         {logoCurrentSrc === undefined ? null : (
           <div className="flex items-center gap-4">
-            {/* eslint-disable-next-line @next/next/no-img-element -- school logo preview */}
             <img
               src={logoCurrentSrc}
               alt=""
@@ -124,7 +123,6 @@ export function ProfileSchoolEditorFields({
         />
       ) : logoCurrentSrc === undefined ? null : (
         <div className="flex items-center gap-4">
-          {/* eslint-disable-next-line @next/next/no-img-element -- school logo preview */}
           <img
             src={logoCurrentSrc}
             alt=""

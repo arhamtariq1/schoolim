@@ -2,15 +2,18 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@ilm/ui';
 import { formatMoney, minorUnits } from '@ilm/utils';
+import type { ApexOptions } from 'apexcharts';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
-import type { ApexOptions } from 'apexcharts';
 
 import {
   formatRupeesCompact,
   readDashboardChartTheme,
   resolveCssColor,
   type DashboardChartTheme,
+  type ApexSeriesTotals,
+  minorToRupees,
+  roundToNearest,
 } from '@/components/dashboard/dashboard-chart-theme';
 import type { DashboardExpenseSegment } from '@/lib/dashboard-data';
 
@@ -41,7 +44,7 @@ export function DashboardExpenseBreakdownChart({ segments }: DashboardExpenseBre
 
   const { options, series } = useMemo(() => {
     const chartLabels = segments.map((entry) => entry.label);
-    const values = segments.map((entry) => Math.round(entry.amountMinor / 100));
+    const values = segments.map((entry) => minorToRupees(entry.amountMinor));
     const palette = [theme.primary, theme.primaryMid, theme.primaryLight, theme.mutedForeground];
 
     return {
@@ -75,8 +78,8 @@ export function DashboardExpenseBreakdownChart({ segments }: DashboardExpenseBre
                   fontWeight: 600,
                   color: theme.primary,
                   formatter: (value: string) => {
-                    const minor = Math.round(Number(value) * 100);
-                    return formatRupeesCompact(Math.round(minor / 100));
+                    const minor = Math.trunc(Number(value) * 100);
+                    return formatRupeesCompact(minorToRupees(minor));
                   },
                 },
                 total: {
@@ -84,12 +87,12 @@ export function DashboardExpenseBreakdownChart({ segments }: DashboardExpenseBre
                   label: 'This month',
                   fontSize: '11px',
                   color: theme.mutedForeground,
-                  formatter: (w) => {
+                  formatter: (w: ApexSeriesTotals) => {
                     const total = w.globals.seriesTotals.reduce(
                       (sum: number, n: number) => sum + n,
                       0,
                     );
-                    return formatRupeesCompact(Math.round(total));
+                    return formatRupeesCompact(roundToNearest(total));
                   },
                 },
               },

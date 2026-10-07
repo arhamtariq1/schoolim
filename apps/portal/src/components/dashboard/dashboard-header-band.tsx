@@ -1,5 +1,4 @@
-import { Card, CardContent } from '@ilm/ui';
-import { SchoolIcon } from '@ilm/ui/icons';
+import { systemClock } from '@ilm/utils';
 
 type DashboardHeaderBandProps = {
   greeting: string;
@@ -23,13 +22,37 @@ export function DashboardHeaderBand({
         <p className="max-w-2xl text-sm text-muted-foreground md:text-base">
           Here&apos;s what&apos;s happening at {schoolName} today.
         </p>
+        {/* The session and the date were already being computed and passed in,
+            and then dropped on the floor by a refactor. Which academic year
+            you are looking at is not decoration on a screen whose next click
+            might be "generate fees". */}
+        <p className="text-xs text-muted-foreground">
+          {[sessionLabel, dateLabel].filter((part) => part !== undefined).join('  ·  ')}
+        </p>
       </div>
     </header>
   );
 }
 
-export function timeBasedGreeting(firstName: string): string {
-  const hour = new Date().getHours();
+/**
+ * "Good morning" in the school's own time, not the server's.
+ *
+ * This renders on the server, so a bare `new Date().getHours()` is the *host's*
+ * hour — a Karachi head teacher opening the portal after dinner would be
+ * greeted with "Good afternoon" by a machine in UTC. The school's timezone is
+ * on the session for exactly this reason, and `systemClock` is how this
+ * codebase reads the time at all (the `new Date()` ban is this bug, written
+ * down).
+ */
+export function timeBasedGreeting(firstName: string, timeZone: string): string {
+  const hour = Number(
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone,
+      hour: 'numeric',
+      hour12: false,
+    }).format(systemClock.now()),
+  );
+
   const salutation =
     hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   return firstName === '' ? salutation : `${salutation}, ${firstName}!`;

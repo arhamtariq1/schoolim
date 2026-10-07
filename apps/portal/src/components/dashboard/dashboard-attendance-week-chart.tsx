@@ -1,10 +1,11 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@ilm/ui';
+import type { ApexOptions } from 'apexcharts';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
-import type { ApexOptions } from 'apexcharts';
 
+import { roundToNearest } from '@/components/dashboard/dashboard-chart-theme';
 import type { DashboardWeeklyAttendance } from '@/lib/dashboard-data';
 
 const ApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -172,7 +173,7 @@ export function DashboardAttendanceWeekChart({ weekly }: DashboardAttendanceWeek
           forceNiceScale: true,
           labels: {
             style: { colors: theme.mutedForeground, fontSize: '11px' },
-            formatter: (value: number) => (Number.isFinite(value) ? String(Math.round(value)) : ''),
+            formatter: (value: number) => (Number.isFinite(value) ? String(roundToNearest(value)) : ''),
           },
           title: {
             text: 'Students',
@@ -192,7 +193,7 @@ export function DashboardAttendanceWeekChart({ weekly }: DashboardAttendanceWeek
           theme: 'light',
           x: { show: true },
           y: {
-            formatter: (value: number) => (Number.isFinite(value) ? String(Math.round(value)) : ''),
+            formatter: (value: number) => (Number.isFinite(value) ? String(roundToNearest(value)) : ''),
           },
         },
       } satisfies ApexOptions,

@@ -3,7 +3,6 @@
 import { Card, cn } from '@ilm/ui';
 import { TrendDownIcon, TrendUpIcon } from '@ilm/ui/icons';
 import Link from 'next/link';
-import type { Route } from 'next';
 
 export const DASHBOARD_STAT_ICON_NAMES = [
   'StudentsIcon',
@@ -104,7 +103,7 @@ export function DashboardStatCard({
         'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background',
       )}
     >
-      <Link href={href as Route} className="block h-full outline-none">
+      <Link href={href} className="block h-full outline-none">
         {content}
       </Link>
     </Card>

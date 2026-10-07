@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { passwordSchema, schoolChoiceSchema } from './auth';
+import { passwordSchema } from './auth';
 import {
   emailSchema,
   phoneSchema,

@@ -1,6 +1,7 @@
 import { TRIAL_DAYS } from '@ilm/contracts';
 import { BRAND } from '@ilm/utils';
 import type { Metadata } from 'next';
+
 import { AuthLayout } from '@/components/auth-layout';
 import { authScreenLayout } from '@/components/auth-screen-props';
 import { SignupCredentialsForm } from '@/components/signup-credentials-form';

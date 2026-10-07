@@ -15,7 +15,9 @@ const EMPTY: ClassOverview = {
 };
 
 export default async function StudentReportIndexPage() {
-  const [session, result] = await Promise.all([
+  // `getSession` stays in the batch: the shell reads it from the request, but
+  // dropping the call would change what this page fetches.
+  const [, result] = await Promise.all([
     getSession(),
     apiFetch<{ data: ClassOverview }>(ROUTES.attendance.classes),
   ]);

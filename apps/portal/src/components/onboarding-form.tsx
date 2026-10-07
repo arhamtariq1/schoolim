@@ -12,8 +12,6 @@ import {
 import { useToast } from '@ilm/ui';
 import { AccountIcon, SchoolIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
-
-import { useTenantHref } from '@/lib/use-tenant-href';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import { SetupFormFooter } from '@/components/form-section-card';
@@ -26,7 +24,6 @@ import {
   type ProfileSchoolEditorValues,
 } from '@/components/profile-school-editor-fields';
 import { ProfileSectionCard } from '@/components/profile-section-card';
-import { provinceForPakistanCity } from '@/lib/pakistan-locations';
 import {
   FORM_VALIDATION_TOAST,
   fieldErrorsFromZod,
@@ -34,8 +31,10 @@ import {
   phoneDisplayError,
   withoutFieldErrors,
 } from '@/lib/form-validation';
-import { displayPhone, phoneDigits, toE164 } from '@/lib/phone-format';
 import { mutate } from '@/lib/mutate';
+import { provinceForPakistanCity } from '@/lib/pakistan-locations';
+import { displayPhone, phoneDigits, toE164 } from '@/lib/phone-format';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
  * First-login form after signup OTP — school details + owner profile.

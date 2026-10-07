@@ -251,7 +251,7 @@ function holiday(
 ): Holiday {
   const start = new Date(`${startDate}T00:00:00Z`);
   const end = new Date(`${endDate}T00:00:00Z`);
-  const days = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
+  const days = Math.trunc((end.getTime() - start.getTime()) / 86_400_000 + 0.5) + 1;
 
   return {
     id: `00000000-0000-4000-8000-0000000000${suffix}`,

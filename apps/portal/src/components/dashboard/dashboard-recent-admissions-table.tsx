@@ -21,9 +21,9 @@ import {
   StudentsIcon,
 } from '@ilm/ui/icons';
 import { minorUnits } from '@ilm/utils';
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { Route } from 'next';
 import { useMemo, type ReactNode } from 'react';
 
 import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
@@ -51,7 +51,7 @@ export function DashboardRecentAdmissionsTable({
     <Card className="overflow-hidden rounded-lg shadow-raised">
       <CardHeader className="flex flex-row items-center justify-between gap-2 bg-card px-4 pb-2 pt-4 sm:px-6">
         <CardTitle className="text-base font-semibold text-foreground">Recent admissions</CardTitle>
-        <Link href={listHref as Route} className="text-xs font-medium text-primary hover:underline">
+        <Link href={listHref} className="text-xs font-medium text-primary hover:underline">
           View all students
         </Link>
       </CardHeader>

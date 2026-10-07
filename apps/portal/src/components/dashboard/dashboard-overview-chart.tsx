@@ -1,10 +1,14 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, cn } from '@ilm/ui';
+import type { ApexOptions } from 'apexcharts';
 import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
-import type { ApexOptions } from 'apexcharts';
 
+import {
+  type ApexSeriesTotals,
+  roundToNearest,
+} from '@/components/dashboard/dashboard-chart-theme';
 import type {
   DashboardClassAttendance,
   DashboardFees,
@@ -217,12 +221,12 @@ function donutOptions(labels: string[], colors: string[], money: boolean): ApexO
             total: {
               show: true,
               label: 'Total',
-              formatter: (w) => {
+              formatter: (w: ApexSeriesTotals) => {
                 const sum = w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
                 if (money) {
                   return `Rs ${sum.toLocaleString('en-PK', { maximumFractionDigits: 0 })}`;
                 }
-                return String(Math.round(sum));
+                return String(roundToNearest(sum));
               },
             },
           },

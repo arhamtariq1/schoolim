@@ -3,15 +3,17 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ilm/ui';
 import { ExpenseIcon } from '@ilm/ui/icons';
 import { formatMoney, minorUnits } from '@ilm/utils';
+import type { ApexOptions } from 'apexcharts';
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
-import type { ApexOptions } from 'apexcharts';
 
 import {
   DASHBOARD_FINANCE_CHART_HEIGHT,
   dashboardChartAxisPadding,
   formatMinorCompact,
   formatRupeesCompact,
+  minorToRupees,
+  roundToNearest,
 } from '@/components/dashboard/dashboard-chart-theme';
 import { useDashboardChartTheme } from '@/components/dashboard/use-dashboard-chart-theme';
 import type { DashboardMonthlyExpense } from '@/lib/dashboard-data';
@@ -39,7 +41,7 @@ export function DashboardMonthlyExpensesChart({ monthly }: DashboardMonthlyExpen
 
   const { options, series } = useMemo(() => {
     const categories = monthly.map((entry) => entry.label);
-    const amounts = monthly.map((entry) => Math.round(entry.amountMinor / 100));
+    const amounts = monthly.map((entry) => minorToRupees(entry.amountMinor));
 
     return {
       series: [{ name: 'Expenses', data: amounts }],
@@ -172,7 +174,7 @@ function formatMonthChange(
   previousMinor: number,
 ): { label: string; positive: boolean } {
   const delta = latestMinor - previousMinor;
-  const pct = Math.round((Math.abs(delta) / previousMinor) * 100);
+  const pct = roundToNearest((Math.abs(delta) / previousMinor) * 100);
   if (delta === 0) {
     return { label: 'Flat vs last month', positive: true };
   }

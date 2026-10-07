@@ -32,8 +32,8 @@ import {
 } from '@/lib/form-validation';
 import { mutate } from '@/lib/mutate';
 import { provinceForPakistanCity } from '@/lib/pakistan-locations';
-import type { ProfileSchoolWorkspace } from '@/lib/profile-school-workspace';
 import { displayPhone, phoneDigits, toE164 } from '@/lib/phone-format';
+import type { ProfileSchoolWorkspace } from '@/lib/profile-school-workspace';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 export type ProfileWorkspaceMode = 'view' | 'edit' | 'create';

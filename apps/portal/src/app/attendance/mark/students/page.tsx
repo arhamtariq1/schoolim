@@ -27,7 +27,9 @@ export default async function MarkStudentAttendancePage({
   const params = await searchParams;
   const date = typeof params['date'] === 'string' ? params['date'] : '';
 
-  const [session, result] = await Promise.all([
+  // `getSession` stays in the batch: the shell reads it from the request, but
+  // dropping the call would change what this page fetches.
+  const [, result] = await Promise.all([
     getSession(),
     apiFetch<{ data: ClassOverview }>(
       `${ROUTES.attendance.classes}${date === '' ? '' : `?date=${date}`}`,

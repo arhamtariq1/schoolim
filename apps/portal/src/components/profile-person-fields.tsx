@@ -8,8 +8,8 @@ import {
   PhoneIcon,
 } from '@ilm/ui/icons';
 
-import { ProfileDisplayField } from '@/components/profile-display-field';
 import { InputWithIcon } from '@/components/input-with-icon';
+import { ProfileDisplayField } from '@/components/profile-display-field';
 
 /**
  * Personal profile fields — shared by profile workspace, create, edit and onboarding.

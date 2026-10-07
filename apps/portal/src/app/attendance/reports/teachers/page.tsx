@@ -26,7 +26,9 @@ export default async function StaffReportPage({
     search.set('q', q);
   }
 
-  const [session, result] = await Promise.all([
+  // `getSession` stays in the batch: the shell reads it from the request, but
+  // dropping the call would change what this page fetches.
+  const [, result] = await Promise.all([
     getSession(),
     apiFetch<{ data: MonthlyReport }>(`${ROUTES.attendance.staffReport}?${search.toString()}`),
   ]);

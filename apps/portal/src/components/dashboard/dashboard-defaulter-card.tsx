@@ -3,14 +3,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@ilm/ui';
 import { OverdueIcon } from '@ilm/ui/icons';
 import { formatMoney, minorUnits } from '@ilm/utils';
+import type { ApexOptions } from 'apexcharts';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
-import type { ApexOptions } from 'apexcharts';
 
 import { DashboardCardViewLink } from '@/components/dashboard/dashboard-card-view-link';
 import {
   readDashboardChartTheme,
   type DashboardChartTheme,
+  roundToNearest,
 } from '@/components/dashboard/dashboard-chart-theme';
 import type { DashboardDefaulters } from '@/lib/dashboard-data';
 
@@ -44,7 +45,7 @@ export function DashboardDefaulterCard({ defaulters, detailsHref }: DashboardDef
   const gaugePercent =
     totalStudents === 0
       ? 0
-      : Math.min(100, Math.round((defaulters.families / totalStudents) * 100));
+      : Math.min(100, roundToNearest((defaulters.families / totalStudents) * 100));
 
   const { options, series } = useMemo(() => {
     return {

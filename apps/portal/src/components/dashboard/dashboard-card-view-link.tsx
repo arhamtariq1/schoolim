@@ -1,7 +1,6 @@
 import { cn } from '@ilm/ui';
 import { ChevronRightIcon } from '@ilm/ui/icons';
 import Link from 'next/link';
-import type { Route } from 'next';
 
 type DashboardCardViewLinkProps = {
   href: string;
@@ -16,7 +15,7 @@ export function DashboardCardViewLink({
 }: DashboardCardViewLinkProps) {
   return (
     <Link
-      href={href as Route}
+      href={href}
       className={cn(
         'inline-flex items-center gap-1 text-xs font-semibold tracking-wide text-primary uppercase hover:underline',
         className,
