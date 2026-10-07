@@ -1,7 +1,7 @@
 import { cn } from '@ilm/ui';
 import type { ReactNode } from 'react';
 
-/** Shared surface for full-width setup screens (white on `bg-slate-50`). */
+/** Shared surface for full-width setup screens — a card on the shell's muted ground. */
 export const setupFormCardClassName =
   'rounded-2xl border border-border/70 bg-card shadow-xs';
 

@@ -16,7 +16,7 @@ export function ProfilePageLayout({
   breadcrumbsHomeHref = '/',
 }: ProfilePageLayoutProps) {
   return (
-    <div className="w-full space-y-5 bg-slate-50 p-2 sm:p-2.5 md:p-3 lg:p-4">
+    <div className="w-full space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">{title}</h1>

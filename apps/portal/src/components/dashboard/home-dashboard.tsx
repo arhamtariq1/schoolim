@@ -72,7 +72,10 @@ export function HomeDashboard({
   const statCards = buildStatCards(snapshot, permissions, tenantSlug);
 
   return (
-    <div className="w-full space-y-3 bg-slate-50 p-2 sm:p-2.5 md:p-3 lg:p-4">
+    // No padding and no background of its own: the shell owns both. The
+    // `bg-slate-50` that used to be here stayed light in dark mode, which is a
+    // white sheet behind dark cards.
+    <div className="w-full space-y-3">
       {verifyBanner}
 
       <DashboardHeaderBand greeting={greeting} schoolName={session.school.name} />

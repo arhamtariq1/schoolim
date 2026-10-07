@@ -3,7 +3,7 @@ import { Skeleton } from '@ilm/ui';
 /** Home dashboard layout while server data loads — shell stays mounted. */
 export function DashboardLoading() {
   return (
-    <div className="w-full space-y-3 bg-slate-50 p-3" role="status" aria-label="Loading dashboard">
+    <div className="w-full space-y-3" role="status" aria-label="Loading dashboard">
       <div className="flex flex-wrap justify-between gap-3">
         <div className="space-y-2">
           <Skeleton className="h-9 w-64" />

@@ -84,6 +84,14 @@ const NAV_LEAF_HREFS: readonly string[] = (() => {
  * Until `profileCompleted` is true, nav items stay visible but disabled; the
  * proxy sends incomplete profiles to `/profile/create` (not listed in the sidebar).
  */
+/**
+ * The gutter every workspace screen sits in.
+ *
+ * `pb-24` on small screens clears the bottom tab bar; from `md` the bar is
+ * gone and the padding is even on all four sides.
+ */
+const CONTENT_PADDING = "px-4 pt-4 pb-24 md:px-6 md:pt-6 md:pb-6";
+
 
 export interface AppShellProps {
   user: { name: string; email?: string; roleLabel: string };
@@ -217,11 +225,19 @@ export function AppShell({
             ref={scrollport}
             className="scrollbar-hidden min-w-0 flex-1 overflow-y-auto overscroll-y-contain bg-muted/30"
           >
+            {/* Padding is decided here and nowhere else.
+
+                The two widths used to disagree about it: `default` padded and
+                `full` did not, so every screen that asked for the full width
+                sat flush against the sidebar and ran off the right edge — and
+                the dashboard quietly grew its own padding to compensate, which
+                is how one rule becomes two. The only difference between the
+                branches now is the maximum width. */}
             <div
               className={
                 contentWidth === 'full'
-                  ? 'w-full pb-24 md:pb-6'
-                  : 'mx-auto w-full max-w-6xl space-y-6 p-4 pb-24 md:p-5 md:pb-6 lg:px-6 lg:py-6 xl:max-w-7xl 2xl:max-w-[84rem]'
+                  ? `w-full ${CONTENT_PADDING}`
+                  : `mx-auto w-full max-w-6xl space-y-6 ${CONTENT_PADDING} xl:max-w-7xl 2xl:max-w-[84rem]`
               }
             >
               {unverifiedEmail === undefined ? null : <VerifyEmailBanner email={unverifiedEmail} />}
