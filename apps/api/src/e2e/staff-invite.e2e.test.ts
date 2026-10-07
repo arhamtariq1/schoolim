@@ -192,7 +192,7 @@ async function plantToken(userId: string, token: string, expiresAt: Date): Promi
 async function userOf(staffId: string): Promise<Record<string, unknown>> {
   const rows = await admin.$queryRawUnsafe<Record<string, unknown>[]>(
     `SELECT u.id, u.email, u.status::text AS status, u.password_hash,
-            u.email_verified_at, u.must_change_password
+            u.email_verified_at, u.must_change_password, u.phone, u.profile_completed_at
        FROM staff s JOIN users u ON u.id = s.user_id
       WHERE s.id = $1::uuid`,
     staffId,
@@ -417,6 +417,30 @@ describe('accepting it', () => {
     // Following the link is the same proof `verify-email` asks for, so asking
     // again would be asking them to confirm what they just did.
     expect(user['email_verified_at']).not.toBeNull();
+  });
+
+  it('asks a new teacher for nothing, because the office already said it', async () => {
+    // `profileCompletedAt` is the portal's "we have what we need from this
+    // person", and for invited staff we do: the office gave us their name,
+    // email and phone when it put them on the payroll.
+    //
+    // Left null, the portal sent them to `/profile/create` — an onboarding
+    // screen built for an owner setting up a school, showing a teacher the
+    // school's own name, address and contact as required fields.
+    const staffId = await invited();
+
+    await acceptInvite('a-known-token');
+
+    expect((await userOf(staffId))['profile_completed_at']).not.toBeNull();
+  });
+
+  it('carries the number the office typed onto the account', async () => {
+    // Otherwise the first thing a new teacher is asked for is a phone number
+    // their school has already given us.
+    const staff = (await addStaff(TEACHER)).data();
+    await invite(staff.id);
+
+    expect((await userOf(staff.id))['phone']).toBe(TEACHER.phone);
   });
 
   it('lets them sign in with the password they chose, and only that one', async () => {

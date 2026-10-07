@@ -26,6 +26,26 @@ export function humanizeFieldErrors(errors: Record<string, string>): Record<stri
   return next;
 }
 
+/**
+ * Namespace a flat set of field errors, e.g. `phone` → `school.phone`.
+ *
+ * Two forms on one screen can own a field of the same name — a person has a
+ * phone and so does their school — and the settings API answers with the flat
+ * key its own schema uses. Without a prefix the school's phone field fell back
+ * to reading the bare `phone`, so leaving your *own* number blank printed "This
+ * is required" under the school's contact number as well.
+ */
+export function prefixFieldErrors(
+  errors: Record<string, string>,
+  prefix: string,
+): Record<string, string> {
+  const next: Record<string, string> = {};
+  for (const [key, message] of Object.entries(errors)) {
+    next[key.startsWith(`${prefix}.`) ? key : `${prefix}.${key}`] = message;
+  }
+  return next;
+}
+
 export function withoutFieldErrors(
   errors: Record<string, string>,
   ...keys: string[]

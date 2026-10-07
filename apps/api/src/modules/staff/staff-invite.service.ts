@@ -121,7 +121,15 @@ export class StaffInviteService {
     return (async () => {
         const staff = await tx.staff.findFirst({
           where: { id: staffId, deletedAt: null },
-          select: { id: true, name: true, email: true, role: true, userId: true, status: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            role: true,
+            userId: true,
+            status: true,
+          },
         });
 
         if (staff === null) {
@@ -187,6 +195,15 @@ export class StaffInviteService {
             data: {
               email: staff.email,
               name: staff.name,
+              // Carried from the payroll record, because the office already
+              // typed it there. Without this the account is created with no
+              // number and the new teacher is asked, on their first screen,
+              // for something their school has already told us.
+              //
+              // Seeded, not synced: from here it is theirs to correct, and a
+              // later edit to the payroll row must not overwrite the number
+              // they gave us themselves.
+              ...(staff.phone === null ? {} : { phone: staff.phone }),
               status: 'INVITED',
               passwordHash: null,
             } as never,
@@ -347,6 +364,20 @@ export class StaffInviteService {
           mustChangePassword: false,
           failedLoginCount: 0,
           lockedUntil: null,
+          // Nothing left to ask them for.
+          //
+          // `profileCompletedAt` is the portal's "we have what we need from
+          // this person", and for invited staff we already do: the office gave
+          // us their name, their email and their phone when it put them on the
+          // payroll. Leaving it null sent a new teacher to `/profile/create` —
+          // an onboarding screen built for an owner setting up a school, which
+          // showed them the school's own name, address and contact as fields
+          // to fill in, and which they could not have completed anyway because
+          // the school is already set up.
+          //
+          // Somebody who wants to correct a detail does it from their profile,
+          // which is where the rest of the product already points them.
+          profileCompletedAt: now,
         },
       });
 

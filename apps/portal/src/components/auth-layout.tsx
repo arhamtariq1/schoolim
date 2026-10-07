@@ -86,7 +86,7 @@ html::-webkit-scrollbar,body::-webkit-scrollbar{display:none!important;width:0!i
               className={`mx-auto w-full ${width === 'wide' ? 'max-w-2xl' : 'max-w-md'} ${fitViewport ? 'max-lg:pb-4' : ''}`}
             >
               {logoInHero ? (
-                <div className="mb-4 flex justify-center sm:mb-5">
+                <div className="mb-4 flex justify-center sm:mb-8">
                   <AuthLogo centered />
                 </div>
               ) : null}

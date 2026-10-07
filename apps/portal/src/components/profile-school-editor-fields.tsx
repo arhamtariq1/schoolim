@@ -132,7 +132,7 @@ export function ProfileSchoolEditorFields({
         </div>
       )}
 
-      <Field label="School name" error={fieldErrors['name'] ?? fieldErrors['school.name']} required>
+      <Field label="School name" error={fieldErrors['school.name']} required>
         <InputWithIcon
           icon={SchoolIcon}
           name="schoolName"
@@ -145,7 +145,7 @@ export function ProfileSchoolEditorFields({
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="School email" error={fieldErrors['email'] ?? fieldErrors['school.email']} required>
+        <Field label="School email" error={fieldErrors['school.email']} required>
           <InputWithIcon
             icon={EmailIcon}
             name="schoolEmail"
@@ -160,7 +160,7 @@ export function ProfileSchoolEditorFields({
 
         <Field
           label="School contact number"
-          error={fieldErrors['phone'] ?? fieldErrors['school.phone']}
+          error={fieldErrors['school.phone']}
           required
         >
           <InputWithIcon
@@ -197,7 +197,7 @@ export function ProfileSchoolEditorFields({
             />
           </Field>
 
-          <Field label="City" error={fieldErrors['city'] ?? fieldErrors['school.city']} required>
+          <Field label="City" error={fieldErrors['school.city']} required>
             <SearchableSelect
               value={values.city}
               onValueChange={(next) => {
@@ -213,7 +213,7 @@ export function ProfileSchoolEditorFields({
 
         <Field
           label="Street address"
-          error={fieldErrors['address'] ?? fieldErrors['school.address']}
+          error={fieldErrors['school.address']}
           required
           className="mt-4"
         >
@@ -235,7 +235,7 @@ export function ProfileSchoolEditorFields({
         onChange={(next) => {
           onChange({ schoolLevels: next });
         }}
-        error={fieldErrors['schoolLevels'] ?? fieldErrors['school.schoolLevels']}
+        error={fieldErrors['school.schoolLevels']}
         disabled={disabled}
       />
 
@@ -244,7 +244,7 @@ export function ProfileSchoolEditorFields({
         onChange={(next) => {
           onChange({ slug: next });
         }}
-        error={fieldErrors['slug'] ?? fieldErrors['school.slug']}
+        error={fieldErrors['school.slug']}
         availability={slugAvailability}
         disabled={disabled || slugLocked}
         hint={

@@ -26,6 +26,7 @@ import { ProfileSectionCard } from '@/components/profile-section-card';
 import {
   FORM_VALIDATION_TOAST,
   fieldErrorsFromZod,
+  prefixFieldErrors,
   humanizeFieldErrors,
   phoneDisplayError,
   withoutFieldErrors,
@@ -162,7 +163,7 @@ export function ProfileWorkspaceEditor({
     const schoolSchemaErrors =
       schoolParsed === undefined || schoolParsed.success
         ? {}
-        : fieldErrorsFromZod(schoolParsed.error);
+        : prefixFieldErrors(fieldErrorsFromZod(schoolParsed.error), 'school');
 
     const nextErrors = {
       ...personSchemaErrors,
@@ -193,7 +194,7 @@ export function ProfileWorkspaceEditor({
       if (schoolParsed?.success === true && canEditSchool && mode === 'edit') {
         const schoolResult = await mutate(ROUTES.school.settings, 'PUT', schoolParsed.data);
         if (!schoolResult.ok) {
-          setFieldErrors(humanizeFieldErrors(schoolResult.fieldErrors));
+          setFieldErrors(prefixFieldErrors(humanizeFieldErrors(schoolResult.fieldErrors), 'school'));
           toast.error(schoolResult.message);
           return;
         }
@@ -265,6 +266,14 @@ export function ProfileWorkspaceEditor({
         />
       </ProfileSectionCard>
 
+      {/* Only for somebody who can change it.
+
+          A teacher editing their own profile was being shown the school's name,
+          email, contact number and address as a column of starred, required
+          fields they could not edit — which reads as a form they have failed to
+          fill in. Their school's address is not their business on this screen,
+          and the people whose business it is have Settings › School. */}
+      {!canEditSchool && !readOnly ? null : (
       <ProfileSectionCard
         icon={SchoolIcon}
         title="School Information"
@@ -282,13 +291,8 @@ export function ProfileWorkspaceEditor({
           logoCurrentSrc={logoCurrentSrc}
           showLogoPicker={!readOnly && canEditSchool}
         />
-        {!canEditSchool && !readOnly ? (
-          <p className="mt-4 text-sm text-muted-foreground">
-            Only an owner or principal can change school details. Ask one of them if something here
-            is wrong.
-          </p>
-        ) : null}
       </ProfileSectionCard>
+      )}
     </div>
   );
 
