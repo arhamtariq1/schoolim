@@ -80,6 +80,8 @@ export const ROUTES = {
     remove: (id: string) => `${API_PREFIX}/students/${id}`,
     /** The 360 page: details, guardians and enrolment history in one call. */
     profile: (id: string) => `${API_PREFIX}/students/${id}/profile`,
+    /** Confirmed fee receipts for the Fees tab payment history table. */
+    feePayments: (id: string) => `${API_PREFIX}/students/${id}/fee-payments`,
     guardians: (id: string) => `${API_PREFIX}/students/${id}/guardians`,
     /** Search existing guardians, so a sibling links rather than duplicates. */
     guardianSearch: `${API_PREFIX}/guardians`,

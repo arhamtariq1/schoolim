@@ -6,6 +6,7 @@ import {
   studentListQuerySchema,
   updateStudentSchema,
   upsertGuardianSchema,
+  type StudentFeePaymentHistory,
   type StudentListItem,
   type StudentProfile,
 } from '@ilm/contracts';
@@ -95,6 +96,15 @@ export class StudentsController {
     ]);
 
     return { data: { ...profile, guardians }, meta: { requestId: request.id } };
+  }
+
+  @Get('/api/v1/students/:id/fee-payments')
+  @RequirePermission('fees.voucher.read')
+  async feePayments(
+    @Param('id') id: string,
+    @Req() request: FastifyRequest,
+  ): Promise<{ data: StudentFeePaymentHistory; meta: { requestId: string } }> {
+    return { data: await this.students.feePaymentHistory(id), meta: { requestId: request.id } };
   }
 
   /**

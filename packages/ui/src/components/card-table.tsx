@@ -26,6 +26,10 @@ export type CardTableColumn<TRow> = {
 
 export type CardTableProps<TRow> = {
   readonly title: string;
+  /** Shown under the title in the card header. */
+  readonly description?: string | undefined;
+  /** Right side of the header — e.g. Edit or Add. */
+  readonly headerAction?: ReactNode;
   readonly rows: readonly TRow[];
   readonly columns: readonly CardTableColumn<TRow>[];
   readonly rowKey: (row: TRow) => string;
@@ -52,6 +56,8 @@ export type CardTableProps<TRow> = {
 
 export function CardTable<TRow>({
   title,
+  description,
+  headerAction,
   rows,
   columns,
   rowKey,
@@ -74,7 +80,7 @@ export function CardTable<TRow>({
   if (isLoading) {
     return (
       <Card className="w-full overflow-hidden rounded-lg shadow-raised">
-        <CardHeader className="bg-card px-4 pb-2 pt-4 sm:px-6">
+        <CardHeader className="bg-card px-4 pt-4 sm:px-6">
           <CardTitle className="text-base font-semibold text-foreground">{title}</CardTitle>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
@@ -88,17 +94,25 @@ export function CardTable<TRow>({
 
   return (
     <Card className="w-full overflow-hidden rounded-lg shadow-raised">
-      <CardHeader className="flex flex-row items-center justify-between gap-2 bg-card px-4 pb-2 pt-4 sm:px-6">
-        <CardTitle className="text-base font-semibold text-foreground">{title}</CardTitle>
-        {isFiltered && onClearFilters !== undefined ? (
-          <button
-            type="button"
-            className="text-xs font-medium text-primary hover:underline"
-            onClick={onClearFilters}
-          >
-            Clear filters
-          </button>
-        ) : null}
+      <CardHeader className="flex flex-row items-start justify-between gap-3 bg-card px-4 pb-2 pt-4 sm:px-6">
+        <div className="min-w-0 space-y-1">
+          <CardTitle className="text-base font-semibold text-foreground">{title}</CardTitle>
+          {description === undefined ? null : (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {headerAction}
+          {isFiltered && onClearFilters !== undefined ? (
+            <button
+              type="button"
+              className="text-xs font-medium text-primary hover:underline"
+              onClick={onClearFilters}
+            >
+              Clear filters
+            </button>
+          ) : null}
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         {!hasData ? (
@@ -166,15 +180,15 @@ export function CardTable<TRow>({
                         onRowClick === undefined
                           ? undefined
                           : (event) => {
-                              if (
-                                (event.target as HTMLElement | null)?.closest(
-                                  '[data-stop-row-click]',
-                                ) !== null
-                              ) {
-                                return;
-                              }
-                              onRowClick(row);
+                            if (
+                              (event.target as HTMLElement | null)?.closest(
+                                '[data-stop-row-click]',
+                              ) !== null
+                            ) {
+                              return;
                             }
+                            onRowClick(row);
+                          }
                       }
                       className={cn(
                         'border-b border-border last:border-0 hover:bg-muted/30',

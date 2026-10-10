@@ -4,11 +4,13 @@ import {
   type CreateStudent,
   type SchoolRole,
   type StudentListItem,
+  type StudentFeePaymentHistory,
+  type StudentFeePaymentHistoryEntry,
   type StudentListQuery,
   type StudentProfile,
   type UpdateStudent,
 } from '@ilm/contracts';
-import { DEFAULT_TIMEZONE, fromDecimalString, today } from '@ilm/utils';
+import { DEFAULT_TIMEZONE, fromDecimalString, minorUnits, today } from '@ilm/utils';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { Prisma, type TransactionClient } from '../../prisma';
@@ -444,6 +446,8 @@ export class StudentsService {
           status: true,
           enrolledOn: true,
           endedOn: true,
+          sessionId: true,
+          classLevelId: true,
           session: { select: { name: true } },
           classLevel: { select: { name: true } },
           section: { select: { name: true } },
@@ -469,7 +473,9 @@ export class StudentsService {
         guardians: [],
         enrollments: enrollments.map((entry) => ({
           id: entry.id,
+          sessionId: entry.sessionId,
           sessionName: entry.session.name,
+          classLevelId: entry.classLevelId,
           className: entry.classLevel.name,
           sectionName: entry.section?.name ?? null,
           rollNo: entry.rollNo,
@@ -479,6 +485,100 @@ export class StudentsService {
         })),
         fees,
         feeTotals: totals,
+      };
+    });
+  }
+
+  /**
+   * Every confirmed fee receipt for this child, newest first.
+   *
+   * Scope follows `findOne`: if the caller cannot list this student, they
+   * cannot read their payments either.
+   */
+  async feePaymentHistory(id: string): Promise<StudentFeePaymentHistory> {
+    const listRow = await this.findOne(id);
+
+    return this.prisma.tenant(async (tx) => {
+      const payments = await tx.feePayment.findMany({
+        where: {
+          studentId: id,
+          status: 'CONFIRMED',
+          reversesPaymentId: null,
+        },
+        orderBy: [{ paidOn: 'desc' }, { createdAt: 'desc' }],
+        take: 500,
+        select: {
+          id: true,
+          receiptNo: true,
+          amount: true,
+          method: true,
+          paidOn: true,
+          allocations: {
+            select: {
+              voucher: {
+                select: {
+                  voucherNo: true,
+                  billMonths: true,
+                  lines: {
+                    orderBy: { sortOrder: 'asc' },
+                    select: { label: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const entries: StudentFeePaymentHistoryEntry[] = payments.map((payment) => {
+        const labels = new Set<string>();
+        const voucherNos = new Set<string>();
+        const monthKeys = new Set<string>();
+
+        for (const allocation of payment.allocations) {
+          voucherNos.add(allocation.voucher.voucherNo);
+          for (const line of allocation.voucher.lines) {
+            labels.add(line.label);
+          }
+          for (const month of allocation.voucher.billMonths) {
+            monthKeys.add(month.toISOString().slice(0, 7));
+          }
+        }
+
+        const feePart = [...labels].join(', ');
+        const periodPart =
+          monthKeys.size === 0
+            ? ''
+            : [...monthKeys]
+                .sort()
+                .map((key) => formatBillMonth(key))
+                .join(', ');
+        const description =
+          feePart === ''
+            ? periodPart === ''
+              ? 'Fee payment'
+              : periodPart
+            : periodPart === ''
+              ? feePart
+              : `${feePart} · ${periodPart}`;
+
+        const voucherNo =
+          voucherNos.size === 0 ? null : voucherNos.size === 1 ? [...voucherNos][0]! : 'Multiple';
+
+        return {
+          id: payment.id,
+          receiptNo: payment.receiptNo,
+          paidOn: asCalendarDate(payment.paidOn) ?? payment.paidOn.toISOString().slice(0, 10),
+          amountMinor: minorUnits(fromDecimalString(payment.amount.toString())),
+          method: payment.method,
+          voucherNo,
+          description,
+        };
+      });
+
+      return {
+        studentId: listRow.id,
+        entries,
       };
     });
   }
@@ -735,6 +835,12 @@ function decimalToMinor(value: unknown): number | null {
  * anything timezone-aware shifts a birthday by a day in half the world, so it
  * is sliced rather than converted.
  */
+function formatBillMonth(monthKey: string): string {
+  const [year, month] = monthKey.split('-');
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, 1));
+  return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
 function asCalendarDate(value: Date | null): string | null {
   return value === null ? null : value.toISOString().slice(0, 10);
 }

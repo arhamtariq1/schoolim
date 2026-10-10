@@ -5,6 +5,7 @@ import { listQuery } from './pagination';
 import {
   calendarDateSchema,
   idSchema,
+  minorUnitsSchema,
   nonEmptyString,
   phoneSchema,
   positiveMinorUnitsSchema,
@@ -346,7 +347,9 @@ export type StudentGuardian = z.infer<typeof studentGuardianSchema>;
 /** One row of a student's enrolment history — which class, which year. */
 export const enrollmentHistoryItemSchema = z.object({
   id: idSchema,
+  sessionId: idSchema,
   sessionName: z.string(),
+  classLevelId: idSchema,
   className: z.string(),
   sectionName: z.string().nullable(),
   rollNo: z.int().nullable(),
@@ -373,6 +376,27 @@ export const studentProfileSchema = studentDetailSchema.extend({
 });
 
 export type StudentProfile = z.infer<typeof studentProfileSchema>;
+
+/** One confirmed fee receipt on the student profile — tuition, lab, admission, etc. */
+export const studentFeePaymentHistoryEntrySchema = z.object({
+  id: idSchema,
+  receiptNo: z.string(),
+  paidOn: calendarDateSchema,
+  amountMinor: minorUnitsSchema,
+  method: z.enum(['CASH', 'BANK_TRANSFER', 'CHEQUE', 'CARD', 'OTHER']),
+  voucherNo: z.string().nullable(),
+  /** Human-readable fee names and billing period, e.g. "Tuition Fee · Mar 2026". */
+  description: z.string(),
+});
+
+export type StudentFeePaymentHistoryEntry = z.infer<typeof studentFeePaymentHistoryEntrySchema>;
+
+export const studentFeePaymentHistorySchema = z.object({
+  studentId: idSchema,
+  entries: z.array(studentFeePaymentHistoryEntrySchema),
+});
+
+export type StudentFeePaymentHistory = z.infer<typeof studentFeePaymentHistorySchema>;
 
 /** Adding a guardian to a student, or editing one already attached. */
 export const upsertGuardianSchema = z
