@@ -77,6 +77,7 @@ export class FeeHeadsService {
             type: input.type,
             name: input.name,
             defaultAmount: toDecimalString(minorUnits(input.defaultAmountMinor)),
+            frequency: input.frequency,
             sortOrder,
             // `schoolId` is stamped by the Prisma tenant extension, so it is
             // absent here on purpose — writing it would be R2 (tenant scope is
@@ -134,6 +135,7 @@ export class FeeHeadsService {
               ? {}
               : { defaultAmount: toDecimalString(minorUnits(input.defaultAmountMinor)) }),
             ...(input.sortOrder === undefined ? {} : { sortOrder: input.sortOrder }),
+            ...(input.frequency === undefined ? {} : { frequency: input.frequency }),
             ...(input.isActive === undefined ? {} : { isActive: input.isActive }),
           },
           select: {

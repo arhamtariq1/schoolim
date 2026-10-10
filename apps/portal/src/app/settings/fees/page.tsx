@@ -2,6 +2,7 @@ import { ROUTES, type FeeHead, type LateFeePolicy } from '@ilm/contracts';
 
 import { FeeHeadsManager } from '@/components/fee-heads-manager';
 import { LateFeePolicyCard } from '@/components/late-fee-policy-card';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -37,17 +38,23 @@ export default async function FeeSettingsPage() {
   const canConfigure = session?.permissions.includes('fees.plan.configure') ?? false;
 
   return (
-    <div className="space-y-6">
-        <FeeHeadsManager
-          initialHeads={result.ok ? result.data.data : []}
-          error={result.ok ? undefined : result.message}
-          canConfigure={canConfigure}
-        />
-        <LateFeePolicyCard
-          policy={policy}
-          canConfigure={canConfigure}
-          error={lateFeeResult.ok ? undefined : lateFeeResult.message}
-        />
-      </div>
+    <div className="w-full space-y-8">
+      <WorkspacePageHeader
+        title="Fees Setting"
+        description="Define fee types for admissions and monthly collection. Changes to amounts apply to new admissions only."
+      />
+
+      <FeeHeadsManager
+        initialHeads={result.ok ? result.data.data : []}
+        error={result.ok ? undefined : result.message}
+        canConfigure={canConfigure}
+      />
+
+      <LateFeePolicyCard
+        policy={policy}
+        canConfigure={canConfigure}
+        error={lateFeeResult.ok ? undefined : lateFeeResult.message}
+      />
+    </div>
   );
 }

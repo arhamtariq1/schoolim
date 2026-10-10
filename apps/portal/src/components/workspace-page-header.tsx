@@ -17,7 +17,7 @@ export function WorkspacePageHeader({
   return (
     <header className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-        <div className="min-w-0 space-y-1">
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
             {title}
           </h1>

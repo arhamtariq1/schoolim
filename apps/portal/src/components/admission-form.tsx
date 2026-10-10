@@ -10,11 +10,53 @@ import {
   type FeeHead,
   type SessionStatus,
 } from '@ilm/contracts';
-import { Button, DatePicker, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Field, Input, Money, SimpleSelect, Textarea, useToast } from '@ilm/ui';
-import { CloseIcon, ICON_SIZE, SuccessIcon } from '@ilm/ui/icons';
+import {
+  Button,
+  DatePicker,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Field,
+  Input,
+  Money,
+  SimpleSelect,
+  Textarea,
+  useToast,
+  cn,
+} from '@ilm/ui';
+import {
+  AccountIcon,
+  AcademicsIcon,
+  CalendarIcon,
+  ClassIcon,
+  CloseIcon,
+  DesignationIcon,
+  FeesIcon,
+  ICON_SIZE,
+  LocationIcon,
+  PhoneIcon,
+  SaveIcon,
+  SectionIcon,
+  SessionIcon,
+  StudentsIcon,
+  SuccessIcon,
+  UndoIcon,
+  WebIcon,
+} from '@ilm/ui/icons';
 import { minorUnits } from '@ilm/utils';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState, type FormEvent } from 'react';
+import {
+  cloneElement,
+  useMemo,
+  useState,
+  type FormEvent,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 
 import { mutate } from '@/lib/mutate';
 import { useTenantHref } from '@/lib/use-tenant-href';
@@ -59,6 +101,14 @@ const RELIGION_OPTIONS = [
   { value: 'Christianity', label: 'Christianity' },
   { value: 'Hinduism', label: 'Hinduism' },
   { value: 'Sikhism', label: 'Sikhism' },
+  { value: 'Other', label: 'Other' },
+] as const;
+
+const NATIONALITY_OPTIONS = [
+  { value: 'Pakistani', label: 'Pakistani' },
+  { value: 'Afghan', label: 'Afghan' },
+  { value: 'Indian', label: 'Indian' },
+  { value: 'Bangladeshi', label: 'Bangladeshi' },
   { value: 'Other', label: 'Other' },
 ] as const;
 
@@ -115,7 +165,10 @@ export function AdmissionForm({
   const [admittedOn, setAdmittedOn] = useState<string>(today);
 
   const [bFormNo, setBFormNo] = useState('');
+  const [studentIdCard, setStudentIdCard] = useState('');
   const [religion, setReligion] = useState('');
+  const [nationality, setNationality] = useState('');
+  const [studentAddress, setStudentAddress] = useState('');
 
   // Defaults to the current session, which is the answer on almost every
   // admission. A school filling next year's classes in March picks that year
@@ -174,6 +227,39 @@ export function AdmissionForm({
    * holding an id the new session has never heard of, and the failure would
    * arrive at Save rather than here.
    */
+  function resetForm(): void {
+    setFirstName('');
+    setLastName('');
+    setGender('');
+    setDateOfBirth('');
+    setAdmittedOn(today);
+    setBFormNo('');
+    setStudentIdCard('');
+    setReligion('');
+    setNationality('');
+    setStudentAddress('');
+    setEnrolSessionId(sessionId ?? '');
+    setSessionClasses(classes);
+    setClassLevelId('');
+    setSectionId('');
+    setGuardianName('');
+    setGuardianRelation('FATHER');
+    setGuardianPhone('');
+    setGuardianCnic('');
+    setGuardianOccupation('');
+    setGuardianAddress('');
+    setFees(
+      catalogue.map((head) => ({
+        feeHeadId: head.id,
+        name: head.name,
+        amountMinor: head.defaultAmountMinor,
+      })),
+    );
+    setDiscountFor(undefined);
+    setFieldErrors({});
+    setFormError(undefined);
+  }
+
   async function changeSession(next: string): Promise<void> {
     setEnrolSessionId(next);
     setClassLevelId('');
@@ -220,6 +306,11 @@ export function AdmissionForm({
       ...(admittedOn === '' ? {} : { admittedOn }),
       ...(bFormNo.trim() === '' ? {} : { bFormNo }),
       ...(religion.trim() === '' ? {} : { religion }),
+      ...(nationality.trim() === '' ? {} : { nationality }),
+      ...(studentAddress.trim() === '' ? {} : { address: studentAddress.trim() }),
+      ...(studentIdCard.trim() === ''
+        ? {}
+        : { custom: { studentIdCard: studentIdCard.trim() } }),
       enrollment: {
         sessionId: enrolSessionId,
         classLevelId,
@@ -229,7 +320,8 @@ export function AdmissionForm({
         name: guardianName,
         relation: guardianRelation,
         phone: toE164(guardianPhone),
-        address: guardianAddress,
+        address:
+          guardianAddress.trim() === '' ? studentAddress.trim() : guardianAddress.trim(),
         ...(guardianCnic.trim() === '' ? {} : { cnic: guardianCnic }),
         ...(guardianOccupation.trim() === '' ? {} : { occupation: guardianOccupation }),
       },
@@ -288,7 +380,7 @@ export function AdmissionForm({
           void submit(event);
         }}
         noValidate
-        className="space-y-6"
+        className="space-y-8"
       >
         {formError === undefined ? null : (
           <div
@@ -299,247 +391,306 @@ export function AdmissionForm({
           </div>
         )}
 
-        <Section title="Student" description="What goes on the register.">
-          <div className="grid gap-4 sm:grid-cols-2">
+        <AdmissionSection
+          icon={StudentsIcon}
+          iconClassName="bg-primary/10 text-primary"
+          title="Student Information"
+          description="Provide the basic details of the student."
+        >
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             <Field label="First name" error={fieldErrors['firstName']} required>
-              <Input
-                value={firstName}
-                autoFocus
-                onChange={(event) => {
-                  setFirstName(event.target.value);
-                }}
-              />
+              <FieldIconWrap icon={AccountIcon}>
+                <Input
+                  value={firstName}
+                  autoFocus
+                  placeholder="Enter first name"
+                  onChange={(event) => {
+                    setFirstName(event.target.value);
+                  }}
+                />
+              </FieldIconWrap>
             </Field>
             <Field label="Last name" error={fieldErrors['lastName']} required>
-              <Input
-                value={lastName}
-                onChange={(event) => {
-                  setLastName(event.target.value);
-                }}
-              />
+              <FieldIconWrap icon={AccountIcon}>
+                <Input
+                  value={lastName}
+                  placeholder="Enter last name"
+                  onChange={(event) => {
+                    setLastName(event.target.value);
+                  }}
+                />
+              </FieldIconWrap>
             </Field>
-            <Field label="Gender" error={fieldErrors['gender']}>
-              <SimpleSelect
-                value={gender}
-                onValueChange={setGender}
-                options={GENDER_OPTIONS}
-                placeholder="Select"
-                ariaLabel="Gender"
-                emptyOption={{ value: '', label: 'Not recorded' }}
-              />
+            <Field label="Gender" error={fieldErrors['gender']} required>
+              <FieldIconWrap icon={StudentsIcon}>
+                <SimpleSelect
+                  value={gender}
+                  onValueChange={setGender}
+                  options={GENDER_OPTIONS}
+                  placeholder="Select gender"
+                  ariaLabel="Gender"
+                  emptyOption={{ value: '', label: 'Select gender' }}
+                />
+              </FieldIconWrap>
             </Field>
-            <Field label="Date of birth" error={fieldErrors['dateOfBirth']}>
-              <DatePicker
-                value={dateOfBirth}
-                onChange={setDateOfBirth}
-                max={today}
-              />
+            <Field label="Date of birth" error={fieldErrors['dateOfBirth']} required>
+              <DatePicker value={dateOfBirth} onChange={setDateOfBirth} max={today} />
+            </Field>
+            <Field label="B-Form number" error={fieldErrors['bFormNo']}>
+              <FieldIconWrap icon={DesignationIcon}>
+                <Input
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="Enter B-Form number"
+                  value={bFormNo}
+                  onChange={(event) => {
+                    setBFormNo(formatCnic(event.target.value));
+                  }}
+                />
+              </FieldIconWrap>
+            </Field>
+            <Field label="CNIC / ID Card" error={fieldErrors['custom.studentIdCard']}>
+              <FieldIconWrap icon={DesignationIcon}>
+                <Input
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="Enter CNIC / ID number"
+                  value={studentIdCard}
+                  onChange={(event) => {
+                    setStudentIdCard(formatCnic(event.target.value));
+                  }}
+                />
+              </FieldIconWrap>
+            </Field>
+            <Field label="Religion" error={fieldErrors['religion']}>
+              <FieldIconWrap icon={AcademicsIcon}>
+                <SimpleSelect
+                  value={religion}
+                  onValueChange={setReligion}
+                  options={RELIGION_OPTIONS}
+                  placeholder="Select religion"
+                  ariaLabel="Religion"
+                  emptyOption={{ value: '', label: 'Select religion' }}
+                />
+              </FieldIconWrap>
+            </Field>
+            <Field label="Nationality" error={fieldErrors['nationality']}>
+              <FieldIconWrap icon={WebIcon}>
+                <SimpleSelect
+                  value={nationality}
+                  onValueChange={setNationality}
+                  options={NATIONALITY_OPTIONS}
+                  placeholder="Select nationality"
+                  ariaLabel="Nationality"
+                  emptyOption={{ value: '', label: 'Select nationality' }}
+                />
+              </FieldIconWrap>
+            </Field>
+            <Field
+              label="Address"
+              error={fieldErrors['address']}
+              className="md:col-span-2 xl:col-span-3"
+            >
+              <FieldIconWrap icon={LocationIcon} alignTop>
+                <Textarea
+                  rows={2}
+                  autoComplete="street-address"
+                  placeholder="Enter address"
+                  value={studentAddress}
+                  onChange={(event) => {
+                    setStudentAddress(event.target.value);
+                  }}
+                />
+              </FieldIconWrap>
+            </Field>
+          </div>
+        </AdmissionSection>
+
+        <AdmissionSection
+          icon={AcademicsIcon}
+          iconClassName="bg-primary/10 text-primary"
+          title="Admission Details"
+          description="Select class, session and other admission information."
+        >
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <Field
+              label="Academic session"
+              error={fieldErrors['enrollment.sessionId']}
+              required
+            >
+              <FieldIconWrap icon={SessionIcon}>
+                <SimpleSelect
+                  value={enrolSessionId}
+                  onValueChange={(next) => {
+                    void changeSession(next);
+                  }}
+                  options={sessions.map((entry) => ({
+                    value: entry.id,
+                    label: sessionOptionLabel(entry),
+                  }))}
+                  disabled={sessions.length === 0}
+                  placeholder="Select session"
+                  ariaLabel="Academic session"
+                />
+              </FieldIconWrap>
+            </Field>
+            <Field label="Class" error={fieldErrors['enrollment.classLevelId']} required>
+              <FieldIconWrap icon={ClassIcon}>
+                <SimpleSelect
+                  value={classLevelId}
+                  onValueChange={(next) => {
+                    setClassLevelId(next);
+                    setSectionId('');
+                  }}
+                  options={sessionClasses.map((entry) => ({ value: entry.id, label: entry.name }))}
+                  disabled={enrolSessionId === '' || loadingClasses || sessionClasses.length === 0}
+                  placeholder={loadingClasses ? 'Loading…' : 'Select class'}
+                  ariaLabel="Class"
+                  emptyOption={{ value: '', label: 'Select class' }}
+                />
+              </FieldIconWrap>
+            </Field>
+            <Field label="Section" error={fieldErrors['enrollment.sectionId']} required>
+              <FieldIconWrap icon={SectionIcon}>
+                <SimpleSelect
+                  value={sectionId}
+                  onValueChange={setSectionId}
+                  options={sections.map((entry) => ({ value: entry.id, label: entry.name }))}
+                  disabled={classLevelId === '' || sections.length === 0}
+                  placeholder="Select section"
+                  ariaLabel="Section"
+                  emptyOption={{ value: '', label: 'Select section' }}
+                />
+              </FieldIconWrap>
             </Field>
             <Field
               label="Date of admission"
               error={fieldErrors['admittedOn']}
-              hint="Defaults to today. Backdate it when entering an older record."
+              hint="Defaults to today. Backdate when entering an older record."
               required
             >
-              <DatePicker
-                value={admittedOn}
-                onChange={setAdmittedOn}
-              />
-            </Field>
-            <Field
-              label="B-Form number"
-              error={fieldErrors['bFormNo']}
-              hint="The child’s NADRA registration. Needed for board enrolment later."
-            >
-              <Input
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder="35202-1234567-1"
-                value={bFormNo}
-                onChange={(event) => {
-                  setBFormNo(formatCnic(event.target.value));
-                }}
-              />
-            </Field>
-            <Field label="Religion" error={fieldErrors['religion']}>
-              <SimpleSelect
-                value={religion}
-                onValueChange={setReligion}
-                options={RELIGION_OPTIONS}
-                placeholder="Select"
-                ariaLabel="Religion"
-                emptyOption={{ value: '', label: 'Not recorded' }}
-              />
+              <FieldIconWrap icon={CalendarIcon}>
+                <DatePicker value={admittedOn} onChange={setAdmittedOn} />
+              </FieldIconWrap>
             </Field>
           </div>
-        </Section>
+          {sessionId === null ? (
+            <p className="mt-4 text-sm text-warning">
+              Set up an academic session under Academics before admitting — every student needs a
+              class.
+            </p>
+          ) : null}
+        </AdmissionSection>
 
-        <Section
-          title="Class"
-          description={
-            sessionId === null
-              ? 'Set up an academic session under Academics before admitting — every student needs a class.'
-              : 'Which year and class this student joins.'
-          }
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              label="Academic session"
-              error={fieldErrors['enrollment.sessionId']}
-              hint="The current year unless you are admitting into a year you have planned."
-              required
-            >
-              <SimpleSelect
-                value={enrolSessionId}
-                onValueChange={(next) => {
-                  void changeSession(next);
-                }}
-                options={sessions.map((entry) => ({
-                  value: entry.id,
-                  // The label says which is which, because "2026-2027" and
-                  // "2027-2028" differ by one character and enrolling a child
-                  // into the wrong year is not visible until a register is
-                  // printed without them on it.
-                  label: entry.isCurrent
-                    ? `${entry.name} — current`
-                    : `${entry.name} — planned`,
-                }))}
-                disabled={sessions.length === 0}
-                placeholder="Select session"
-                ariaLabel="Academic session"
-              />
-            </Field>
-            <Field label="Class" error={fieldErrors['enrollment.classLevelId']} required>
-              <SimpleSelect
-                value={classLevelId}
-                onValueChange={(next) => {
-                  setClassLevelId(next);
-                  // A section from the previous class is not a section of this
-                  // one, and leaving it selected sends a mismatched pair.
-                  setSectionId('');
-                }}
-                options={sessionClasses.map((entry) => ({ value: entry.id, label: entry.name }))}
-                disabled={enrolSessionId === '' || loadingClasses || sessionClasses.length === 0}
-                placeholder={loadingClasses ? 'Loading…' : 'Select class'}
-                ariaLabel="Class"
-                emptyOption={{ value: '', label: 'Select class' }}
-              />
-            </Field>
-            <Field
-              label="Section"
-              error={fieldErrors['enrollment.sectionId']}
-              hint={
-                classLevelId !== '' && !loadingClasses && sections.length === 0
-                  ? 'That class has no sections in this session yet. Add them under Academics, or leave this blank.'
-                  : undefined
-              }
-            >
-              <SimpleSelect
-                value={sectionId}
-                onValueChange={setSectionId}
-                options={sections.map((entry) => ({ value: entry.id, label: entry.name }))}
-                disabled={classLevelId === '' || sections.length === 0}
-                ariaLabel="Section"
-                emptyOption={{ value: '', label: 'Not assigned' }}
-              />
-            </Field>
-          </div>
-        </Section>
-
-        <Section
-          title="Guardian"
+        <AdmissionSection
+          icon={AccountIcon}
+          iconClassName="bg-primary/10 text-primary"
+          title="Guardian Contact"
           description="One contactable adult. Fee notices and absence messages go here."
         >
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             <Field label="Name" error={fieldErrors['guardian.name']} required>
-              <Input
-                value={guardianName}
-                onChange={(event) => {
-                  setGuardianName(event.target.value);
-                }}
-              />
+              <FieldIconWrap icon={AccountIcon}>
+                <Input
+                  value={guardianName}
+                  placeholder="Enter guardian name"
+                  onChange={(event) => {
+                    setGuardianName(event.target.value);
+                  }}
+                />
+              </FieldIconWrap>
             </Field>
             <Field label="Relation" error={fieldErrors['guardian.relation']} required>
-              <SimpleSelect
-                value={guardianRelation}
-                onValueChange={setGuardianRelation}
-                options={RELATION_OPTIONS}
-                ariaLabel="Relation to student"
-              />
+              <FieldIconWrap icon={StudentsIcon}>
+                <SimpleSelect
+                  value={guardianRelation}
+                  onValueChange={setGuardianRelation}
+                  options={RELATION_OPTIONS}
+                  ariaLabel="Relation to student"
+                />
+              </FieldIconWrap>
             </Field>
-            <Field
-              label="Phone"
-              error={fieldErrors['guardian.phone']}
-              hint="Start with 0 and we will add +92."
-              required
-            >
-              <Input
-                type="tel"
-                inputMode="numeric"
-                autoComplete="tel"
-                placeholder="03001234567"
-                value={guardianPhone}
-                onChange={(event) => {
-                  setGuardianPhone(digitsOnly(event.target.value, 15));
-                }}
-              />
+            <Field label="Phone" error={fieldErrors['guardian.phone']} required>
+              <FieldIconWrap icon={PhoneIcon}>
+                <Input
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  placeholder="03001234567"
+                  value={guardianPhone}
+                  onChange={(event) => {
+                    setGuardianPhone(digitsOnly(event.target.value, 15));
+                  }}
+                />
+              </FieldIconWrap>
             </Field>
-            <Field label="CNIC" error={fieldErrors['guardian.cnic']}>
-              <Input
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder="35202-1234567-1"
-                value={guardianCnic}
-                onChange={(event) => {
-                  setGuardianCnic(formatCnic(event.target.value));
-                }}
-              />
+            <Field label="CNIC" error={fieldErrors['guardian.cnic']} hint="Optional.">
+              <FieldIconWrap icon={DesignationIcon}>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="35202-1234567-1"
+                  value={guardianCnic}
+                  onChange={(event) => {
+                    setGuardianCnic(formatCnic(event.target.value));
+                  }}
+                />
+              </FieldIconWrap>
             </Field>
             <Field label="Occupation" error={fieldErrors['guardian.occupation']}>
-              <Input
-                autoComplete="organization-title"
-                placeholder="Shopkeeper, teacher, government service…"
-                value={guardianOccupation}
-                onChange={(event) => {
-                  setGuardianOccupation(event.target.value);
-                }}
-              />
+              <FieldIconWrap icon={DesignationIcon}>
+                <Input
+                  autoComplete="organization-title"
+                  placeholder="Enter occupation"
+                  value={guardianOccupation}
+                  onChange={(event) => {
+                    setGuardianOccupation(event.target.value);
+                  }}
+                />
+              </FieldIconWrap>
             </Field>
             <Field
               label="Home address"
               error={fieldErrors['guardian.address']}
-              hint="Where a leaving certificate or a legal notice would be posted."
-              required
-              className="sm:col-span-2"
+              hint="Uses the student address above if left blank."
+              className="md:col-span-2 xl:col-span-3"
             >
-              <Textarea
-                rows={2}
-                autoComplete="street-address"
-                value={guardianAddress}
-                onChange={(event) => {
-                  setGuardianAddress(event.target.value);
-                }}
-              />
+              <FieldIconWrap icon={LocationIcon} alignTop>
+                <Textarea
+                  rows={2}
+                  autoComplete="street-address"
+                  placeholder="Enter home address"
+                  value={guardianAddress}
+                  onChange={(event) => {
+                    setGuardianAddress(event.target.value);
+                  }}
+                />
+              </FieldIconWrap>
             </Field>
           </div>
-        </Section>
+        </AdmissionSection>
 
-        <Section
+        <AdmissionSection
+          icon={FeesIcon}
+          iconClassName="bg-primary/10 text-primary"
           title="Fees"
           description={
             catalogue.length === 0
-              ? undefined
+              ? 'Review billing for this admission. Fee heads come from your school settings.'
               : 'Filled in from your fee settings. Change an amount for this child only, or give a discount.'
           }
         >
           {catalogue.length === 0 ? (
-            <div className="rounded-md border border-warning/30 bg-warning/10 px-4 py-3 text-sm">
+            <div className="rounded-lg border border-border bg-muted/30 px-4 py-4 text-sm">
               <p className="font-medium text-foreground">No fees are set up yet</p>
               <p className="mt-1 text-muted-foreground">
                 This student can still be admitted — they just will not be billed for anything. Set
                 your fees in{' '}
-                <a href={tenantHref('/settings/fees')} className="font-medium text-primary hover:underline">
+                <a
+                  href={tenantHref('/settings/fees')}
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                >
                   Settings › Fees
                 </a>
                 .
@@ -573,21 +724,16 @@ export function AdmissionForm({
               totals={totals}
             />
           )}
-        </Section>
+        </AdmissionSection>
 
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          <Button
-            type="button"
-            tone="outline"
-            size="touch"
-            onClick={() => {
-              router.push(tenantHref('/students'));
-            }}
-          >
-            Cancel
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-6">
+          <Button type="button" tone="outline" size="touch" onClick={resetForm}>
+            <UndoIcon className={ICON_SIZE.inline} aria-hidden />
+            Reset
           </Button>
           <Button type="submit" isPending={isPending} size="touch">
-            {isPending ? 'Admitting…' : 'Admit student'}
+            <SaveIcon className={ICON_SIZE.inline} aria-hidden />
+            {isPending ? 'Saving…' : 'Save Admission'}
           </Button>
         </div>
       </form>
@@ -616,24 +762,72 @@ export function AdmissionForm({
   );
 }
 
-/** A titled block. Four of these read better than one 30-field form. */
-function Section({
+function sessionOptionLabel(entry: AdmissionSession): string {
+  const spaced = entry.name.replace(/-/g, ' - ');
+  return entry.isCurrent ? `${spaced} (Current)` : spaced;
+}
+
+function AdmissionSection({
+  icon: Icon,
+  iconClassName,
   title,
   description,
   children,
 }: {
+  icon: typeof StudentsIcon;
+  iconClassName: string;
   title: string;
   description?: string | undefined;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-border bg-card p-4 sm:p-6">
-      <h2 className="text-base font-medium text-foreground">{title}</h2>
-      {description === undefined ? null : (
-        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-      )}
-      <div className="mt-4">{children}</div>
+    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-raised">
+      <div className="flex gap-4 border-b border-border px-6 py-5">
+        <span
+          className={cn(
+            'flex size-11 shrink-0 items-center justify-center rounded-full',
+            iconClassName,
+          )}
+        >
+          <Icon className={ICON_SIZE.nav} aria-hidden="true" />
+        </span>
+        <div className="min-w-0 space-y-0.5">
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+          {description === undefined ? null : (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          )}
+        </div>
+      </div>
+      <div className="px-6 py-6">{children}</div>
     </section>
+  );
+}
+
+function FieldIconWrap({
+  icon: Icon,
+  alignTop = false,
+  children,
+  ...fieldControlProps
+}: {
+  icon: typeof AccountIcon;
+  alignTop?: boolean;
+  children: ReactElement<{ className?: string; id?: string }>;
+} & Record<string, unknown>) {
+  return (
+    <div className="relative">
+      <span
+        className={cn(
+          'pointer-events-none absolute start-0 flex w-10 justify-center text-muted-foreground',
+          alignTop ? 'top-2.5' : 'inset-y-0 items-center',
+        )}
+      >
+        <Icon className={ICON_SIZE.inline} aria-hidden="true" />
+      </span>
+      {cloneElement(children, {
+        ...fieldControlProps,
+        className: cn('ps-10', children.props.className),
+      })}
+    </div>
   );
 }
 

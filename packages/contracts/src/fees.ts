@@ -6,7 +6,14 @@ import {
   positiveMinorUnitsSchema,
   textSchema,
 } from './primitives';
-import { feeFrequencySchema } from './vouchers';
+import {
+  FEE_FREQUENCIES,
+  FEE_FREQUENCY_LABELS,
+  feeFrequencySchema,
+  type FeeFrequency,
+} from './vouchers';
+
+export { FEE_FREQUENCIES, FEE_FREQUENCY_LABELS, type FeeFrequency };
 
 /**
  * Fee contracts — the catalogue, and what a child was agreed to pay.
@@ -46,6 +53,13 @@ export const feeHeadTypeSchema = z.enum(FEE_HEAD_TYPES);
 export type FeeHeadType = z.infer<typeof feeHeadTypeSchema>;
 
 /** Labels, so a dropdown and a table cannot disagree about what to call a type. */
+/** Short labels for fee settings tables (matches admission/fee UI copy). */
+export const FEE_FREQUENCY_TABLE_LABELS: Readonly<Record<FeeFrequency, string>> = {
+  MONTHLY: 'Monthly',
+  ONE_TIME: 'One Time',
+  ANNUAL: 'Yearly',
+};
+
 export const FEE_HEAD_TYPE_LABELS: Readonly<Record<FeeHeadType, string>> = {
   ADMISSION: 'Admission',
   TUITION: 'Tuition',
@@ -89,6 +103,7 @@ export const createFeeHeadSchema = z
     type: feeHeadTypeSchema.default('CUSTOM'),
     name: textSchema(80),
     defaultAmountMinor: positiveMinorUnitsSchema,
+    frequency: feeFrequencySchema.default('ONE_TIME'),
     sortOrder: z.int().min(0).max(9999).optional(),
   })
   .strict();
