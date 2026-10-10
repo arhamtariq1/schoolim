@@ -33,6 +33,39 @@ interface Problem {
   readonly errors?: readonly FieldError[];
 }
 
+/** Read JSON from a same-origin GET (browser only — not for server components). */
+export async function fetchJson<T>(path: string): Promise<MutationResult<T>> {
+  let response: Response;
+
+  try {
+    response = await fetch(path, { credentials: 'include' });
+  } catch {
+    return {
+      ok: false,
+      status: 0,
+      message: 'Could not reach the server. Trying again usually works.',
+      fieldErrors: {},
+    };
+  }
+
+  const payload = (await response.json().catch(() => ({}))) as Problem & { data?: unknown };
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      status: response.status,
+      message:
+        payload.detail ??
+        (response.status === 403
+          ? 'You do not have permission to view this.'
+          : 'That did not load. Trying again usually works.'),
+      fieldErrors: {},
+    };
+  }
+
+  return { ok: true, data: payload as T };
+}
+
 export async function mutate<T>(
   path: string,
   method: 'POST' | 'PATCH' | 'PUT' | 'DELETE',

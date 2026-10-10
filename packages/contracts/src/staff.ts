@@ -106,6 +106,31 @@ export const staffListItemSchema = z.object({
 
 export type StaffListItem = z.infer<typeof staffListItemSchema>;
 
+/** Full employment record for the staff profile screen. */
+export const staffProfileSchema = staffListItemSchema.extend({
+  cnic: z.string().nullable(),
+  designation: z.string().nullable(),
+  address: z.string().nullable(),
+  photoUrl: z.string().nullable(),
+  cvUrl: z.string().nullable(),
+});
+
+export type StaffProfile = z.infer<typeof staffProfileSchema>;
+
+const staffCnicSchema = z
+  .string()
+  .trim()
+  .min(5, 'Enter a CNIC number.')
+  .max(20, 'CNIC is too long.');
+
+/** Photo data URLs from the portal file picker stay under ~512 KB raw. */
+const optionalStaffPhotoSchema = z.string().trim().max(800_000).optional().nullable();
+
+/** CV PDFs as data URLs from the portal stay under ~2 MB raw. */
+const optionalStaffCvSchema = z.string().trim().max(3_000_000).optional().nullable();
+
+const optionalAddressSchema = z.string().trim().max(500).optional().nullable();
+
 export const staffListQuerySchema = listQuery(
   ['name', 'employeeNo', 'role', 'createdAt'] as const,
   {
@@ -158,8 +183,11 @@ export const createStaffSchema = z
     sickLeaves: z.int().min(0).max(365).default(0),
     basicSalaryMinor: positiveMinorUnitsSchema.default(0),
     joinedOn: calendarDateSchema.optional(),
-    cnic: z.string().trim().max(20).optional(),
+    cnic: staffCnicSchema,
     designation: z.string().trim().max(80).optional(),
+    address: optionalAddressSchema,
+    photoUrl: optionalStaffPhotoSchema,
+    cvUrl: optionalStaffCvSchema,
   })
   .strict()
   .refine((value) => !staffRoleCanSignIn(value.role) || value.email !== undefined, {
@@ -192,8 +220,11 @@ export const updateStaffSchema = z
     sickLeaves: z.int().min(0).max(365).optional(),
     basicSalaryMinor: positiveMinorUnitsSchema.optional(),
     joinedOn: calendarDateSchema.optional(),
-    cnic: z.string().trim().max(20).optional(),
+    cnic: staffCnicSchema.optional(),
     designation: z.string().trim().max(80).optional(),
+    address: optionalAddressSchema,
+    photoUrl: optionalStaffPhotoSchema,
+    cvUrl: optionalStaffCvSchema,
   })
   .strict();
 

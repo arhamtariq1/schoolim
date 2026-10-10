@@ -4,6 +4,7 @@ import {
   type CreateStaff,
   type StaffListItem,
   type StaffListQuery,
+  type StaffProfile,
   type StaffRole,
   type UpdateStaff,
 } from '@ilm/contracts';
@@ -54,6 +55,15 @@ const LIST_SELECTION = {
   // The account's own state, for `invitePending`. An invited account exists
   // and cannot be used; the list has to be able to say so.
   user: { select: { status: true } },
+} as const;
+
+const PROFILE_SELECTION = {
+  ...LIST_SELECTION,
+  cnic: true,
+  designation: true,
+  address: true,
+  photoUrl: true,
+  cvUrl: true,
 } as const;
 
 @Injectable()
@@ -157,8 +167,11 @@ export class StaffService {
             ...(input.phone === undefined ? {} : { phone: input.phone }),
             ...(input.gender === undefined ? {} : { gender: input.gender }),
             ...(input.joinedOn === undefined ? {} : { joinedOn: new Date(input.joinedOn) }),
-            ...(input.cnic === undefined ? {} : { cnic: input.cnic }),
+            cnic: input.cnic,
             ...(input.designation === undefined ? {} : { designation: input.designation }),
+            ...(input.address === undefined ? {} : { address: input.address }),
+            ...(input.photoUrl === undefined ? {} : { photoUrl: input.photoUrl }),
+            ...(input.cvUrl === undefined ? {} : { cvUrl: input.cvUrl }),
           } as never,
           select: LIST_SELECTION,
         });
@@ -193,20 +206,24 @@ export class StaffService {
     return this.detail(id);
   }
 
-  /** One row, as the list shows it. */
-  private async detail(id: string): Promise<StaffListItem> {
+  async getProfile(id: string): Promise<StaffProfile> {
     return this.prisma.tenant(async (tx) => {
       const row = await tx.staff.findFirst({
         where: { id, deletedAt: null },
-        select: LIST_SELECTION,
+        select: PROFILE_SELECTION,
       });
 
       if (row === null) {
         throw new NotFoundError('staff member');
       }
 
-      return toListItem(row);
+      return toProfile(row);
     });
+  }
+
+  /** One row, as the list shows it. */
+  private async detail(id: string): Promise<StaffListItem> {
+    return this.getProfile(id);
   }
 
   async update(id: string, input: UpdateStaff): Promise<StaffListItem> {
@@ -314,6 +331,9 @@ export class StaffService {
             ...(input.joinedOn === undefined ? {} : { joinedOn: new Date(input.joinedOn) }),
             ...(input.cnic === undefined ? {} : { cnic: input.cnic }),
             ...(input.designation === undefined ? {} : { designation: input.designation }),
+            ...(input.address === undefined ? {} : { address: input.address }),
+            ...(input.photoUrl === undefined ? {} : { photoUrl: input.photoUrl }),
+            ...(input.cvUrl === undefined ? {} : { cvUrl: input.cvUrl }),
             ...(userId === existing.userId ? {} : { userId }),
           },
           select: LIST_SELECTION,
@@ -410,6 +430,37 @@ function schoolRoleFor(role: StaffRole): string {
     );
   }
   return mapped;
+}
+
+function toProfile(row: {
+  id: string;
+  employeeNo: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  gender: StaffListItem['gender'];
+  role: StaffRole;
+  status: StaffListItem['status'];
+  casualLeaves: number;
+  sickLeaves: number;
+  basicSalary: { toFixed: (digits: number) => string };
+  joinedOn: Date | null;
+  userId: string | null;
+  user?: { status: string } | null;
+  cnic: string | null;
+  designation: string | null;
+  address: string | null;
+  photoUrl: string | null;
+  cvUrl: string | null;
+}): StaffProfile {
+  return {
+    ...toListItem(row),
+    cnic: row.cnic,
+    designation: row.designation,
+    address: row.address,
+    photoUrl: row.photoUrl,
+    cvUrl: row.cvUrl,
+  };
 }
 
 function toListItem(row: {

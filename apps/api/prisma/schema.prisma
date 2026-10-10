@@ -944,6 +944,9 @@ model Staff {
   leftOn       DateTime?   @map("left_on") @db.Date
   cnic         String?
   designation  String?
+  address      String?
+  photoUrl     String?     @map("photo_url")
+  cvUrl        String?     @map("cv_url")
   createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
   /// Soft delete: a payroll record that vanishes takes the answer to "were they

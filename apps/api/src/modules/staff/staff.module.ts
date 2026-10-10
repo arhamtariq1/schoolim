@@ -6,6 +6,7 @@ import {
   updateStaffSchema,
   type StaffInviteResult,
   type StaffListItem,
+  type StaffProfile,
 } from '@ilm/contracts';
 import {
   Body,
@@ -71,6 +72,12 @@ export class StaffController {
   @RequirePermission('staff.record.update')
   async create(@Body() body: unknown): Promise<{ data: StaffListItem }> {
     return { data: await this.staff.create(createStaffSchema.parse(body)) };
+  }
+
+  @Get('/api/v1/staff/:id')
+  @RequirePermission('staff.record.read')
+  async get(@Param('id') id: string): Promise<{ data: StaffProfile }> {
+    return { data: await this.staff.getProfile(id) };
   }
 
   @Patch('/api/v1/staff/:id')
