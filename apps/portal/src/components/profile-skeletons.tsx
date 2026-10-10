@@ -21,7 +21,11 @@ export function PageHeaderSkeleton({ withActions = false }: { withActions?: bool
 /** Profile workspace — two reference-style section cards. */
 export function ProfileViewSkeleton() {
   return (
-    <div className="grid w-full gap-4 lg:grid-cols-2" role="status" aria-label="Loading profile">
+    <div
+      className="flex w-full flex-col gap-4"
+      role="status"
+      aria-label="Loading profile"
+    >
       <ReferenceSectionSkeleton />
       <ReferenceSectionSkeleton tall />
     </div>

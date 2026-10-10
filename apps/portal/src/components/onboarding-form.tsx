@@ -306,7 +306,7 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
       noValidate
       className="space-y-6 pb-4"
     >
-      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+      <div className="flex w-full flex-col gap-4">
         <ProfileSectionCard
           icon={AccountIcon}
           title="Account Information"

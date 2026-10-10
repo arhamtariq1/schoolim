@@ -235,7 +235,7 @@ export function ProfileWorkspaceEditor({
     );
 
   const body = (
-    <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+    <div className="flex w-full flex-col gap-4">
       <ProfileSectionCard
         icon={AccountIcon}
         title="Account Information"

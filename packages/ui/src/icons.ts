@@ -63,6 +63,7 @@ export {
   Globe as WebIcon,
   MapPin as LocationIcon,
   Save as SaveIcon,
+  Palette as PaletteIcon,
   Eye as ShowPasswordIcon,
   EyeOff as HidePasswordIcon,
 
