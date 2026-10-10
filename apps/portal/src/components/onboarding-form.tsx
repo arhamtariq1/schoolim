@@ -60,6 +60,8 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
   const [schoolLevels, setSchoolLevels] = useState<SchoolLevelId[]>(() =>
     parseSchoolLevels(initial.school.schoolLevels ?? []),
   );
+  const [oLevelClassNames, setOLevelClassNames] = useState<string[]>([]);
+  const [aLevelClassNames, setALevelClassNames] = useState<string[]>([]);
   const [schoolPhone, setSchoolPhone] = useState(displayPhone(initial.school.phone ?? ''));
   const [schoolEmail, setSchoolEmail] = useState(initial.school.email ?? initial.email);
   const [availability, setAvailability] = useState<SlugAvailability | undefined>(undefined);
@@ -78,9 +80,22 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
       city,
       address,
       schoolLevels,
+      oLevelClassNames,
+      aLevelClassNames,
       slug: effectiveSlug,
     }),
-    [schoolName, schoolEmail, schoolPhone, province, city, address, schoolLevels, effectiveSlug],
+    [
+      schoolName,
+      schoolEmail,
+      schoolPhone,
+      province,
+      city,
+      address,
+      schoolLevels,
+      oLevelClassNames,
+      aLevelClassNames,
+      effectiveSlug,
+    ],
   );
   const slugHint = describeAvailability(
     effectiveSlug,
@@ -164,6 +179,12 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
       setSchoolLevels(patch.schoolLevels);
       clearErrors('school.schoolLevels');
     }
+    if (patch.oLevelClassNames !== undefined) {
+      setOLevelClassNames(patch.oLevelClassNames);
+    }
+    if (patch.aLevelClassNames !== undefined) {
+      setALevelClassNames(patch.aLevelClassNames);
+    }
     if (patch.slug !== undefined) {
       setSlugTouched(true);
       setSlug(slugify(patch.slug));
@@ -232,6 +253,8 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
         phone: toE164(schoolPhone),
         email: schoolEmail,
         schoolLevels: [...schoolLevels],
+        oLevelClassNames: [...oLevelClassNames],
+        aLevelClassNames: [...aLevelClassNames],
         timezone: 'Asia/Karachi',
         locale: 'en',
       },

@@ -179,6 +179,10 @@ model School {
   address                String?
   /// Levels offered — e.g. primary, secondary. Stored as stable slugs from `@ilm/contracts`.
   schoolLevels           String[]     @default([]) @map("school_levels")
+  /// Custom O-Level class names; empty means product defaults at sync time.
+  oLevelClassNames       String[]     @default([]) @map("o_level_class_names")
+  /// Custom A-Level class names; empty means product defaults at sync time.
+  aLevelClassNames       String[]     @default([]) @map("a_level_class_names")
   phone                  String?
   email                  String?
   status                 SchoolStatus @default(TRIAL)

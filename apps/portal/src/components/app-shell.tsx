@@ -1,6 +1,6 @@
 'use client';
 
-import { ROUTES } from '@ilm/contracts';
+import { ROUTES, type SchoolLogoInfo } from '@ilm/contracts';
 import {
   ConfirmDialog,
   DropdownMenu,
@@ -26,24 +26,24 @@ import {
   MenuIcon,
   NotificationsIcon,
   PrintIcon,
-  SchoolIcon,
   SearchIcon,
   SettingsIcon,
   SignOutIcon,
   StudentsIcon,
   TrendUpIcon,
 } from '@ilm/ui/icons';
-import { BRAND } from '@ilm/utils';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
 
 import { AppSearch } from '@/components/app-search';
 import { BrandTheme } from '@/components/brand-theme';
+import { SidebarBrandMark } from '@/components/sidebar-brand-mark';
 import { NAV_ICONS } from '@/components/nav-icons';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { VerifyEmailBanner } from '@/components/verify-email-banner';
 import { NAV_ITEMS, visibleNavItems, visibleSettingsMenuItems, type NavItem } from '@/lib/navigation';
+import { SCHOOL_LOGO_UPDATED_EVENT } from '@/lib/school-logo-shell';
 import { useCanonicalPathname, useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -119,6 +119,8 @@ export interface AppShellProps {
    * page, and the shell already has the session in its hands.
    */
   brandColor?: string | undefined;
+  /** Latest school logo metadata — loaded with the shell, updated in place on upload. */
+  schoolLogo?: SchoolLogoInfo | undefined;
   /** Setup-style pages: no max-width column — content aligns with the shell edge. */
   contentWidth?: 'default' | 'full';
   children: ReactNode;
@@ -135,6 +137,7 @@ export function AppShell({
   profileCompleted = true,
   unverifiedEmail,
   brandColor,
+  schoolLogo: initialSchoolLogo,
   contentWidth = 'default',
   children,
 }: AppShellProps) {
@@ -145,7 +148,25 @@ export function AppShell({
   const navLocked = !profileCompleted && canonicalPath === '/profile/create';
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [schoolLogo, setSchoolLogo] = useState(initialSchoolLogo);
   const scrollport = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    setSchoolLogo(initialSchoolLogo);
+  }, [initialSchoolLogo]);
+
+  useEffect(() => {
+    function onLogoUpdated(event: Event): void {
+      const detail = (event as CustomEvent<SchoolLogoInfo>).detail;
+      if (detail !== undefined) {
+        setSchoolLogo(detail);
+      }
+    }
+    window.addEventListener(SCHOOL_LOGO_UPDATED_EVENT, onLogoUpdated);
+    return () => {
+      window.removeEventListener(SCHOOL_LOGO_UPDATED_EVENT, onLogoUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     setDrawerOpen(false);
@@ -184,7 +205,8 @@ export function AppShell({
         <Sidebar
           className="hidden md:flex"
           items={items}
-          school={school}
+          schoolLogo={schoolLogo}
+          profileCompleted={profileCompleted}
           navLocked={navLocked}
         />
 
@@ -201,7 +223,8 @@ export function AppShell({
             <Sidebar
               className="relative flex h-full animate-in fade-in-0 slide-in-from-left-2"
               items={items}
-              school={school}
+              schoolLogo={schoolLogo}
+              profileCompleted={profileCompleted}
               navLocked={navLocked}
               onClose={() => {
                 setDrawerOpen(false);
@@ -583,17 +606,21 @@ function ProfileMenu({
 
 function Sidebar({
   items,
-  school,
+  schoolLogo,
+  profileCompleted,
   navLocked,
   className,
   onClose,
 }: {
   items: readonly NavItem[];
-  school: { name: string };
+  schoolLogo: SchoolLogoInfo | undefined;
+  profileCompleted: boolean;
   navLocked: boolean;
   className?: string;
   onClose?: () => void;
 }) {
+  const tenantHref = useTenantHref();
+
   return (
     <aside
       className={cn(
@@ -601,27 +628,30 @@ function Sidebar({
         className,
       )}
     >
-      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-border px-4">
-        <span
-          aria-hidden="true"
-          className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-raised"
+      <div className="relative flex h-16 shrink-0 items-center justify-center border-b border-border px-4">
+        <Link
+          href={tenantHref('/')}
+          className="inline-flex max-w-[148px] items-center justify-center rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          aria-label="Home"
         >
-          <SchoolIcon className="size-5" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm leading-tight font-semibold" title={school.name}>
-            {school.name}
-          </span>
-          <span className="block truncate text-xs leading-tight text-muted-foreground">
-            {BRAND.name}
-          </span>
-        </span>
+          <SidebarBrandMark
+            schoolLogo={
+              schoolLogo ?? {
+                present: false,
+                mimeType: null,
+                byteSize: null,
+                version: null,
+              }
+            }
+            profileCompleted={profileCompleted}
+          />
+        </Link>
         {onClose === undefined ? null : (
           <button
             type="button"
             aria-label="Close menu"
             onClick={onClose}
-            className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="absolute end-3 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             <CloseIcon className="size-4" aria-hidden="true" />
           </button>

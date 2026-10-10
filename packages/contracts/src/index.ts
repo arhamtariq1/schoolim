@@ -16,6 +16,7 @@ export * from './profile';
 export * from './roles';
 export * from './routes';
 export * from './school-levels';
+export * from './school-level-classes';
 export * from './school-logo';
 export * from './school-settings';
 export * from './promotions';

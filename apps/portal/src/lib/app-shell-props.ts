@@ -1,11 +1,14 @@
-import type { SessionUser } from '@ilm/contracts';
+import type { SchoolLogoInfo, SessionUser } from '@ilm/contracts';
 
 import type { AppShellProps } from '@/components/app-shell';
 
 /** Map session → AppShell props (shared by layout and legacy call sites). */
 export function appShellPropsFromSession(
   session: SessionUser,
-  options?: { contentWidth?: AppShellProps['contentWidth'] },
+  options?: {
+    contentWidth?: AppShellProps['contentWidth'];
+    schoolLogo?: SchoolLogoInfo;
+  },
 ): Omit<AppShellProps, 'children'> {
   return {
     user: {
@@ -18,6 +21,7 @@ export function appShellPropsFromSession(
     profileCompleted: session.profileCompleted,
     unverifiedEmail: session.emailVerified ? undefined : session.email,
     brandColor: session.school.primaryColor ?? undefined,
+    schoolLogo: options?.schoolLogo,
     contentWidth: options?.contentWidth ?? 'default',
   };
 }

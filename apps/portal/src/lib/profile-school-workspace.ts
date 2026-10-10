@@ -31,6 +31,8 @@ export async function loadProfileSchoolWorkspace(): Promise<ProfileSchoolWorkspa
         address: null,
         city: null,
         schoolLevels: [],
+        oLevelClassNames: [],
+        aLevelClassNames: [],
         phone: null,
         email: null,
         timezone: session?.school.timezone ?? 'Asia/Karachi',

@@ -4,6 +4,7 @@ import {
   ROUTES,
   updateSchoolSettingsSchema,
   upsertUserProfileSchema,
+  type SchoolLogoInfo,
   type UpdateSchoolSettings,
   type UploadSchoolLogo,
   type UserProfile,
@@ -32,6 +33,7 @@ import {
   withoutFieldErrors,
 } from '@/lib/form-validation';
 import { mutate } from '@/lib/mutate';
+import { notifySchoolLogoUpdated } from '@/lib/school-logo-shell';
 import { provinceForPakistanCity } from '@/lib/pakistan-locations';
 import { displayPhone, phoneDigits, toE164 } from '@/lib/phone-format';
 import type { ProfileSchoolWorkspace } from '@/lib/profile-school-workspace';
@@ -71,7 +73,10 @@ export function ProfileWorkspaceEditor({
   const [phone, setPhone] = useState(displayPhone(profile.phone ?? ''));
   const [designation, setDesignation] = useState(profile.designation ?? '');
   const [school, setSchool] = useState<ProfileSchoolEditorValues>(() =>
-    schoolValuesFromProfile(profile, initialProvince),
+    schoolValuesFromProfile(profile, initialProvince, {
+      oLevelClassNames: workspace.settings.oLevelClassNames,
+      aLevelClassNames: workspace.settings.aLevelClassNames,
+    }),
   );
   const [logo, setLogo] = useState<UploadSchoolLogo | undefined>(undefined);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -154,6 +159,8 @@ export function ProfileWorkspaceEditor({
         phone: toE164(school.phone),
         email: school.email,
         schoolLevels: [...school.schoolLevels],
+        oLevelClassNames: [...school.oLevelClassNames],
+        aLevelClassNames: [...school.aLevelClassNames],
         timezone: workspace.settings.timezone,
         locale: workspace.settings.locale === 'ur' ? 'ur' : 'en',
       };
@@ -201,11 +208,12 @@ export function ProfileWorkspaceEditor({
       }
 
       if (logo !== undefined && canEditSchool) {
-        const logoResult = await mutate(ROUTES.schoolLogo.image, 'PUT', logo);
+        const logoResult = await mutate<SchoolLogoInfo>(ROUTES.schoolLogo.image, 'PUT', logo);
         if (!logoResult.ok) {
           toast.error(logoResult.message);
           return;
         }
+        notifySchoolLogoUpdated(logoResult.data);
       }
 
       await fetch(ROUTES.auth.refresh, { method: 'POST', credentials: 'include' });

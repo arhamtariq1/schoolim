@@ -15,6 +15,8 @@ import {
   ProfileDisplayField,
   ProfileDisplayLevelBadges,
 } from '@/components/profile-display-field';
+import { LevelClassMappingFields } from '@/components/level-class-mapping-fields';
+import { SchoolLevelClassPreview } from '@/components/school-level-class-preview';
 import { SchoolLevelPicker } from '@/components/school-level-picker';
 import { SchoolSlugField } from '@/components/school-slug-field';
 import {
@@ -33,6 +35,8 @@ export type ProfileSchoolEditorValues = {
   city: string;
   address: string;
   schoolLevels: SchoolLevelId[];
+  oLevelClassNames: string[];
+  aLevelClassNames: string[];
   slug: string;
 };
 
@@ -239,6 +243,21 @@ export function ProfileSchoolEditorFields({
         disabled={disabled}
       />
 
+      <LevelClassMappingFields
+        oLevelSelected={values.schoolLevels.includes('o-level')}
+        aLevelSelected={values.schoolLevels.includes('a-level')}
+        oLevelClassNames={values.oLevelClassNames}
+        aLevelClassNames={values.aLevelClassNames}
+        disabled={disabled}
+        onChange={onChange}
+      />
+
+      <SchoolLevelClassPreview
+        levels={values.schoolLevels}
+        oLevelClassNames={values.oLevelClassNames}
+        aLevelClassNames={values.aLevelClassNames}
+      />
+
       <SchoolSlugField
         value={values.slug}
         onChange={(next) => {
@@ -276,6 +295,7 @@ export function schoolValuesFromProfile(
     };
   },
   province: string,
+  levelNames?: { oLevelClassNames: readonly string[]; aLevelClassNames: readonly string[] },
 ): ProfileSchoolEditorValues {
   return {
     name: profile.school.name,
@@ -285,6 +305,8 @@ export function schoolValuesFromProfile(
     city: profile.school.city ?? '',
     address: profile.school.address ?? '',
     schoolLevels: parseSchoolLevels(profile.school.schoolLevels),
+    oLevelClassNames: [...(levelNames?.oLevelClassNames ?? [])],
+    aLevelClassNames: [...(levelNames?.aLevelClassNames ?? [])],
     slug: profile.school.slug,
   };
 }

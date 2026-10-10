@@ -2,8 +2,12 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+import { ROUTES, type SchoolLogoInfo } from '@ilm/contracts';
+
 import { AppShell } from '@/components/app-shell';
+import { apiFetch } from '@/lib/api';
 import { appShellPropsFromSession } from '@/lib/app-shell-props';
+import { ABSENT_SCHOOL_LOGO } from '@/lib/school-logo-shell';
 import { pathUsesDashboardShell } from '@/lib/dashboard-shell-paths';
 import { getSession } from '@/lib/session';
 import { INNER_PATH_HEADER } from '@/proxy';
@@ -44,7 +48,12 @@ export async function DashboardChrome({ children }: { children: ReactNode }) {
       ? 'full'
       : 'default';
 
+  const logoResult = await apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info);
+  const schoolLogo: SchoolLogoInfo = logoResult.ok ? logoResult.data.data : ABSENT_SCHOOL_LOGO;
+
   return (
-    <AppShell {...appShellPropsFromSession(session, { contentWidth })}>{children}</AppShell>
+    <AppShell {...appShellPropsFromSession(session, { contentWidth, schoolLogo })}>
+      {children}
+    </AppShell>
   );
 }

@@ -58,7 +58,7 @@ export function ProfilePersonFields({
 
   if (layout === 'reference') {
     return (
-      <fieldset disabled={disabled} className="space-y-4">
+      <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
         <Field label="Full name" error={fieldErrors['name'] ?? fieldErrors['person.name']} required>
           <InputWithIcon
             icon={AccountIcon}
@@ -100,6 +100,7 @@ export function ProfilePersonFields({
         <Field
           label="Designation (Optional)"
           error={fieldErrors['designation'] ?? fieldErrors['person.designation']}
+          className="sm:col-span-2"
         >
           <InputWithIcon
             icon={DesignationIcon}

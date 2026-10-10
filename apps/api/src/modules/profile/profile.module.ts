@@ -19,6 +19,8 @@ import { STORAGE_PROVIDERS } from '../../shared/storage/storage.port';
 import { schoolOrigin } from '../../shared/tenancy/school-origin';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
 import { CLOCK, clockProvider, type Clock } from '../../shared/time/clock.provider';
+import { AcademicsModule } from '../academics/academics.module';
+import { SchoolLevelClassSyncService } from '../academics/school-level-class-sync.service';
 import { AuthModule } from '../auth/auth.module';
 import { HandoffService } from '../auth/handoff.service';
 
@@ -35,6 +37,7 @@ export class ProfileService {
     private readonly prisma: PrismaService,
     private readonly context: TenantContextService,
     private readonly handoffs: HandoffService,
+    private readonly levelClasses: SchoolLevelClassSyncService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ENV) private readonly env: Env,
   ) {}
@@ -266,6 +269,8 @@ export class ProfileService {
             phone: input.school.phone,
             email: input.school.email,
             schoolLevels: [...input.school.schoolLevels],
+            oLevelClassNames: [...(input.school.oLevelClassNames ?? [])],
+            aLevelClassNames: [...(input.school.aLevelClassNames ?? [])],
             timezone: input.school.timezone,
             locale: input.school.locale,
             onboardedAt: now,
@@ -278,8 +283,15 @@ export class ProfileService {
             phone: true,
             email: true,
             schoolLevels: true,
+            oLevelClassNames: true,
+            aLevelClassNames: true,
             onboardedAt: true,
           },
+        });
+
+        await this.levelClasses.syncInTransaction(tx, school.schoolLevels, {
+          oLevelClassNames: school.oLevelClassNames,
+          aLevelClassNames: school.aLevelClassNames,
         });
 
         if (input.logo !== undefined) {
@@ -460,7 +472,7 @@ export class ProfileController {
 }
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, AcademicsModule],
   controllers: [ProfileController],
   providers: [clockProvider, ProfileService],
 })

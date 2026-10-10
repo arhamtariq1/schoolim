@@ -9,6 +9,7 @@ import { useId, useState } from 'react';
 import { LogoPicker } from './logo-picker';
 
 import { mutate } from '@/lib/mutate';
+import { ABSENT_SCHOOL_LOGO, notifySchoolLogoUpdated } from '@/lib/school-logo-shell';
 
 /**
  * Settings › an image the school owns.
@@ -78,6 +79,9 @@ export function SchoolLogoCard({
 
     setChosen(undefined);
     toast.success(`${noun} updated.`);
+    if (imageRoute === ROUTES.schoolLogo.image) {
+      notifySchoolLogoUpdated(result.data);
+    }
     router.refresh();
   }
 
@@ -95,6 +99,9 @@ export function SchoolLogoCard({
 
     setChosen(undefined);
     toast.success(`${noun} removed.`);
+    if (imageRoute === ROUTES.schoolLogo.image) {
+      notifySchoolLogoUpdated(ABSENT_SCHOOL_LOGO);
+    }
     router.refresh();
   }
 

@@ -118,15 +118,11 @@ function FormSectionSkeleton({
 
 function ProfilePersonFieldsSkeleton({ withEmail }: { withEmail?: boolean }) {
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-3 lg:gap-5">
-        <FieldSkeleton />
-        {withEmail ? <FieldSkeleton withHint /> : null}
-        <FieldSkeleton withHint />
-      </div>
-      <div className="grid gap-4 lg:grid-cols-3 lg:gap-5">
-        <FieldSkeleton withHint />
-      </div>
+    <div className="grid gap-4 sm:grid-cols-2">
+      <FieldSkeleton />
+      {withEmail ? <FieldSkeleton /> : null}
+      <FieldSkeleton withHint />
+      <FieldSkeleton withHint className="sm:col-span-2" />
     </div>
   );
 }
@@ -144,9 +140,15 @@ function LogoPickerSkeleton() {
   );
 }
 
-function FieldSkeleton({ withHint = false }: { withHint?: boolean }) {
+function FieldSkeleton({
+  withHint = false,
+  className,
+}: {
+  withHint?: boolean;
+  className?: string;
+}) {
   return (
-    <div className="space-y-2">
+    <div className={className === undefined ? 'space-y-2' : `space-y-2 ${className}`}>
       <Skeleton className="h-4 w-28" />
       <Skeleton className="h-10 w-full rounded-lg" />
       {withHint ? <Skeleton className="h-3 w-full max-w-xs" /> : null}

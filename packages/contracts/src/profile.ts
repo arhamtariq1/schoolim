@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { emailSchema, phoneSchema, schoolSlugSchema, textSchema, timeZoneSchema } from './primitives';
+import { levelClassNamesSchema } from './school-level-classes';
 import { schoolLevelsSchema } from './school-levels';
 import { uploadSchoolLogoSchema } from './school-logo';
 
@@ -69,6 +70,7 @@ export const completeOnboardingSchema = z
         phone: phoneSchema,
         email: emailSchema,
         schoolLevels: schoolLevelsSchema,
+        ...levelClassNamesSchema.shape,
         timezone: timeZoneSchema.default('Asia/Karachi'),
         locale: z.enum(['en', 'ur']).default('en'),
       })

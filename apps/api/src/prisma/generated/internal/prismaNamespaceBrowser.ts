@@ -199,6 +199,8 @@ export const SchoolScalarFieldEnum = {
   city: 'city',
   address: 'address',
   schoolLevels: 'schoolLevels',
+  oLevelClassNames: 'oLevelClassNames',
+  aLevelClassNames: 'aLevelClassNames',
   phone: 'phone',
   email: 'email',
   status: 'status',

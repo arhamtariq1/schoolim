@@ -6,6 +6,8 @@ import {
 } from '@ilm/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 
+import { SchoolLevelClassSyncService } from '../academics/school-level-class-sync.service';
+
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotFoundError } from '../../shared/errors/domain-error';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
@@ -43,6 +45,7 @@ export class SchoolSettingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly context: TenantContextService,
+    private readonly levelClasses: SchoolLevelClassSyncService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -75,10 +78,17 @@ export class SchoolSettingsService {
           phone: input.phone,
           email: input.email,
           schoolLevels: [...input.schoolLevels],
+          oLevelClassNames: [...input.oLevelClassNames],
+          aLevelClassNames: [...input.aLevelClassNames],
           timezone: input.timezone,
           locale: input.locale,
         },
         select: SELECTION,
+      });
+
+      await this.levelClasses.syncInTransaction(tx, after.schoolLevels, {
+        oLevelClassNames: after.oLevelClassNames,
+        aLevelClassNames: after.aLevelClassNames,
       });
 
       // Written by hand rather than left to `AuditInterceptor`, which records
@@ -191,6 +201,8 @@ const SELECTION = {
   phone: true,
   email: true,
   schoolLevels: true,
+  oLevelClassNames: true,
+  aLevelClassNames: true,
   timezone: true,
   locale: true,
   currency: true,

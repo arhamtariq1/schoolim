@@ -13,6 +13,8 @@ import {
 import { Body, Controller, Delete, Get, Module, Put, Req, Res } from '@nestjs/common';
 import { type FastifyReply, type FastifyRequest } from 'fastify';
 
+import { AcademicsModule } from '../academics/academics.module';
+
 import { RequirePermission } from '../../shared/rbac/rbac.guard';
 import { clockProvider } from '../../shared/time/clock.provider';
 
@@ -247,6 +249,7 @@ export class VoucherSettingsController {
 }
 
 @Module({
+  imports: [AcademicsModule],
   controllers: [
     SchoolLogoController,
     BankLogoController,

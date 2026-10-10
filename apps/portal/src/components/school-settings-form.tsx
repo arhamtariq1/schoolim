@@ -78,6 +78,12 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
   const [schoolLevels, setSchoolLevels] = useState<SchoolLevelId[]>(() =>
     parseSchoolLevels(settings.schoolLevels),
   );
+  const [oLevelClassNames, setOLevelClassNames] = useState<string[]>(() => [
+    ...settings.oLevelClassNames,
+  ]);
+  const [aLevelClassNames, setALevelClassNames] = useState<string[]>(() => [
+    ...settings.aLevelClassNames,
+  ]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
@@ -93,7 +99,9 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
   const savedLevels = useMemo(() => parseSchoolLevels(settings.schoolLevels), [settings.schoolLevels]);
   const isDirty =
     (Object.keys(saved) as DraftKey[]).some((key) => draft[key] !== saved[key]) ||
-    !levelsEqual(schoolLevels, savedLevels);
+    !levelsEqual(schoolLevels, savedLevels) ||
+    !namesEqual(oLevelClassNames, settings.oLevelClassNames) ||
+    !namesEqual(aLevelClassNames, settings.aLevelClassNames);
   const slugAffix = schoolSlugAffixes();
 
   function set(key: DraftKey, value: string): void {
@@ -111,7 +119,9 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
 
     // Parsed here as well as on the server so a typo lands beside the input
     // that caused it rather than as one sentence above the whole form.
-    const parsed = updateSchoolSettingsSchema.safeParse(toPayload(draft, schoolLevels));
+    const parsed = updateSchoolSettingsSchema.safeParse(
+      toPayload(draft, schoolLevels, oLevelClassNames, aLevelClassNames),
+    );
 
     if (!parsed.success) {
       const next: Record<string, string> = {};
@@ -306,6 +316,8 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
               onClick={() => {
                 setDraft(saved);
                 setSchoolLevels(savedLevels);
+                setOLevelClassNames([...settings.oLevelClassNames]);
+                setALevelClassNames([...settings.aLevelClassNames]);
                 setFieldErrors({});
                 setFormError(undefined);
               }}
@@ -353,7 +365,12 @@ function toDraft(settings: SchoolSettings): Draft {
 }
 
 /** Form shape → wire shape. Blank optional fields are absent, not empty. */
-function toPayload(draft: Draft, levels: SchoolLevelId[]): UpdateSchoolSettings {
+function toPayload(
+  draft: Draft,
+  levels: SchoolLevelId[],
+  oLevelClassNames: string[],
+  aLevelClassNames: string[],
+): UpdateSchoolSettings {
   return {
     name: draft.name,
     legalName: draft.legalName.trim() === '' ? null : draft.legalName,
@@ -362,9 +379,18 @@ function toPayload(draft: Draft, levels: SchoolLevelId[]): UpdateSchoolSettings 
     phone: toE164(draft.phone),
     email: draft.email,
     schoolLevels: [...levels],
+    oLevelClassNames: [...oLevelClassNames],
+    aLevelClassNames: [...aLevelClassNames],
     timezone: draft.timezone,
     locale: draft.locale === 'ur' ? 'ur' : 'en',
   };
+}
+
+function namesEqual(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return a.every((entry, index) => entry === b[index]);
 }
 
 function parseSchoolLevels(values: readonly string[]): SchoolLevelId[] {

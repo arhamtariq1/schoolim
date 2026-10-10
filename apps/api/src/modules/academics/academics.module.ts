@@ -4,6 +4,7 @@ import { AcademicsController } from './academics.controller';
 import { AcademicsService } from './academics.service';
 import { HolidaysService } from './holidays.service';
 import { PromotionService } from './promotion.service';
+import { SchoolLevelClassSyncService } from './school-level-class-sync.service';
 import { StructureService } from './structure.service';
 
 /**
@@ -15,7 +16,7 @@ import { StructureService } from './structure.service';
  */
 @Module({
   controllers: [AcademicsController],
-  providers: [AcademicsService, StructureService, HolidaysService, PromotionService],
-  exports: [AcademicsService],
+  providers: [AcademicsService, StructureService, HolidaysService, PromotionService, SchoolLevelClassSyncService],
+  exports: [AcademicsService, SchoolLevelClassSyncService],
 })
 export class AcademicsModule {}
