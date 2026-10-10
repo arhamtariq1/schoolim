@@ -54,7 +54,7 @@ export class StaffAttendanceService {
           AND: [{ OR: [{ leftOn: null }, { leftOn: { gte: new Date(on) } }] }],
         },
         orderBy: [{ role: 'asc' }, { name: 'asc' }],
-        select: { id: true, employeeNo: true, name: true, email: true, role: true },
+        select: { id: true, employeeNo: true, name: true, email: true, role: true, photoUrl: true },
       });
 
       const existing = await tx.staffAttendanceRecord.findMany({
@@ -80,6 +80,7 @@ export class StaffAttendanceService {
             name: member.name,
             email: member.email,
             role: member.role,
+            photoUrl: member.photoUrl,
             status: mark?.status ?? null,
             note: mark?.note ?? null,
           };
@@ -221,6 +222,7 @@ export class StaffAttendanceService {
             days: Object.fromEntries(marks),
             present,
             absent: values.filter((status) => status === 'ABSENT').length,
+            late: values.filter((status) => status === 'LATE').length,
             leave: values.filter((status) => status === 'SICK_LEAVE' || status === 'CASUAL_LEAVE')
               .length,
             expectedDays: expected,

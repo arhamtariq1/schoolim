@@ -122,8 +122,8 @@ beforeAll(async () => {
   }
 
   await admin.$executeRawUnsafe(
-    `INSERT INTO holidays (id, school_id, session_id, name, type, applies_to, start_date, end_date, created_at, updated_at)
-     VALUES (gen_random_uuid(), $1::uuid, $2::uuid, 'Eid Milad-un-Nabi', 'HOLIDAY', 'ALL', $3::date, $3::date, now(), now())`,
+    `INSERT INTO holidays (id, school_id, session_id, name, type, applies_to, start_date, end_date, color_key, created_at, updated_at)
+     VALUES (gen_random_uuid(), $1::uuid, $2::uuid, 'Eid Milad-un-Nabi', 'HOLIDAY', 'ALL', $3::date, $3::date, 'rose', now(), now())`,
     SCHOOL_A,
     SESSION_A,
     A_HOLIDAY,

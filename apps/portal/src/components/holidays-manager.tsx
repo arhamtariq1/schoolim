@@ -1,33 +1,48 @@
 'use client';
 
-
 import {
   createHolidaySchema,
   HOLIDAY_AUDIENCE_LABELS,
   HOLIDAY_AUDIENCES,
+  HOLIDAY_COLOR_KEYS,
+  HOLIDAY_COLOR_LABELS,
   HOLIDAY_TYPE_LABELS,
   HOLIDAY_TYPES,
   ROUTES,
   type AcademicSession,
   type Holiday,
+  type HolidayColorKey,
+  type HolidayType,
 } from '@ilm/contracts';
-import { Button, CheckboxField, ConfirmDialog, DataTable, DateDisplay, DatePicker, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, EmptyState, Field, Input, SimpleSelect, StatusBadge, type Column, useToast } from '@ilm/ui';
-import { CreateIcon, DeleteIcon, EditIcon, ICON_SIZE } from '@ilm/ui/icons';
+import {
+  Button,
+  CheckboxField,
+  cn,
+  ConfirmDialog,
+  DatePicker,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  EmptyState,
+  Field,
+  Input,
+  SimpleSelect,
+  useToast,
+} from '@ilm/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
+import { AcademicCalendarView } from '@/components/academic-calendar/academic-calendar-view';
+import {
+  defaultColorForType,
+  HOLIDAY_COLOR_THEME,
+} from '@/components/academic-calendar/calendar-holiday-colors';
 import { mutate } from '@/lib/mutate';
 import { useTenantHref } from '@/lib/use-tenant-href';
-
-/**
- * The school calendar.
- *
- * Holidays are **ranges**, not one row per day. "Summer vacation, 1 June to 15
- * August" is one thing a school declares and one thing it later shortens, and
- * 76 rows would make moving the end date a delete-and-recreate that loses the
- * name. A single day is simply the same date twice, and the form hides the
- * second field until it is needed.
- */
 
 const TYPE_OPTIONS = HOLIDAY_TYPES.map((value) => ({
   value,
@@ -39,16 +54,11 @@ const AUDIENCE_OPTIONS = HOLIDAY_AUDIENCES.map((value) => ({
   label: HOLIDAY_AUDIENCE_LABELS[value],
 }));
 
-const TYPE_TONE: Record<string, 'neutral' | 'warning' | 'success'> = {
-  HOLIDAY: 'warning',
-  VACATION: 'neutral',
-  EVENT: 'success',
-};
-
 export interface HolidaysManagerProps {
   holidays: Holiday[];
   sessions: AcademicSession[];
   activeSessionId: string | undefined;
+  today: string;
   error?: string | undefined;
   canConfigure: boolean;
 }
@@ -57,6 +67,7 @@ export function HolidaysManager({
   holidays,
   sessions,
   activeSessionId,
+  today,
   error,
   canConfigure,
 }: HolidaysManagerProps) {
@@ -69,7 +80,6 @@ export function HolidaysManager({
   const [deleting, setDeleting] = useState<Holiday | undefined>(undefined);
 
   const activeSession = sessions.find((entry) => entry.id === activeSessionId);
-  const totalDays = holidays.reduce((sum, entry) => sum + entry.days, 0);
 
   function changeSession(nextId: string) {
     const url = new URL(window.location.href);
@@ -98,134 +108,9 @@ export function HolidaysManager({
     router.refresh();
   }
 
-  const columns: Column<Holiday>[] = [
-    {
-      key: 'name',
-      header: 'Occasion',
-      render: (row) => (
-        <div className="min-w-0">
-          <p className="truncate font-medium text-foreground">{row.name}</p>
-          {row.notes === null ? null : (
-            <p className="truncate text-xs text-muted-foreground">{row.notes}</p>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'dates',
-      header: 'When',
-      render: (row) => (
-        <span className="text-sm">
-          <DateDisplay value={row.startDate} />
-          {row.startDate === row.endDate ? null : (
-            <>
-              {' — '}
-              <DateDisplay value={row.endDate} />
-            </>
-          )}
-        </span>
-      ),
-    },
-    {
-      key: 'days',
-      header: 'Days',
-      align: 'end',
-      render: (row) => <span className="font-mono text-sm tabular-nums">{row.days}</span>,
-    },
-    {
-      key: 'type',
-      header: 'Type',
-      render: (row) => (
-        <StatusBadge tone={TYPE_TONE[row.type] ?? 'neutral'}>
-          {HOLIDAY_TYPE_LABELS[row.type]}
-        </StatusBadge>
-      ),
-    },
-    {
-      key: 'appliesTo',
-      header: 'Applies to',
-      hideOnMobile: true,
-      render: (row) => (
-        <span className="text-sm text-muted-foreground">
-          {HOLIDAY_AUDIENCE_LABELS[row.appliesTo]}
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'end',
-      render: (row) =>
-        !canConfigure ? null : (
-          <div className="flex items-center justify-end gap-1">
-            <Button
-              tone="ghost"
-              size="sm"
-              onClick={() => {
-                setEditing(row);
-                setDialogOpen(true);
-              }}
-            >
-              <EditIcon className={ICON_SIZE.inline} aria-hidden />
-              Edit
-            </Button>
-            <Button
-              tone="ghost"
-              size="sm"
-              aria-label={`Remove ${row.name}`}
-              onClick={() => {
-                setDeleting(row);
-              }}
-            >
-              <DeleteIcon className={`${ICON_SIZE.inline} text-danger`} aria-hidden />
-            </Button>
-          </div>
-        ),
-    },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Calendar</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {holidays.length === 0
-              ? 'Days the school is closed or running something else.'
-              : `${String(holidays.length)} entries · ${String(totalDays)} non-teaching days`}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {sessions.length > 0 ? (
-            <div className="w-52">
-              <SimpleSelect
-                value={activeSessionId ?? ''}
-                onValueChange={changeSession}
-                options={sessions.map((entry) => ({
-                  value: entry.id,
-                  label: entry.isCurrent ? `${entry.name} (current)` : entry.name,
-                }))}
-                ariaLabel="Session"
-              />
-            </div>
-          ) : null}
-
-          {canConfigure && sessions.length > 0 ? (
-            <Button
-              onClick={() => {
-                setEditing(undefined);
-                setDialogOpen(true);
-              }}
-            >
-              <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-              Add
-            </Button>
-          ) : null}
-        </div>
-      </header>
-
-      {sessions.length === 0 ? (
+  if (sessions.length === 0) {
+    return (
+      <div className="space-y-6">
         <EmptyState
           title="No academic session yet"
           description="A calendar belongs to a school year, so create a session first — the same date next year is a separate decision."
@@ -235,31 +120,33 @@ export function HolidaysManager({
             </Button>
           }
         />
-      ) : (
-        <DataTable
-          rows={holidays}
-          columns={columns}
-          rowKey={(row) => row.id}
-          error={error}
-          caption={`Calendar for ${activeSession?.name ?? 'this session'}`}
-          empty={{
-            title: 'Nothing in the calendar yet',
-            description:
-              'Add public holidays, vacations and school events. Attendance will use these so a closed day is never counted as absence.',
-            action: canConfigure ? (
-              <Button
-                onClick={() => {
-                  setEditing(undefined);
-                  setDialogOpen(true);
-                }}
-              >
-                <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-                Add the first entry
-              </Button>
-            ) : undefined,
-          }}
-        />
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <AcademicCalendarView
+        holidays={holidays}
+        sessions={sessions}
+        activeSessionId={activeSessionId}
+        activeSession={activeSession}
+        today={today}
+        error={error}
+        canConfigure={canConfigure}
+        onSessionChange={changeSession}
+        onAddEvent={() => {
+          setEditing(undefined);
+          setDialogOpen(true);
+        }}
+        onEditEvent={(row) => {
+          setEditing(row);
+          setDialogOpen(true);
+        }}
+        onDeleteEvent={(row) => {
+          setDeleting(row);
+        }}
+      />
 
       {dialogOpen ? (
         <HolidayDialog
@@ -287,7 +174,7 @@ export function HolidaysManager({
         tone="danger"
         onConfirm={confirmDelete}
       />
-    </div>
+    </>
   );
 }
 
@@ -311,7 +198,7 @@ function HolidayDialog({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [notes, setNotes] = useState('');
-  /** Most entries are a single day, so the second date stays out of the way. */
+  const [colorKey, setColorKey] = useState<HolidayColorKey>('rose');
   const [isRange, setIsRange] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | undefined>(undefined);
@@ -324,16 +211,13 @@ function HolidayDialog({
     setStartDate(editing?.startDate ?? '');
     setEndDate(editing?.endDate ?? '');
     setNotes(editing?.notes ?? '');
+    const nextType = editing?.type ?? 'HOLIDAY';
+    setColorKey(editing?.colorKey ?? defaultColorForType(nextType));
     setIsRange(editing !== undefined && editing.startDate !== editing.endDate);
     setFieldErrors({});
     setFormError(undefined);
   }
 
-  // Run once, on mount. The dialog is mounted fresh for each row (its call site
-  // keys it by id), so this is the prefill — and it replaces a `reset()` hung
-  // off `onOpenChange(true)`, which Radix only fires for a dialog that opens
-  // itself. Opened from a row's Edit button, that callback never ran and the
-  // form kept whatever was last typed into it.
   useEffect(reset, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -346,9 +230,6 @@ function HolidayDialog({
       return;
     }
 
-    // A single-day entry sends the same date for both ends rather than omitting
-    // one, so switching a range back to one day actually shortens it instead of
-    // silently leaving yesterday's end date in place.
     const payload = {
       sessionId,
       name,
@@ -356,6 +237,7 @@ function HolidayDialog({
       appliesTo,
       startDate,
       endDate: isRange && endDate !== '' ? endDate : startDate,
+      colorKey,
       ...(notes.trim() === '' ? {} : { notes }),
     };
 
@@ -379,6 +261,7 @@ function HolidayDialog({
             appliesTo: parsed.data.appliesTo,
             startDate: parsed.data.startDate,
             endDate: parsed.data.endDate ?? parsed.data.startDate,
+            colorKey: parsed.data.colorKey,
             notes: notes.trim() === '' ? null : notes,
           });
     setIsPending(false);
@@ -403,7 +286,7 @@ function HolidayDialog({
         }
       }}
     >
-      <DialogContent>
+      <DialogContent className="max-w-2xl">
         <form
           onSubmit={(event) => {
             void submit(event);
@@ -411,9 +294,7 @@ function HolidayDialog({
           noValidate
         >
           <DialogHeader>
-            <DialogTitle>
-              {editing === undefined ? 'Add to the calendar' : `Edit ${editing.name}`}
-            </DialogTitle>
+            <DialogTitle>{editing === undefined ? 'Add event' : `Edit ${editing.name}`}</DialogTitle>
             <DialogDescription>
               {sessionName === undefined
                 ? 'A holiday, vacation or school event.'
@@ -446,7 +327,12 @@ function HolidayDialog({
               <Field label="Type" error={fieldErrors['type']}>
                 <SimpleSelect
                   value={type}
-                  onValueChange={setType}
+                  onValueChange={(next) => {
+                    setType(next);
+                    if (editing === undefined) {
+                      setColorKey(defaultColorForType(next as HolidayType));
+                    }
+                  }}
                   options={TYPE_OPTIONS}
                   ariaLabel="Type"
                 />
@@ -471,18 +357,11 @@ function HolidayDialog({
                 error={fieldErrors['startDate']}
                 required
               >
-                <DatePicker
-                  value={startDate}
-                  onChange={setStartDate}
-                />
+                <DatePicker value={startDate} onChange={setStartDate} />
               </Field>
               {isRange ? (
                 <Field label="Last day" error={fieldErrors['endDate']} required>
-                  <DatePicker
-                    value={endDate}
-                    min={startDate}
-                    onChange={setEndDate}
-                  />
+                  <DatePicker value={endDate} min={startDate} onChange={setEndDate} />
                 </Field>
               ) : null}
             </div>
@@ -498,6 +377,32 @@ function HolidayDialog({
                 }
               }}
             />
+
+            <Field
+              label="Calendar colour"
+              error={fieldErrors['colorKey']}
+              hint="How this event appears on the month grid."
+            >
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Calendar colour">
+                {HOLIDAY_COLOR_KEYS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={colorKey === key}
+                    aria-label={HOLIDAY_COLOR_LABELS[key]}
+                    title={HOLIDAY_COLOR_LABELS[key]}
+                    onClick={() => {
+                      setColorKey(key);
+                    }}
+                    className={cn(
+                      'size-9 rounded-md transition-shadow',
+                      HOLIDAY_COLOR_THEME[key].swatch,
+                      colorKey === key && 'ring-2 ring-ring ring-offset-2 ring-offset-background',
+                    )}
+                  />
+                ))}
+              </div>
+            </Field>
 
             <Field label="Notes" error={fieldErrors['notes']}>
               <Input
@@ -515,7 +420,7 @@ function HolidayDialog({
               Cancel
             </Button>
             <Button type="submit" isPending={isPending}>
-              {editing === undefined ? 'Add' : 'Save changes'}
+              {editing === undefined ? 'Add event' : 'Save changes'}
             </Button>
           </DialogFooter>
         </form>

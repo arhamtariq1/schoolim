@@ -1,17 +1,15 @@
 import { Skeleton } from '@ilm/ui';
 
-/** Students list shape while the server fetch runs — shell stays mounted in the root layout. */
+/** Students list shell while the server fetch runs. */
 export default function StudentsLoading() {
   return (
-    <div className="space-y-4" role="status" aria-label="Loading students">
-      <Skeleton className="h-8 w-32" />
-      <Skeleton className="h-4 w-64" />
-      <Skeleton className="h-10 w-full" />
-      <div className="space-y-2 pt-2">
-        {Array.from({ length: 8 }, (_, index) => (
-          <Skeleton key={index} className="h-12 w-full" />
-        ))}
+    <div className="w-full space-y-6" role="status" aria-label="Loading students">
+      <div className="space-y-2">
+        <Skeleton className="h-9 w-40" />
+        <Skeleton className="h-4 w-56" />
       </div>
+      <Skeleton className="h-10 w-full max-w-xl" />
+      <Skeleton className="h-96 w-full rounded-lg" />
     </div>
   );
 }

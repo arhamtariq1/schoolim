@@ -60,6 +60,9 @@ export type StaffMinAggregateOutputType = {
   leftOn: Date | null
   cnic: string | null
   designation: string | null
+  address: string | null
+  photoUrl: string | null
+  cvUrl: string | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -83,6 +86,9 @@ export type StaffMaxAggregateOutputType = {
   leftOn: Date | null
   cnic: string | null
   designation: string | null
+  address: string | null
+  photoUrl: string | null
+  cvUrl: string | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -106,6 +112,9 @@ export type StaffCountAggregateOutputType = {
   leftOn: number
   cnic: number
   designation: number
+  address: number
+  photoUrl: number
+  cvUrl: number
   createdAt: number
   updatedAt: number
   deletedAt: number
@@ -143,6 +152,9 @@ export type StaffMinAggregateInputType = {
   leftOn?: true
   cnic?: true
   designation?: true
+  address?: true
+  photoUrl?: true
+  cvUrl?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -166,6 +178,9 @@ export type StaffMaxAggregateInputType = {
   leftOn?: true
   cnic?: true
   designation?: true
+  address?: true
+  photoUrl?: true
+  cvUrl?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -189,6 +204,9 @@ export type StaffCountAggregateInputType = {
   leftOn?: true
   cnic?: true
   designation?: true
+  address?: true
+  photoUrl?: true
+  cvUrl?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -299,6 +317,9 @@ export type StaffGroupByOutputType = {
   leftOn: Date | null
   cnic: string | null
   designation: string | null
+  address: string | null
+  photoUrl: string | null
+  cvUrl: string | null
   createdAt: Date
   updatedAt: Date
   deletedAt: Date | null
@@ -345,6 +366,9 @@ export type StaffWhereInput = {
   leftOn?: Prisma.DateTimeNullableFilter<"Staff"> | Date | string | null
   cnic?: Prisma.StringNullableFilter<"Staff"> | string | null
   designation?: Prisma.StringNullableFilter<"Staff"> | string | null
+  address?: Prisma.StringNullableFilter<"Staff"> | string | null
+  photoUrl?: Prisma.StringNullableFilter<"Staff"> | string | null
+  cvUrl?: Prisma.StringNullableFilter<"Staff"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Staff"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Staff"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Staff"> | Date | string | null
@@ -371,6 +395,9 @@ export type StaffOrderByWithRelationInput = {
   leftOn?: Prisma.SortOrderInput | Prisma.SortOrder
   cnic?: Prisma.SortOrderInput | Prisma.SortOrder
   designation?: Prisma.SortOrderInput | Prisma.SortOrder
+  address?: Prisma.SortOrderInput | Prisma.SortOrder
+  photoUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  cvUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -401,6 +428,9 @@ export type StaffWhereUniqueInput = Prisma.AtLeast<{
   leftOn?: Prisma.DateTimeNullableFilter<"Staff"> | Date | string | null
   cnic?: Prisma.StringNullableFilter<"Staff"> | string | null
   designation?: Prisma.StringNullableFilter<"Staff"> | string | null
+  address?: Prisma.StringNullableFilter<"Staff"> | string | null
+  photoUrl?: Prisma.StringNullableFilter<"Staff"> | string | null
+  cvUrl?: Prisma.StringNullableFilter<"Staff"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Staff"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Staff"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Staff"> | Date | string | null
@@ -427,6 +457,9 @@ export type StaffOrderByWithAggregationInput = {
   leftOn?: Prisma.SortOrderInput | Prisma.SortOrder
   cnic?: Prisma.SortOrderInput | Prisma.SortOrder
   designation?: Prisma.SortOrderInput | Prisma.SortOrder
+  address?: Prisma.SortOrderInput | Prisma.SortOrder
+  photoUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  cvUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -458,6 +491,9 @@ export type StaffScalarWhereWithAggregatesInput = {
   leftOn?: Prisma.DateTimeNullableWithAggregatesFilter<"Staff"> | Date | string | null
   cnic?: Prisma.StringNullableWithAggregatesFilter<"Staff"> | string | null
   designation?: Prisma.StringNullableWithAggregatesFilter<"Staff"> | string | null
+  address?: Prisma.StringNullableWithAggregatesFilter<"Staff"> | string | null
+  photoUrl?: Prisma.StringNullableWithAggregatesFilter<"Staff"> | string | null
+  cvUrl?: Prisma.StringNullableWithAggregatesFilter<"Staff"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Staff"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Staff"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Staff"> | Date | string | null
@@ -479,6 +515,9 @@ export type StaffCreateInput = {
   leftOn?: Date | string | null
   cnic?: string | null
   designation?: string | null
+  address?: string | null
+  photoUrl?: string | null
+  cvUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -505,6 +544,9 @@ export type StaffUncheckedCreateInput = {
   leftOn?: Date | string | null
   cnic?: string | null
   designation?: string | null
+  address?: string | null
+  photoUrl?: string | null
+  cvUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -527,6 +569,9 @@ export type StaffUpdateInput = {
   leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -553,6 +598,9 @@ export type StaffUncheckedUpdateInput = {
   leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -577,6 +625,9 @@ export type StaffCreateManyInput = {
   leftOn?: Date | string | null
   cnic?: string | null
   designation?: string | null
+  address?: string | null
+  photoUrl?: string | null
+  cvUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -598,6 +649,9 @@ export type StaffUpdateManyMutationInput = {
   leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -621,6 +675,9 @@ export type StaffUncheckedUpdateManyInput = {
   leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -664,6 +721,9 @@ export type StaffCountOrderByAggregateInput = {
   leftOn?: Prisma.SortOrder
   cnic?: Prisma.SortOrder
   designation?: Prisma.SortOrder
+  address?: Prisma.SortOrder
+  photoUrl?: Prisma.SortOrder
+  cvUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -693,6 +753,9 @@ export type StaffMaxOrderByAggregateInput = {
   leftOn?: Prisma.SortOrder
   cnic?: Prisma.SortOrder
   designation?: Prisma.SortOrder
+  address?: Prisma.SortOrder
+  photoUrl?: Prisma.SortOrder
+  cvUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -716,6 +779,9 @@ export type StaffMinOrderByAggregateInput = {
   leftOn?: Prisma.SortOrder
   cnic?: Prisma.SortOrder
   designation?: Prisma.SortOrder
+  address?: Prisma.SortOrder
+  photoUrl?: Prisma.SortOrder
+  cvUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -844,6 +910,9 @@ export type StaffCreateWithoutSchoolInput = {
   leftOn?: Date | string | null
   cnic?: string | null
   designation?: string | null
+  address?: string | null
+  photoUrl?: string | null
+  cvUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -868,6 +937,9 @@ export type StaffUncheckedCreateWithoutSchoolInput = {
   leftOn?: Date | string | null
   cnic?: string | null
   designation?: string | null
+  address?: string | null
+  photoUrl?: string | null
+  cvUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -921,6 +993,9 @@ export type StaffScalarWhereInput = {
   leftOn?: Prisma.DateTimeNullableFilter<"Staff"> | Date | string | null
   cnic?: Prisma.StringNullableFilter<"Staff"> | string | null
   designation?: Prisma.StringNullableFilter<"Staff"> | string | null
+  address?: Prisma.StringNullableFilter<"Staff"> | string | null
+  photoUrl?: Prisma.StringNullableFilter<"Staff"> | string | null
+  cvUrl?: Prisma.StringNullableFilter<"Staff"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Staff"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Staff"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Staff"> | Date | string | null
@@ -942,6 +1017,9 @@ export type StaffCreateWithoutUserInput = {
   leftOn?: Date | string | null
   cnic?: string | null
   designation?: string | null
+  address?: string | null
+  photoUrl?: string | null
+  cvUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -966,6 +1044,9 @@ export type StaffUncheckedCreateWithoutUserInput = {
   leftOn?: Date | string | null
   cnic?: string | null
   designation?: string | null
+  address?: string | null
+  photoUrl?: string | null
+  cvUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1004,6 +1085,9 @@ export type StaffUpdateWithoutUserInput = {
   leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1028,6 +1112,9 @@ export type StaffUncheckedUpdateWithoutUserInput = {
   leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1050,6 +1137,9 @@ export type StaffCreateWithoutStaffAttendanceRecordsInput = {
   leftOn?: Date | string | null
   cnic?: string | null
   designation?: string | null
+  address?: string | null
+  photoUrl?: string | null
+  cvUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1075,6 +1165,9 @@ export type StaffUncheckedCreateWithoutStaffAttendanceRecordsInput = {
   leftOn?: Date | string | null
   cnic?: string | null
   designation?: string | null
+  address?: string | null
+  photoUrl?: string | null
+  cvUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1112,6 +1205,9 @@ export type StaffUpdateWithoutStaffAttendanceRecordsInput = {
   leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1137,6 +1233,9 @@ export type StaffUncheckedUpdateWithoutStaffAttendanceRecordsInput = {
   leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1159,6 +1258,9 @@ export type StaffCreateManySchoolInput = {
   leftOn?: Date | string | null
   cnic?: string | null
   designation?: string | null
+  address?: string | null
+  photoUrl?: string | null
+  cvUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1180,6 +1282,9 @@ export type StaffUpdateWithoutSchoolInput = {
   leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1204,6 +1309,9 @@ export type StaffUncheckedUpdateWithoutSchoolInput = {
   leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1227,6 +1335,9 @@ export type StaffUncheckedUpdateManyWithoutSchoolInput = {
   leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1281,6 +1392,9 @@ export type StaffSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   leftOn?: boolean
   cnic?: boolean
   designation?: boolean
+  address?: boolean
+  photoUrl?: boolean
+  cvUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -1308,6 +1422,9 @@ export type StaffSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   leftOn?: boolean
   cnic?: boolean
   designation?: boolean
+  address?: boolean
+  photoUrl?: boolean
+  cvUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -1333,6 +1450,9 @@ export type StaffSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   leftOn?: boolean
   cnic?: boolean
   designation?: boolean
+  address?: boolean
+  photoUrl?: boolean
+  cvUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -1358,12 +1478,15 @@ export type StaffSelectScalar = {
   leftOn?: boolean
   cnic?: boolean
   designation?: boolean
+  address?: boolean
+  photoUrl?: boolean
+  cvUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
 }
 
-export type StaffOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "employeeNo" | "userId" | "name" | "email" | "phone" | "gender" | "role" | "casualLeaves" | "sickLeaves" | "basicSalary" | "status" | "joinedOn" | "leftOn" | "cnic" | "designation" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["staff"]>
+export type StaffOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "employeeNo" | "userId" | "name" | "email" | "phone" | "gender" | "role" | "casualLeaves" | "sickLeaves" | "basicSalary" | "status" | "joinedOn" | "leftOn" | "cnic" | "designation" | "address" | "photoUrl" | "cvUrl" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["staff"]>
 export type StaffInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   user?: boolean | Prisma.Staff$userArgs<ExtArgs>
@@ -1416,6 +1539,9 @@ export type $StaffPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     leftOn: Date | null
     cnic: string | null
     designation: string | null
+    address: string | null
+    photoUrl: string | null
+    cvUrl: string | null
     createdAt: Date
     updatedAt: Date
     /**
@@ -1866,6 +1992,9 @@ export interface StaffFieldRefs {
   readonly leftOn: Prisma.FieldRef<"Staff", 'DateTime'>
   readonly cnic: Prisma.FieldRef<"Staff", 'String'>
   readonly designation: Prisma.FieldRef<"Staff", 'String'>
+  readonly address: Prisma.FieldRef<"Staff", 'String'>
+  readonly photoUrl: Prisma.FieldRef<"Staff", 'String'>
+  readonly cvUrl: Prisma.FieldRef<"Staff", 'String'>
   readonly createdAt: Prisma.FieldRef<"Staff", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Staff", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"Staff", 'DateTime'>

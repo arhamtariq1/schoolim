@@ -1,4 +1,5 @@
-import { ROUTES, type AcademicSession, type Holiday } from '@ilm/contracts';
+import { normalizeHoliday, ROUTES, type AcademicSession, type Holiday } from '@ilm/contracts';
+import { DEFAULT_TIMEZONE, systemClock, today } from '@ilm/utils';
 
 import { HolidaysManager } from '@/components/holidays-manager';
 import { apiFetch } from '@/lib/api';
@@ -29,15 +30,18 @@ export default async function HolidaysPage({
           `${ROUTES.academics.holidays}?sessionId=${encodeURIComponent(activeSessionId)}`,
         );
 
+  const todayDate = today(systemClock, session?.school.timezone ?? DEFAULT_TIMEZONE);
+
   return (
     <HolidaysManager
-        holidays={holidaysResult?.ok === true ? holidaysResult.data.data : []}
-        sessions={sessions}
-        activeSessionId={activeSessionId}
-        error={
-          holidaysResult !== undefined && !holidaysResult.ok ? holidaysResult.message : undefined
-        }
-        canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
-      />
+      holidays={
+        holidaysResult?.ok === true ? holidaysResult.data.data.map(normalizeHoliday) : []
+      }
+      sessions={sessions}
+      activeSessionId={activeSessionId}
+      today={todayDate}
+      error={holidaysResult !== undefined && !holidaysResult.ok ? holidaysResult.message : undefined}
+      canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
+    />
   );
 }

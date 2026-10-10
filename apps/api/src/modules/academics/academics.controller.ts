@@ -3,6 +3,7 @@ import {
   createHolidaySchema,
   createSectionSchema,
   createSessionSchema,
+  holidaysListQuerySchema,
   promotionPreviewQuerySchema,
   runPromotionSchema,
   ROUTES,
@@ -222,8 +223,9 @@ export class AcademicsController {
 
   @Get(ROUTES.academics.holidays)
   @RequirePermission('academics.structure.read')
-  async listHolidays(@Query('sessionId') sessionId?: string): Promise<{ data: Holiday[] }> {
-    return { data: await this.holidays.list(emptyToUndefined(sessionId)) };
+  async listHolidays(@Query() query: unknown): Promise<{ data: Holiday[] }> {
+    const parsed = holidaysListQuerySchema.parse(query);
+    return { data: await this.holidays.list(emptyToUndefined(parsed.sessionId)) };
   }
 
   @Post(ROUTES.academics.holidays)

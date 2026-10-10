@@ -17,9 +17,16 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  DataTable,
+  CardTable,
+  Checkbox,
   DateDisplay,
   DatePicker,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Dialog,
   DialogBody,
   DialogContent,
@@ -33,21 +40,63 @@ import {
   Pagination,
   SimpleSelect,
   StatusBadge,
-  type Column,
+  TwoLineCell,
   useToast,
+  type CardTableColumn,
 } from '@ilm/ui';
 import {
+  CalendarIcon,
   DeleteIcon,
   EditIcon,
+  FeesIcon,
   ICON_SIZE,
+  MoreIcon,
   PrintIcon,
-  SearchIcon,
   SpinnerIcon,
+  StudentsIcon,
 } from '@ilm/ui/icons';
 import { systemClock } from '@ilm/utils';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
+
+import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
+
+const VOUCHER_TABLE_CELL = {
+  headerClassName: 'whitespace-nowrap px-3 py-2.5',
+  cellClassName: 'whitespace-nowrap px-3 py-2.5',
+} as const;
+
+type VoucherTableHeaderIcon = typeof StudentsIcon;
+
+function voucherTableHeader(
+  label: string,
+  Icon?: VoucherTableHeaderIcon,
+  leading?: ReactNode,
+): ReactNode {
+  return (
+    <div className="flex items-center gap-2">
+      {leading}
+      {Icon === undefined ? null : (
+        <Icon className="size-4 shrink-0 opacity-80" aria-hidden />
+      )}
+      <span className="text-xs leading-none font-medium text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+function afterMenuAction(action: () => void): void {
+  action();
+  const swallow = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  document.addEventListener('click', swallow, true);
+  window.setTimeout(() => {
+    document.removeEventListener('click', swallow, true);
+  }, 100);
+}
 
 import { VoucherBulkBar } from './voucher-bulk-bar';
 import { VoucherChallan } from './voucher-challan';
@@ -86,7 +135,6 @@ export interface VouchersViewProps {
   offset: number;
   filters: {
     q: string;
-    grNo: string;
     sessionId: string;
     classLevelId: string;
     status: string;
@@ -131,11 +179,13 @@ export function VouchersView({
 }: VouchersViewProps) {
   const router = useRouter();
   const tenantHref = useTenantHref();
+  const pathname = usePathname();
   const params = useSearchParams();
 
   const toast = useToast();
 
-  const [draft, setDraft] = useState(filters);
+  const [searchQuery, setSearchQuery] = useState(filters.q);
+  const searchDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [busyId, setBusyId] = useState<string | undefined>(undefined);
   const [cancelling, setCancelling] = useState<VoucherSummary | undefined>(undefined);
   const [cancelReason, setCancelReason] = useState('');
@@ -144,6 +194,18 @@ export function VouchersView({
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [editing, setEditing] = useState<VoucherSummary | undefined>(undefined);
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+
+  useEffect(() => {
+    setSearchQuery(filters.q);
+  }, [filters.q]);
+
+  const isFiltered =
+    filters.q !== '' ||
+    filters.classLevelId !== '' ||
+    filters.status !== '' ||
+    filters.sessionId !== '' ||
+    filters.from !== '' ||
+    filters.to !== '';
 
   /**
    * Take every voucher behind the current filters, not just this page.
@@ -194,47 +256,76 @@ export function VouchersView({
     setSelected(new Set(body.data.ids));
   }
 
-  function apply(next: Partial<typeof filters>, resetPage = true) {
-    // A filter change drops the selection; turning a page keeps it.
-    //
-    // Without this, ticking twenty October vouchers and then filtering to
-    // November leaves twenty rows selected that are no longer on screen — and
-    // Delete would remove vouchers the operator can no longer see, from a
-    // month they are no longer looking at. Paging is the opposite case: the
-    // rows are still in the set, and carrying the ticks across pages is the
-    // whole point of being able to tick across pages.
+  function pushFilters(next: Record<string, string>, resetPage = true) {
     if (resetPage) {
       setSelected(new Set());
     }
 
-    const merged = { ...draft, ...next };
-    const query = new URLSearchParams();
-    for (const [key, value] of Object.entries(merged)) {
-      if (value !== '') {
+    const query = new URLSearchParams(params.toString());
+    query.delete('grNo');
+
+    for (const [key, value] of Object.entries(next)) {
+      if (value === '') {
+        query.delete(key);
+      } else {
         query.set(key, value);
       }
     }
+
     query.set('limit', String(limit));
-    if (!resetPage) {
+    if (resetPage) {
+      query.delete('offset');
+    } else if (offset > 0) {
       query.set('offset', String(offset));
     }
-    router.push(tenantHref(`/fees/vouchers?${query.toString()}`));
+
+    router.push(`${pathname}?${query.toString()}`);
   }
 
-  function reset() {
+  function onSearchQueryChange(value: string) {
+    setSearchQuery(value);
+    if (searchDebounce.current !== undefined) {
+      clearTimeout(searchDebounce.current);
+    }
+    searchDebounce.current = setTimeout(() => {
+      pushFilters({ q: value });
+    }, 350);
+  }
+
+  function clearFilters() {
+    setSearchQuery('');
     setSelected(new Set());
-    const cleared = {
-      q: '',
-      grNo: '',
-      sessionId: '',
-      classLevelId: '',
-      status: '',
-      from: '',
-      to: '',
-    };
-    setDraft(cleared);
     router.push(tenantHref('/fees/vouchers'));
   }
+
+  function toggleRowSelected(id: string, checked: boolean) {
+    const next = new Set(selected);
+    if (checked) {
+      next.add(id);
+    } else {
+      next.delete(id);
+    }
+    setSelected(next);
+  }
+
+  function toggleAllOnPage(checked: boolean) {
+    if (!checked) {
+      const next = new Set(selected);
+      for (const row of rows) {
+        next.delete(row.id);
+      }
+      setSelected(next);
+      return;
+    }
+    const next = new Set(selected);
+    for (const row of rows) {
+      next.add(row.id);
+    }
+    setSelected(next);
+  }
+
+  const allOnPageSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
+  const someOnPageSelected = rows.some((row) => selected.has(row.id));
 
   async function openChallan(row: VoucherSummary) {
     setIsLoadingPreview(true);
@@ -268,256 +359,271 @@ export function VouchersView({
     router.refresh();
   }
 
-  const columns: Column<VoucherSummary>[] = [
-    {
-      key: 'grNo',
-      header: 'GR No',
-      render: (row) => <span className="font-mono text-sm">{row.grNo ?? '—'}</span>,
-    },
-    {
-      key: 'student',
-      header: 'Student',
-      render: (row) => (
-        <span className="min-w-0">
-          <span className="block truncate font-medium text-foreground">{row.studentName}</span>
-          <span className="block truncate text-xs text-muted-foreground">
-            {row.className ?? '—'}
-            {row.sectionName === null ? '' : ` ${row.sectionName}`}
-          </span>
-        </span>
-      ),
-    },
-    {
-      key: 'issueDate',
-      header: 'Issued',
-      render: (row) => <DateDisplay value={row.issueDate} />,
-    },
-    {
-      key: 'dueDate',
-      header: 'Due',
-      render: (row) => <DateDisplay value={row.dueDate} />,
-    },
-    {
-      key: 'months',
-      header: 'Bill months',
-      render: (row) => (
-        <span className="text-sm text-muted-foreground">
-          {row.billMonths.length === 0
-            ? '—'
-            : row.billMonths.map((month) => formatMonth(month)).join(', ')}
-        </span>
-      ),
-    },
-    {
-      key: 'amount',
-      header: 'Amount',
-      align: 'end',
-      render: (row) => (
-        <span className="font-mono text-sm tabular-nums">
-          <Money valueMinor={row.totalPayableMinor} />
-          {row.arrearsMinor > 0 ? (
-            <span className="block text-xs font-normal text-warning">
-              incl. <Money valueMinor={row.arrearsMinor} withSymbol={false} /> arrears
+  const columns = useMemo((): CardTableColumn<VoucherSummary>[] => {
+    return [
+      {
+        key: 'grNo',
+        label: 'GR No',
+        ...VOUCHER_TABLE_CELL,
+        colStyle: { width: '5.75rem' },
+        headerCell: voucherTableHeader(
+          'GR No',
+          undefined,
+          <Checkbox
+            className="shrink-0"
+            checked={allOnPageSelected ? true : someOnPageSelected ? 'indeterminate' : false}
+            aria-label="Select every voucher on this page"
+            onCheckedChange={(next) => {
+              toggleAllOnPage(next === true);
+            }}
+          />,
+        ),
+        render: (row) => (
+          <div className="flex items-center gap-2" data-stop-row-click>
+            <Checkbox
+              className="shrink-0"
+              checked={selected.has(row.id)}
+              aria-label={`Select voucher ${row.voucherNo}`}
+              onCheckedChange={(next) => {
+                toggleRowSelected(row.id, next === true);
+              }}
+            />
+            <span className="font-mono text-sm leading-none tabular-nums text-foreground">
+              {row.grNo ?? '—'}
             </span>
-          ) : null}
-        </span>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (row) => (
-        <StatusBadge tone={toneFor(row.status)}>{VOUCHER_STATUS_LABELS[row.status]}</StatusBadge>
-      ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'end',
-      render: (row) => (
-        <div className="flex items-center justify-end gap-1">
-          {/* Absent on a cancelled voucher: there is nothing left to correct,
-              and the server refuses. */}
-          {canEdit && row.status !== 'CANCELLED' && row.status !== 'PAID' ? (
-            <Button
-              tone="ghost"
-              size="sm"
-              aria-label={`Edit ${row.voucherNo}`}
-              disabled={busyId !== undefined}
-              onClick={() => {
-                setEditing(row);
-              }}
-            >
-              <EditIcon className={ICON_SIZE.inline} aria-hidden />
-            </Button>
-          ) : null}
-          {canCollect && row.balanceMinor > 0 && row.status !== 'CANCELLED' ? (
-            <Button
-              tone="ghost"
-              size="sm"
-              disabled={busyId !== undefined}
-              onClick={() => {
-                setPaying(row);
-              }}
-            >
-              Pay
-            </Button>
-          ) : null}
-          <Button
-            tone="ghost"
-            size="sm"
-            aria-label={`Print ${row.voucherNo}`}
-            disabled={busyId !== undefined}
-            onClick={() => {
+          </div>
+        ),
+      },
+      {
+        key: 'student',
+        label: 'Student',
+        ...VOUCHER_TABLE_CELL,
+        width: 'w-[19%]',
+        headerCell: voucherTableHeader('Student', StudentsIcon),
+        render: (row) => (
+          <TwoLineCell
+            primary={row.studentName}
+            secondary={`${row.className ?? '—'}${row.sectionName === null ? '' : ` ${row.sectionName}`}`}
+          />
+        ),
+      },
+      {
+        key: 'issueDate',
+        label: 'Issued',
+        ...VOUCHER_TABLE_CELL,
+        width: 'w-[12%]',
+        hideOnMobile: true,
+        headerCell: voucherTableHeader('Issued', CalendarIcon),
+        render: (row) => (
+          <span className="text-sm leading-none text-foreground">
+            <DateDisplay value={row.issueDate} />
+          </span>
+        ),
+      },
+      {
+        key: 'dueDate',
+        label: 'Due',
+        ...VOUCHER_TABLE_CELL,
+        width: 'w-[12%]',
+        hideOnMobile: true,
+        headerCell: voucherTableHeader('Due', CalendarIcon),
+        render: (row) => (
+          <span className="text-sm leading-none text-foreground">
+            <DateDisplay value={row.dueDate} />
+          </span>
+        ),
+      },
+      {
+        key: 'months',
+        label: 'Bill months',
+        ...VOUCHER_TABLE_CELL,
+        width: 'w-[12%]',
+        hideOnMobile: true,
+        headerCell: voucherTableHeader('Bill months', CalendarIcon),
+        render: (row) => (
+          <span className="text-sm leading-none text-muted-foreground">
+            {row.billMonths.length === 0
+              ? '—'
+              : row.billMonths.map((month) => formatMonth(month)).join(', ')}
+          </span>
+        ),
+      },
+      {
+        key: 'amount',
+        label: 'Amount',
+        ...VOUCHER_TABLE_CELL,
+        width: 'w-[13%]',
+        headerCell: voucherTableHeader('Amount', FeesIcon),
+        render: (row) => (
+          <TwoLineCell
+            primary={
+              <span className="font-mono tabular-nums">
+                <Money valueMinor={row.totalPayableMinor} />
+              </span>
+            }
+            secondary={
+              row.arrearsMinor > 0 ? (
+                <span className="text-warning">
+                  incl. <Money valueMinor={row.arrearsMinor} withSymbol={false} /> arrears
+                </span>
+              ) : (
+                ''
+              )
+            }
+          />
+        ),
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        ...VOUCHER_TABLE_CELL,
+        width: 'w-[11%]',
+        headerCell: voucherTableHeader('Status'),
+        render: (row) => (
+          <StatusBadge tone={toneFor(row.status)}>{VOUCHER_STATUS_LABELS[row.status]}</StatusBadge>
+        ),
+      },
+      {
+        key: 'actions',
+        label: 'Actions',
+        ...VOUCHER_TABLE_CELL,
+        width: 'w-[9%]',
+        headerCell: voucherTableHeader('Actions'),
+        render: (row) => (
+          <VoucherRowActions
+            row={row}
+            busyId={busyId}
+            isLoadingPreview={isLoadingPreview}
+            canEdit={canEdit}
+            canCollect={canCollect}
+            canCancel={canCancel}
+            onEdit={() => {
+              setEditing(row);
+            }}
+            onPay={() => {
+              setPaying(row);
+            }}
+            onPrint={() => {
               void openChallan(row);
             }}
-          >
-            {busyId === row.id && isLoadingPreview ? (
-              <SpinnerIcon className={`${ICON_SIZE.inline} animate-spin`} aria-hidden />
-            ) : (
-              <PrintIcon className={ICON_SIZE.inline} aria-hidden />
-            )}
-          </Button>
-          {/* Absent once money has arrived — the server refuses, and offering a
-              control that always fails is worse than not offering it. */}
-          {canCancel && row.paidMinor === 0 ? (
-            <Button
-              tone="ghost"
-              size="sm"
-              aria-label={`Delete ${row.voucherNo}`}
-              disabled={busyId !== undefined}
-              onClick={() => {
-                setCancelling(row);
-                setCancelReason('');
-              }}
-            >
-              <DeleteIcon className={`${ICON_SIZE.inline} text-danger`} aria-hidden />
-            </Button>
-          ) : null}
-        </div>
-      ),
-    },
-  ];
+            onDelete={() => {
+              setCancelling(row);
+              setCancelReason('');
+            }}
+          />
+        ),
+      },
+    ];
+  }, [
+    allOnPageSelected,
+    busyId,
+    canCancel,
+    canCollect,
+    canEdit,
+    isLoadingPreview,
+    selected,
+    someOnPageSelected,
+  ]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Fee vouchers</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+    <div className="w-full space-y-6">
+      <WorkspacePageHeader
+        title="Fee vouchers"
+        description={
+          <>
             {totals.count} {totals.count === 1 ? 'voucher' : 'vouchers'} ·{' '}
             <Money valueMinor={totals.outstandingMinor} /> outstanding
-          </p>
-        </div>
-      </header>
+          </>
+        }
+      />
 
-      <form
-        className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
-        onSubmit={(event: FormEvent) => {
-          event.preventDefault();
-          apply({});
-        }}
-      >
-        <Field label="Search">
-          <div className="relative">
-            <Input
-              value={draft.q}
-              placeholder="Name, father, voucher no"
-              onChange={(event) => {
-                setDraft({ ...draft, q: event.target.value });
+      {error !== undefined ? (
+        <div
+          role="alert"
+          className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+        >
+          {error}
+        </div>
+      ) : null}
+
+      <ListPageToolbar
+        searchQuery={searchQuery}
+        onSearchQueryChange={onSearchQueryChange}
+        searchPlaceholder="Name, father, voucher no, GR number"
+        searchAriaLabel="Search vouchers"
+        filters={
+          <>
+            <SimpleSelect
+              className="w-full sm:w-36"
+              ariaLabel="Filter by class"
+              value={filters.classLevelId}
+              emptyOption={{ value: '', label: 'Any class' }}
+              placeholder="Any class"
+              options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
+              onValueChange={(next) => {
+                pushFilters({ classLevelId: next });
               }}
             />
-            <SearchIcon
-              className={`${ICON_SIZE.inline} pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground`}
-              aria-hidden
+            <SimpleSelect
+              className="w-full sm:w-36"
+              ariaLabel="Filter by status"
+              value={filters.status}
+              emptyOption={{ value: '', label: 'Any status' }}
+              placeholder="Any status"
+              options={VOUCHER_STATUSES.map((status) => ({
+                value: status,
+                label: VOUCHER_STATUS_LABELS[status],
+              }))}
+              onValueChange={(next) => {
+                pushFilters({ status: next });
+              }}
             />
-          </div>
-        </Field>
+            <SimpleSelect
+              className="w-full sm:w-40"
+              ariaLabel="Filter by session"
+              value={filters.sessionId}
+              emptyOption={{ value: '', label: 'Any session' }}
+              placeholder="Any session"
+              options={sessions.map((entry) => ({
+                value: entry.id,
+                label: entry.isCurrent ? `${entry.name} (current)` : entry.name,
+              }))}
+              onValueChange={(next) => {
+                pushFilters({ sessionId: next });
+              }}
+            />
+            <div className="w-full min-w-[11rem] sm:w-44">
+              <DatePicker
+                value={
+                  filters.from !== '' &&
+                  (filters.to === '' || filters.to === filters.from)
+                    ? filters.from
+                    : ''
+                }
+                aria-label="Issued date"
+                onChange={(nextValue) => {
+                  if (nextValue === '') {
+                    pushFilters({ from: '', to: '' });
+                    return;
+                  }
+                  pushFilters({ from: nextValue, to: nextValue });
+                }}
+              />
+            </div>
+          </>
+        }
+      />
 
-        <Field label="GR number">
-          <Input
-            value={draft.grNo}
-            placeholder="1081"
-            onChange={(event) => {
-              setDraft({ ...draft, grNo: event.target.value });
-            }}
-          />
-        </Field>
-
-        <Field label="Class">
-          <SimpleSelect
-            value={draft.classLevelId}
-            emptyOption={{ value: '', label: 'Any class' }}
-            options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
-            onValueChange={(next) => {
-              setDraft({ ...draft, classLevelId: next });
-              apply({ classLevelId: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Status">
-          <SimpleSelect
-            value={draft.status}
-            emptyOption={{ value: '', label: 'Any status' }}
-            options={VOUCHER_STATUSES.map((status) => ({
-              value: status,
-              label: VOUCHER_STATUS_LABELS[status],
-            }))}
-            onValueChange={(next) => {
-              setDraft({ ...draft, status: next });
-              apply({ status: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Session">
-          <SimpleSelect
-            value={draft.sessionId}
-            emptyOption={{ value: '', label: 'Any session' }}
-            options={sessions.map((entry) => ({ value: entry.id, label: entry.name }))}
-            onValueChange={(next) => {
-              setDraft({ ...draft, sessionId: next });
-              apply({ sessionId: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Issued from">
-          <DatePicker
-            value={draft.from}
-            onChange={(nextValue) => {
-              setDraft({ ...draft, from: nextValue });
-            }}
-          />
-        </Field>
-
-        <Field label="Issued to">
-          <DatePicker
-            value={draft.to}
-            onChange={(nextValue) => {
-              setDraft({ ...draft, to: nextValue });
-            }}
-          />
-        </Field>
-
-        <div className="flex items-end gap-2">
-          <Button type="submit" tone="outline" className="flex-1">
-            Apply
-          </Button>
-          <Button type="button" tone="ghost" onClick={reset}>
-            Reset
-          </Button>
-        </div>
-      </form>
-
-      <DataTable
+      <CardTable
+        title="All vouchers"
+        caption="Fee vouchers"
         rows={rows}
         columns={columns}
         rowKey={(row) => row.id}
-        selection={{ selected, onChange: setSelected, noun: 'voucher' }}
-        error={error}
-        caption="Fee vouchers"
+        minWidthClass="min-w-[52rem]"
+        error={undefined}
+        isFiltered={isFiltered}
+        onClearFilters={clearFilters}
         empty={{
           title: 'No vouchers here',
           description:
@@ -544,14 +650,14 @@ export function VouchersView({
           offset={offset}
           label="vouchers"
           onChange={(next) => {
-            apply({}, false);
             const query = new URLSearchParams(params.toString());
+            query.delete('grNo');
             if (next === 0) {
               query.delete('offset');
             } else {
               query.set('offset', String(next));
             }
-            router.push(tenantHref(`/fees/vouchers?${query.toString()}`));
+            router.push(`${pathname}?${query.toString()}`);
           }}
         />
       )}
@@ -700,6 +806,113 @@ export function VouchersView({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function VoucherRowActions({
+  row,
+  busyId,
+  isLoadingPreview,
+  canEdit,
+  canCollect,
+  canCancel,
+  onEdit,
+  onPay,
+  onPrint,
+  onDelete,
+}: {
+  row: VoucherSummary;
+  busyId: string | undefined;
+  isLoadingPreview: boolean;
+  canEdit: boolean;
+  canCollect: boolean;
+  canCancel: boolean;
+  onEdit: () => void;
+  onPay: () => void;
+  onPrint: () => void;
+  onDelete: () => void;
+}) {
+  const showEdit = canEdit && row.status !== 'CANCELLED' && row.status !== 'PAID';
+  const showPay = canCollect && row.balanceMinor > 0 && row.status !== 'CANCELLED';
+  const showDelete = canCancel && row.paidMinor === 0;
+  const disabled = busyId !== undefined;
+
+  return (
+    <div className="flex justify-end" data-stop-row-click>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            tone="ghost"
+            size="icon"
+            className="size-8 text-muted-foreground hover:text-foreground"
+            aria-label={`Actions for voucher ${row.voucherNo}`}
+            disabled={disabled}
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+          >
+            <MoreIcon className={ICON_SIZE.inline} aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          className="w-48"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+          }}
+        >
+          <DropdownMenuLabel>{row.voucherNo}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {showEdit ? (
+            <DropdownMenuItem
+              onSelect={() => {
+                afterMenuAction(onEdit);
+              }}
+            >
+              <EditIcon className={ICON_SIZE.inline} aria-hidden />
+              Edit voucher
+            </DropdownMenuItem>
+          ) : null}
+          {showPay ? (
+            <DropdownMenuItem
+              onSelect={() => {
+                afterMenuAction(onPay);
+              }}
+            >
+              Record payment
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem
+            disabled={disabled}
+            onSelect={() => {
+              afterMenuAction(onPrint);
+            }}
+          >
+            {busyId === row.id && isLoadingPreview ? (
+              <SpinnerIcon className={`${ICON_SIZE.inline} animate-spin`} aria-hidden />
+            ) : (
+              <PrintIcon className={ICON_SIZE.inline} aria-hidden />
+            )}
+            Preview challan
+          </DropdownMenuItem>
+          {showDelete ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                destructive
+                onSelect={() => {
+                  afterMenuAction(onDelete);
+                }}
+              >
+                <DeleteIcon className={ICON_SIZE.inline} aria-hidden />
+                Delete voucher
+              </DropdownMenuItem>
+            </>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

@@ -205,6 +205,20 @@ export const HOLIDAY_AUDIENCE_LABELS: Readonly<Record<HolidayAudience, string>> 
   STAFF: 'Staff only',
 };
 
+/** Fixed calendar colours — semantic tokens in UI, stored as keys in the database. */
+export const HOLIDAY_COLOR_KEYS = ['rose', 'amber', 'emerald', 'sky', 'violet', 'teal'] as const;
+export const holidayColorKeySchema = z.enum(HOLIDAY_COLOR_KEYS);
+export type HolidayColorKey = z.infer<typeof holidayColorKeySchema>;
+
+export const HOLIDAY_COLOR_LABELS: Readonly<Record<HolidayColorKey, string>> = {
+  rose: 'Rose',
+  amber: 'Amber',
+  emerald: 'Emerald',
+  sky: 'Sky',
+  violet: 'Violet',
+  teal: 'Teal',
+};
+
 export const holidaySchema = z.object({
   id: idSchema,
   sessionId: idSchema,
@@ -214,6 +228,7 @@ export const holidaySchema = z.object({
   startDate: calendarDateSchema,
   /** Inclusive. Equal to `startDate` for a single day. */
   endDate: calendarDateSchema,
+  colorKey: holidayColorKeySchema,
   notes: z.string().nullable(),
   /** Inclusive day count, computed server-side so no caller re-derives it. */
   days: z.int().min(1),
@@ -230,6 +245,7 @@ export const createHolidaySchema = z
     startDate: calendarDateSchema,
     /** Omit for a single day; the server sets it equal to `startDate`. */
     endDate: calendarDateSchema.optional(),
+    colorKey: holidayColorKeySchema.default('rose'),
     notes: z.string().trim().max(300).optional(),
   })
   .strict()
@@ -247,6 +263,7 @@ export const updateHolidaySchema = z
     appliesTo: holidayAudienceSchema.optional(),
     startDate: calendarDateSchema.optional(),
     endDate: calendarDateSchema.optional(),
+    colorKey: holidayColorKeySchema.optional(),
     notes: z.string().trim().max(300).nullable().optional(),
   })
   .strict()
@@ -259,3 +276,18 @@ export const updateHolidaySchema = z
   );
 
 export type UpdateHoliday = z.infer<typeof updateHolidaySchema>;
+
+export const holidaysListQuerySchema = z.object({
+  sessionId: idSchema.optional(),
+});
+
+export type HolidaysListQuery = z.infer<typeof holidaysListQuerySchema>;
+
+/** Ensures every row has a valid palette key (older API rows or partial JSON). */
+export function normalizeHoliday(row: Holiday): Holiday {
+  const colorKey = holidayColorKeySchema.safeParse(row.colorKey);
+  return {
+    ...row,
+    colorKey: colorKey.success ? colorKey.data : 'rose',
+  };
+}

@@ -1,11 +1,15 @@
 'use client';
 
-import { ROUTES, STUDENT_STATUSES, type StudentListItem } from '@ilm/contracts';
+import {
+  ROUTES,
+  STUDENT_STATUSES,
+  type StudentListItem,
+  type StudentListQuery,
+} from '@ilm/contracts';
 import {
   Button,
+  CardTable,
   ConfirmDialog,
-  DataTable,
-  Pagination,
   DateDisplay,
   DropdownMenu,
   DropdownMenuContent,
@@ -14,31 +18,38 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Money,
+  Pagination,
   SimpleSelect,
   StatusBadge,
+  TwoLineCell,
   useToast,
-  type Column,
+  type CardTableColumn,
 } from '@ilm/ui';
-import { CreateIcon, DeleteIcon, EditIcon, MoreIcon, SearchIcon } from '@ilm/ui/icons';
+import {
+  AccountIcon,
+  CalendarIcon,
+  ClassIcon,
+  CreateIcon,
+  DeleteIcon,
+  EditIcon,
+  FeesIcon,
+  MoreIcon,
+  PhoneIcon,
+  StudentsIcon,
+} from '@ilm/ui/icons';
 import { minorUnits } from '@ilm/utils';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { useState, useTransition, type FormEvent } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 
 import { EditStudentDialog } from './edit-student-dialog';
 
+import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
+import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
 import { mutateOrThrow } from '@/lib/mutate';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
-/**
- * Run a row-menu action without the leftover click navigating the row.
- *
- * Dropdown content is portaled. After an item is chosen the menu unmounts and
- * the browser delivers `click` to whatever is now under the pointer — the
- * table row — which would open the student detail on top of the confirm dialog.
- * Capturing that one click stops it.
- */
 function afterMenuAction(action: () => void): void {
   action();
   const swallow = (event: MouseEvent) => {
@@ -50,20 +61,6 @@ function afterMenuAction(action: () => void): void {
     document.removeEventListener('click', swallow, true);
   }, 100);
 }
-
-/**
- * The student list.
- *
- * Filters live in the URL, not in component state: a filtered view is then a
- * link someone can paste to a colleague, it survives a refresh, and the back
- * button does what it should. `useTransition` keeps the previous rows on screen
- * while the new ones load rather than flashing a skeleton over data that is
- * about to be almost identical (docs/16 §7).
- *
- * Row actions sit behind one menu rather than four buttons per row. Thirteen
- * rows with four visible actions is fifty-two tap targets competing for
- * attention; one "⋯" per row is one.
- */
 
 const STATUS_TONE: Record<string, 'success' | 'neutral' | 'warning' | 'danger'> = {
   ACTIVE: 'success',
@@ -77,6 +74,8 @@ function humanise(status: string): string {
   return status.toLowerCase().replace('_', ' ');
 }
 
+export type StudentSortKey = StudentListQuery['sort'];
+
 export interface StudentsTableProps {
   rows: StudentListItem[];
   total: number;
@@ -86,11 +85,11 @@ export interface StudentsTableProps {
   offset: number;
   search: string;
   status: string;
-  /** The class filter, from the URL. Empty means every class. */
   classLevelId: string;
-  /** Classes in the current session, for the filter. Naturally a short list. */
   classes: readonly { id: string; name: string }[];
   isFiltered: boolean;
+  sort: StudentSortKey;
+  order: 'asc' | 'desc';
   can: { create: boolean; update: boolean; delete: boolean };
 }
 
@@ -106,6 +105,8 @@ export function StudentsTable({
   isFiltered,
   limit,
   offset,
+  sort,
+  order,
   can,
 }: StudentsTableProps) {
   const router = useRouter();
@@ -118,6 +119,12 @@ export function StudentsTable({
   const [editing, setEditing] = useState<StudentListItem | undefined>(undefined);
   const [deleting, setDeleting] = useState<StudentListItem | undefined>(undefined);
   const [leaving, setLeaving] = useState<StudentListItem | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState(search);
+  const searchDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    setSearchQuery(search);
+  }, [search]);
 
   function apply(next: Record<string, string>) {
     const updated = new URLSearchParams(params.toString());
@@ -129,330 +136,366 @@ export function StudentsTable({
       }
     }
 
-    // Changing a filter always returns to the first page.
-    //
-    // Without this, searching from page 3 asks for rows 51–75 of a result set
-    // that now has four rows, and the screen says "no students" for a search
-    // that matched. Paging itself is exempt, or it would reset the page it just
-    // set.
     if (!Object.hasOwn(next, 'offset')) {
       updated.delete('offset');
     }
 
     startTransition(() => {
-      router.replace(`${pathname}?${updated.toString()}`);
+      router.push(`${pathname}?${updated.toString()}`);
     });
   }
 
-  const columns: Column<StudentListItem>[] = [
-    {
-      key: 'grNo',
-      header: 'GR no.',
-      // Monospace and selectable: it is read aloud and copied constantly, and
-      // it is the number written on the physical file.
-      render: (row) => <span className="font-mono text-xs select-all">{row.grNo}</span>,
-    },
-    {
-      key: 'studentCode',
-      header: 'Student ID',
-      hideOnMobile: true,
-      render: (row) => (
-        <span className="font-mono text-xs text-muted-foreground select-all">
-          {row.studentCode}
-        </span>
-      ),
-    },
-    {
-      key: 'name',
-      header: 'Name',
-      render: (row) => (
-        <span className="font-medium text-balance">
-          {row.firstName} {row.lastName}
-        </span>
-      ),
-    },
-    {
-      key: 'class',
-      header: 'Class',
-      render: (row) =>
-        row.className === null ? (
-          <span className="text-muted-foreground">Not enrolled</span>
-        ) : (
-          <span>
-            {row.className}
-            {row.sectionName === null ? '' : ` — ${row.sectionName}`}
-          </span>
-        ),
-    },
-    // No Roll column, deliberately.
-    //
-    // A roll is a position on *one* section's register. This list is every
-    // student in the school, sorted by name, so the column put "7" from Grade 2
-    // — A next to "7" from Prep — B and invited the reading that they are the
-    // same kind of number. The roll belongs beside the register it orders,
-    // which is the attendance roster and the student's own profile.
-    {
-      key: 'father',
-      header: 'Father / guardian',
-      render: (row) =>
-        row.fatherName === null ? (
-          // Named plainly: this is a task-queue item, not a cosmetic gap.
-          <span className="text-warning">No guardian on file</span>
-        ) : (
-          <span>{row.fatherName}</span>
-        ),
-    },
-    {
-      key: 'contact',
-      header: 'Contact',
-      hideOnMobile: true,
-      render: (row) =>
-        row.guardianPhone === null ? (
-          <span className="text-muted-foreground">—</span>
-        ) : (
-          <a
-            href={`tel:${row.guardianPhone}`}
-            className="font-mono text-xs underline"
-            onClick={(event) => {
-              // The row opens the student; the phone link must not.
-              event.stopPropagation();
-            }}
-          >
-            {row.guardianPhone}
-          </a>
-        ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (row) => (
-        <StatusBadge tone={STATUS_TONE[row.status] ?? 'neutral'}>
-          {humanise(row.status)}
-        </StatusBadge>
-      ),
-    },
-    {
-      key: 'tuition',
-      header: 'Tuition',
-      align: 'end',
-      hideOnMobile: true,
-      // Payable, after any agreed discount — the figure reception is asked for
-      // on the phone, which is why it is on the list rather than one click in.
-      render: (row) =>
-        row.tuitionFeeMinor === null ? (
-          <span className="text-muted-foreground">—</span>
-        ) : (
-          <Money valueMinor={minorUnits(row.tuitionFeeMinor)} />
-        ),
-    },
-    {
-      key: 'admittedOn',
-      header: 'Admitted',
-      hideOnMobile: true,
-      render: (row) =>
-        row.admittedOn === null ? (
-          <span className="text-muted-foreground">—</span>
-        ) : (
-          <DateDisplay value={row.admittedOn} />
-        ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'end',
-      render: (row) =>
-        !can.update && !can.delete ? null : (
-          <div
-            data-stop-row-click=""
-            onClick={(event) => {
-              event.stopPropagation();
-            }}
-            onPointerDown={(event) => {
-              event.stopPropagation();
-            }}
-          >
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                aria-label={`Actions for ${row.firstName} ${row.lastName}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                }}
-              >
-                <MoreIcon className="size-4" aria-hidden="true" />
-              </DropdownMenuTrigger>
+  function onSearchQueryChange(value: string) {
+    setSearchQuery(value);
+    if (searchDebounce.current !== undefined) {
+      clearTimeout(searchDebounce.current);
+    }
+    searchDebounce.current = setTimeout(() => {
+      apply({ q: value });
+    }, 350);
+  }
 
-              <DropdownMenuContent
-                onCloseAutoFocus={(event) => {
-                  event.preventDefault();
-                }}
-              >
-                <DropdownMenuLabel>
-                  {row.firstName} {row.lastName}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+  function clearFilters(): void {
+    setSearchQuery('');
+    apply({ q: '', status: '', classLevelId: '' });
+  }
 
-                {can.update ? (
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      afterMenuAction(() => {
-                        setEditing(row);
-                      });
+  function toggleSort(nextKey: StudentSortKey): void {
+    if (sort === nextKey) {
+      apply({ order: order === 'asc' ? 'desc' : 'asc' });
+      return;
+    }
+    apply({ sort: nextKey, order: 'asc' });
+  }
+
+  const columns = useMemo((): CardTableColumn<StudentListItem>[] => {
+    return [
+      {
+        key: 'grNo',
+        label: 'GR no.',
+        icon: StudentsIcon,
+        sortable: true,
+        width: 'w-[9%]',
+        render: (row) => (
+          <span className="font-mono text-xs select-all text-foreground">{row.grNo}</span>
+        ),
+      },
+      {
+        key: 'name',
+        label: 'Name',
+        icon: AccountIcon,
+        sortable: true,
+        width: 'w-[20%]',
+        render: (row) => (
+          <div className="flex min-w-0 items-center gap-3">
+            <StudentAdmissionAvatar
+              firstName={row.firstName}
+              lastName={row.lastName}
+              photoUrl={row.photoUrl}
+            />
+            <span className="min-w-0 font-medium text-balance text-foreground">
+              {row.firstName} {row.lastName}
+            </span>
+          </div>
+        ),
+      },
+      {
+        key: 'className',
+        label: 'Class',
+        icon: ClassIcon,
+        sortable: true,
+        width: 'w-[14%]',
+        render: (row) =>
+          row.className === null ? (
+            <StatusBadge tone="warning" size="sm">
+              Not enrolled
+            </StatusBadge>
+          ) : (
+            <span className="inline-flex flex-wrap items-center gap-1.5">
+              <StatusBadge tone="neutral" size="sm">
+                {row.className}
+              </StatusBadge>
+              {row.sectionName === null ? null : (
+                <StatusBadge tone="neutral" size="sm">
+                  {row.sectionName}
+                </StatusBadge>
+              )}
+            </span>
+          ),
+      },
+      {
+        key: 'father',
+        label: 'Father / guardian',
+        icon: AccountIcon,
+        width: 'w-[14%]',
+        hideOnMobile: true,
+        render: (row) =>
+          row.fatherName === null ? (
+            <span className="text-warning">No guardian on file</span>
+          ) : (
+            <span>{row.fatherName}</span>
+          ),
+      },
+      {
+        key: 'contact',
+        label: 'Contact',
+        icon: PhoneIcon,
+        width: 'w-[12%]',
+        hideOnMobile: true,
+        render: (row) =>
+          row.guardianPhone === null ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <a
+              href={`tel:${row.guardianPhone}`}
+              className="font-mono text-xs underline"
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              {row.guardianPhone}
+            </a>
+          ),
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        width: 'w-[10%]',
+        render: (row) => (
+          <StatusBadge tone={STATUS_TONE[row.status] ?? 'neutral'}>{humanise(row.status)}</StatusBadge>
+        ),
+      },
+      {
+        key: 'tuition',
+        label: 'Tuition',
+        icon: FeesIcon,
+        align: 'end',
+        width: 'w-[10%]',
+        hideOnMobile: true,
+        render: (row) =>
+          row.tuitionFeeMinor === null ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <Money valueMinor={minorUnits(row.tuitionFeeMinor)} className="font-mono tabular-nums" />
+          ),
+      },
+      {
+        key: 'createdAt',
+        label: 'Admitted',
+        icon: CalendarIcon,
+        sortable: true,
+        width: 'w-[11%]',
+        hideOnMobile: true,
+        render: (row) =>
+          row.admittedOn === null ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <DateDisplay value={row.admittedOn} />
+          ),
+      },
+      {
+        key: 'actions',
+        label: 'Actions',
+        align: 'end',
+        width: 'w-[8%]',
+        render: (row) =>
+          !can.update && !can.delete ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <div className="flex justify-end" data-stop-row-click>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    tone="ghost"
+                    size="icon"
+                    className="size-8 text-muted-foreground hover:text-foreground"
+                    aria-label={`Actions for ${row.firstName} ${row.lastName}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
                     }}
                   >
-                    <EditIcon aria-hidden="true" />
-                    Edit details
-                  </DropdownMenuItem>
-                ) : null}
-
-                {can.update && row.status === 'ACTIVE' ? (
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      afterMenuAction(() => {
-                        setLeaving(row);
-                      });
-                    }}
-                  >
-                    Mark as left
-                  </DropdownMenuItem>
-                ) : null}
-
-                {can.delete ? (
-                  <>
-                    <DropdownMenuSeparator />
+                    <MoreIcon className="size-4" aria-hidden="true" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-48"
+                  onCloseAutoFocus={(event) => {
+                    event.preventDefault();
+                  }}
+                >
+                  <DropdownMenuLabel>
+                    {row.firstName} {row.lastName}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {can.update ? (
                     <DropdownMenuItem
-                      destructive
                       onSelect={() => {
                         afterMenuAction(() => {
-                          setDeleting(row);
+                          setEditing(row);
                         });
                       }}
                     >
-                      <DeleteIcon aria-hidden="true" />
-                      Delete record
+                      <EditIcon className="size-4" aria-hidden="true" />
+                      Edit details
                     </DropdownMenuItem>
-                  </>
-                ) : null}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ),
-    },
-  ];
+                  ) : null}
+                  {can.update && row.status === 'ACTIVE' ? (
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        afterMenuAction(() => {
+                          setLeaving(row);
+                        });
+                      }}
+                    >
+                      Mark as left
+                    </DropdownMenuItem>
+                  ) : null}
+                  {can.delete ? (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-danger focus:text-danger"
+                        onSelect={() => {
+                          afterMenuAction(() => {
+                            setDeleting(row);
+                          });
+                        }}
+                      >
+                        <DeleteIcon className="size-4" aria-hidden="true" />
+                        Delete record
+                      </DropdownMenuItem>
+                    </>
+                  ) : null}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ),
+      },
+    ];
+  }, [can.delete, can.update]);
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Students</h1>
-          <p className="text-sm text-muted-foreground">
+    <div className="w-full space-y-6">
+      <WorkspacePageHeader
+        title="Students"
+        description={
+          <>
             {total} {total === 1 ? 'student' : 'students'}
             {aggregates['totalActive'] === undefined
               ? ''
               : ` · ${aggregates['totalActive']} active`}
-          </p>
+          </>
+        }
+      />
+
+      {error !== undefined ? (
+        <div
+          role="alert"
+          className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+        >
+          {error}
         </div>
+      ) : null}
 
-        {/* A link to a page, not a dialog. Admission grew a fee structure and a
-            money total, and a modal cannot be linked to, cannot survive a
-            refresh, and gives a receptionist nowhere to leave a half-finished
-            admission while they phone a parent for a CNIC. */}
-        {can.create ? (
-          <Button asChild>
-            <Link href={tenantHref('/students/new')}>
-              <CreateIcon className="size-4" aria-hidden="true" />
-              Admit student
-            </Link>
-          </Button>
-        ) : null}
-      </header>
-
-      <form
-        role="search"
-        className="flex flex-wrap items-center gap-2"
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          const value = new FormData(event.currentTarget).get('q');
-          apply({ q: typeof value === 'string' ? value : '' });
-        }}
-      >
-        <div className="relative min-w-56 flex-1">
-          <SearchIcon
-            className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden="true"
-          />
-          <input
-            type="search"
-            name="q"
-            defaultValue={search}
-            placeholder="Name, GR or Student ID"
-            aria-label="Search students"
-            className="h-10 w-full rounded-md border border-border bg-background ps-9 pe-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          />
-        </div>
-
-        {/*
-          Class before status, because it is the one people reach for.
-          "Show me Grade 4" is a daily question at a front desk; "show me the
-          students who left" is a monthly one.
-        */}
-        <SimpleSelect
-          className="w-44"
-          ariaLabel="Filter by class"
-          value={classLevelId}
-          emptyOption={{ value: '', label: 'Any class' }}
-          placeholder="Any class"
-          disabled={classes.length === 0}
-          onValueChange={(value) => {
-            apply({ classLevelId: value });
-          }}
-          options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
-        />
-
-        <SimpleSelect
-          className="w-44"
-          ariaLabel="Filter by status"
-          value={status}
-          emptyOption={{ value: '', label: 'Any status' }}
-          placeholder="Any status"
-          onValueChange={(value) => {
-            apply({ status: value });
-          }}
-          options={STUDENT_STATUSES.map((value) => ({ value, label: humanise(value) }))}
-        />
-
-        <Button type="submit" tone="outline" isPending={isPending}>
-          Search
-        </Button>
-      </form>
+      <ListPageToolbar
+        searchQuery={searchQuery}
+        onSearchQueryChange={onSearchQueryChange}
+        searchPlaceholder="Name or GR no."
+        searchAriaLabel="Search students"
+        filters={
+          <>
+            <SimpleSelect
+              className="w-full sm:w-44"
+              ariaLabel="Filter by class"
+              value={classLevelId}
+              emptyOption={{ value: '', label: 'Any class' }}
+              placeholder="Any class"
+              disabled={classes.length === 0}
+              onValueChange={(value) => {
+                apply({ classLevelId: value });
+              }}
+              options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
+            />
+            <SimpleSelect
+              className="w-full sm:w-44"
+              ariaLabel="Filter by status"
+              value={status}
+              emptyOption={{ value: '', label: 'Any status' }}
+              placeholder="Any status"
+              onValueChange={(value) => {
+                apply({ status: value });
+              }}
+              options={STUDENT_STATUSES.map((value) => ({ value, label: humanise(value) }))}
+            />
+            {can.create ? (
+              <Button asChild className="w-full sm:w-auto">
+                <Link href={tenantHref('/students/new')}>
+                  <CreateIcon className="size-4" aria-hidden="true" />
+                  Admit student
+                </Link>
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <div
         aria-busy={isPending}
-        className={isPending ? 'opacity-60 transition-opacity' : undefined}
+        className={isPending ? 'space-y-6 opacity-60 transition-opacity' : 'space-y-6'}
       >
-        <DataTable
+        <CardTable
+          title="All students"
+          caption="Students"
           rows={rows}
           columns={columns}
           rowKey={(row) => row.id}
-          caption="Students"
-          {...(error === undefined ? {} : { error })}
+          minWidthClass="min-w-[56rem]"
           isFiltered={isFiltered}
-          // The row opens the student. It never mutates (docs/16 §9).
+          onClearFilters={clearFilters}
+          sort={{
+            key: sort,
+            direction: order,
+            onToggle: (key) => {
+              toggleSort(key as StudentSortKey);
+            },
+          }}
           onRowClick={(row) => {
             router.push(tenantHref(`/students/${row.id}`));
-          }}
-          onClearFilters={() => {
-            apply({ q: '', status: '' });
           }}
           empty={{
             title: 'No students yet',
             description:
               'A student is admitted with a GR number, a class and a guardian. Admitting the first one takes about a minute.',
+            action: can.create ? (
+              <Button asChild>
+                <Link href={tenantHref('/students/new')}>
+                  <CreateIcon className="size-4" aria-hidden="true" />
+                  Admit the first student
+                </Link>
+              </Button>
+            ) : undefined,
           }}
+          renderMobileRow={(row) => (
+            <div className="flex items-center gap-3 px-4 py-3">
+              <StudentAdmissionAvatar
+                firstName={row.firstName}
+                lastName={row.lastName}
+                photoUrl={row.photoUrl}
+              />
+              <TwoLineCell
+                primary={
+                  <span className="font-medium">
+                    {row.firstName} {row.lastName}
+                  </span>
+                }
+                secondary={`GR ${row.grNo} · ${row.className ?? 'Not enrolled'} · ${humanise(row.status)}`}
+              />
+            </div>
+          )}
         />
 
-        {/* Hidden while there is nothing to page through, so an empty school
-            is not handed a control that does nothing. */}
         {total === 0 ? null : (
           <Pagination
             total={total}
@@ -478,8 +521,6 @@ export function StudentsTable({
         />
       )}
 
-      {/* Leaving is a status change, not a delete: the child stays in the
-          register. The reason is required because the register has to say why. */}
       <ConfirmDialog
         open={leaving !== undefined}
         onOpenChange={(next) => {
@@ -511,9 +552,6 @@ export function StudentsTable({
         }}
       />
 
-      {/* Delete is for a record created in error. Typing the GR number is
-          deliberately annoying — it is the number on the physical file, so it
-          forces the operator to confirm they have the right child. */}
       <ConfirmDialog
         open={deleting !== undefined}
         onOpenChange={(next) => {

@@ -4020,6 +4020,9 @@ export const StaffScalarFieldEnum = {
   leftOn: 'leftOn',
   cnic: 'cnic',
   designation: 'designation',
+  address: 'address',
+  photoUrl: 'photoUrl',
+  cvUrl: 'cvUrl',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
@@ -4071,6 +4074,7 @@ export const HolidayScalarFieldEnum = {
   appliesTo: 'appliesTo',
   startDate: 'startDate',
   endDate: 'endDate',
+  colorKey: 'colorKey',
   notes: 'notes',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

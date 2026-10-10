@@ -167,6 +167,7 @@ export class StudentsService {
             studentId: student.id,
             sessionId: input.enrollment.sessionId,
             classLevelId: input.enrollment.classLevelId,
+            enrolledOn: new Date(admissionDate),
             ...(input.enrollment.sectionId === undefined
               ? {}
               : { sectionId: input.enrollment.sectionId }),

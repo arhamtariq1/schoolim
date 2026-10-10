@@ -1078,6 +1078,8 @@ model Holiday {
   startDate DateTime        @map("start_date") @db.Date
   /// Inclusive. Equal to `startDate` for a single day.
   endDate   DateTime        @map("end_date") @db.Date
+  /// Token from a fixed palette — calendar UI only, not school branding.
+  colorKey  String          @default("rose") @map("color_key")
   notes     String?
   createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)

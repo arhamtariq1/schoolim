@@ -14,30 +14,38 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  CheckboxField,
+  Checkbox,
   cn,
   DateDisplay,
   DatePicker,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Field,
   Input,
   Money,
-  MonthPicker,
   SimpleSelect,
   StatusBadge,
   useToast,
 } from '@ilm/ui';
 import {
-  CloseIcon,
+  AccountIcon,
+  ApproveIcon,
+  ClassIcon,
   CreateIcon,
-  DeleteIcon,
+  FeesIcon,
   ICON_SIZE,
+  MoreIcon,
   SearchIcon,
   SpinnerIcon,
+  StudentsIcon,
+  ViewIcon,
   WarningIcon,
 } from '@ilm/ui/icons';
 import { systemClock } from '@ilm/utils';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
@@ -69,15 +77,36 @@ export interface GenerateFeeProps {
   heads: FeeHead[];
   currentSessionId: string | undefined;
   canGenerate: boolean;
+  schoolName?: string | undefined;
   error?: string | undefined;
 }
 
 type ScopeKind = 'STUDENT' | 'CLASS' | 'ALL';
 
-const SCOPES: readonly { key: ScopeKind; label: string }[] = [
-  { key: 'STUDENT', label: 'One student' },
-  { key: 'CLASS', label: 'A whole class' },
-  { key: 'ALL', label: 'Every student' },
+const SCOPES: readonly {
+  key: ScopeKind;
+  label: string;
+  description: string;
+  icon: typeof AccountIcon;
+}[] = [
+  {
+    key: 'STUDENT',
+    label: 'One student',
+    description: 'Generate fee for a single student.',
+    icon: AccountIcon,
+  },
+  {
+    key: 'CLASS',
+    label: 'A whole class',
+    description: 'Generate fee for all students in a class.',
+    icon: ClassIcon,
+  },
+  {
+    key: 'ALL',
+    label: 'Every student',
+    description: 'Generate fee for all students.',
+    icon: StudentsIcon,
+  },
 ];
 
 export function GenerateFee({
@@ -86,6 +115,7 @@ export function GenerateFee({
   heads,
   currentSessionId,
   canGenerate,
+  schoolName,
   error,
 }: GenerateFeeProps) {
   const router = useRouter();
@@ -104,7 +134,7 @@ export function GenerateFee({
   const [validTill, setValidTill] = useState(() => addDays(today, 24));
 
   const [months, setMonths] = useState<string[]>(() => [today.slice(0, 7)]);
-  const [monthDraft, setMonthDraft] = useState(() => today.slice(0, 7));
+  const [showPreviewDetails, setShowPreviewDetails] = useState(false);
 
   const [selected, setSelected] = useState<{ id: string; override: string }[]>([]);
   const [includeArrears, setIncludeArrears] = useState(true);
@@ -116,6 +146,24 @@ export function GenerateFee({
   const [isGenerating, setIsGenerating] = useState(false);
 
   const activeHeads = useMemo(() => heads.filter((head) => head.isActive), [heads]);
+  const activeSession = useMemo(
+    () => sessions.find((entry) => entry.id === sessionId),
+    [sessions, sessionId],
+  );
+  const billMonthOptions = useMemo(() => monthsInSession(activeSession), [activeSession]);
+  const sessionLabel = activeSession?.name ?? 'Session';
+
+  useEffect(() => {
+    const allowed = new Set(billMonthOptions.map((entry) => entry.key));
+    setMonths((previous) => {
+      const kept = previous.filter((entry) => allowed.has(entry));
+      if (kept.length > 0) {
+        return kept;
+      }
+      const first = billMonthOptions[0]?.key;
+      return first === undefined ? [] : [first];
+    });
+  }, [sessionId, billMonthOptions]);
   const sections = useMemo(
     () => classes.find((entry) => entry.id === classLevelId)?.sections ?? [],
     [classes, classLevelId],
@@ -259,10 +307,9 @@ export function GenerateFee({
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-xl font-semibold text-foreground">Generate fee</h1>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Every child is billed their own agreed amount, discounts included. Nothing is written
-          until you press Generate, and a month already billed is never billed twice.
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Generate fee</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Bill students from their agreed fees. Totals in the preview match what Generate writes.
         </p>
       </header>
 
@@ -275,8 +322,8 @@ export function GenerateFee({
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
-        <section className="space-y-5 rounded-xl border border-border bg-card p-4 sm:p-6">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
+        <div className="min-w-0 space-y-4">
           <ScopePicker
             active={scopeKind}
             onChange={(next) => {
@@ -285,128 +332,179 @@ export function GenerateFee({
             }}
           />
 
-          {scopeKind === 'STUDENT' ? (
-            <StudentPicker
-              sessionId={sessionId}
-              student={student}
-              onPick={setStudent}
-              onClear={() => {
-                setStudent(undefined);
-              }}
-            />
-          ) : null}
-
-          {scopeKind === 'CLASS' ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Class" required>
-                <SimpleSelect
-                  value={classLevelId}
-                  placeholder="Choose a class"
-                  options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
-                  onValueChange={(next) => {
-                    setClassLevelId(next);
-                    setSectionId('');
-                  }}
-                />
-              </Field>
-              <Field label="Section" hint="Leave blank for the whole class.">
-                <SimpleSelect
-                  value={sectionId}
-                  disabled={sections.length === 0}
-                  emptyOption={{ value: '', label: 'All sections' }}
-                  options={sections.map((section) => ({ value: section.id, label: section.name }))}
-                  onValueChange={setSectionId}
-                />
-              </Field>
-            </div>
-          ) : null}
-
-          <Field label="Session" required>
-            <SimpleSelect
-              value={sessionId}
-              options={sessions.map((entry) => ({ value: entry.id, label: entry.name }))}
-              onValueChange={setSessionId}
-            />
-          </Field>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Issue date" required>
-              <DatePicker value={issueDate} onChange={setIssueDate} />
-            </Field>
-            <Field
-              label="Due date"
-              required
-              error={dueDate < issueDate ? 'Cannot be before the issue date.' : undefined}
-            >
-              <DatePicker value={dueDate} onChange={setDueDate} />
-            </Field>
-            <Field
-              label="Valid till"
-              required
-              hint="Printed on the challan. Banks refuse an expired one."
-              error={validTill < dueDate ? 'Cannot be before the due date.' : undefined}
-            >
-              <DatePicker value={validTill} onChange={setValidTill} />
-            </Field>
-          </div>
-
-          <BillMonthsField
-            months={months}
-            draft={monthDraft}
-            onDraft={setMonthDraft}
-            onAdd={() => {
-              if (monthDraft !== '' && !months.includes(monthDraft)) {
-                setMonths([...months, monthDraft].sort());
+          <section className="rounded-lg border border-border bg-card p-4 sm:p-5">
+            <StepHeader
+              step={1}
+              title={
+                scopeKind === 'STUDENT'
+                  ? 'Student details'
+                  : scopeKind === 'CLASS'
+                    ? 'Class details'
+                    : 'Scope'
               }
-            }}
-            onRemove={(month) => {
-              setMonths(months.filter((entry) => entry !== month));
-            }}
-          />
-
-          <div className="space-y-3 border-t border-border pt-4">
-            <CheckboxField
-              label="Carry unpaid balances forward"
-              hint="Earlier unpaid vouchers are printed as arrears and settled when this one is paid."
-              checked={includeArrears}
-              onCheckedChange={(next) => {
-                setIncludeArrears(next === true);
-              }}
+              action={
+                scopeKind === 'STUDENT' && student !== undefined ? (
+                  <Button
+                    type="button"
+                    tone="outline"
+                    size="sm"
+                    onClick={() => {
+                      setStudent(undefined);
+                    }}
+                  >
+                    Change student
+                  </Button>
+                ) : null
+              }
             />
-            <CheckboxField
-              label="Apply the late fee after the due date"
-              hint="Uses the school's own rule. Printed as a second figure; charged only if the money actually arrives late."
-              checked={applyLateFee}
-              onCheckedChange={(next) => {
-                setApplyLateFee(next === true);
-              }}
-            />
-          </div>
-        </section>
+            <div className="mt-4">
+              {scopeKind === 'STUDENT' ? (
+                <StudentPicker sessionId={sessionId} student={student} onPick={setStudent} />
+              ) : null}
+              {scopeKind === 'CLASS' ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Class" required>
+                    <SimpleSelect
+                      value={classLevelId}
+                      placeholder="Choose a class"
+                      options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
+                      onValueChange={(next) => {
+                        setClassLevelId(next);
+                        setSectionId('');
+                      }}
+                    />
+                  </Field>
+                  <Field label="Section" hint="Leave blank for the whole class.">
+                    <SimpleSelect
+                      value={sectionId}
+                      disabled={sections.length === 0}
+                      emptyOption={{ value: '', label: 'All sections' }}
+                      options={sections.map((section) => ({
+                        value: section.id,
+                        label: section.name,
+                      }))}
+                      onValueChange={setSectionId}
+                    />
+                  </Field>
+                </div>
+              ) : null}
+              {scopeKind === 'ALL' ? (
+                <p className="text-sm text-muted-foreground">
+                  Every student enrolled in the selected session will be included.
+                </p>
+              ) : null}
+            </div>
+          </section>
 
-        <section className="space-y-4">
+          <section className="rounded-lg border border-border bg-card p-4 sm:p-5">
+            <StepHeader step={2} title="Fee period" />
+            <div className="mt-4 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Field label="Session" required>
+                  <SimpleSelect
+                    value={sessionId}
+                    options={sessions.map((entry) => ({
+                      value: entry.id,
+                      label: entry.isCurrent ? `${entry.name} (current)` : entry.name,
+                    }))}
+                    onValueChange={setSessionId}
+                  />
+                </Field>
+                <Field label="Issue date" required>
+                  <DatePicker value={issueDate} onChange={setIssueDate} />
+                </Field>
+                <Field
+                  label="Due date"
+                  required
+                  error={dueDate < issueDate ? 'Cannot be before the issue date.' : undefined}
+                >
+                  <DatePicker value={dueDate} onChange={setDueDate} />
+                </Field>
+                <Field
+                  label="Valid till"
+                  required
+                  error={validTill < dueDate ? 'Cannot be before the due date.' : undefined}
+                >
+                  <DatePicker value={validTill} onChange={setValidTill} />
+                </Field>
+              </div>
+              <BillMonthGrid
+                options={billMonthOptions}
+                selected={months}
+                onToggle={(monthKey) => {
+                  setMonths(
+                    months.includes(monthKey)
+                      ? months.filter((entry) => entry !== monthKey)
+                      : [...months, monthKey].sort(),
+                  );
+                }}
+              />
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-border bg-card p-4 sm:p-5">
+            <StepHeader step={3} title="Additional settings" />
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <SettingCard
+                label="Carry unpaid balances forward"
+                hint="Earlier unpaid vouchers are printed as arrears and settled when this one is paid."
+                checked={includeArrears}
+                onCheckedChange={setIncludeArrears}
+              />
+              <SettingCard
+                label="Apply the late fee after the due date"
+                hint="Uses the school's own rule. Charged only if payment arrives after the due date."
+                checked={applyLateFee}
+                onCheckedChange={setApplyLateFee}
+              />
+            </div>
+          </section>
+        </div>
+
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-4">
           <FeePicker
             heads={activeHeads}
             selected={selected}
             onChange={setSelected}
             scopeLabel={scopeKind === 'STUDENT' ? 'this student' : 'everyone in scope'}
+            preview={preview}
+            singleStudent={scopeKind === 'STUDENT'}
           />
 
-          <PreviewPanel
+          <VoucherPreviewCard
             preview={preview}
             error={previewError}
             isLoading={isPreviewing}
             ready={ready}
-            singleStudent={scopeKind === 'STUDENT'}
+            schoolName={schoolName}
+            sessionLabel={sessionLabel}
+            student={student}
             issueDate={issueDate}
+            dueDate={dueDate}
+            validTill={validTill}
+            billMonths={months}
+            singleStudent={scopeKind === 'STUDENT'}
+            showDetails={showPreviewDetails}
+            onToggleDetails={() => {
+              setShowPreviewDetails((previous) => !previous);
+            }}
           />
+
+          {showPreviewDetails ? (
+            <PreviewDetails
+              preview={preview}
+              ready={ready}
+              singleStudent={scopeKind === 'STUDENT'}
+              issueDate={issueDate}
+              error={previewError}
+              isLoading={isPreviewing}
+            />
+          ) : null}
 
           {canGenerate ? (
             <Button
               size="touch"
               className="w-full"
-              // Disabled while the preview is stale, so nothing is committed
-              // against a figure nobody has seen.
               disabled={!ready || isPreviewing || preview === undefined || preview.willCreate === 0}
               isPending={isGenerating}
               onClick={() => {
@@ -420,10 +518,10 @@ export function GenerateFee({
             </Button>
           ) : (
             <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-              You can see what this would produce, but not generate. Ask an administrator.
+              You can preview totals, but generating vouchers requires permission.
             </p>
           )}
-        </section>
+        </aside>
       </div>
     </div>
   );
@@ -437,27 +535,172 @@ function ScopePicker({
   onChange: (next: ScopeKind) => void;
 }) {
   return (
-    <div role="tablist" aria-label="Who to bill" className="flex gap-1 rounded-lg bg-muted p-1">
-      {SCOPES.map((entry) => (
-        <button
-          key={entry.key}
-          type="button"
-          role="tab"
-          aria-selected={entry.key === active}
-          onClick={() => {
-            onChange(entry.key);
-          }}
-          className={cn(
-            'flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-            entry.key === active
-              ? 'bg-card text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
-          {entry.label}
-        </button>
-      ))}
+    <div
+      role="radiogroup"
+      aria-label="Who to bill"
+      className="grid gap-3 sm:grid-cols-3"
+    >
+      {SCOPES.map((entry) => {
+        const Icon = entry.icon;
+        const isActive = entry.key === active;
+        return (
+          <button
+            key={entry.key}
+            type="button"
+            role="radio"
+            aria-checked={isActive}
+            onClick={() => {
+              onChange(entry.key);
+            }}
+            className={cn(
+              'relative flex items-start gap-3 rounded-lg border bg-card p-4 text-left transition-colors',
+              isActive
+                ? 'border-primary ring-1 ring-primary/30'
+                : 'border-border hover:border-primary/40',
+            )}
+          >
+            {isActive ? (
+              <span className="absolute top-3 right-3 text-primary">
+                <ApproveIcon className={ICON_SIZE.inline} aria-hidden />
+              </span>
+            ) : null}
+            <span
+              className={cn(
+                'flex size-10 shrink-0 items-center justify-center rounded-lg',
+                isActive ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+              )}
+            >
+              <Icon className={ICON_SIZE.nav} aria-hidden />
+            </span>
+            <span className="min-w-0 pr-6">
+              <span className="block text-sm font-semibold text-foreground">{entry.label}</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                {entry.description}
+              </span>
+            </span>
+          </button>
+        );
+      })}
     </div>
+  );
+}
+
+function StepHeader({
+  step,
+  title,
+  action,
+}: {
+  step: number;
+  title: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2.5">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+          {step}
+        </span>
+        <h2 className="text-base font-semibold text-foreground">{title}</h2>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function BillMonthGrid({
+  options,
+  selected,
+  onToggle,
+}: {
+  options: { key: string; label: string }[];
+  selected: string[];
+  onToggle: (monthKey: string) => void;
+}) {
+  return (
+    <div>
+      <p className="text-sm font-medium text-foreground">
+        Bill months <span className="text-danger">*</span>
+      </p>
+      <p className="mt-0.5 text-xs text-muted-foreground">
+        Monthly fees are charged once per month selected. Annual and one-time fees bill once per
+        run.
+      </p>
+      {options.length === 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">Choose a session to see its months.</p>
+      ) : (
+        <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          {options.map((entry) => {
+            const isOn = selected.includes(entry.key);
+            return (
+              <li key={entry.key}>
+                <button
+                  type="button"
+                  aria-pressed={isOn}
+                  onClick={() => {
+                    onToggle(entry.key);
+                  }}
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded-md border px-3 py-2.5 text-left text-sm transition-colors',
+                    isOn
+                      ? 'border-primary bg-primary/10 text-foreground'
+                      : 'border-border bg-background text-muted-foreground hover:border-primary/30',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'flex size-4 shrink-0 items-center justify-center rounded border',
+                      isOn ? 'border-primary bg-primary text-primary-foreground' : 'border-border',
+                    )}
+                  >
+                    {isOn ? <ApproveIcon className="size-3" aria-hidden /> : null}
+                  </span>
+                  {entry.label}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {selected.length === 0 && options.length > 0 ? (
+        <p className="mt-2 text-sm text-danger">Choose at least one month.</p>
+      ) : null}
+    </div>
+  );
+}
+
+function SettingCard({
+  label,
+  hint,
+  checked,
+  onCheckedChange,
+}: {
+  label: string;
+  hint: string;
+  checked: boolean;
+  onCheckedChange: (next: boolean) => void;
+}) {
+  const id = label.replace(/\s+/g, '-').toLowerCase();
+  return (
+    <label
+      htmlFor={id}
+      className={cn(
+        'flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors',
+        checked ? 'border-primary/40 bg-primary/5' : 'border-border bg-background',
+      )}
+    >
+      <Checkbox
+        id={id}
+        checked={checked}
+        onCheckedChange={(next) => {
+          onCheckedChange(next === true);
+        }}
+        className="mt-0.5"
+      />
+      <span className="min-w-0">
+        <span className="block text-sm font-medium text-foreground">{label}</span>
+        <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{hint}</span>
+      </span>
+    </label>
   );
 }
 
@@ -473,12 +716,10 @@ function StudentPicker({
   sessionId,
   student,
   onPick,
-  onClear,
 }: {
   sessionId: string;
   student: StudentLookupResult | undefined;
   onPick: (student: StudentLookupResult) => void;
-  onClear: () => void;
 }) {
   const [term, setTerm] = useState('');
   const [results, setResults] = useState<StudentLookupResult[]>([]);
@@ -524,10 +765,16 @@ function StudentPicker({
 
   if (student !== undefined) {
     return (
-      <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3">
-        <div className="min-w-0">
-          <p className="truncate font-medium text-foreground">{student.name}</p>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+      <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
+        <span
+          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary"
+          aria-hidden
+        >
+          {initialsFromName(student.name)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold text-foreground">{student.name}</p>
+          <p className="mt-0.5 truncate text-sm text-muted-foreground">
             GR {student.grNo ?? '—'}
             {student.className === null ? '' : ` · ${student.className}`}
             {student.sectionName === null ? '' : ` ${student.sectionName}`}
@@ -539,15 +786,7 @@ function StudentPicker({
             </p>
           ) : null}
         </div>
-        <Button
-          type="button"
-          tone="ghost"
-          size="sm"
-          onClick={onClear}
-          aria-label="Choose another student"
-        >
-          <CloseIcon className={ICON_SIZE.inline} aria-hidden />
-        </Button>
+        <StatusBadge tone="success">Active</StatusBadge>
       </div>
     );
   }
@@ -612,118 +851,99 @@ function StudentPicker({
   );
 }
 
-/** The bill months, as chips. */
-function BillMonthsField({
-  months,
-  draft,
-  onDraft,
-  onAdd,
-  onRemove,
-}: {
-  months: string[];
-  draft: string;
-  onDraft: (value: string) => void;
-  onAdd: () => void;
-  onRemove: (month: string) => void;
-}) {
-  return (
-    <div>
-      <Field
-        label="Bill months"
-        required
-        hint="Monthly fees are charged once per month chosen. Annual and one-time fees are charged once, whatever you pick."
-      >
-        <div className="flex gap-2">
-          <MonthPicker value={draft} onChange={onDraft} />
-          <Button type="button" tone="outline" onClick={onAdd} aria-label="Add this month">
-            <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-          </Button>
-        </div>
-      </Field>
-
-      {months.length === 0 ? (
-        <p className="mt-2 text-sm text-danger">Choose at least one month.</p>
-      ) : (
-        <ul className="mt-2 flex flex-wrap gap-2">
-          {months.map((month) => (
-            <li key={month}>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 py-1 pr-1.5 pl-3 text-sm text-foreground">
-                {formatMonth(month)}
-                <button
-                  type="button"
-                  onClick={() => {
-                    onRemove(month);
-                  }}
-                  aria-label={`Remove ${formatMonth(month)}`}
-                  className="rounded-full p-0.5 text-muted-foreground hover:bg-danger/10 hover:text-danger"
-                >
-                  <CloseIcon className="size-3.5" aria-hidden />
-                </button>
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
 /** Which fees to charge, and an optional amount that overrides every student. */
 function FeePicker({
   heads,
   selected,
   onChange,
   scopeLabel,
+  preview,
+  singleStudent,
 }: {
   heads: FeeHead[];
   selected: { id: string; override: string }[];
   onChange: (next: { id: string; override: string }[]) => void;
   scopeLabel: string;
+  preview: VoucherPreview | undefined;
+  singleStudent: boolean;
 }) {
-  const [pending, setPending] = useState('');
+  const [addOpen, setAddOpen] = useState(false);
+  const [editingAmountId, setEditingAmountId] = useState<string | null>(null);
   const chosen = new Set(selected.map((entry) => entry.id));
   const available = heads.filter((head) => !chosen.has(head.id));
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
-      <h2 className="text-base font-medium text-foreground">Fees to charge</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Leave the amount blank and each child is billed what they agreed, discount included. Type
-        one and it replaces that for {scopeLabel}.
-      </p>
-
-      <div className="mt-4 flex gap-2">
-        <SimpleSelect
-          value={pending}
-          disabled={available.length === 0}
-          ariaLabel="Add a fee"
-          placeholder={available.length === 0 ? 'Every fee is already added' : 'Add a fee…'}
-          options={available.map((head) => ({
-            value: head.id,
-            label: `${head.name} — ${FEE_FREQUENCY_LABELS[head.frequency]}`,
-          }))}
-          onValueChange={(id) => {
-            if (id !== '') {
-              onChange([...selected, { id, override: '' }]);
-              setPending('');
-            }
-          }}
-        />
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="min-w-0 text-base font-semibold text-foreground">Fees to charge</h2>
+        <DropdownMenu open={addOpen} onOpenChange={setAddOpen}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              tone="outline"
+              size="sm"
+              disabled={available.length === 0}
+              className={cn(
+                'h-8 shrink-0 gap-1.5 whitespace-nowrap border-primary/25 bg-primary/5 px-2.5',
+                'text-primary hover:bg-primary/10 hover:text-primary',
+              )}
+            >
+              <CreateIcon className={ICON_SIZE.inline} aria-hidden />
+              Add fee
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="max-h-64 w-56 overflow-auto">
+            {available.length === 0 ? (
+              <p className="px-2 py-1.5 text-sm text-muted-foreground">All fees added.</p>
+            ) : (
+              available.map((head) => (
+                <DropdownMenuItem
+                  key={head.id}
+                  onSelect={() => {
+                    onChange([...selected, { id: head.id, override: '' }]);
+                    setAddOpen(false);
+                  }}
+                >
+                  {head.name}
+                </DropdownMenuItem>
+              ))
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Blank amount uses each child&apos;s agreed fee. An override applies to {scopeLabel}.
+      </p>
 
       {selected.length === 0 ? (
         <p className="mt-4 rounded-md border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
-          No fees chosen yet.
+          Add at least one fee to continue.
         </p>
       ) : (
         <ul className="mt-4 space-y-2">
           {selected.map((entry) => {
             const head = heads.find((candidate) => candidate.id === entry.id);
+            const previewTotal =
+              singleStudent && preview !== undefined
+                ? preview.headTotals.find((row) => row.feeHeadId === entry.id)
+                : undefined;
+            const overrideMinor = rupeesToMinor(entry.override);
+            const displayMinor =
+              overrideMinor ??
+              (singleStudent && previewTotal !== undefined
+                ? previewTotal.amountMinor
+                : head?.defaultAmountMinor);
+            const showInput =
+              editingAmountId === entry.id || entry.override !== '' || displayMinor === undefined;
+
             return (
               <li
                 key={entry.id}
-                className="flex items-center gap-3 rounded-lg border border-border px-3 py-2"
+                className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5"
               >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <FeesIcon className={ICON_SIZE.inline} aria-hidden />
+                </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-foreground">
                     {head?.name ?? 'Unknown fee'}
@@ -732,35 +952,82 @@ function FeePicker({
                     {head === undefined ? '' : FEE_FREQUENCY_LABELS[head.frequency]}
                   </span>
                 </span>
-                <Input
-                  type="number"
-                  min="0"
-                  step="1"
-                  inputMode="numeric"
-                  aria-label={`Amount for ${head?.name ?? 'this fee'}`}
-                  placeholder="Agreed"
-                  value={entry.override}
-                  className="w-28 text-right"
-                  onChange={(event) => {
-                    onChange(
-                      selected.map((candidate) =>
-                        candidate.id === entry.id
-                          ? { ...candidate, override: event.target.value }
-                          : candidate,
-                      ),
-                    );
-                  }}
-                />
-                <button
-                  type="button"
-                  aria-label={`Remove ${head?.name ?? 'this fee'}`}
-                  onClick={() => {
-                    onChange(selected.filter((candidate) => candidate.id !== entry.id));
-                  }}
-                  className="rounded-md p-1.5 text-muted-foreground hover:bg-danger/10 hover:text-danger"
-                >
-                  <DeleteIcon className={ICON_SIZE.inline} aria-hidden />
-                </button>
+                {showInput ? (
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    aria-label={`Amount for ${head?.name ?? 'this fee'}`}
+                    placeholder="Agreed"
+                    value={entry.override}
+                    className="w-24 text-right"
+                    onChange={(event) => {
+                      onChange(
+                        selected.map((candidate) =>
+                          candidate.id === entry.id
+                            ? { ...candidate, override: event.target.value }
+                            : candidate,
+                        ),
+                      );
+                    }}
+                    onBlur={() => {
+                      if (entry.override === '') {
+                        setEditingAmountId(null);
+                      }
+                    }}
+                  />
+                ) : (
+                  <span className="shrink-0 font-mono text-sm tabular-nums text-foreground">
+                    <Money valueMinor={displayMinor} />
+                  </span>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted"
+                      aria-label={`Actions for ${head?.name ?? 'fee'}`}
+                    >
+                      <MoreIcon className={ICON_SIZE.inline} aria-hidden />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {showInput ? null : (
+                      <DropdownMenuItem
+                        onSelect={() => {
+                          setEditingAmountId(entry.id);
+                        }}
+                      >
+                        Override amount
+                      </DropdownMenuItem>
+                    )}
+                    {entry.override !== '' ? (
+                      <DropdownMenuItem
+                        onSelect={() => {
+                          onChange(
+                            selected.map((candidate) =>
+                              candidate.id === entry.id
+                                ? { ...candidate, override: '' }
+                                : candidate,
+                            ),
+                          );
+                          setEditingAmountId(null);
+                        }}
+                      >
+                        Use agreed amount
+                      </DropdownMenuItem>
+                    ) : null}
+                    <DropdownMenuItem
+                      destructive
+                      onSelect={() => {
+                        onChange(selected.filter((candidate) => candidate.id !== entry.id));
+                      }}
+                    >
+                      Remove
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </li>
             );
           })}
@@ -770,8 +1037,174 @@ function FeePicker({
   );
 }
 
+function VoucherPreviewCard({
+  preview,
+  error,
+  isLoading,
+  ready,
+  schoolName,
+  sessionLabel,
+  student,
+  issueDate,
+  dueDate,
+  validTill,
+  billMonths,
+  singleStudent,
+  showDetails,
+  onToggleDetails,
+}: {
+  preview: VoucherPreview | undefined;
+  error: string | undefined;
+  isLoading: boolean;
+  ready: boolean;
+  schoolName: string | undefined;
+  sessionLabel: string;
+  student: StudentLookupResult | undefined;
+  issueDate: string;
+  dueDate: string;
+  validTill: string;
+  billMonths: string[];
+  singleStudent: boolean;
+  showDetails: boolean;
+  onToggleDetails: () => void;
+}) {
+  const sample = preview?.samples[0];
+  const lines =
+    sample?.lines ??
+    preview?.headTotals.map((head) => ({
+      label: head.name,
+      amountMinor: head.amountMinor,
+      discountMinor: 0,
+    })) ??
+    [];
+  const totalMinor = preview?.netPayableMinor ?? 0;
+  const studentName = student?.name ?? sample?.studentName ?? '—';
+  const grNo = student?.grNo ?? sample?.grNo ?? '—';
+  const classLabel =
+    student?.className === null || student?.className === undefined
+      ? '—'
+      : `${student.className}${student.sectionName === null ? '' : ` ${student.sectionName}`}`;
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-base font-semibold text-foreground">Voucher preview</h2>
+        <Button
+          type="button"
+          tone="ghost"
+          size="sm"
+          disabled={!ready}
+          aria-expanded={showDetails}
+          onClick={onToggleDetails}
+        >
+          <ViewIcon className={ICON_SIZE.inline} aria-hidden />
+          {showDetails ? 'Hide breakdown' : 'Preview'}
+        </Button>
+      </div>
+
+      <div className="mt-3 overflow-hidden rounded-md border border-border bg-background text-[10px] leading-snug text-foreground shadow-sm">
+        <div className="border-b border-border bg-muted/40 px-3 py-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate font-semibold">{schoolName ?? 'School'}</p>
+              <p className="text-muted-foreground">Fee voucher</p>
+            </div>
+            <span className="shrink-0 rounded border border-border bg-card px-1.5 py-0.5 text-[9px] font-semibold tracking-wide uppercase">
+              Fee voucher
+            </span>
+          </div>
+          <p className="mt-1 text-muted-foreground">Session: {sessionLabel}</p>
+        </div>
+
+        {!ready ? (
+          <p className="px-3 py-6 text-center text-xs text-muted-foreground">
+            Complete the steps to see a preview.
+          </p>
+        ) : error !== undefined ? (
+          <p className="px-3 py-4 text-xs text-danger" role="alert">
+            {error}
+          </p>
+        ) : isLoading || preview === undefined ? (
+          <p className="flex items-center justify-center gap-2 px-3 py-6 text-xs text-muted-foreground">
+            <SpinnerIcon className={`${ICON_SIZE.inline} animate-spin`} aria-hidden />
+            Calculating…
+          </p>
+        ) : (
+          <>
+            <dl className="grid grid-cols-2 gap-x-2 gap-y-1 border-b border-border px-3 py-2">
+              <PreviewRow label="Student" value={studentName} />
+              <PreviewRow label="GR number" value={grNo ?? '—'} />
+              <PreviewRow label="Class" value={classLabel} />
+              <PreviewRow label="Issue date" value={<DateDisplay value={issueDate} />} />
+              <PreviewRow label="Due date" value={<DateDisplay value={dueDate} />} />
+              <PreviewRow label="Valid till" value={<DateDisplay value={validTill} />} />
+              {billMonths.length > 0 ? (
+                <PreviewRow
+                  label="Bill months"
+                  value={billMonths.map((month) => formatMonthShort(month)).join(', ')}
+                  className="col-span-2"
+                />
+              ) : null}
+            </dl>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border text-muted-foreground">
+                  <th scope="col" className="px-3 py-1 text-left font-medium">
+                    Description
+                  </th>
+                  <th scope="col" className="px-3 py-1 text-right font-medium">
+                    Amount
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {lines.map((line) => (
+                  <tr key={line.label} className="border-b border-border/60 last:border-0">
+                    <td className="px-3 py-1">{line.label}</td>
+                    <td className="px-3 py-1 text-right font-mono tabular-nums">
+                      <Money valueMinor={line.amountMinor - line.discountMinor} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex items-center justify-between border-t border-border bg-muted/30 px-3 py-2 font-semibold">
+              <span>{singleStudent ? 'Total' : 'Sample total'}</span>
+              <span className="font-mono tabular-nums">
+                <Money valueMinor={totalMinor} />
+              </span>
+            </div>
+            {!singleStudent && preview.willCreate > 1 ? (
+              <p className="border-t border-border px-3 py-1.5 text-[9px] text-muted-foreground">
+                {preview.willCreate} vouchers will be created across the scope.
+              </p>
+            ) : null}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PreviewRow({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: ReactNode;
+  className?: string;
+}) {
+  return (
+    <>
+      <dt className={cn('text-muted-foreground', className)}>{label}</dt>
+      <dd className={cn('truncate font-medium', className)}>{value}</dd>
+    </>
+  );
+}
+
 /** What generation will do, from the endpoint that will do it. */
-function PreviewPanel({
+function PreviewDetails({
   preview,
   error,
   isLoading,
@@ -787,20 +1220,11 @@ function PreviewPanel({
   /** The day arrears are measured against — see the note beside the total. */
   issueDate: string;
 }) {
-  if (!ready) {
-    return (
-      <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-        Choose who to bill, at least one fee and a month. The totals appear here before anything is
-        written.
-      </div>
-    );
-  }
-
   if (error !== undefined) {
     return (
       <div
         role="alert"
-        className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger"
+        className="rounded-lg border border-danger/30 bg-danger/10 p-4 text-sm text-danger"
       >
         {error}
       </div>
@@ -809,7 +1233,7 @@ function PreviewPanel({
 
   if (preview === undefined || isLoading) {
     return (
-      <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
         <SpinnerIcon className={`${ICON_SIZE.inline} animate-spin`} aria-hidden />
         Working out the totals…
       </div>
@@ -821,7 +1245,7 @@ function PreviewPanel({
   const isWholeResult = preview.samples.length >= preview.willCreate;
 
   return (
-    <div className="rounded-xl border border-border bg-card">
+    <div className="rounded-lg border border-border bg-card">
       <div className="border-b border-border px-4 py-3">
         <h2 className="text-base font-medium text-foreground">Before you generate</h2>
         <p className="mt-0.5 text-sm text-muted-foreground">
@@ -974,11 +1398,51 @@ function Row({ label, value, muted }: { label: string; value: number; muted?: bo
   );
 }
 
-/** `2026-09` → `September 2026`. */
-function formatMonth(monthKey: string): string {
+/** `2026-09` → `Sep 2026` for the month grid. */
+function formatMonthShort(monthKey: string): string {
   const [year, month] = monthKey.split('-');
   const date = new Date(Date.UTC(Number(year), Number(month) - 1, 1));
-  return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
+function monthsInSession(
+  session: AcademicSession | undefined,
+): { key: string; label: string }[] {
+  if (session === undefined) {
+    return [];
+  }
+  const result: { key: string; label: string }[] = [];
+  let year = Number(session.startDate.slice(0, 4));
+  let month = Number(session.startDate.slice(5, 7));
+  const endKey = session.endDate.slice(0, 7);
+
+  for (;;) {
+    const key = `${String(year)}-${String(month).padStart(2, '0')}`;
+    result.push({ key, label: formatMonthShort(key) });
+    if (key === endKey) {
+      break;
+    }
+    month += 1;
+    if (month > 12) {
+      month = 1;
+      year += 1;
+    }
+    if (result.length > 24) {
+      break;
+    }
+  }
+  return result;
+}
+
+function initialsFromName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter((part) => part.length > 0);
+  if (parts.length === 0) {
+    return '?';
+  }
+  if (parts.length === 1) {
+    return parts[0]!.slice(0, 2).toUpperCase();
+  }
+  return `${parts[0]![0] ?? ''}${parts[parts.length - 1]![0] ?? ''}`.toUpperCase();
 }
 
 /** Dates are handled as `YYYY-MM-DD` strings throughout, never as local Dates. */

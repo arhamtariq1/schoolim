@@ -69,7 +69,7 @@ export class AttendanceService {
       const classes = await tx.classLevel.findMany({
         where: { isActive: true },
         orderBy: { numericOrder: 'asc' },
-        select: { id: true, name: true },
+        select: { id: true, name: true, numericOrder: true },
       });
 
       // Two grouped queries for the whole screen rather than two per card. A
@@ -110,12 +110,14 @@ export class AttendanceService {
           return {
             classLevelId: entry.id,
             className: entry.name,
+            numericOrder: entry.numericOrder,
             sectionId: null,
             sectionName: null,
             strength: strengthBy.get(entry.id) ?? 0,
             markedAt: stamp === null ? null : stamp.toISOString(),
-            present: total(PRESENT_STATUSES),
+            present: total(['PRESENT', 'HALF_DAY']),
             absent: total(['ABSENT']),
+            late: total(['LATE']),
             leave: total(['LEAVE', 'EXCUSED']),
           };
         }),
@@ -158,6 +160,7 @@ export class AttendanceService {
               firstName: true,
               lastName: true,
               grNo: true,
+              photoUrl: true,
               status: true,
               guardians: {
                 where: { guardian: { relation: 'FATHER' } },
@@ -207,6 +210,7 @@ export class AttendanceService {
             rollNo: enrolment.rollNo,
             sectionId: enrolment.sectionId,
             sectionName: enrolment.section?.name ?? null,
+            photoUrl: enrolment.student.photoUrl,
             status: mark?.status ?? null,
             note: mark?.note ?? null,
           };
@@ -300,8 +304,7 @@ export class AttendanceService {
           ...(query.sectionId === undefined ? {} : { sectionId: query.sectionId }),
           // Anybody enrolled at any point in the month, including a child who
           // left mid-month — their partial month still belongs in the register.
-          OR: [{ endedOn: null }, { endedOn: { gte: new Date(first) } }],
-          enrolledOn: { lte: new Date(last) },
+          ...enrolledDuringMonth(first, last),
           ...(query.q === undefined
             ? {}
             : {
@@ -310,6 +313,16 @@ export class AttendanceService {
                     { firstName: { contains: query.q, mode: 'insensitive' } },
                     { lastName: { contains: query.q, mode: 'insensitive' } },
                     { grNo: { contains: query.q, mode: 'insensitive' } },
+                    {
+                      guardians: {
+                        some: {
+                          guardian: {
+                            relation: 'FATHER',
+                            name: { contains: query.q, mode: 'insensitive' },
+                          },
+                        },
+                      },
+                    },
                   ],
                 },
               }),
@@ -319,7 +332,20 @@ export class AttendanceService {
           rollNo: true,
           enrolledOn: true,
           endedOn: true,
-          student: { select: { id: true, firstName: true, lastName: true, grNo: true } },
+          student: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              grNo: true,
+              photoUrl: true,
+              guardians: {
+                where: { guardian: { relation: 'FATHER' } },
+                take: 1,
+                select: { guardian: { select: { name: true } } },
+              },
+            },
+          },
         },
       });
 
@@ -362,9 +388,12 @@ export class AttendanceService {
             subjectId: enrolment.student.id,
             name: `${enrolment.student.firstName} ${enrolment.student.lastName}`.trim(),
             code: enrolment.student.grNo,
+            fatherName: enrolment.student.guardians[0]?.guardian.name ?? '',
+            photoUrl: enrolment.student.photoUrl,
             days: Object.fromEntries(marks),
             present,
             absent: values.filter((status) => status === 'ABSENT').length,
+            late: values.filter((status) => status === 'LATE').length,
             leave: values.filter((status) => status === 'LEAVE' || status === 'EXCUSED').length,
             expectedDays: expected,
             percentBasisPoints: attendanceBasisPoints(present, expected),
@@ -506,6 +535,14 @@ function enrolledOn(date: string): Record<string, unknown> {
   return {
     OR: [{ enrolledOn: null }, { enrolledOn: { lte: new Date(date) } }],
     AND: [{ OR: [{ endedOn: null }, { endedOn: { gte: new Date(date) } }] }],
+  };
+}
+
+/** Enrolments that overlap a calendar month (same rules as `enrolledOn`, per day). */
+function enrolledDuringMonth(first: string, last: string): Record<string, unknown> {
+  return {
+    OR: [{ enrolledOn: null }, { enrolledOn: { lte: new Date(last) } }],
+    AND: [{ OR: [{ endedOn: null }, { endedOn: { gte: new Date(first) } }] }],
   };
 }
 

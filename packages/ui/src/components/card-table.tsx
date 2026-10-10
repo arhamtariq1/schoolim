@@ -1,7 +1,7 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, type CSSProperties, type ReactNode } from 'react';
 
 import { SortIcon } from '../icons';
 import { cn } from '../lib/cn';
@@ -17,6 +17,12 @@ export type CardTableColumn<TRow> = {
   readonly label: string;
   readonly icon?: LucideIcon;
   readonly render: (row: TRow) => ReactNode;
+  /** Replaces the default text header — e.g. a select-all checkbox. */
+  readonly headerCell?: ReactNode;
+  /** Inline width on `<col>` — use for fixed checkbox columns with `table-fixed`. */
+  readonly colStyle?: CSSProperties;
+  readonly headerClassName?: string;
+  readonly cellClassName?: string;
   readonly align?: 'start' | 'end';
   readonly sortable?: boolean;
   /** Tailwind width class on `<col>` — e.g. `w-[28%]`. */
@@ -35,6 +41,8 @@ export type CardTableProps<TRow> = {
   readonly rowKey: (row: TRow) => string;
   readonly caption?: string;
   readonly minWidthClass?: string;
+  /** `auto` lets content-sized columns (e.g. checkbox + GR) stay tight. Default `fixed`. */
+  readonly tableLayout?: 'fixed' | 'auto';
 
   readonly isLoading?: boolean;
   readonly error?: string | undefined;
@@ -63,6 +71,7 @@ export function CardTable<TRow>({
   rowKey,
   caption,
   minWidthClass = 'min-w-[48rem]',
+  tableLayout = 'fixed',
   isLoading = false,
   error,
   onRetry,
@@ -133,7 +142,11 @@ export function CardTable<TRow>({
           <>
             <div className="hidden overflow-x-auto md:block">
               <table
-                className={cn('w-full table-fixed border-collapse text-sm', minWidthClass)}
+                className={cn(
+                  'w-full border-collapse text-sm',
+                  tableLayout === 'auto' ? 'table-auto' : 'table-fixed',
+                  minWidthClass,
+                )}
               >
                 {caption === undefined ? null : (
                   <caption className="sr-only">{caption}</caption>
@@ -143,13 +156,26 @@ export function CardTable<TRow>({
                     <col
                       key={column.key}
                       className={column.width ?? undefined}
+                      style={column.colStyle}
                     />
                   ))}
                 </colgroup>
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
                     {columns.map((column) =>
-                      column.sortable && sort !== undefined ? (
+                      column.headerCell !== undefined ? (
+                        <th
+                          key={column.key}
+                          scope="col"
+                          className={cn(
+                            'px-4 py-3 align-middle',
+                            column.headerClassName,
+                            column.align === 'end' ? 'text-end' : undefined,
+                          )}
+                        >
+                          {column.headerCell}
+                        </th>
+                      ) : column.sortable && sort !== undefined ? (
                         <CardTableSortHeader
                           key={column.key}
                           label={column.label}
@@ -200,6 +226,7 @@ export function CardTable<TRow>({
                           key={column.key}
                           className={cn(
                             'px-4 py-3 align-middle',
+                            column.cellClassName,
                             column.align === 'end' ? 'text-end' : undefined,
                           )}
                         >
@@ -256,21 +283,21 @@ function CardTableHeaderCell({
     <th
       scope="col"
       className={cn(
-        'px-4 py-3 align-middle text-xs font-medium whitespace-nowrap text-muted-foreground',
+        'px-4 py-3 align-middle whitespace-nowrap text-muted-foreground',
         align === 'end' ? 'text-end' : undefined,
       )}
     >
-      <span
+      <div
         className={cn(
-          'inline-flex w-full items-center gap-2',
+          'inline-flex items-center gap-2',
           align === 'end' ? 'justify-end' : undefined,
         )}
       >
         {Icon === undefined ? null : (
           <Icon className="size-4 shrink-0 opacity-80" aria-hidden="true" />
         )}
-        <span>{label}</span>
-      </span>
+        <span className="text-xs leading-none font-medium">{label}</span>
+      </div>
     </th>
   );
 }

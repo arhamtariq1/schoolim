@@ -36,7 +36,7 @@ export function ListPageToolbar({
         />
       </div>
       {filters === undefined ? null : (
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end lg:shrink-0">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end lg:shrink-0 xl:flex-nowrap">
           {filters}
         </div>
       )}

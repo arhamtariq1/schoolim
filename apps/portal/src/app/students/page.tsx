@@ -1,4 +1,4 @@
-import { MAX_PAGE_LIMIT, ROUTES, type StudentListItem } from '@ilm/contracts';
+import { MAX_PAGE_LIMIT, ROUTES, type StudentListItem, type StudentListQuery } from '@ilm/contracts';
 
 import { StudentsTable } from '@/components/students-table';
 import { apiFetch } from '@/lib/api';
@@ -41,8 +41,15 @@ export default async function StudentsPage({
   // 100,000 must not reach the API as-is.
   const limit = clampInt(params['limit'], PAGE_LIMIT, 1, MAX_PAGE_LIMIT);
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
+  const sort = parseSort(params['sort']);
+  const order = params['order'] === 'desc' ? 'desc' : 'asc';
 
-  const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  const query = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    sort,
+    order,
+  });
   if (search !== '') {
     query.set('q', search);
   }
@@ -94,6 +101,8 @@ export default async function StudentsPage({
         isFiltered={isFiltered}
         limit={result.ok ? result.data.meta.page.limit : limit}
         offset={result.ok ? result.data.meta.page.offset : offset}
+        sort={sort}
+        order={order}
         can={can}
       />
   );
@@ -115,6 +124,21 @@ function SignedOut() {
 
 /** Rows per page. Well under the API's cap of 200 (docs/11 §5). */
 const PAGE_LIMIT = 25;
+
+const SORTABLE: readonly StudentListQuery['sort'][] = [
+  'name',
+  'grNo',
+  'studentCode',
+  'className',
+  'createdAt',
+];
+
+function parseSort(raw: string | string[] | undefined): StudentListQuery['sort'] {
+  const value = typeof raw === 'string' ? raw : '';
+  return SORTABLE.includes(value as StudentListQuery['sort'])
+    ? (value as StudentListQuery['sort'])
+    : 'name';
+}
 
 /**
  * Read a query-string integer that a person may have typed.

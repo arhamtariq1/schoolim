@@ -2,7 +2,7 @@ import { ROUTES, type MonthlyReport } from '@ilm/contracts';
 import { systemClock } from '@ilm/utils';
 import type { Metadata } from 'next';
 
-import { AttendanceMonthGrid } from '@/components/attendance-month-grid';
+import { MonthlyAttendanceReportView } from '@/components/monthly-attendance-report-view';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -42,12 +42,11 @@ export default async function StudentReportPage({
 
   return (
     <div className="space-y-6">
-        <AttendanceMonthGrid
+        <MonthlyAttendanceReportView
+          variant="student"
           report={report}
           basePath={`/attendance/reports/students/${classLevelId}`}
           filters={{ month, q }}
-          heading={report.title === '' ? 'Attendance' : `${report.title} attendance`}
-          codeLabel="GR"
           error={result.ok ? undefined : result.message}
         />
       </div>

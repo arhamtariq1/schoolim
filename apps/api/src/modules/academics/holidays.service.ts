@@ -1,4 +1,10 @@
-import { type CreateHoliday, type Holiday, type UpdateHoliday } from '@ilm/contracts';
+import {
+  HOLIDAY_COLOR_KEYS,
+  type CreateHoliday,
+  type Holiday,
+  type HolidayColorKey,
+  type UpdateHoliday,
+} from '@ilm/contracts';
 import { calendarDate, daysBetween } from '@ilm/utils';
 import { Injectable } from '@nestjs/common';
 
@@ -44,6 +50,7 @@ export class HolidaysService {
           appliesTo: true,
           startDate: true,
           endDate: true,
+          colorKey: true,
           notes: true,
         },
       });
@@ -76,6 +83,7 @@ export class HolidaysService {
           appliesTo: input.appliesTo,
           startDate: start,
           endDate: end,
+          colorKey: input.colorKey ?? 'rose',
           ...(input.notes === undefined || input.notes === '' ? {} : { notes: input.notes }),
         } as never,
         select: {
@@ -86,6 +94,7 @@ export class HolidaysService {
           appliesTo: true,
           startDate: true,
           endDate: true,
+          colorKey: true,
           notes: true,
         },
       });
@@ -129,6 +138,7 @@ export class HolidaysService {
           ...(input.appliesTo === undefined ? {} : { appliesTo: input.appliesTo }),
           ...(input.startDate === undefined ? {} : { startDate: start }),
           ...(input.endDate === undefined ? {} : { endDate: end }),
+          ...(input.colorKey === undefined ? {} : { colorKey: input.colorKey }),
           ...(input.notes === undefined ? {} : { notes: input.notes }),
         },
         select: {
@@ -139,6 +149,7 @@ export class HolidaysService {
           appliesTo: true,
           startDate: true,
           endDate: true,
+          colorKey: true,
           notes: true,
         },
       });
@@ -192,6 +203,7 @@ function toHoliday(row: {
   appliesTo: Holiday['appliesTo'];
   startDate: Date;
   endDate: Date;
+  colorKey: string;
   notes: string | null;
 }): Holiday {
   return {
@@ -202,6 +214,7 @@ function toHoliday(row: {
     appliesTo: row.appliesTo,
     startDate: iso(row.startDate),
     endDate: iso(row.endDate),
+    colorKey: parseColorKey(row.colorKey ?? 'rose'),
     notes: row.notes,
     // Inclusive: 1 June to 1 June is one day, not zero.
     //
@@ -215,4 +228,11 @@ function toHoliday(row: {
 /** `@db.Date` comes back at UTC midnight; the calendar day is its ISO prefix. */
 function iso(value: Date): string {
   return value.toISOString().slice(0, 10);
+}
+
+function parseColorKey(value: string): HolidayColorKey {
+  if ((HOLIDAY_COLOR_KEYS as readonly string[]).includes(value)) {
+    return value as HolidayColorKey;
+  }
+  return 'rose';
 }

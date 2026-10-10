@@ -233,12 +233,12 @@ function offsetDate(iso: string, days: number): string {
 function demoHolidays(todayDate: string): Holiday[] {
   const year = todayDate.slice(0, 4);
   return [
-    holiday('01', 'Eid ul-Fitr break', `${year}-03-31`, `${year}-04-04`, 'HOLIDAY'),
-    holiday('02', 'Summer vacation', `${year}-06-01`, `${year}-08-15`, 'VACATION'),
-    holiday('03', 'Independence Day', `${year}-08-14`, `${year}-08-14`, 'HOLIDAY'),
-    holiday('04', 'Defence Day', `${year}-09-06`, `${year}-09-06`, 'HOLIDAY'),
-    holiday('05', 'Mid-term break', `${year}-10-20`, `${year}-10-24`, 'VACATION'),
-    holiday('06', 'Quaid-e-Azam Day', `${year}-12-25`, `${year}-12-25`, 'HOLIDAY'),
+    holiday('01', 'Eid ul-Fitr break', `${year}-03-31`, `${year}-04-04`, 'HOLIDAY', 'rose'),
+    holiday('02', 'Summer vacation', `${year}-06-01`, `${year}-08-15`, 'VACATION', 'violet'),
+    holiday('03', 'Independence Day', `${year}-08-14`, `${year}-08-14`, 'HOLIDAY', 'amber'),
+    holiday('04', 'Defence Day', `${year}-09-06`, `${year}-09-06`, 'HOLIDAY', 'sky'),
+    holiday('05', 'Mid-term break', `${year}-10-20`, `${year}-10-24`, 'VACATION', 'teal'),
+    holiday('06', 'Quaid-e-Azam Day', `${year}-12-25`, `${year}-12-25`, 'HOLIDAY', 'emerald'),
   ];
 }
 
@@ -248,6 +248,7 @@ function holiday(
   startDate: string,
   endDate: string,
   type: Holiday['type'],
+  colorKey: Holiday['colorKey'],
 ): Holiday {
   const start = new Date(`${startDate}T00:00:00Z`);
   const end = new Date(`${endDate}T00:00:00Z`);
@@ -261,6 +262,7 @@ function holiday(
     appliesTo: 'ALL',
     startDate,
     endDate,
+    colorKey,
     notes: null,
     days,
   };

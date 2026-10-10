@@ -1,7 +1,7 @@
 import { ROUTES, type ClassOverview } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
-import { AttendanceClassGrid } from '@/components/attendance-class-grid';
+import { AttendanceClassOverviewTable } from '@/components/attendance-class-overview-table';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -38,14 +38,16 @@ export default async function MarkStudentAttendancePage({
 
   return (
     <div className="space-y-6">
-        <AttendanceClassGrid
+        <AttendanceClassOverviewTable
           overview={result.ok ? result.data.data : EMPTY}
           hrefPrefix="/attendance/mark/students"
           hrefSuffix={date === '' ? '' : `?date=${date}`}
           actionLabel="Mark attendance"
+          reviewLabel="View / Edit"
           title="Mark student attendance"
           description="Pick a class. Everyone starts present, so you only tap the exceptions."
           basePath="/attendance/mark/students"
+          reportHrefPrefix="/attendance/reports/students"
           error={result.ok ? undefined : result.message}
         />
       </div>

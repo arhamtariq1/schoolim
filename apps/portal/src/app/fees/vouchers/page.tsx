@@ -33,9 +33,10 @@ export default async function VouchersPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+  const qParam = readParam(params, 'q');
+  const grNoParam = readParam(params, 'grNo');
   const filters = {
-    q: readParam(params, 'q'),
-    grNo: readParam(params, 'grNo'),
+    q: qParam !== '' ? qParam : grNoParam,
     sessionId: readParam(params, 'sessionId'),
     classLevelId: readParam(params, 'classLevelId'),
     status: readParam(params, 'status'),

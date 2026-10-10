@@ -109,6 +109,8 @@ export type DayStatus = z.infer<typeof dayStatusSchema>;
 export const classAttendanceCardSchema = z.object({
   classLevelId: idSchema,
   className: z.string(),
+  /** Promotion sequence — same order as the Classes screen. */
+  numericOrder: z.int(),
   sectionId: idSchema.nullable(),
   sectionName: z.string().nullable(),
   strength: z.int().min(0),
@@ -116,6 +118,7 @@ export const classAttendanceCardSchema = z.object({
   markedAt: z.string().nullable(),
   present: z.int().min(0),
   absent: z.int().min(0),
+  late: z.int().min(0),
   leave: z.int().min(0),
 });
 
@@ -148,6 +151,7 @@ export const rosterEntrySchema = z.object({
   rollNo: z.int().nullable(),
   sectionId: idSchema.nullable(),
   sectionName: z.string().nullable(),
+  photoUrl: z.string().nullable(),
   /** What is already recorded for this date, if anything. */
   status: attendanceStatusSchema.nullable(),
   note: z.string().nullable(),
@@ -223,6 +227,7 @@ export const staffRosterEntrySchema = z.object({
   name: z.string(),
   email: z.string().nullable(),
   role: z.string(),
+  photoUrl: z.string().nullable(),
   status: staffAttendanceStatusSchema.nullable(),
   note: z.string().nullable(),
 });
@@ -290,7 +295,11 @@ export const monthlyRowSchema = z.object({
   days: z.record(z.string(), z.string()),
   present: z.int().min(0),
   absent: z.int().min(0),
+  late: z.int().min(0),
   leave: z.int().min(0),
+  /** Father name on student class reports; omitted for staff. */
+  fatherName: z.string().optional(),
+  photoUrl: z.string().nullable().optional(),
   /** Days this person could have attended. The percentage denominator. */
   expectedDays: z.int().min(0),
   /** Basis points, so no float reaches the wire. 9250 is 92.50%. */

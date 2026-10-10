@@ -1,7 +1,7 @@
 import { ROUTES, type ClassOverview } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
-import { AttendanceClassGrid } from '@/components/attendance-class-grid';
+import { AttendanceClassReportTable } from '@/components/attendance-class-report-table';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -24,14 +24,11 @@ export default async function StudentReportIndexPage() {
 
   return (
     <div className="space-y-6">
-        <AttendanceClassGrid
+        <AttendanceClassReportTable
           overview={result.ok ? result.data.data : EMPTY}
           hrefPrefix="/attendance/reports/students"
-          actionLabel="View report"
           title="Student attendance report"
           description="A month at a time, per class, with the percentage worked out against the days each child could actually have attended."
-          showDatePicker={false}
-          basePath="/attendance/reports/students"
           error={result.ok ? undefined : result.message}
         />
       </div>
