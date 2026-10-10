@@ -6,6 +6,7 @@ import {
   ROUTES,
   type AcademicSession,
   type ClassLevel,
+  type SchoolLevelId,
   type Section,
 } from '@ilm/contracts';
 import {
@@ -18,39 +19,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  EmptyState,
   Field,
   Input,
   SimpleSelect,
-  StatusBadge,
   useToast,
 } from '@ilm/ui';
-import { CreateIcon, DeleteIcon, EditIcon, ICON_SIZE, SortIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
+import { ClassesTable } from '@/components/classes-table';
 import { mutate } from '@/lib/mutate';
-
-/**
- * Classes and their sections.
- *
- * ## Why one screen and not two
- *
- * A class with no sections cannot hold a student, so "add a class" and "add its
- * sections" are one job that happens to touch two tables. Splitting them across
- * pages means a school sets up twelve classes, leaves, and discovers at
- * admission time that none of them can be enrolled into.
- *
- * Sections are rendered as chips on the class row rather than in a second
- * table: a class has two or three of them, and a table of 36 rows to express
- * "twelve classes × three sections" is a worse view of the same fact.
- *
- * ## Sessions
- *
- * Sections belong to a session, so this page has a session picker and it is not
- * cosmetic — a school sets up next year's sections while this year is running,
- * and a page that could only show the current year could not be used for that.
- */
 
 export interface ClassesManagerProps {
   classes: ClassLevel[];
@@ -58,8 +36,8 @@ export interface ClassesManagerProps {
   activeSessionId: string | undefined;
   error?: string | undefined;
   canConfigure: boolean;
-  /** `students.student.update` — renumbering rewrites children’s enrolments. */
   canRenumber: boolean;
+  enabledSchoolLevels: SchoolLevelId[];
 }
 
 export function ClassesManager({
@@ -69,12 +47,12 @@ export function ClassesManager({
   error,
   canConfigure,
   canRenumber,
+  enabledSchoolLevels,
 }: ClassesManagerProps) {
   const router = useRouter();
   const toast = useToast();
 
   const [editingClass, setEditingClass] = useState<ClassLevel | undefined>(undefined);
-  const [creatingClass, setCreatingClass] = useState(false);
   const [sectionFor, setSectionFor] = useState<ClassLevel | undefined>(undefined);
   const [editingSection, setEditingSection] = useState<
     { section: Section; className: string } | undefined
@@ -95,11 +73,7 @@ export function ClassesManager({
     const result = await mutate(path, 'DELETE');
 
     if (!result.ok) {
-      // Thrown rather than toasted so the dialog stays open with the reason —
-      // "31 students are in this section" is the answer to the question the
-      // person just asked, and closing the dialog hides it.
       toast.error(result.message);
-      setDeleting(undefined);
       return;
     }
 
@@ -108,21 +82,13 @@ export function ClassesManager({
     router.refresh();
   }
 
-  /**
-   * Put a section's register back in alphabetical order, 1..n.
-   *
-   * Rolls are handed out in the order children are admitted, so by the time a
-   * class is full its register reads in whatever order the front desk took them
-   * — which is no order at all to call a name from. Most schools renumber once
-   * the class settles, and again after promotion.
-   *
-   * It is not a confirmation dialog: nothing is lost, the result is visible
-   * immediately on the register, and pressing it again is harmless.
-   */
-  async function renumber(sectionId: string, className: string, sectionName: string) {
-    setRenumbering(sectionId);
+  async function renumberSection(
+    className: string,
+    section: { id: string; name: string },
+  ): Promise<void> {
+    setRenumbering(section.id);
     const result = await mutate<{ renumbered: number }>(
-      ROUTES.academics.renumberSection(sectionId),
+      ROUTES.academics.renumberSection(section.id),
       'POST',
     );
     setRenumbering(undefined);
@@ -133,7 +99,7 @@ export function ClassesManager({
     }
 
     toast.success(
-      `${className} — ${sectionName} renumbered`,
+      `${className} — ${section.name} renumbered`,
       result.data.renumbered === 0
         ? 'There is nobody in this section yet.'
         : `${String(result.data.renumbered)} students, roll 1 to ${String(result.data.renumbered)}, in name order.`,
@@ -151,215 +117,59 @@ export function ClassesManager({
     router.push(`${url.pathname}${url.search}`);
   }
 
-  const totalSections = classes.reduce((sum, entry) => sum + entry.sections.length, 0);
-
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Classes</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {classes.length} {classes.length === 1 ? 'class' : 'classes'} · {totalSections}{' '}
-            {totalSections === 1 ? 'section' : 'sections'} in this session
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {sessions.length > 0 ? (
-            <div className="w-52">
-              <SimpleSelect
-                value={activeSessionId ?? ''}
-                onValueChange={changeSession}
-                options={sessions.map((entry) => ({
-                  value: entry.id,
-                  label: entry.isCurrent ? `${entry.name} (current)` : entry.name,
-                }))}
-                ariaLabel="Session"
-              />
-            </div>
-          ) : null}
-
-          {canConfigure ? (
-            <Button
-              onClick={() => {
-                setCreatingClass(true);
-              }}
-            >
-              <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-              Add class
-            </Button>
-          ) : null}
-        </div>
-      </header>
-
-      {error !== undefined ? (
-        <div
-          role="alert"
-          className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
-        >
-          {error}
-        </div>
-      ) : classes.length === 0 ? (
-        <EmptyState
-          title="No classes yet"
-          description="A class is a grade — Nursery, Grade 1, Grade 10. Sections come next, and students are admitted into those."
-          action={
-            canConfigure ? (
-              <Button
-                onClick={() => {
-                  setCreatingClass(true);
-                }}
-              >
-                <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-                Add the first class
-              </Button>
-            ) : undefined
+    <>
+      <ClassesTable
+        classes={classes}
+        sessions={sessions.map((entry) => ({
+          id: entry.id,
+          name: entry.name,
+          isCurrent: entry.isCurrent,
+        }))}
+        activeSessionId={activeSessionId}
+        onSessionChange={changeSession}
+        error={error}
+        canConfigure={canConfigure}
+        onAddSection={(entry) => {
+          setSectionFor(entry);
+        }}
+        onEditClass={(entry) => {
+          setEditingClass(entry);
+        }}
+        onEditSection={(entry, sectionId) => {
+          const section = entry.sections.find((row) => row.id === sectionId);
+          if (section === undefined) {
+            return;
           }
-        />
-      ) : (
-        <ul className="space-y-3">
-          {classes.map((entry) => (
-            <li
-              key={entry.id}
-              className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-base font-medium text-foreground">{entry.name}</h2>
-                    {entry.isActive ? null : <StatusBadge tone="neutral">Off</StatusBadge>}
-                  </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Order {entry.numericOrder} ·{' '}
-                    {entry.studentCount === 0
-                      ? 'no students yet'
-                      : `${String(entry.studentCount)} enrolled, all sessions`}
-                  </p>
-                </div>
+          setEditingSection({ section, className: entry.name });
+        }}
+        onDeleteClass={(entry) => {
+          setDeleting({ kind: 'class', id: entry.id, label: entry.name });
+        }}
+        onDeleteSection={(entry, section) => {
+          setDeleting({
+            kind: 'section',
+            id: section.id,
+            label: `Section ${section.name} (${entry.name})`,
+          });
+        }}
+        canRenumber={canRenumber}
+        renumberingSectionId={renumbering}
+        onRenumberSection={(entry, section) => {
+          void renumberSection(entry.name, section);
+        }}
+        enabledSchoolLevels={enabledSchoolLevels}
+      />
 
-                {canConfigure ? (
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Button
-                      tone="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSectionFor(entry);
-                      }}
-                    >
-                      <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-                      Section
-                    </Button>
-                    <Button
-                      tone="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditingClass(entry);
-                      }}
-                    >
-                      <EditIcon className={ICON_SIZE.inline} aria-hidden />
-                      Edit
-                    </Button>
-                    {/* Absent once anyone has ever been enrolled — the server
-                        refuses, and offering a control that always fails is
-                        worse than not offering it (docs/16 §7). */}
-                    {entry.studentCount === 0 ? (
-                      <Button
-                        tone="ghost"
-                        size="sm"
-                        aria-label={`Delete ${entry.name}`}
-                        onClick={() => {
-                          setDeleting({ kind: 'class', id: entry.id, label: entry.name });
-                        }}
-                      >
-                        <DeleteIcon className={`${ICON_SIZE.inline} text-danger`} aria-hidden />
-                      </Button>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {entry.sections.length === 0 ? (
-                  <p className="text-sm text-warning">
-                    No sections in this session — students cannot be admitted into this class yet.
-                  </p>
-                ) : (
-                  entry.sections.map((section) => (
-                    <span
-                      key={section.id}
-                      className="group inline-flex items-center gap-2 rounded-full border border-border bg-muted/40 py-1 ps-3 pe-1 text-sm"
-                    >
-                      <span className="font-medium">{section.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {section.studentCount}
-                        {section.capacity === null ? '' : `/${String(section.capacity)}`}
-                      </span>
-                      {!canRenumber || section.studentCount === 0 ? null : (
-                        <button
-                          type="button"
-                          aria-label={`Renumber roll numbers in section ${section.name}`}
-                          title="Renumber rolls 1…n in name order"
-                          disabled={renumbering !== undefined}
-                          className="rounded-full p-1 text-muted-foreground hover:bg-background hover:text-foreground disabled:opacity-50"
-                          onClick={() => {
-                            void renumber(section.id, entry.name, section.name);
-                          }}
-                        >
-                          <SortIcon className="size-3.5" aria-hidden />
-                        </button>
-                      )}
-                      {canConfigure ? (
-                        <span className="flex items-center">
-                          <button
-                            type="button"
-                            aria-label={`Edit section ${section.name}`}
-                            className="rounded-full p-1 text-muted-foreground hover:bg-background hover:text-foreground"
-                            onClick={() => {
-                              setEditingSection({ section, className: entry.name });
-                            }}
-                          >
-                            <EditIcon className="size-3.5" aria-hidden />
-                          </button>
-                          {section.studentCount === 0 ? (
-                            <button
-                              type="button"
-                              aria-label={`Delete section ${section.name}`}
-                              className="rounded-full p-1 text-muted-foreground hover:bg-background hover:text-danger"
-                              onClick={() => {
-                                setDeleting({
-                                  kind: 'section',
-                                  id: section.id,
-                                  label: `Section ${section.name}`,
-                                });
-                              }}
-                            >
-                              <DeleteIcon className="size-3.5" aria-hidden />
-                            </button>
-                          ) : null}
-                        </span>
-                      ) : null}
-                    </span>
-                  ))
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {creatingClass || editingClass !== undefined ? (
+      {editingClass === undefined ? null : (
         <ClassDialog
-          key={editingClass?.id ?? 'new'}
+          key={editingClass.id}
           editing={editingClass}
-          suggestedOrder={
-            classes.length === 0 ? 0 : Math.max(...classes.map((c) => c.numericOrder)) + 1
-          }
           onClose={() => {
-            setCreatingClass(false);
             setEditingClass(undefined);
           }}
         />
-      ) : null}
+      )}
 
       {sectionFor !== undefined || editingSection !== undefined ? (
         <SectionDialog
@@ -392,46 +202,34 @@ export function ClassesManager({
         tone="danger"
         onConfirm={confirmDelete}
       />
-    </div>
+    </>
   );
 }
 
-/** Add or rename a class. Same dialog for both, keyed so defaults reset. */
 function ClassDialog({
   editing,
-  suggestedOrder,
   onClose,
 }: {
-  editing: ClassLevel | undefined;
-  suggestedOrder: number;
+  editing: ClassLevel;
   onClose: () => void;
 }) {
   const router = useRouter();
   const toast = useToast();
 
-  const [name, setName] = useState(editing?.name ?? '');
-  const [order, setOrder] = useState(String(editing?.numericOrder ?? suggestedOrder));
+  const [name, setName] = useState(editing.name);
+  const [order, setOrder] = useState(String(editing.numericOrder));
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [isPending, setIsPending] = useState(false);
 
-  // The dialog is mounted once and reused, so its fields are reset when it
-  // opens rather than relying on a remount that does not happen.
-  function reset() {
-    setName(editing?.name ?? '');
-    setOrder(String(editing?.numericOrder ?? suggestedOrder));
+  useEffect(() => {
+    setName(editing.name);
+    setOrder(String(editing.numericOrder));
     setFieldErrors({});
     setFormError(undefined);
-  }
+  }, [editing.id, editing.name, editing.numericOrder]);
 
-  // Run once, on mount. The dialog is mounted fresh for each row (its call site
-  // keys it by id), so this is the prefill — and it replaces a `reset()` hung
-  // off `onOpenChange(true)`, which Radix only fires for a dialog that opens
-  // itself. Opened from a row's Edit button, that callback never ran and the
-  // form kept whatever was last typed into it.
-  useEffect(reset, []);
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setFieldErrors({});
     setFormError(undefined);
@@ -439,9 +237,8 @@ function ClassDialog({
     const parsed = createClassLevelSchema.safeParse({
       name,
       numericOrder: Number(order),
-      isActive: editing?.isActive ?? true,
+      isActive: editing.isActive,
     });
-
     if (!parsed.success) {
       const next: Record<string, string> = {};
       for (const issue of parsed.error.issues) {
@@ -452,94 +249,63 @@ function ClassDialog({
     }
 
     setIsPending(true);
-    const result =
-      editing === undefined
-        ? await mutate(ROUTES.academics.classes, 'POST', parsed.data)
-        : await mutate(ROUTES.academics.class(editing.id), 'PATCH', parsed.data);
+    const result = await mutate(ROUTES.academics.class(editing.id), 'PATCH', parsed.data);
     setIsPending(false);
 
     if (!result.ok) {
       setFormError(result.message);
-      setFieldErrors(result.fieldErrors);
       return;
     }
 
-    toast.success(
-      editing === undefined ? `${parsed.data.name} added` : `${parsed.data.name} saved`,
-    );
+    toast.success('Class updated.');
     onClose();
     router.refresh();
   }
 
   return (
-    <Dialog
-      open
-      onOpenChange={(next) => {
-        if (!next) {
-          onClose();
-        }
-      }}
-    >
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit class</DialogTitle>
+          <DialogDescription>Rename or re-order this class in the promotion sequence.</DialogDescription>
+        </DialogHeader>
         <form
           onSubmit={(event) => {
             void submit(event);
           }}
           noValidate
         >
-          <DialogHeader>
-            <DialogTitle>
-              {editing === undefined ? 'Add a class' : `Edit ${editing.name}`}
-            </DialogTitle>
-            <DialogDescription>
-              A grade the school teaches. Sections are added to it next.
-            </DialogDescription>
-          </DialogHeader>
-
           <DialogBody className="space-y-4">
             {formError === undefined ? null : (
-              <div
-                role="alert"
-                className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
-              >
+              <p role="alert" className="text-sm text-danger">
                 {formError}
-              </div>
+              </p>
             )}
-
-            <Field label="Class name" error={fieldErrors['name']} required>
+            <Field label="Name" error={fieldErrors['name']} required>
               <Input
                 value={name}
-                autoFocus
-                placeholder="Grade 1"
                 onChange={(event) => {
                   setName(event.target.value);
                 }}
               />
             </Field>
-
-            <Field
-              label="Order"
-              error={fieldErrors['numericOrder']}
-              hint="Sorts the list and drives promotion. Nursery 0, Grade 1 is 1, and so on — alphabetical would put Grade 10 before Grade 2."
-              required
-            >
+            <Field label="Sort order" error={fieldErrors['numericOrder']} hint="Used for promotion.">
               <Input
                 value={order}
                 inputMode="numeric"
-                className="w-24 text-right font-mono tabular-nums"
+                className="w-24 font-mono tabular-nums"
                 onChange={(event) => {
                   setOrder(event.target.value);
                 }}
               />
             </Field>
           </DialogBody>
-
           <DialogFooter>
             <Button type="button" tone="outline" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" isPending={isPending}>
-              {editing === undefined ? 'Add class' : 'Save changes'}
+              Save changes
             </Button>
           </DialogFooter>
         </form>
@@ -548,7 +314,6 @@ function ClassDialog({
   );
 }
 
-/** Add a section to a class, or edit one — including moving it to another class. */
 function SectionDialog({
   forClass,
   editing,
@@ -588,11 +353,6 @@ function SectionDialog({
     setFormError(undefined);
   }
 
-  // Run once, on mount. The dialog is mounted fresh for each row (its call site
-  // keys it by id), so this is the prefill — and it replaces a `reset()` hung
-  // off `onOpenChange(true)`, which Radix only fires for a dialog that opens
-  // itself. Opened from a row's Edit button, that callback never ran and the
-  // form kept whatever was last typed into it.
   useEffect(reset, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -634,8 +394,6 @@ function SectionDialog({
     } else {
       result = await mutate(ROUTES.academics.section(editing.section.id), 'PATCH', {
         name,
-        // `null` clears the limit; `undefined` would leave it untouched, and
-        // the two must not collapse or a capacity can never be removed.
         capacity: capacityValue ?? null,
         ...(classLevelId === '' ? {} : { classLevelId }),
       });
@@ -645,92 +403,72 @@ function SectionDialog({
 
     if (!result.ok) {
       setFormError(result.message);
-      setFieldErrors(result.fieldErrors);
       return;
     }
 
-    toast.success(editing === undefined ? `Section ${name} added` : `Section ${name} saved`);
+    toast.success(editing === undefined ? 'Section added.' : 'Section updated.');
     onClose();
     router.refresh();
   }
 
   return (
-    <Dialog
-      open
-      onOpenChange={(next) => {
-        if (!next) {
-          onClose();
-        }
-      }}
-    >
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{editing === undefined ? 'Add section' : 'Edit section'}</DialogTitle>
+          <DialogDescription>
+            {editing === undefined
+              ? 'Students are admitted into a section within the selected session.'
+              : `Section in ${editing.className}.`}
+          </DialogDescription>
+        </DialogHeader>
         <form
           onSubmit={(event) => {
             void submit(event);
           }}
           noValidate
         >
-          <DialogHeader>
-            <DialogTitle>
-              {editing === undefined
-                ? `Add a section to ${forClass?.name ?? ''}`
-                : `Edit section ${editing.section.name}`}
-            </DialogTitle>
-            <DialogDescription>
-              Sections belong to one session, so this one is created in the session shown on the
-              page.
-            </DialogDescription>
-          </DialogHeader>
-
           <DialogBody className="space-y-4">
             {formError === undefined ? null : (
-              <div
-                role="alert"
-                className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
-              >
+              <p role="alert" className="text-sm text-danger">
                 {formError}
-              </div>
+              </p>
             )}
-
+            {editing === undefined ? (
+              <Field label="Class" error={fieldErrors['classLevelId']} required>
+                <SimpleSelect
+                  value={classLevelId}
+                  onValueChange={setClassLevelId}
+                  options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
+                  placeholder="Choose class"
+                  ariaLabel="Class"
+                />
+              </Field>
+            ) : null}
             <Field label="Section name" error={fieldErrors['name']} required>
               <Input
                 value={name}
-                autoFocus
                 placeholder="A"
                 onChange={(event) => {
                   setName(event.target.value);
                 }}
               />
             </Field>
-
             <Field
               label="Capacity"
+              hint="Optional maximum students."
               error={fieldErrors['capacity']}
-              hint="Optional. Leave blank for no limit."
             >
               <Input
                 value={capacity}
                 inputMode="numeric"
-                placeholder="30"
-                className="w-28 text-right font-mono tabular-nums"
+                placeholder="No limit"
                 onChange={(event) => {
                   setCapacity(event.target.value);
                 }}
               />
             </Field>
-
-            {editing === undefined ? null : (
-              <Field label="Class" hint="Moving a section takes its students with it.">
-                <SimpleSelect
-                  value={classLevelId}
-                  onValueChange={setClassLevelId}
-                  options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
-                  ariaLabel="Class"
-                />
-              </Field>
-            )}
           </DialogBody>
-
           <DialogFooter>
             <Button type="button" tone="outline" onClick={onClose}>
               Cancel

@@ -121,8 +121,6 @@ export interface AppShellProps {
   brandColor?: string | undefined;
   /** Latest school logo metadata — loaded with the shell, updated in place on upload. */
   schoolLogo?: SchoolLogoInfo | undefined;
-  /** Setup-style pages: no max-width column — content aligns with the shell edge. */
-  contentWidth?: 'default' | 'full';
   children: ReactNode;
 }
 
@@ -138,7 +136,6 @@ export function AppShell({
   unverifiedEmail,
   brandColor,
   schoolLogo: initialSchoolLogo,
-  contentWidth = 'default',
   children,
 }: AppShellProps) {
   const items = visibleNavItems(permissions);
@@ -248,21 +245,11 @@ export function AppShell({
             ref={scrollport}
             className="scrollbar-hidden min-w-0 flex-1 overflow-y-auto overscroll-y-contain bg-muted/30"
           >
-            {/* Padding is decided here and nowhere else.
-
-                The two widths used to disagree about it: `default` padded and
-                `full` did not, so every screen that asked for the full width
-                sat flush against the sidebar and ran off the right edge — and
-                the dashboard quietly grew its own padding to compensate, which
-                is how one rule becomes two. The only difference between the
-                branches now is the maximum width. */}
-            <div
-              className={
-                contentWidth === 'full'
-                  ? `w-full ${CONTENT_PADDING}`
-                  : `mx-auto w-full max-w-6xl space-y-6 ${CONTENT_PADDING} xl:max-w-7xl 2xl:max-w-[84rem]`
-              }
-            >
+            {/* Padding is decided here and nowhere else. Workspace pages use the
+                full width beside the sidebar — tables and dashboards need the
+                room on large monitors, and a centred max-width column left half
+                the canvas empty. */}
+            <div className={`w-full space-y-6 ${CONTENT_PADDING}`}>
               {unverifiedEmail === undefined ? null : <VerifyEmailBanner email={unverifiedEmail} />}
               {children}
             </div>

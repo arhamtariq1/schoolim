@@ -5,6 +5,7 @@ import '@/app/globals.css';
 import { ToastProvider } from '@ilm/ui';
 import { BRAND } from '@ilm/utils';
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import type { ReactNode } from 'react';
 
 import { DashboardChrome } from '@/components/dashboard-chrome';
@@ -52,23 +53,13 @@ export const viewport: Viewport = {
  * privacy configurations, and a thrown error here would block the whole
  * document.
  */
-const NO_FLASH = `
-try {
-  var stored = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
-  var dark = stored === 'dark';
-  if (dark) document.documentElement.classList.add('dark');
-  document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
-} catch (e) {}
-`;
+const NO_FLASH = `(function(){try{var stored=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});var dark=stored==='dark';if(dark)document.documentElement.classList.add('dark');document.documentElement.style.colorScheme=dark?'dark':'light';}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     // `dir` is set here rather than hard-coded in components so an Urdu tenant
     // flips to RTL without touching one (docs/16 §14).
     <html lang="en" dir="ltr" suppressHydrationWarning className={sansFont.variable}>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: NO_FLASH }} />
-      </head>
       {/*
         No `min-h-dvh` here, on purpose.
 
@@ -85,6 +76,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         document scrolls only when a page genuinely has more than fits.
       */}
       <body className={`${sansFont.className} bg-background text-foreground antialiased`}>
+        <Script id="theme-no-flash" strategy="beforeInteractive">
+          {NO_FLASH}
+        </Script>
         {/* At the root, not per page: a toast fired while navigating away must
             outlive the page that fired it, or the confirmation of what someone
             just did disappears with the screen they did it on. */}

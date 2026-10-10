@@ -40,19 +40,11 @@ export async function DashboardChrome({ children }: { children: ReactNode }) {
     redirect('/profile/create');
   }
 
-  const contentWidth =
-    innerPath === '/' ||
-    innerPath === '/profile' ||
-    innerPath === '/profile/edit' ||
-    innerPath === '/profile/create'
-      ? 'full'
-      : 'default';
-
   const logoResult = await apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info);
   const schoolLogo: SchoolLogoInfo = logoResult.ok ? logoResult.data.data : ABSENT_SCHOOL_LOGO;
 
   return (
-    <AppShell {...appShellPropsFromSession(session, { contentWidth, schoolLogo })}>
+    <AppShell {...appShellPropsFromSession(session, { schoolLogo })}>
       {children}
     </AppShell>
   );

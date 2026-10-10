@@ -6,7 +6,6 @@ import type { AppShellProps } from '@/components/app-shell';
 export function appShellPropsFromSession(
   session: SessionUser,
   options?: {
-    contentWidth?: AppShellProps['contentWidth'];
     schoolLogo?: SchoolLogoInfo;
   },
 ): Omit<AppShellProps, 'children'> {
@@ -22,6 +21,5 @@ export function appShellPropsFromSession(
     unverifiedEmail: session.emailVerified ? undefined : session.email,
     brandColor: session.school.primaryColor ?? undefined,
     schoolLogo: options?.schoolLogo,
-    contentWidth: options?.contentWidth ?? 'default',
   };
 }

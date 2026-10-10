@@ -276,11 +276,9 @@ export function ProfileSchoolEditorFields({
   );
 }
 
-export function parseSchoolLevels(values: readonly string[]): SchoolLevelId[] {
-  return values.filter((value): value is SchoolLevelId =>
-    (SCHOOL_LEVEL_IDS as readonly string[]).includes(value),
-  );
-}
+import { parseSchoolLevels } from '@/lib/parse-school-levels';
+
+export { parseSchoolLevels };
 
 export function schoolValuesFromProfile(
   profile: {
