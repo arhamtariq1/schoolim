@@ -27,7 +27,6 @@ import {
   Field,
   Input,
   Money,
-  Pagination,
   SimpleSelect,
   StatusBadge,
   Textarea,
@@ -38,9 +37,11 @@ import {
 import {
   AccountIcon,
   CalendarIcon,
+  ClassIcon,
   DepositIcon,
   FeesIcon,
   ICON_SIZE,
+  SuccessIcon,
   MoreIcon,
   PhoneIcon,
   RefundIcon,
@@ -58,8 +59,13 @@ import {
   feeListTableHeader,
   useDebouncedSearchFilter,
 } from '@/components/fees/fee-list-shared';
+import { ListDataTable } from '@/components/list-data-table';
+import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
+import { ListTableScreen } from '@/components/list-table-screen';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { TableSelectionBar } from '@/components/table-selection-bar';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
 import { pageIntro } from '@/lib/page-copy';
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
@@ -140,6 +146,15 @@ export function SecurityDepositsView({
 
   const isFiltered = Object.values(filters).some((value) => value !== '');
 
+  const {
+    selected,
+    clearSelection,
+    allOnPageSelected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  } = useRowSelection(page.rows, (row) => row.id);
+
   function toggleSort(columnKey: string) {
     const next = nextSortParams(sort, order, columnKey);
     pushFilters({ sort: next.sort, order: next.order });
@@ -154,8 +169,13 @@ export function SecurityDepositsView({
         query.set(key, value);
       }
     }
-    query.set('limit', String(limit));
-    query.delete('offset');
+    if (!Object.hasOwn(next, 'limit')) {
+      query.set('limit', String(limit));
+    }
+    if (!Object.hasOwn(next, 'offset')) {
+      query.delete('offset');
+      clearSelection();
+    }
     router.push(`${pathname}?${query.toString()}`);
   }
 
@@ -205,6 +225,16 @@ export function SecurityDepositsView({
 
   const columns = useMemo((): CardTableColumn<SecurityDepositRow>[] => {
     return [
+      listTableSelectColumn({
+        selected,
+        allOnPageSelected,
+        someOnPageSelected,
+        toggleAllOnPage,
+        toggleRowSelected,
+        getRowId: (row) => row.id,
+        rowAriaLabel: (row) => row.name,
+        selectAllAriaLabel: 'Select every deposit on this page',
+      }),
       {
         key: 'grNo',
         label: 'GR No',
@@ -332,7 +362,14 @@ export function SecurityDepositsView({
         ),
       },
     ];
-  }, [canRefund]);
+  }, [
+    allOnPageSelected,
+    canRefund,
+    selected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  ]);
 
   return (
     <div className="w-full space-y-6">
@@ -357,96 +394,102 @@ export function SecurityDepositsView({
         }
       />
 
-      <ListPageToolbar
-        searchQuery={searchQuery}
-        onSearchQueryChange={onSearchQueryChange}
-        searchPlaceholder="Name, father, GR number"
-        searchAriaLabel="Search security deposits"
+      <ListTableScreen
+        tableTitle="All deposits"
         filters={
-          <>
-            <SimpleSelect
-              className="w-full sm:w-36"
-              ariaLabel="Filter by class"
-              value={filters.classLevelId}
-              emptyOption={{ value: '', label: 'Any class' }}
-              placeholder="Any class"
-              options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
-              onValueChange={(next) => {
-                pushFilters({ classLevelId: next });
-              }}
-            />
-            <SimpleSelect
-              className="w-full sm:w-36"
-              ariaLabel="Filter by status"
-              value={filters.status}
-              emptyOption={{ value: '', label: 'Any status' }}
-              placeholder="Any status"
-              options={[
-                { value: 'ACTIVE', label: 'Active' },
-                { value: 'INACTIVE', label: 'Inactive' },
-                { value: 'LEFT', label: 'Left' },
-              ]}
-              onValueChange={(next) => {
-                pushFilters({ status: next });
-              }}
-            />
-            <SimpleSelect
-              className="w-full sm:w-40"
-              ariaLabel="Filter by deposit state"
-              value={filters.state}
-              emptyOption={{ value: '', label: 'All deposits' }}
-              placeholder="All deposits"
-              options={[
-                { value: 'held', label: 'Still held' },
-                { value: 'settled', label: 'Fully refunded' },
-              ]}
-              onValueChange={(next) => {
-                pushFilters({ state: next });
-              }}
-            />
-          </>
-        }
-      />
-
-      <CardTable
-        title="All deposits"
-        caption="Security deposits held"
-        rows={page.rows}
-        columns={columns}
-        rowKey={(row) => row.id}
-        minWidthClass="min-w-[56rem]"
-        error={error}
-        isFiltered={isFiltered}
-        onClearFilters={clearFilters}
-        sort={{
-          key: sort,
-          direction: order,
-          onToggle: toggleSort,
-        }}
-        empty={{
-          title: 'No deposits recorded',
-          description:
-            'A security deposit is recorded when it is collected — on a fee voucher, or at the counter. None have been taken yet.',
-        }}
-      />
-
-      {page.total === 0 ? null : (
-        <Pagination
-          total={page.total}
-          limit={limit}
-          offset={offset}
-          label="deposits"
-          onChange={(next) => {
-            const query = new URLSearchParams(params.toString());
-            if (next === 0) {
-              query.delete('offset');
-            } else {
-              query.set('offset', String(next));
+          <ListPageToolbar
+            searchQuery={searchQuery}
+            onSearchQueryChange={onSearchQueryChange}
+            searchPlaceholder="Name, father, GR number"
+            searchAriaLabel="Search security deposits"
+            filters={
+              <>
+                <SimpleSelect
+                  className="w-full min-w-32 sm:w-36"
+                  ariaLabel="Filter by class"
+                  value={filters.classLevelId}
+                  triggerIcon={ClassIcon}
+                  emptyOption={{ value: '', label: 'Any class' }}
+                  placeholder="Any class"
+                  options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
+                  onValueChange={(next) => {
+                    pushFilters({ classLevelId: next });
+                  }}
+                />
+                <SimpleSelect
+                  className="w-full min-w-32 sm:w-36"
+                  ariaLabel="Filter by status"
+                  value={filters.status}
+                  triggerIcon={SuccessIcon}
+                  emptyOption={{ value: '', label: 'Any status' }}
+                  placeholder="Any status"
+                  options={[
+                    { value: 'ACTIVE', label: 'Active' },
+                    { value: 'INACTIVE', label: 'Inactive' },
+                    { value: 'LEFT', label: 'Left' },
+                  ]}
+                  onValueChange={(next) => {
+                    pushFilters({ status: next });
+                  }}
+                />
+                <SimpleSelect
+                  className="w-full min-w-32 sm:w-40"
+                  ariaLabel="Filter by deposit state"
+                  value={filters.state}
+                  triggerIcon={DepositIcon}
+                  emptyOption={{ value: '', label: 'All deposits' }}
+                  placeholder="All deposits"
+                  options={[
+                    { value: 'held', label: 'Still held' },
+                    { value: 'settled', label: 'Fully refunded' },
+                  ]}
+                  onValueChange={(next) => {
+                    pushFilters({ state: next });
+                  }}
+                />
+              </>
             }
-            router.push(tenantHref(`/fees/security-deposits?${query.toString()}`));
+          />
+        }
+        footer={
+          <ListTablePaginationFooter
+            total={page.total}
+            limit={limit}
+            offset={offset}
+            label="deposits"
+            onPageChange={(next) => {
+              pushFilters({ offset: next === 0 ? '' : String(next) });
+            }}
+            onLimitChange={(next) => {
+              pushFilters({ limit: next, offset: '' });
+            }}
+          />
+        }
+      >
+        <ListDataTable
+          title="All deposits"
+          caption="Security deposits held"
+          rows={page.rows}
+          columns={columns}
+          rowKey={(row) => row.id}
+          minWidthClass="min-w-[56rem]"
+          error={error}
+          isFiltered={isFiltered}
+          onClearFilters={clearFilters}
+          sort={{
+            key: sort,
+            direction: order,
+            onToggle: toggleSort,
+          }}
+          empty={{
+            title: 'No deposits recorded',
+            description:
+              'A security deposit is recorded when it is collected — on a fee voucher, or at the counter. None have been taken yet.',
           }}
         />
-      )}
+      </ListTableScreen>
+
+      <TableSelectionBar count={selected.size} noun="deposit" onClear={clearSelection} />
 
       {/* Money leaving the building, so the dialog states the three figures
           rather than asking "are you sure?" (docs/16 §11), and the reason is in

@@ -8,11 +8,9 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  CardTable,
   DateDisplay,
   DatePicker,
   Money,
-  Pagination,
   SimpleSelect,
   StatusBadge,
   TwoLineCell,
@@ -23,11 +21,13 @@ import {
   CalendarIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  ClassIcon,
   ExportIcon,
   FeesIcon,
   ICON_SIZE,
   PhoneIcon,
   StudentsIcon,
+  SuccessIcon,
 } from '@ilm/ui/icons';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState, type ReactNode } from 'react';
@@ -37,10 +37,15 @@ import {
   feeListTableHeader,
   useDebouncedSearchFilter,
 } from '@/components/fees/fee-list-shared';
+import { ListDataTable } from '@/components/list-data-table';
+import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
+import { ListTableScreen } from '@/components/list-table-screen';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { TableSelectionBar } from '@/components/table-selection-bar';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
 import { pageIntro } from '@/lib/page-copy';
 import { nextSortParams } from '@/lib/list-page';
+import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -102,6 +107,15 @@ export function DefaultersView({
 
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
 
+  const {
+    selected,
+    clearSelection,
+    allOnPageSelected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  } = useRowSelection(page.rows, (row) => row.studentId);
+
   const { searchQuery, onSearchQueryChange } = useDebouncedSearchFilter(filters.q, (value) => {
     pushFilters({ q: value });
   });
@@ -122,8 +136,13 @@ export function DefaultersView({
         query.set(key, value);
       }
     }
-    query.set('limit', String(limit));
-    query.delete('offset');
+    if (!Object.hasOwn(next, 'limit')) {
+      query.set('limit', String(limit));
+    }
+    if (!Object.hasOwn(next, 'offset')) {
+      query.delete('offset');
+      clearSelection();
+    }
     router.push(`${pathname}?${query.toString()}`);
   }
 
@@ -233,6 +252,16 @@ export function DefaultersView({
 
   const columns = useMemo((): CardTableColumn<DefaulterRow>[] => {
     return [
+      listTableSelectColumn({
+        selected,
+        allOnPageSelected,
+        someOnPageSelected,
+        toggleAllOnPage,
+        toggleRowSelected,
+        getRowId: (row) => row.studentId,
+        rowAriaLabel: (row) => row.name,
+        selectAllAriaLabel: 'Select every defaulter on this page',
+      }),
       {
         key: 'grNo',
         label: 'GR No',
@@ -346,7 +375,14 @@ export function DefaultersView({
         ),
       },
     ];
-  }, [expanded]);
+  }, [
+    allOnPageSelected,
+    expanded,
+    selected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  ]);
 
   return (
     <div className="w-full space-y-6">
@@ -354,22 +390,25 @@ export function DefaultersView({
         title="Defaulters"
         description={pageIntro('/fees/defaulters')}
         actions={
-          <>
-            <div className="rounded-lg border border-danger/30 bg-danger/5 px-4 py-2">
-              <p className="text-xs text-muted-foreground">Total outstanding</p>
-              <p className="font-mono text-lg font-semibold text-danger tabular-nums">
-                <Money valueMinor={page.totalOwedMinor} />
-              </p>
-            </div>
-            <Button tone="outline" onClick={exportCsv(page)} disabled={page.rows.length === 0}>
-              <ExportIcon className={ICON_SIZE.inline} aria-hidden />
-              Export
-            </Button>
-          </>
+          <div className="rounded-lg border border-danger/30 bg-danger/5 px-4 py-2">
+            <p className="text-xs text-muted-foreground">Total outstanding</p>
+            <p className="font-mono text-lg font-semibold text-danger tabular-nums">
+              <Money valueMinor={page.totalOwedMinor} />
+            </p>
+          </div>
         }
       />
 
-      <ListPageToolbar
+      <ListTableScreen
+        tableTitle="All defaulters"
+        headerActions={
+          <Button tone="outline" size="sm" onClick={exportCsv(page)} disabled={page.rows.length === 0}>
+            <ExportIcon className={ICON_SIZE.inline} aria-hidden />
+            Export
+          </Button>
+        }
+        filters={
+          <ListPageToolbar
         searchQuery={searchQuery}
         onSearchQueryChange={onSearchQueryChange}
         searchPlaceholder="Name, father, GR number"
@@ -377,9 +416,10 @@ export function DefaultersView({
         filters={
           <>
             <SimpleSelect
-              className="w-full sm:w-36"
+              className="w-full min-w-32 sm:w-36"
               ariaLabel="Filter by class"
               value={filters.classLevelId}
+              triggerIcon={ClassIcon}
               emptyOption={{ value: '', label: 'Any class' }}
               placeholder="Any class"
               options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
@@ -388,9 +428,10 @@ export function DefaultersView({
               }}
             />
             <SimpleSelect
-              className="w-full sm:w-36"
+              className="w-full min-w-32 sm:w-36"
               ariaLabel="Filter by status"
               value={filters.status}
+              triggerIcon={SuccessIcon}
               emptyOption={{ value: '', label: 'Any status' }}
               placeholder="Any status"
               options={[
@@ -403,9 +444,10 @@ export function DefaultersView({
               }}
             />
             <SimpleSelect
-              className="w-full sm:w-36"
+              className="w-full min-w-32 sm:w-36"
               ariaLabel="Months behind"
               value={filters.months}
+              triggerIcon={CalendarIcon}
               emptyOption={{ value: '', label: 'Any months behind' }}
               placeholder="Any months behind"
               options={[
@@ -419,9 +461,10 @@ export function DefaultersView({
               }}
             />
             <SimpleSelect
-              className="w-full sm:w-32"
+              className="w-full min-w-32 sm:w-36"
               ariaLabel="Filter by gender"
               value={filters.gender}
+              triggerIcon={AccountIcon}
               emptyOption={{ value: '', label: 'Any gender' }}
               placeholder="Any gender"
               options={[
@@ -451,50 +494,50 @@ export function DefaultersView({
             </div>
           </>
         }
-      />
-
-      <CardTable
-        title="All defaulters"
-        caption="Students with overdue fees"
-        rows={page.rows}
-        columns={columns}
-        rowKey={(row) => row.studentId}
-        minWidthClass="min-w-[56rem]"
-        error={error}
-        isFiltered={isFiltered}
-        onClearFilters={clearFilters}
-        sort={{
-          key: sort,
-          direction: order,
-          onToggle: toggleSort,
-        }}
-        renderExpanded={(row) =>
-          expanded.has(row.studentId) ? renderVouchers(row) : null
+          />
         }
-        empty={{
-          title: 'Nobody is behind',
-          description:
-            'Every fee due before today has been paid. Vouchers that are not due yet are not counted here.',
-        }}
-      />
-
-      {page.total === 0 ? null : (
-        <Pagination
-          total={page.total}
-          limit={limit}
-          offset={offset}
-          label="defaulters"
-          onChange={(next) => {
-            const query = new URLSearchParams(params.toString());
-            if (next === 0) {
-              query.delete('offset');
-            } else {
-              query.set('offset', String(next));
-            }
-            router.push(tenantHref(`/fees/defaulters?${query.toString()}`));
+        footer={
+          <ListTablePaginationFooter
+            total={page.total}
+            limit={limit}
+            offset={offset}
+            label="defaulters"
+            onPageChange={(next) => {
+              pushFilters({ offset: next === 0 ? '' : String(next) });
+            }}
+            onLimitChange={(next) => {
+              pushFilters({ limit: next, offset: '' });
+            }}
+          />
+        }
+      >
+        <ListDataTable
+          title="All defaulters"
+          caption="Students with overdue fees"
+          rows={page.rows}
+          columns={columns}
+          rowKey={(row) => row.studentId}
+          minWidthClass="min-w-[56rem]"
+          error={error}
+          isFiltered={isFiltered}
+          onClearFilters={clearFilters}
+          sort={{
+            key: sort,
+            direction: order,
+            onToggle: toggleSort,
+          }}
+          renderExpanded={(row) =>
+            expanded.has(row.studentId) ? renderVouchers(row) : null
+          }
+          empty={{
+            title: 'Nobody is behind',
+            description:
+              'Every fee due before today has been paid. Vouchers that are not due yet are not counted here.',
           }}
         />
-      )}
+      </ListTableScreen>
+
+      <TableSelectionBar count={selected.size} noun="defaulter" onClear={clearSelection} />
     </div>
   );
 }

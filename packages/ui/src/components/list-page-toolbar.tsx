@@ -21,8 +21,8 @@ export function ListPageToolbar({
   filters,
 }: ListPageToolbarProps) {
   return (
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-      <div className="relative min-w-0 w-full lg:max-w-sm">
+    <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+      <div className="relative min-w-0 w-full shrink-0 md:max-w-xl">
         <SearchIcon
           className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden="true"
@@ -39,7 +39,7 @@ export function ListPageToolbar({
         />
       </div>
       {filters === undefined ? null : (
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end lg:shrink-0 xl:flex-nowrap">
+        <div className="flex flex-wrap items-center gap-2 xl:ms-auto xl:justify-end">
           {filters}
         </div>
       )}

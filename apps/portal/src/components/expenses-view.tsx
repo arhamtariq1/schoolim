@@ -13,9 +13,7 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  Card,
   CardTable,
-  Checkbox,
   ConfirmDialog,
   DateDisplay,
   DatePicker,
@@ -35,7 +33,6 @@ import {
   Field,
   Input,
   Money,
-  Pagination,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -55,10 +52,10 @@ import {
   EditIcon,
   ExpenseIcon,
   FeesIcon,
+  FinanceIcon,
   ICON_SIZE,
   MoreIcon,
-  RetryIcon,
-  SearchIcon,
+  SessionIcon,
 } from '@ilm/ui/icons';
 import { minorUnits } from '@ilm/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -66,11 +63,15 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactElement } from 
 
 import { DASHBOARD_STAT_NUMBER_CLASS } from '@/components/dashboard/dashboard-stat-card';
 import { ExpenseWorkspaceShell } from '@/components/expense-workspace-shell';
+import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { ListDataTable } from '@/components/list-data-table';
+import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
+import { ListTableScreen } from '@/components/list-table-screen';
+import { TableSelectionBar } from '@/components/table-selection-bar';
+import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
 import {
-  FEE_LIST_SELECT_COLUMN,
   FEE_LIST_TABLE_CELL,
   afterMenuAction,
-  feeListSelectCheckboxWrap,
   feeListTableHeader,
   useDebouncedSearchFilter,
 } from '@/components/fees/fee-list-shared';
@@ -144,7 +145,15 @@ export function ExpensesView({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | undefined>(undefined);
   const [deleting, setDeleting] = useState<Expense | undefined>(undefined);
-  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const {
+    selected,
+    clearSelection,
+    allOnPageSelected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  } = useRowSelection(rows, (row) => row.id);
+
   const [rangeDraft, setRangeDraft] = useState({ from: filters.from, to: filters.to });
 
   useEffect(() => {
@@ -162,6 +171,7 @@ export function ExpensesView({
     }
     if (!Object.hasOwn(next, 'offset')) {
       query.delete('offset');
+      clearSelection();
     }
     router.push(`${pathname}?${query.toString()}`);
   }
@@ -186,9 +196,6 @@ export function ExpensesView({
     return value !== '';
   });
 
-  const allOnPageSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
-  const someOnPageSelected = rows.some((row) => selected.has(row.id)) && !allOnPageSelected;
-
   function openCreate() {
     setEditing(undefined);
     setDialogOpen(true);
@@ -211,50 +218,16 @@ export function ExpensesView({
 
   const columns = useMemo((): CardTableColumn<Expense>[] => {
     return [
-      {
-        key: 'select',
-        label: '',
-        ...FEE_LIST_SELECT_COLUMN,
-        colStyle: { width: '3.25rem' },
-        headerCell: feeListSelectCheckboxWrap(
-          <Checkbox
-            checked={allOnPageSelected ? true : someOnPageSelected ? 'indeterminate' : false}
-            aria-label="Select every expense on this page"
-            onCheckedChange={(next) => {
-              setSelected((prev) => {
-                const copy = new Set(prev);
-                for (const row of rows) {
-                  if (next === true) {
-                    copy.add(row.id);
-                  } else {
-                    copy.delete(row.id);
-                  }
-                }
-                return copy;
-              });
-            }}
-          />,
-        ),
-        render: (row) =>
-          feeListSelectCheckboxWrap(
-            <Checkbox
-              checked={selected.has(row.id)}
-              aria-label={`Select ${row.voucherNo}`}
-              onCheckedChange={(next) => {
-                setSelected((prev) => {
-                  const copy = new Set(prev);
-                  if (next === true) {
-                    copy.add(row.id);
-                  } else {
-                    copy.delete(row.id);
-                  }
-                  return copy;
-                });
-              }}
-            />,
-            { stopRowClick: true },
-          ),
-      },
+      listTableSelectColumn({
+        selected,
+        allOnPageSelected,
+        someOnPageSelected,
+        toggleAllOnPage,
+        toggleRowSelected,
+        getRowId: (row) => row.id,
+        rowAriaLabel: (row) => row.voucherNo,
+        selectAllAriaLabel: 'Select every expense on this page',
+      }),
       {
         key: 'voucherNo',
         label: 'Voucher #',
@@ -359,7 +332,15 @@ export function ExpensesView({
           ),
       },
     ];
-  }, [allOnPageSelected, canManage, categories, rows, selected, someOnPageSelected]);
+  }, [
+    allOnPageSelected,
+    canManage,
+    categories,
+    selected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  ]);
 
   return (
     <>
@@ -370,123 +351,125 @@ export function ExpensesView({
         canManage={canManage}
         onAddExpense={canManage ? openCreate : undefined}
       >
-        <Card className="overflow-hidden rounded-lg shadow-raised">
-          <div className="space-y-4 border-b border-border p-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-              <div className="relative min-w-0 flex-1">
-                <SearchIcon
-                  className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(event) => {
-                    onSearchQueryChange(event.target.value);
-                  }}
-                  placeholder="Search by description, voucher, category…"
-                  aria-label="Search expenses"
-                  className="h-10 w-full rounded-md border border-border bg-background ps-9 pe-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                />
-              </div>
-              {canManage ? (
-                <Button className="shrink-0" onClick={openCreate}>
-                  <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-                  Add expense
-                </Button>
-              ) : null}
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button tone="outline" className="w-full gap-2 sm:w-auto">
-                    <DateRangeIcon className={ICON_SIZE.inline} aria-hidden />
-                    {formatInclusiveDateRange(filters.from, filters.to)}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-auto space-y-3 p-4">
-                  <Field label="From">
-                    <DatePicker
-                      value={rangeDraft.from}
-                      aria-label="From date"
-                      onChange={(next) => {
-                        setRangeDraft((prev) => ({ ...prev, from: next }));
-                      }}
-                    />
-                  </Field>
-                  <Field label="To">
-                    <DatePicker
-                      value={rangeDraft.to}
-                      aria-label="To date"
-                      onChange={(next) => {
-                        setRangeDraft((prev) => ({ ...prev, to: next }));
-                      }}
-                    />
-                  </Field>
-                  <Button
-                    className="w-full"
-                    onClick={() => {
-                      pushFilters({ from: rangeDraft.from, to: rangeDraft.to });
+        <ListTableScreen
+          tableTitle="All expenses"
+          headerActions={
+            canManage ? (
+              <Button size="sm" onClick={openCreate}>
+                <CreateIcon className={ICON_SIZE.inline} aria-hidden />
+                Add expense
+              </Button>
+            ) : null
+          }
+          filters={
+            <ListPageToolbar
+              searchQuery={searchQuery}
+              onSearchQueryChange={onSearchQueryChange}
+              searchPlaceholder="Search by description, voucher, category…"
+              searchAriaLabel="Search expenses"
+              filters={
+                <>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button tone="outline" className="w-full gap-2 sm:w-auto">
+                        <DateRangeIcon className={ICON_SIZE.inline} aria-hidden />
+                        {formatInclusiveDateRange(filters.from, filters.to)}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-auto space-y-3 p-4">
+                      <Field label="From">
+                        <DatePicker
+                          value={rangeDraft.from}
+                          aria-label="From date"
+                          onChange={(next) => {
+                            setRangeDraft((prev) => ({ ...prev, from: next }));
+                          }}
+                        />
+                      </Field>
+                      <Field label="To">
+                        <DatePicker
+                          value={rangeDraft.to}
+                          aria-label="To date"
+                          onChange={(next) => {
+                            setRangeDraft((prev) => ({ ...prev, to: next }));
+                          }}
+                        />
+                      </Field>
+                      <Button
+                        className="w-full"
+                        onClick={() => {
+                          pushFilters({ from: rangeDraft.from, to: rangeDraft.to });
+                        }}
+                      >
+                        Apply range
+                      </Button>
+                    </PopoverContent>
+                  </Popover>
+                  <SimpleSelect
+                    className="w-full min-w-32 sm:w-36"
+                    ariaLabel="Filter by category"
+                    value={filters.categoryId}
+                    triggerIcon={ExpenseIcon}
+                    emptyOption={{ value: '', label: 'All categories' }}
+                    placeholder="All categories"
+                    options={categories.map((entry) => ({ value: entry.id, label: entry.name }))}
+                    onValueChange={(next) => {
+                      pushFilters({ categoryId: next });
                     }}
-                  >
-                    Apply range
-                  </Button>
-                </PopoverContent>
-              </Popover>
-              <SimpleSelect
-                className="w-full sm:w-36"
-                ariaLabel="Filter by category"
-                value={filters.categoryId}
-                emptyOption={{ value: '', label: 'All categories' }}
-                placeholder="All categories"
-                options={categories.map((entry) => ({ value: entry.id, label: entry.name }))}
-                onValueChange={(next) => {
-                  pushFilters({ categoryId: next });
-                }}
-              />
-              <SimpleSelect
-                className="w-full sm:w-40"
-                ariaLabel="Filter by payment method"
-                value={filters.method}
-                emptyOption={{ value: '', label: 'All payment methods' }}
-                placeholder="All payment methods"
-                options={paymentMethods.map((method) => ({
-                  value: method,
-                  label: PAYMENT_METHOD_LABELS[method],
-                }))}
-                onValueChange={(next) => {
-                  pushFilters({ method: next });
-                }}
-              />
-              {sessions.length > 1 ? (
-                <SimpleSelect
-                  className="w-full sm:w-36"
-                  ariaLabel="Filter by session"
-                  value={filters.sessionId}
-                  emptyOption={{ value: '', label: 'All sessions' }}
-                  placeholder="All sessions"
-                  options={sessions.map((entry) => ({
-                    value: entry.id,
-                    label: entry.isCurrent ? `${entry.name} (current)` : entry.name,
-                  }))}
-                  onValueChange={(next) => {
-                    pushFilters({ sessionId: next });
-                  }}
-                />
-              ) : null}
-              {isFiltered ? (
-                <Button tone="ghost" size="sm" className="gap-1 sm:ms-auto" onClick={clearFilters}>
-                  <RetryIcon className={ICON_SIZE.inline} aria-hidden />
-                  Clear
-                </Button>
-              ) : null}
-            </div>
-          </div>
-
-          <CardTable
+                  />
+                  <SimpleSelect
+                    className="w-full min-w-32 sm:w-40"
+                    ariaLabel="Filter by payment method"
+                    value={filters.method}
+                    triggerIcon={FinanceIcon}
+                    emptyOption={{ value: '', label: 'All payment methods' }}
+                    placeholder="All payment methods"
+                    options={paymentMethods.map((method) => ({
+                      value: method,
+                      label: PAYMENT_METHOD_LABELS[method],
+                    }))}
+                    onValueChange={(next) => {
+                      pushFilters({ method: next });
+                    }}
+                  />
+                  {sessions.length > 1 ? (
+                    <SimpleSelect
+                      className="w-full min-w-32 sm:w-36"
+                      ariaLabel="Filter by session"
+                      value={filters.sessionId}
+                      triggerIcon={SessionIcon}
+                      emptyOption={{ value: '', label: 'All sessions' }}
+                      placeholder="All sessions"
+                      options={sessions.map((entry) => ({
+                        value: entry.id,
+                        label: entry.isCurrent ? `${entry.name} (current)` : entry.name,
+                      }))}
+                      onValueChange={(next) => {
+                        pushFilters({ sessionId: next });
+                      }}
+                    />
+                  ) : null}
+                </>
+              }
+            />
+          }
+          footer={
+            <ListTablePaginationFooter
+              total={total}
+              limit={limit}
+              offset={offset}
+              label="expenses"
+              onPageChange={(next) => {
+                pushFilters({ offset: next === 0 ? '' : String(next) });
+              }}
+              onLimitChange={(next) => {
+                pushFilters({ limit: next, offset: '' });
+              }}
+            />
+          }
+        >
+          <ListDataTable
             title="Expenses"
-            surface="embedded"
-            showHeader={false}
             rows={rows}
             columns={columns}
             rowKey={(row) => row.id}
@@ -511,36 +494,10 @@ export function ExpensesView({
               ) : undefined,
             }}
           />
-
-          {total === 0 ? null : (
-            <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <Pagination
-                total={total}
-                limit={limit}
-                offset={offset}
-                label="expenses"
-                className="border-0 pt-0"
-                onChange={(next) => {
-                  pushFilters({ offset: next === 0 ? '' : String(next) });
-                }}
-              />
-              <SimpleSelect
-                className="w-full sm:w-36"
-                ariaLabel="Rows per page"
-                value={String(limit)}
-                options={[
-                  { value: '20', label: '20 per page' },
-                  { value: '50', label: '50 per page' },
-                  { value: '100', label: '100 per page' },
-                ]}
-                onValueChange={(next) => {
-                  pushFilters({ limit: next, offset: '' });
-                }}
-              />
-            </div>
-          )}
-        </Card>
+        </ListTableScreen>
       </ExpenseWorkspaceShell>
+
+      <TableSelectionBar count={selected.size} noun="expense" onClear={clearSelection} />
 
       {dialogOpen ? (
         <ExpenseDialog

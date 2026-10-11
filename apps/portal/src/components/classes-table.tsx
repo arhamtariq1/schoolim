@@ -20,13 +20,19 @@ import {
   EditIcon,
   MoreIcon,
   SchoolIcon,
+  SectionIcon,
+  SessionIcon,
   SortIcon,
   StudentsIcon,
 } from '@ilm/ui/icons';
 import { useMemo, useState } from 'react';
 
+import { ListDataTable } from '@/components/list-data-table';
+import { ListTableScreen } from '@/components/list-table-screen';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { TableSelectionBar } from '@/components/table-selection-bar';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
 import { pageIntro } from '@/lib/page-copy';
 import { classDisplayMeta, compareClassesByProgression } from '@/lib/class-level-display';
 
@@ -165,14 +171,34 @@ export function ClassesTable(props: ClassesTableProps) {
     setSortDir('asc');
   }
 
+  const {
+    selected,
+    clearSelection,
+    allOnPageSelected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  } = useRowSelection(rows, (entry) => entry.id);
+
   function clearFilters(): void {
     setSearchQuery('');
     setLevelFilter('');
     setSectionsFilter('');
+    clearSelection();
   }
 
   const columns = useMemo((): CardTableColumn<ClassLevel>[] => {
     return [
+      listTableSelectColumn({
+        selected,
+        allOnPageSelected,
+        someOnPageSelected,
+        toggleAllOnPage,
+        toggleRowSelected,
+        getRowId: (entry) => entry.id,
+        rowAriaLabel: (entry) => entry.name,
+        selectAllAriaLabel: 'Select every class on this page',
+      }),
       {
         key: 'name',
         label: 'Class name',
@@ -288,6 +314,7 @@ export function ClassesTable(props: ClassesTableProps) {
       },
     ];
   }, [
+    allOnPageSelected,
     canConfigure,
     canRenumber,
     onAddSection,
@@ -297,6 +324,10 @@ export function ClassesTable(props: ClassesTableProps) {
     onDeleteSection,
     onRenumberSection,
     renumberingSectionId,
+    selected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
   ]);
 
   return (
@@ -312,74 +343,84 @@ export function ClassesTable(props: ClassesTableProps) {
         </div>
       ) : null}
 
-      <ListPageToolbar
-        searchQuery={searchQuery}
-        onSearchQueryChange={setSearchQuery}
-        searchPlaceholder="Search class or level"
-        searchAriaLabel="Search classes"
+      <ListTableScreen
+        tableTitle="All classes"
         filters={
-          <>
-            {levelFilterOptions.length > 0 ? (
-              <SimpleSelect
-                className="w-full sm:w-44"
-                ariaLabel="Filter by level"
-                value={levelFilter}
-                emptyOption={{ value: '', label: 'Any level' }}
-                placeholder="Any level"
-                onValueChange={setLevelFilter}
-                options={levelFilterOptions}
-              />
-            ) : null}
-            <SimpleSelect
-              className="w-full sm:w-44"
-              ariaLabel="Filter by sections"
-              value={sectionsFilter}
-              emptyOption={{ value: '', label: 'All classes' }}
-              placeholder="All classes"
-              onValueChange={setSectionsFilter}
-              options={[
-                { value: 'with', label: 'With sections' },
-                { value: 'without', label: 'Without sections' },
-              ]}
-            />
-            {sessions.length > 0 ? (
-              <SimpleSelect
-                className="w-full sm:w-52"
-                value={activeSessionId ?? ''}
-                onValueChange={onSessionChange}
-                options={sessions.map((entry) => ({
-                  value: entry.id,
-                  label: entry.isCurrent ? `${entry.name} (current)` : entry.name,
-                }))}
-                ariaLabel="Session"
-              />
-            ) : null}
-          </>
+          <ListPageToolbar
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            searchPlaceholder="Search class or level"
+            searchAriaLabel="Search classes"
+            filters={
+              <>
+                {levelFilterOptions.length > 0 ? (
+                  <SimpleSelect
+                    className="w-full min-w-32 sm:w-36"
+                    ariaLabel="Filter by level"
+                    value={levelFilter}
+                    triggerIcon={SchoolIcon}
+                    emptyOption={{ value: '', label: 'Any level' }}
+                    placeholder="Any level"
+                    onValueChange={setLevelFilter}
+                    options={levelFilterOptions}
+                  />
+                ) : null}
+                <SimpleSelect
+                  className="w-full min-w-32 sm:w-36"
+                  ariaLabel="Filter by sections"
+                  value={sectionsFilter}
+                  triggerIcon={SectionIcon}
+                  emptyOption={{ value: '', label: 'All classes' }}
+                  placeholder="All classes"
+                  onValueChange={setSectionsFilter}
+                  options={[
+                    { value: 'with', label: 'With sections' },
+                    { value: 'without', label: 'Without sections' },
+                  ]}
+                />
+                {sessions.length > 0 ? (
+                  <SimpleSelect
+                    className="w-full min-w-32 sm:w-40"
+                    value={activeSessionId ?? ''}
+                    triggerIcon={SessionIcon}
+                    onValueChange={onSessionChange}
+                    options={sessions.map((entry) => ({
+                      value: entry.id,
+                      label: entry.isCurrent ? `${entry.name} (current)` : entry.name,
+                    }))}
+                    ariaLabel="Session"
+                  />
+                ) : null}
+              </>
+            }
+          />
         }
-      />
+      >
+        <ListDataTable
+          title="All classes"
+          caption="Classes"
+          rows={rows}
+          columns={columns}
+          rowKey={(entry) => entry.id}
+          isFiltered={isFiltered}
+          onClearFilters={clearFilters}
+          sort={{
+            key: sortKey,
+            direction: sortDir,
+            onToggle: (key) => {
+              toggleSort(key as ClassSortKey);
+            },
+          }}
+          empty={{
+            title: 'No classes yet',
+            description:
+              'Classes are created from your school profile levels. Update school levels in profile settings if something is missing.',
+          }}
+          renderMobileRow={(entry) => <ClassMobileRow entry={entry} />}
+        />
+      </ListTableScreen>
 
-      <CardTable
-        title="All classes"
-        caption="Classes"
-        rows={rows}
-        columns={columns}
-        rowKey={(entry) => entry.id}
-        isFiltered={isFiltered}
-        onClearFilters={clearFilters}
-        sort={{
-          key: sortKey,
-          direction: sortDir,
-          onToggle: (key) => {
-            toggleSort(key as ClassSortKey);
-          },
-        }}
-        empty={{
-          title: 'No classes yet',
-          description:
-            'Classes are created from your school profile levels. Update school levels in profile settings if something is missing.',
-        }}
-        renderMobileRow={(entry) => <ClassMobileRow entry={entry} />}
-      />
+      <TableSelectionBar count={selected.size} noun="class" onClear={clearSelection} />
     </div>
   );
 }

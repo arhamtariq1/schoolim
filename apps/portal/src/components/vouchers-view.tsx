@@ -38,7 +38,6 @@ import {
   Field,
   Input,
   Money,
-  Pagination,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -64,6 +63,7 @@ import {
   PrintIcon,
   RefundIcon,
   SearchIcon,
+  SessionIcon,
   SpinnerIcon,
   StudentsIcon,
   SuccessIcon,
@@ -101,6 +101,8 @@ function afterMenuAction(action: () => void): void {
   }, 100);
 }
 
+import { ListDataTable } from './list-data-table';
+import { ListTablePaginationFooter } from './list-table-pagination-footer';
 import { VoucherBulkBar } from './voucher-bulk-bar';
 import { VoucherChallan } from './voucher-challan';
 import { VoucherEditDialog } from './voucher-edit-dialog';
@@ -618,6 +620,7 @@ export function VouchersView({
                 className="w-full min-w-32 sm:w-36"
                 ariaLabel="Filter by class"
                 value={filters.classLevelId}
+                triggerIcon={ClassIcon}
                 emptyOption={{ value: '', label: 'Any class' }}
                 placeholder="Any class"
                 options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
@@ -629,6 +632,7 @@ export function VouchersView({
                 className="w-full min-w-32 sm:w-36"
                 ariaLabel="Filter by status"
                 value={filters.status}
+                triggerIcon={FeesIcon}
                 emptyOption={{ value: '', label: 'Any status' }}
                 placeholder="Any status"
                 options={VOUCHER_STATUSES.map((status) => ({
@@ -643,6 +647,7 @@ export function VouchersView({
                 className="w-full min-w-32 sm:w-40"
                 ariaLabel="Filter by session"
                 value={filters.sessionId}
+                triggerIcon={SessionIcon}
                 emptyOption={{ value: '', label: 'Any session' }}
                 placeholder="Any session"
                 options={sessions.map((entry) => ({
@@ -752,11 +757,9 @@ export function VouchersView({
           </div>
         </div>
 
-        <CardTable
+        <ListDataTable
           title="Fee Vouchers"
           caption="Fee Vouchers"
-          surface="embedded"
-          showHeader={false}
           rows={rows}
           columns={columns}
           rowKey={(row) => row.id}
@@ -776,33 +779,18 @@ export function VouchersView({
           }}
         />
 
-        {total === 0 ? null : (
-          <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <Pagination
-              total={total}
-              limit={limit}
-              offset={offset}
-              label="vouchers"
-              className="border-0 pt-0"
-              onChange={(next) => {
-                pushFilters({ offset: next === 0 ? '' : String(next) });
-              }}
-            />
-            <SimpleSelect
-              className="w-full sm:w-36"
-              ariaLabel="Rows per page"
-              value={String(limit)}
-              options={[
-                { value: '20', label: '20 per page' },
-                { value: '50', label: '50 per page' },
-                { value: '100', label: '100 per page' },
-              ]}
-              onValueChange={(next) => {
-                pushFilters({ limit: next, offset: '' });
-              }}
-            />
-          </div>
-        )}
+        <ListTablePaginationFooter
+          total={total}
+          limit={limit}
+          offset={offset}
+          label="vouchers"
+          onPageChange={(next) => {
+            pushFilters({ offset: next === 0 ? '' : String(next) });
+          }}
+          onLimitChange={(next) => {
+            pushFilters({ limit: next, offset: '' });
+          }}
+        />
       </Card>
 
       <VoucherBulkBar

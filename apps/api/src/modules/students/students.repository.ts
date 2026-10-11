@@ -105,7 +105,16 @@ export class StudentsRepository {
         // Reception types whichever number is on the paper in front of them.
         `((s.first_name || ' ' || s.last_name) ILIKE ${term}
            OR s.student_code ILIKE ${term}
-           OR s.gr_no ILIKE ${term})`,
+           OR s.gr_no ILIKE ${term}
+           OR g.name ILIKE ${term}
+           OR g.phone ILIKE ${term}
+           OR EXISTS (
+                SELECT 1
+                  FROM student_guardians sgf
+                  JOIN guardians gf ON gf.id = sgf.guardian_id
+                 WHERE sgf.student_id = s.id
+                   AND (gf.name ILIKE ${term} OR gf.phone ILIKE ${term})
+              ))`,
       );
     }
 

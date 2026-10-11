@@ -611,11 +611,11 @@ function Sidebar({
   return (
     <aside
       className={cn(
-        'flex w-60 shrink-0 flex-col border-e border-border bg-card md:flex',
+        'flex w-64 shrink-0 flex-col border-e border-border bg-card md:flex',
         className,
       )}
     >
-      <div className="relative flex h-16 shrink-0 items-center justify-center border-b border-border px-4">
+      <div className="relative flex h-16 shrink-0 items-center justify-center border-b border-border bg-card px-4">
         <Link
           href={tenantHref('/')}
           className="inline-flex max-w-[148px] items-center justify-center rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
@@ -645,7 +645,10 @@ function Sidebar({
         )}
       </div>
 
-      <nav aria-label="Main" className="scrollbar-hidden flex-1 space-y-0.5 overflow-y-auto px-2.5 py-3">
+      <nav
+        aria-label="Main"
+        className="scrollbar-hidden flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4"
+      >
         {items.map((item) => (
           <NavBranch key={item.href} item={item} disabled={navLocked} />
         ))}
@@ -708,21 +711,32 @@ function initials(name: string): string {
   return (first + last).toUpperCase();
 }
 
+function navDepthPadding(depth: number): string {
+  if (depth <= 0) {
+    return 'ps-3';
+  }
+  if (depth === 1) {
+    return 'ps-6';
+  }
+  return 'ps-9';
+}
+
 function NavLink({
   item,
   compact = false,
   disabled = false,
-  nested = false,
+  depth = 0,
 }: {
   item: NavItem;
   compact?: boolean;
   disabled?: boolean;
-  nested?: boolean;
+  depth?: number;
 }) {
   const pathname = useCanonicalPathname();
   const tenantHref = useTenantHref();
   const isActive = isCurrent(item.href, pathname);
   const Icon = NAV_ICONS[item.icon];
+  const nested = depth > 0;
 
   if (disabled) {
     return (
@@ -730,14 +744,14 @@ function NavLink({
         aria-disabled="true"
         title="Complete your profile to unlock this"
         className={cn(
-          'group relative flex cursor-not-allowed items-center gap-3 rounded-xl text-sm font-medium text-muted-foreground/50',
-          compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : 'px-3 py-2.5',
+          'group relative flex cursor-not-allowed items-center gap-2.5 rounded-lg text-sm font-medium text-muted-foreground/50',
+          compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : cn('py-2 pe-3', navDepthPadding(depth)),
         )}
       >
         {Icon === undefined ? null : (
-          <Icon className={cn('shrink-0', nested ? 'size-4' : 'size-5')} />
+          <Icon className={cn('shrink-0 opacity-60', nested ? 'size-4' : ICON_SIZE.nav)} aria-hidden />
         )}
-        <span className={compact ? 'truncate' : undefined}>{item.label}</span>
+        <span className={cn('truncate', nested ? 'text-xs' : undefined)}>{item.label}</span>
       </span>
     );
   }
@@ -747,19 +761,27 @@ function NavLink({
       href={tenantHref(item.href)}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'flex items-center gap-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
-        compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : nested ? 'px-2.5 py-2' : 'px-3 py-2.5',
+        'relative flex items-center gap-2.5 rounded-lg text-sm transition-colors duration-150',
+        compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : cn('py-2 pe-3', navDepthPadding(depth)),
+        nested ? 'font-normal' : 'font-medium',
         isActive
-          ? nested
-            ? 'bg-primary/10 text-primary ring-1 ring-primary/15'
-            : 'bg-primary/10 text-primary'
-          : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+          ? 'bg-primary/10 text-primary ring-1 ring-primary/15'
+          : 'text-muted-foreground hover:bg-card/70 hover:text-foreground',
       )}
     >
       {Icon === undefined ? null : (
-        <Icon className={cn('shrink-0', nested ? 'size-4' : 'size-5')} />
+        <Icon
+          className={cn(
+            'shrink-0',
+            nested ? 'size-4' : ICON_SIZE.nav,
+            isActive ? 'text-primary' : 'opacity-80',
+          )}
+          aria-hidden
+        />
       )}
-      <span className={compact ? 'truncate' : undefined}>{item.label}</span>
+      <span className={cn('truncate', nested ? 'text-xs' : undefined, isActive && 'text-primary')}>
+        {item.label}
+      </span>
     </Link>
   );
 }
@@ -781,13 +803,13 @@ function NavBranch({
   const isOpen = overridden ?? containsCurrent;
 
   if (children.length === 0) {
-    return <NavLink item={item} disabled={disabled} nested={depth > 0} />;
+    return <NavLink item={item} disabled={disabled} depth={depth} />;
   }
 
   const Icon = NAV_ICONS[item.icon];
 
   return (
-    <div>
+    <div className="flex flex-col gap-0.5">
       <button
         type="button"
         aria-expanded={isOpen}
@@ -796,19 +818,36 @@ function NavBranch({
           setOverridden(!isOpen);
         }}
         className={cn(
-          'flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150',
+          'flex w-full items-center gap-2.5 rounded-lg py-2 pe-2 text-sm font-medium transition-colors duration-150',
+          navDepthPadding(depth),
           disabled
             ? 'cursor-not-allowed text-muted-foreground/50'
             : containsCurrent
-              ? 'bg-muted/60 text-foreground'
-              : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+              ? 'text-primary'
+              : 'text-muted-foreground hover:bg-card/70 hover:text-foreground',
         )}
       >
-        {Icon === undefined ? null : <Icon className="size-5 shrink-0" />}
-        <span className="flex-1 text-start">{item.label}</span>
+        {Icon === undefined ? null : (
+          <Icon
+            className={cn(
+              'shrink-0',
+              depth > 0 ? 'size-4' : ICON_SIZE.nav,
+              containsCurrent ? 'text-primary' : 'opacity-80',
+            )}
+            aria-hidden
+          />
+        )}
+        <span
+          className={cn(
+            'flex-1 truncate text-start',
+            containsCurrent && !disabled ? 'text-primary' : undefined,
+          )}
+        >
+          {item.label}
+        </span>
         <ChevronDownIcon
           className={cn(
-            'size-4 shrink-0 transition-transform duration-150',
+            'size-4 shrink-0 opacity-60 transition-transform duration-150',
             isOpen ? '' : '-rotate-90',
           )}
           aria-hidden="true"
@@ -816,12 +855,7 @@ function NavBranch({
       </button>
 
       {isOpen && !disabled ? (
-        <div
-          className={cn(
-            'mt-1 space-y-0.5 border-s-2 border-primary/15',
-            depth === 0 ? 'ms-4 ps-2.5' : 'ms-3 ps-2',
-          )}
-        >
+        <div className="flex flex-col gap-0.5">
           {children.map((child) => (
             <NavBranch key={child.href} item={child} depth={depth + 1} disabled={disabled} />
           ))}

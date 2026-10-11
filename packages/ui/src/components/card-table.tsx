@@ -406,7 +406,6 @@ function CardTableSortHeader({
         className={cn(
           'flex w-full items-center gap-2 px-4 py-3 text-xs font-medium whitespace-nowrap text-muted-foreground hover:bg-muted/40',
           align === 'end' ? 'justify-end' : 'justify-start',
-          active ? 'text-foreground' : undefined,
         )}
       >
         {Icon === undefined ? null : (

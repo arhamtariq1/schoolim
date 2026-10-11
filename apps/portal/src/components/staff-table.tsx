@@ -10,14 +10,12 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  CardTable,
   ConfirmDialog,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   Money,
-  Pagination,
   SimpleSelect,
   StatusBadge,
   TwoLineCell,
@@ -27,6 +25,7 @@ import {
 import {
   AccountIcon,
   CreateIcon,
+  DesignationIcon,
   DeleteIcon,
   EditIcon,
   FeesIcon,
@@ -42,9 +41,14 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 
+import { ListDataTable } from '@/components/list-data-table';
+import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
+import { ListTableScreen } from '@/components/list-table-screen';
+import { TableSelectionBar } from '@/components/table-selection-bar';
 import { useDebouncedSearchFilter } from '@/components/fees/fee-list-shared';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
 import { nextSortParams } from '@/lib/list-page';
+import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
 import { StaffDialog } from '@/components/staff-dialog';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
 import { pageIntro } from '@/lib/page-copy';
@@ -88,6 +92,16 @@ export function StaffTable({
   const [editing, setEditing] = useState<StaffListItem | undefined>(undefined);
   const [deleting, setDeleting] = useState<StaffListItem | undefined>(undefined);
   const [inviting, setInviting] = useState<string | undefined>(undefined);
+
+  const {
+    selected,
+    clearSelection,
+    allOnPageSelected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  } = useRowSelection(rows, (row) => row.id);
+
   async function sendInvite(row: StaffListItem) {
     setInviting(row.id);
     const result = await mutate<StaffInviteResult>(ROUTES.staff.invite(row.id), 'POST');
@@ -122,6 +136,7 @@ export function StaffTable({
 
     if (!Object.hasOwn(next, 'offset')) {
       query.delete('offset');
+      clearSelection();
     }
 
     startTransition(() => {
@@ -169,6 +184,16 @@ export function StaffTable({
 
   const columns = useMemo((): CardTableColumn<StaffListItem>[] => {
     return [
+      listTableSelectColumn({
+        selected,
+        allOnPageSelected,
+        someOnPageSelected,
+        toggleAllOnPage,
+        toggleRowSelected,
+        getRowId: (row) => row.id,
+        rowAriaLabel: (row) => row.name,
+        selectAllAriaLabel: 'Select every staff member on this page',
+      }),
       {
         key: 'name',
         label: 'Name',
@@ -280,7 +305,15 @@ export function StaffTable({
         ),
       },
     ];
-  }, [canManage, inviting]);
+  }, [
+    allOnPageSelected,
+    canManage,
+    inviting,
+    selected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  ]);
 
   return (
     <div className="w-full space-y-6">
@@ -295,89 +328,99 @@ export function StaffTable({
         </div>
       ) : null}
 
-      <ListPageToolbar
-        searchQuery={searchQuery}
-        onSearchQueryChange={onSearchQueryChange}
-        searchPlaceholder="Name, email or ID"
-        searchAriaLabel="Search staff"
+      <ListTableScreen
+        tableTitle="All staff"
         filters={
-          <>
-            <SimpleSelect
-              className="w-full sm:w-44"
-              value={role}
-              onValueChange={(next) => {
-                apply({ role: next });
-              }}
-              options={ROLE_OPTIONS}
-              ariaLabel="Filter by role"
-              emptyOption={{ value: '', label: 'Any role' }}
-            />
-            {canManage ? (
+          <ListPageToolbar
+            searchQuery={searchQuery}
+            onSearchQueryChange={onSearchQueryChange}
+            searchPlaceholder="Name, email or ID"
+            searchAriaLabel="Search staff"
+            filters={
+              <>
+                <SimpleSelect
+                  className="w-full min-w-32 sm:w-36"
+                  value={role}
+                  triggerIcon={DesignationIcon}
+                  onValueChange={(next) => {
+                    apply({ role: next });
+                  }}
+                  options={ROLE_OPTIONS}
+                  ariaLabel="Filter by role"
+                  emptyOption={{ value: '', label: 'Any role' }}
+                />
+                {canManage ? (
+                  <Button
+                    className="w-full sm:w-auto"
+                    onClick={() => {
+                      setEditing(undefined);
+                      setDialogOpen(true);
+                    }}
+                  >
+                    <CreateIcon className={ICON_SIZE.inline} aria-hidden />
+                    Add staff
+                  </Button>
+                ) : null}
+              </>
+            }
+          />
+        }
+        footer={
+          <ListTablePaginationFooter
+            total={total}
+            limit={limit}
+            offset={offset}
+            label="staff"
+            onPageChange={(next) => {
+              apply({ offset: next === 0 ? '' : String(next) });
+            }}
+            onLimitChange={(next) => {
+              apply({ limit: next, offset: '' });
+            }}
+          />
+        }
+      >
+        <ListDataTable
+          title="All staff"
+          caption="Staff"
+          rows={rows}
+          columns={columns}
+          rowKey={(row) => row.id}
+          isFiltered={isFiltered}
+          onClearFilters={clearFilters}
+          sort={{
+            key: sort,
+            direction: order,
+            onToggle: toggleSort,
+          }}
+          empty={{
+            title: 'Nobody on the staff list yet',
+            description:
+              'Add the people who work here — teachers, office staff, and anyone else on the payroll. Only some roles need a portal login.',
+            action: canManage ? (
               <Button
-                className="w-full sm:w-auto"
                 onClick={() => {
                   setEditing(undefined);
                   setDialogOpen(true);
                 }}
               >
                 <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-                Add staff
+                Add the first person
               </Button>
-            ) : null}
-          </>
-        }
-      />
-
-      <CardTable
-        title="All staff"
-        caption="Staff"
-        rows={rows}
-        columns={columns}
-        rowKey={(row) => row.id}
-        isFiltered={isFiltered}
-        onClearFilters={clearFilters}
-        sort={{
-          key: sort,
-          direction: order,
-          onToggle: toggleSort,
-        }}
-        empty={{
-          title: 'Nobody on the staff list yet',
-          description:
-            'Add the people who work here — teachers, office staff, and anyone else on the payroll. Only some roles need a portal login.',
-          action: canManage ? (
-            <Button
-              onClick={() => {
-                setEditing(undefined);
-                setDialogOpen(true);
-              }}
-            >
-              <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-              Add the first person
-            </Button>
-          ) : undefined,
-        }}
-        renderMobileRow={(row) => (
-          <div className="px-4 py-3">
-            <TwoLineCell
-              primary={row.name}
-              secondary={`${STAFF_ROLE_LABELS[row.role]} · ${row.employeeNo}`}
-            />
-          </div>
-        )}
-      />
-
-      {total === 0 ? null : (
-        <Pagination
-          total={total}
-          limit={limit}
-          offset={offset}
-          label="staff"
-          onChange={(next) => {
-            apply({ offset: next === 0 ? '' : String(next) });
+            ) : undefined,
           }}
+          renderMobileRow={(row) => (
+            <div className="px-4 py-3">
+              <TwoLineCell
+                primary={row.name}
+                secondary={`${STAFF_ROLE_LABELS[row.role]} · ${row.employeeNo}`}
+              />
+            </div>
+          )}
         />
-      )}
+      </ListTableScreen>
+
+      <TableSelectionBar count={selected.size} noun="staff member" onClear={clearSelection} />
 
       {dialogOpen ? (
         <StaffDialog

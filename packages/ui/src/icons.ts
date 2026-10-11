@@ -71,6 +71,7 @@ export {
   // --- Academic structure ---------------------------------------------------
   GraduationCap as ClassIcon,
   LayoutGrid as SectionIcon,
+  Rows3 as RowsPerPageIcon,
   CalendarRange as SessionIcon,
   CalendarOff as HolidayIcon,
   Receipt as ExpenseIcon,

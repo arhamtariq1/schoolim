@@ -13,7 +13,6 @@ import {
 import {
   Button,
   CardTable,
-  Checkbox,
   DateDisplay,
   DatePicker,
   Dialog,
@@ -32,7 +31,6 @@ import {
   Field,
   Input,
   Money,
-  Pagination,
   SimpleSelect,
   StatusBadge,
   TwoLineCell,
@@ -42,8 +40,11 @@ import {
 import {
   AccountIcon,
   CalendarIcon,
+  ClassIcon,
   DeleteIcon,
   FeesIcon,
+  SessionIcon,
+  SuccessIcon,
   HistoryIcon,
   ICON_SIZE,
   MoreIcon,
@@ -63,8 +64,13 @@ import {
   feeListTableHeader,
   useDebouncedSearchFilter,
 } from '@/components/fees/fee-list-shared';
+import { ListDataTable } from '@/components/list-data-table';
+import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
+import { ListTableScreen } from '@/components/list-table-screen';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { TableSelectionBar } from '@/components/table-selection-bar';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
 import { pageIntro } from '@/lib/page-copy';
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
@@ -156,7 +162,19 @@ export function FeeIncrementsView({
       pushFilters({ grTo: value });
     },
   );
-  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+
+  const rows = page.rows;
+
+  const {
+    selected,
+    setSelected,
+    clearSelection,
+    allOnPageSelected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  } = useRowSelection(rows, (row) => row.studentId);
+
   const [direction, setDirection] = useState<'INCREASE' | 'DECREASE' | undefined>(undefined);
   const [amount, setAmount] = useState('');
   const [startDate, setStartDate] = useState(firstOfNextMonth());
@@ -168,7 +186,6 @@ export function FeeIncrementsView({
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [removingId, setRemovingId] = useState<string | undefined>(undefined);
 
-  const rows = page.rows;
   const chosen = rows.filter((row) => selected.has(row.studentId));
   const amountMinor = rupeesToMinor(amount);
 
@@ -188,44 +205,18 @@ export function FeeIncrementsView({
         query.set(key, value);
       }
     }
-    query.set('limit', String(limit));
-    query.delete('offset');
+    if (!Object.hasOwn(next, 'limit')) {
+      query.set('limit', String(limit));
+    }
+    if (!Object.hasOwn(next, 'offset')) {
+      query.delete('offset');
+      clearSelection();
+    }
     router.push(`${pathname}?${query.toString()}`);
   }
 
   function clearFilters(): void {
     router.push(tenantHref('/fees/increments'));
-  }
-
-  const allOnPageSelected =
-    canApply && rows.length > 0 && rows.every((row) => selected.has(row.studentId));
-  const someOnPageSelected =
-    canApply && rows.some((row) => selected.has(row.studentId)) && !allOnPageSelected;
-
-  function toggleRowSelected(studentId: string, next: boolean): void {
-    setSelected((prev) => {
-      const copy = new Set(prev);
-      if (next) {
-        copy.add(studentId);
-      } else {
-        copy.delete(studentId);
-      }
-      return copy;
-    });
-  }
-
-  function toggleAllOnPage(next: boolean): void {
-    setSelected((prev) => {
-      const copy = new Set(prev);
-      for (const row of rows) {
-        if (next) {
-          copy.add(row.studentId);
-        } else {
-          copy.delete(row.studentId);
-        }
-      }
-      return copy;
-    });
   }
 
   async function openHistory(row: FeeIncrementRow): Promise<void> {
@@ -323,40 +314,30 @@ export function FeeIncrementsView({
   const feeHeadLabel = page.feeHead.name;
 
   const columns = useMemo((): CardTableColumn<FeeIncrementRow>[] => {
-    const grHeaderLeading =
-      canApply === true ? (
-        <Checkbox
-          className="shrink-0"
-          checked={allOnPageSelected ? true : someOnPageSelected ? 'indeterminate' : false}
-          aria-label="Select every student on this page"
-          onCheckedChange={(next) => {
-            toggleAllOnPage(next === true);
-          }}
-        />
-      ) : undefined;
-
     return [
+      ...(canApply
+        ? [
+            listTableSelectColumn<FeeIncrementRow>({
+              selected,
+              allOnPageSelected,
+              someOnPageSelected,
+              toggleAllOnPage,
+              toggleRowSelected,
+              getRowId: (row) => row.studentId,
+              rowAriaLabel: (row) => row.name,
+              selectAllAriaLabel: 'Select every student on this page',
+            }),
+          ]
+        : []),
       {
         key: 'grNo',
         label: 'GR No',
         ...FEE_LIST_TABLE_CELL,
         colStyle: { width: '5.75rem' },
         sortable: true,
-        headerCell: feeListTableHeader('GR No', undefined, grHeaderLeading),
+        headerCell: feeListTableHeader('GR No', StudentsIcon),
         render: (row) => (
-          <div className="flex items-center gap-2" data-stop-row-click>
-            {canApply ? (
-              <Checkbox
-                className="shrink-0"
-                checked={selected.has(row.studentId)}
-                aria-label={`Select ${row.name}`}
-                onCheckedChange={(next) => {
-                  toggleRowSelected(row.studentId, next === true);
-                }}
-              />
-            ) : null}
-            <span className="font-mono text-sm leading-none tabular-nums">{row.grNo}</span>
-          </div>
+          <span className="font-mono text-sm leading-none tabular-nums">{row.grNo}</span>
         ),
       },
       {
@@ -488,17 +469,21 @@ export function FeeIncrementsView({
     <div className="w-full space-y-6">
       <WorkspacePageHeader title="Fee increment" description={pageIntro('/fees/increments')} />
 
-      <ListPageToolbar
-        searchQuery={searchQuery}
-        onSearchQueryChange={onSearchQueryChange}
-        searchPlaceholder="Name, father, GR number"
-        searchAriaLabel="Search students for fee increment"
+      <ListTableScreen
+        tableTitle="All students"
         filters={
+          <ListPageToolbar
+            searchQuery={searchQuery}
+            onSearchQueryChange={onSearchQueryChange}
+            searchPlaceholder="Name, father, GR number"
+            searchAriaLabel="Search students for fee increment"
+            filters={
           <>
             <SimpleSelect
-              className="w-full sm:w-36"
+              className="w-full min-w-32 sm:w-36"
               ariaLabel="Filter by class"
               value={filters.classLevelId}
+              triggerIcon={ClassIcon}
               emptyOption={{ value: '', label: 'Any class' }}
               placeholder="Any class"
               options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
@@ -507,9 +492,10 @@ export function FeeIncrementsView({
               }}
             />
             <SimpleSelect
-              className="w-full sm:w-36"
+              className="w-full min-w-32 sm:w-36"
               ariaLabel="Filter by session"
               value={filters.sessionId}
+              triggerIcon={SessionIcon}
               emptyOption={{ value: '', label: 'Any session' }}
               placeholder="Any session"
               options={sessions.map((entry) => ({ value: entry.id, label: entry.name }))}
@@ -518,9 +504,10 @@ export function FeeIncrementsView({
               }}
             />
             <SimpleSelect
-              className="w-full sm:w-36"
+              className="w-full min-w-32 sm:w-36"
               ariaLabel="Filter by status"
               value={filters.status}
+              triggerIcon={SuccessIcon}
               emptyOption={{ value: '', label: 'Any status' }}
               placeholder="Any status"
               options={[
@@ -533,9 +520,10 @@ export function FeeIncrementsView({
               }}
             />
             <SimpleSelect
-              className="w-full sm:w-32"
+              className="w-full min-w-32 sm:w-36"
               ariaLabel="Filter by gender"
               value={filters.gender}
+              triggerIcon={AccountIcon}
               emptyOption={{ value: '', label: 'Any gender' }}
               placeholder="Any gender"
               options={[
@@ -564,89 +552,80 @@ export function FeeIncrementsView({
                 onGrToChange(event.target.value);
               }}
             />
-          </>
-        }
-      />
-
-      {/* The bulk bar appears only when something is selected, so the buttons
-          are never offered with nothing to act on. */}
-      {canApply && selected.size > 0 ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
-          <p className="text-sm font-medium">
-            {selected.size} {selected.size === 1 ? 'student' : 'students'} selected
-          </p>
-          <div className="ms-auto flex flex-wrap gap-2">
-            <Button
-              tone="ghost"
-              size="sm"
-              onClick={() => {
-                setSelected(new Set());
-              }}
-            >
-              Clear selection
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => {
-                setDirection('INCREASE');
-              }}
-            >
-              <TrendUpIcon className={ICON_SIZE.inline} aria-hidden />
-              Increase fee
-            </Button>
-            <Button
-              tone="outline"
-              size="sm"
-              onClick={() => {
-                setDirection('DECREASE');
-              }}
-            >
-              <TrendDownIcon className={ICON_SIZE.inline} aria-hidden />
-              Decrease fee
-            </Button>
-          </div>
-        </div>
-      ) : null}
-
-      <CardTable
-        title="All students"
-        caption="Students and their current fee"
-        rows={rows}
-        columns={columns}
-        rowKey={(row) => row.studentId}
-        minWidthClass="min-w-[56rem]"
-        error={error}
-        isFiltered={isFiltered}
-        onClearFilters={clearFilters}
-        sort={{
-          key: sort,
-          direction: order,
-          onToggle: toggleSort,
-        }}
-        empty={{
-          title: 'No students yet',
-          description:
-            'Fee increments work on the students already admitted. Admit a student first, and their agreed fee will appear here.',
-        }}
-      />
-
-      {total === 0 ? null : (
-        <Pagination
-          total={total}
-          limit={limit}
-          offset={offset}
-          label="students"
-          onChange={(next) => {
-            const query = new URLSearchParams(params.toString());
-            if (next === 0) {
-              query.delete('offset');
-            } else {
-              query.set('offset', String(next));
+              </>
             }
-            router.push(tenantHref(`/fees/increments?${query.toString()}`));
+          />
+        }
+        footer={
+          <ListTablePaginationFooter
+            total={total}
+            limit={limit}
+            offset={offset}
+            label="students"
+            onPageChange={(next) => {
+              pushFilters({ offset: next === 0 ? '' : String(next) });
+            }}
+            onLimitChange={(next) => {
+              pushFilters({ limit: next, offset: '' });
+            }}
+          />
+        }
+      >
+        <ListDataTable
+          title="All students"
+          caption="Students and their current fee"
+          rows={rows}
+          columns={columns}
+          rowKey={(row) => row.studentId}
+          minWidthClass="min-w-[56rem]"
+          error={error}
+          isFiltered={isFiltered}
+          onClearFilters={clearFilters}
+          sort={{
+            key: sort,
+            direction: order,
+            onToggle: toggleSort,
+          }}
+          empty={{
+            title: 'No students yet',
+            description:
+              'Fee increments work on the students already admitted. Admit a student first, and their agreed fee will appear here.',
           }}
         />
-      )}
+      </ListTableScreen>
+
+      {canApply ? (
+        <TableSelectionBar
+          count={selected.size}
+          noun="student"
+          onClear={clearSelection}
+          actions={
+            <>
+              <Button
+                size="sm"
+                disabled={selected.size === 0}
+                onClick={() => {
+                  setDirection('INCREASE');
+                }}
+              >
+                <TrendUpIcon className={ICON_SIZE.inline} aria-hidden />
+                Increase fee
+              </Button>
+              <Button
+                tone="outline"
+                size="sm"
+                disabled={selected.size === 0}
+                onClick={() => {
+                  setDirection('DECREASE');
+                }}
+              >
+                <TrendDownIcon className={ICON_SIZE.inline} aria-hidden />
+                Decrease fee
+              </Button>
+            </>
+          }
+        />
+      ) : null}
 
       {/* Applying a change to many rows is financial, so docs/16 §11 asks for a
           preview naming the specifics rather than "Are you sure?". Every
