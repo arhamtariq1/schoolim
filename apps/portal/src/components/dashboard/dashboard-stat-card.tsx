@@ -16,6 +16,20 @@ export const DASHBOARD_STAT_ICON_NAMES = [
 
 export type DashboardStatIconName = (typeof DASHBOARD_STAT_ICON_NAMES)[number];
 
+/** Shared number styling for KPIs and money in tables (size varies by context). */
+export const DASHBOARD_STAT_NUMBER_CLASS =
+  'font-medium tracking-tight text-foreground tabular-nums';
+
+/** KPI figures on the home dashboard — reuse on other stat rows (e.g. Expenses). */
+export const DASHBOARD_STAT_VALUE_CLASS = cn(
+  DASHBOARD_STAT_NUMBER_CLASS,
+  'text-2xl sm:text-4xl',
+);
+
+export const DASHBOARD_STAT_LABEL_CLASS = 'text-sm font-semibold text-foreground';
+
+export const DASHBOARD_STAT_FOOTNOTE_CLASS = 'mt-2 text-xs leading-snug text-muted-foreground';
+
 type DashboardStatCardProps = {
   label: string;
   value: string;
@@ -40,7 +54,7 @@ export function DashboardStatCard({
   const content = (
     <div className="flex h-full flex-col p-4">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-semibold text-foreground">{label}</p>
+        <p className={DASHBOARD_STAT_LABEL_CLASS}>{label}</p>
         {trend === undefined ? null : (
           <span
             className={cn(
@@ -58,9 +72,7 @@ export function DashboardStatCard({
       </div>
 
       <div className="mt-3 flex items-center gap-2">
-        <p className="text-2xl font-medium tracking-tight text-foreground tabular-nums sm:text-4xl">
-          {value}
-        </p>
+        <p className={DASHBOARD_STAT_VALUE_CLASS}>{value}</p>
         {trend === undefined ? null : (
           <span
             aria-hidden="true"
@@ -85,7 +97,7 @@ export function DashboardStatCard({
       </div>
 
       {footnote === undefined ? null : (
-        <p className="mt-2 text-xs leading-snug text-muted-foreground">{footnote}</p>
+        <p className={DASHBOARD_STAT_FOOTNOTE_CLASS}>{footnote}</p>
       )}
     </div>
   );

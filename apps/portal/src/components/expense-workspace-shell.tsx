@@ -1,7 +1,7 @@
 'use client';
 
 import { type ExpenseTotals } from '@ilm/contracts';
-import { Card, Money, cn } from '@ilm/ui';
+import { Card, cn, Money } from '@ilm/ui';
 import {
   CreateIcon,
   ExpenseIcon,
@@ -15,7 +15,14 @@ import { minorUnits } from '@ilm/utils';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import {
+  DASHBOARD_STAT_FOOTNOTE_CLASS,
+  DASHBOARD_STAT_LABEL_CLASS,
+  DASHBOARD_STAT_NUMBER_CLASS,
+  DASHBOARD_STAT_VALUE_CLASS,
+} from '@/components/dashboard/dashboard-stat-card';
 import { FinanceTabs } from '@/components/tab-links';
+import { pageIntro } from '@/lib/page-copy';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 export interface ExpenseWorkspaceShellProps {
@@ -45,35 +52,40 @@ export function ExpenseWorkspaceShell({
 
   return (
     <div className="w-full space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Expenses</h1>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Expenses</h1>
+        <p className="mt-1 text-sm text-muted-foreground md:text-base">
+          {pageIntro('/finance/expenses')}
+        </p>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <ExpenseStatCard
               label="Total expenses"
-              value={<Money valueMinor={totalMinor} className="text-2xl font-semibold" />}
+              valueMinor={totalMinor}
               hint={trendLabel}
               icon={FinanceIcon}
               iconClassName="bg-primary/10 text-primary"
             />
             <ExpenseStatCard
               label="Paid"
-              value={<Money valueMinor={totalMinor} className="text-2xl font-semibold" />}
+              valueMinor={totalMinor}
               hint={totalMinor === 0 ? '0% of total' : '100% of total'}
               icon={TrendUpIcon}
               iconClassName="bg-success/10 text-success"
             />
             <ExpenseStatCard
               label="Unpaid"
-              value={<Money valueMinor={0} className="text-2xl font-semibold" />}
+              valueMinor={0}
               hint="0% of total"
               icon={OverdueIcon}
               iconClassName="bg-danger/10 text-danger"
             />
             <ExpenseStatCard
               label="This month"
-              value={<Money valueMinor={monthMinor} className="text-2xl font-semibold" />}
+              valueMinor={monthMinor}
               hint={`${String(monthTotals.count)} ${monthTotals.count === 1 ? 'expense' : 'expenses'}`}
               icon={ExpenseIcon}
               iconClassName="bg-info/10 text-info"
@@ -87,10 +99,10 @@ export function ExpenseWorkspaceShell({
 
         <aside className="space-y-4">
           <SidebarPanel title="Expense summary">
-            <SummaryRow label="Total" value={<Money valueMinor={totalMinor} />} />
-            <SummaryRow label="Paid" value={<Money valueMinor={totalMinor} />} />
-            <SummaryRow label="Unpaid" value={<Money valueMinor={0} />} />
-            <SummaryRow label="This month" value={<Money valueMinor={monthMinor} />} />
+            <SummaryRow label="Total" valueMinor={totalMinor} />
+            <SummaryRow label="Paid" valueMinor={totalMinor} />
+            <SummaryRow label="Unpaid" valueMinor={0} />
+            <SummaryRow label="This month" valueMinor={monthMinor} />
           </SidebarPanel>
 
           <SidebarPanel title="Quick actions">
@@ -132,35 +144,33 @@ export function ExpenseWorkspaceShell({
 
 function ExpenseStatCard({
   label,
-  value,
+  valueMinor,
   hint,
   icon: Icon,
   iconClassName,
 }: {
   label: string;
-  value: ReactNode;
+  valueMinor: number;
   hint?: string;
   icon: typeof FinanceIcon;
   iconClassName: string;
 }) {
   return (
-    <Card className="rounded-lg p-4 shadow-raised">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-2">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <div>{value}</div>
-          {hint === undefined ? null : (
-            <p className="text-xs text-muted-foreground">{hint}</p>
-          )}
+    <Card className="h-full rounded-xl border border-border bg-card shadow-sm">
+      <div className="flex h-full flex-col p-4">
+        <div className="flex items-start justify-between gap-2">
+          <p className={DASHBOARD_STAT_LABEL_CLASS}>{label}</p>
+          <span
+            className={cn(
+              'inline-flex size-10 shrink-0 items-center justify-center rounded-lg',
+              iconClassName,
+            )}
+          >
+            <Icon className="size-5" aria-hidden />
+          </span>
         </div>
-        <span
-          className={cn(
-            'inline-flex size-10 shrink-0 items-center justify-center rounded-lg',
-            iconClassName,
-          )}
-        >
-          <Icon className="size-5" aria-hidden />
-        </span>
+        <Money valueMinor={minorUnits(valueMinor)} className={cn('mt-3', DASHBOARD_STAT_VALUE_CLASS)} />
+        {hint === undefined ? null : <p className={DASHBOARD_STAT_FOOTNOTE_CLASS}>{hint}</p>}
       </div>
     </Card>
   );
@@ -168,18 +178,18 @@ function ExpenseStatCard({
 
 function SidebarPanel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Card className="space-y-3 rounded-lg p-4 shadow-raised">
+    <Card className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm">
       <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       {children}
     </Card>
   );
 }
 
-function SummaryRow({ label, value }: { label: string; value: ReactNode }) {
+function SummaryRow({ label, valueMinor }: { label: string; valueMinor: number }) {
   return (
     <div className="flex items-center justify-between gap-2 text-sm">
       <span className="text-muted-foreground">{label}</span>
-      <span className="font-mono tabular-nums">{value}</span>
+      <Money valueMinor={minorUnits(valueMinor)} className={DASHBOARD_STAT_NUMBER_CLASS} />
     </div>
   );
 }

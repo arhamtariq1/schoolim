@@ -65,8 +65,10 @@ import {
 } from '@/components/fees/fee-list-shared';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { pageIntro } from '@/lib/page-copy';
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
+import { nextSortParams } from '@/lib/list-page';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -105,6 +107,8 @@ export interface FeeIncrementsViewProps {
   readonly total: number;
   readonly limit: number;
   readonly offset: number;
+  readonly sort: 'name' | 'grNo' | 'className' | 'currentFee';
+  readonly order: 'asc' | 'desc';
   readonly filters: {
     q: string;
     classLevelId: string;
@@ -125,6 +129,8 @@ export function FeeIncrementsView({
   total,
   limit,
   offset,
+  sort,
+  order,
   filters,
   error,
   canApply,
@@ -167,6 +173,11 @@ export function FeeIncrementsView({
   const amountMinor = rupeesToMinor(amount);
 
   const isFiltered = Object.values(filters).some((value) => value !== '');
+
+  function toggleSort(columnKey: string) {
+    const next = nextSortParams(sort, order, columnKey);
+    pushFilters({ sort: next.sort, order: next.order });
+  }
 
   function pushFilters(next: Record<string, string>): void {
     const query = new URLSearchParams(params.toString());
@@ -330,6 +341,7 @@ export function FeeIncrementsView({
         label: 'GR No',
         ...FEE_LIST_TABLE_CELL,
         colStyle: { width: '5.75rem' },
+        sortable: true,
         headerCell: feeListTableHeader('GR No', undefined, grHeaderLeading),
         render: (row) => (
           <div className="flex items-center gap-2" data-stop-row-click>
@@ -352,6 +364,7 @@ export function FeeIncrementsView({
         label: 'Student',
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[16%]',
+        sortable: true,
         headerCell: feeListTableHeader('Student', StudentsIcon),
         render: (row) => (
           <TwoLineCell
@@ -400,6 +413,7 @@ export function FeeIncrementsView({
         label: feeHeadLabel,
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[12%]',
+        sortable: true,
         headerCell: feeListTableHeader(feeHeadLabel, FeesIcon),
         render: (row) => {
           if (row.currentPayableMinor === null) {
@@ -472,10 +486,7 @@ export function FeeIncrementsView({
 
   return (
     <div className="w-full space-y-6">
-      <WorkspacePageHeader
-        title="Fee increment"
-        description={`Raise or lower ${page.feeHead.name.toLowerCase()} for one student or a whole class. Each child keeps their own agreed amount.`}
-      />
+      <WorkspacePageHeader title="Fee increment" description={pageIntro('/fees/increments')} />
 
       <ListPageToolbar
         searchQuery={searchQuery}
@@ -607,6 +618,11 @@ export function FeeIncrementsView({
         error={error}
         isFiltered={isFiltered}
         onClearFilters={clearFilters}
+        sort={{
+          key: sort,
+          direction: order,
+          onToggle: toggleSort,
+        }}
         empty={{
           title: 'No students yet',
           description:

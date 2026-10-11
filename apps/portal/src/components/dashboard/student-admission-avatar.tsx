@@ -27,7 +27,7 @@ export function StudentAdmissionAvatar({
         alt=""
         width={40}
         height={40}
-        className={cn('size-10 shrink-0 rounded-full object-cover ring-1 ring-border', className)}
+        className={cn('size-10 shrink-0 rounded-full object-cover', className)}
         onError={() => {
           setImageFailed(true);
         }}
@@ -39,7 +39,7 @@ export function StudentAdmissionAvatar({
     <span
       aria-hidden="true"
       className={cn(
-        'flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-border',
+        'flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary',
         className,
       )}
       title={displayName}

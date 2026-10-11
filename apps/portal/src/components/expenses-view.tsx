@@ -42,6 +42,7 @@ import {
   SimpleSelect,
   StatusBadge,
   TwoLineCell,
+  cn,
   useToast,
   type CardTableColumn,
   type StatusBadgeProps,
@@ -63,14 +64,18 @@ import { minorUnits } from '@ilm/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent, type ReactElement } from 'react';
 
+import { DASHBOARD_STAT_NUMBER_CLASS } from '@/components/dashboard/dashboard-stat-card';
 import { ExpenseWorkspaceShell } from '@/components/expense-workspace-shell';
 import {
+  FEE_LIST_SELECT_COLUMN,
   FEE_LIST_TABLE_CELL,
   afterMenuAction,
+  feeListSelectCheckboxWrap,
   feeListTableHeader,
   useDebouncedSearchFilter,
 } from '@/components/fees/fee-list-shared';
 import { formatInclusiveDateRange } from '@/lib/expense-date-range';
+import { nextSortParams } from '@/lib/list-page';
 import { mutate } from '@/lib/mutate';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
@@ -106,6 +111,8 @@ export interface ExpensesViewProps {
     from: string;
     to: string;
   };
+  sort: 'paidOn' | 'amount' | 'voucherNo' | 'createdAt';
+  order: 'asc' | 'desc';
   error?: string | undefined;
   canManage: boolean;
   paymentMethods: readonly PaymentMethod[];
@@ -122,6 +129,8 @@ export function ExpensesView({
   limit,
   offset,
   filters,
+  sort,
+  order,
   error,
   canManage,
   paymentMethods,
@@ -165,6 +174,11 @@ export function ExpensesView({
     pushFilters({ q: value });
   });
 
+  function toggleSort(columnKey: string) {
+    const next = nextSortParams(sort, order, columnKey);
+    pushFilters({ sort: next.sort, order: next.order });
+  }
+
   const isFiltered = Object.entries(filters).some(([key, value]) => {
     if (key === 'from' || key === 'to') {
       return false;
@@ -200,11 +214,10 @@ export function ExpensesView({
       {
         key: 'select',
         label: '',
-        ...FEE_LIST_TABLE_CELL,
-        colStyle: { width: '2.75rem' },
-        headerCell: (
+        ...FEE_LIST_SELECT_COLUMN,
+        colStyle: { width: '3.25rem' },
+        headerCell: feeListSelectCheckboxWrap(
           <Checkbox
-            className="shrink-0"
             checked={allOnPageSelected ? true : someOnPageSelected ? 'indeterminate' : false}
             aria-label="Select every expense on this page"
             onCheckedChange={(next) => {
@@ -220,12 +233,11 @@ export function ExpensesView({
                 return copy;
               });
             }}
-          />
+          />,
         ),
-        render: (row) => (
-          <div data-stop-row-click>
+        render: (row) =>
+          feeListSelectCheckboxWrap(
             <Checkbox
-              className="shrink-0"
               checked={selected.has(row.id)}
               aria-label={`Select ${row.voucherNo}`}
               onCheckedChange={(next) => {
@@ -239,15 +251,16 @@ export function ExpensesView({
                   return copy;
                 });
               }}
-            />
-          </div>
-        ),
+            />,
+            { stopRowClick: true },
+          ),
       },
       {
         key: 'voucherNo',
         label: 'Voucher #',
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[9%]',
+        sortable: true,
         headerCell: feeListTableHeader('Voucher #', ExpenseIcon),
         render: (row) => (
           <span className="font-mono text-sm tabular-nums">{row.voucherNo}</span>
@@ -284,6 +297,7 @@ export function ExpensesView({
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[10%]',
         hideOnMobile: true,
+        sortable: true,
         headerCell: feeListTableHeader('Date', CalendarIcon),
         render: (row) => (
           <span className="text-sm">
@@ -307,11 +321,10 @@ export function ExpensesView({
         label: 'Amount',
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[10%]',
+        sortable: true,
         headerCell: feeListTableHeader('Amount', FeesIcon),
         render: (row) => (
-          <span className="font-mono text-sm font-medium tabular-nums">
-            <Money valueMinor={minorUnits(row.amountMinor)} />
-          </span>
+          <Money valueMinor={minorUnits(row.amountMinor)} className={DASHBOARD_STAT_NUMBER_CLASS} />
         ),
       },
       {
@@ -481,6 +494,11 @@ export function ExpensesView({
             error={error}
             isFiltered={isFiltered}
             onClearFilters={clearFilters}
+            sort={{
+              key: sort,
+              direction: order,
+              onToggle: toggleSort,
+            }}
             empty={{
               title: 'Nothing recorded yet',
               description:

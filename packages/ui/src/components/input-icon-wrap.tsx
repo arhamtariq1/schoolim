@@ -1,0 +1,36 @@
+'use client';
+
+import type { LucideIcon } from 'lucide-react';
+import { cloneElement, type ReactElement } from 'react';
+
+import { cn } from '../lib/cn';
+
+export interface InputIconWrapProps {
+  /** Leading icon — decorative when the field has a visible label. */
+  readonly icon: LucideIcon;
+  /** Extra inset for multi-line controls (e.g. textarea). */
+  readonly alignTop?: boolean;
+  readonly children: ReactElement<{ className?: string; id?: string }>;
+}
+
+/**
+ * Prefix icon inside text inputs, selects, and date pickers — one pattern for
+ * admission forms, filters, and settings screens.
+ */
+export function InputIconWrap({ icon: Icon, alignTop = false, children }: InputIconWrapProps) {
+  return (
+    <div className="relative">
+      <span
+        className={cn(
+          'pointer-events-none absolute start-0 flex w-10 justify-center text-muted-foreground',
+          alignTop ? 'top-2.5' : 'inset-y-0 items-center',
+        )}
+      >
+        <Icon className="size-4 shrink-0" aria-hidden="true" />
+      </span>
+      {cloneElement(children, {
+        className: cn('ps-10', children.props.className),
+      })}
+    </div>
+  );
+}

@@ -268,9 +268,10 @@ describe('allocateOldestFirst', () => {
 });
 
 describe('formatting', () => {
-  it('renders two decimal places', () => {
+  it('omits decimals for whole rupees and keeps paisa exact', () => {
+    expect(formatMoneyPlain(minorUnits(1234_00))).toMatch(/1,234(?!\.)/);
     expect(formatMoneyPlain(minorUnits(1234_50))).toMatch(/1,234\.50/);
-    expect(formatMoneyPlain(ZERO_MINOR)).toMatch(/0\.00/);
+    expect(formatMoneyPlain(ZERO_MINOR)).toBe('0');
   });
 
   it('includes a currency indication when asked', () => {

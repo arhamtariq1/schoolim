@@ -14,7 +14,9 @@ import { Money } from './money';
 afterEach(cleanup);
 
 describe('Money', () => {
-  it('renders exactly two decimals, never truncated', () => {
+  it('omits .00 for whole rupees and keeps paisa exact', () => {
+    render(<Money valueMinor={minorUnits(123400)} data-testid="whole" />);
+    expect(screen.getByTestId('whole').textContent).toMatch(/1,234(?!\.)/);
     render(<Money valueMinor={minorUnits(123450)} data-testid="m" />);
     expect(screen.getByTestId('m').textContent).toMatch(/1,234\.50/);
   });
@@ -41,11 +43,12 @@ describe('Money', () => {
     expect(element.getAttribute('aria-label')).toContain('negative');
   });
 
-  it('is monospace and tabular, so a column aligns on the decimal point', () => {
+  it('uses tabular sans figures so columns stay aligned', () => {
     render(<Money valueMinor={minorUnits(100)} data-testid="m" />);
     const className = screen.getByTestId('m').className;
-    expect(className).toContain('font-mono');
+    expect(className).not.toContain('font-mono');
     expect(className).toContain('tabular-nums');
+    expect(className).toContain('font-medium');
   });
 
   it('shows an em dash for zero when asked', () => {
@@ -63,6 +66,6 @@ describe('Money', () => {
     render(<Money valueMinor={minorUnits(100)} className="text-lg" data-testid="m" />);
     const className = screen.getByTestId('m').className;
     expect(className).toContain('text-lg');
-    expect(className).toContain('font-mono');
+    expect(className).toContain('font-medium');
   });
 });

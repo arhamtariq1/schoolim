@@ -39,6 +39,8 @@ import {
 } from '@/components/fees/fee-list-shared';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { pageIntro } from '@/lib/page-copy';
+import { nextSortParams } from '@/lib/list-page';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -69,6 +71,8 @@ export interface DefaultersViewProps {
   readonly classes: readonly ClassLevel[];
   readonly limit: number;
   readonly offset: number;
+  readonly sort: 'amount' | 'months' | 'name' | 'grNo' | 'className';
+  readonly order: 'asc' | 'desc';
   readonly filters: {
     q: string;
     classLevelId: string;
@@ -86,6 +90,8 @@ export function DefaultersView({
   classes,
   limit,
   offset,
+  sort,
+  order,
   filters,
   error,
 }: DefaultersViewProps) {
@@ -101,6 +107,11 @@ export function DefaultersView({
   });
 
   const isFiltered = Object.values(filters).some((value) => value !== '');
+
+  function toggleSort(columnKey: string) {
+    const next = nextSortParams(sort, order, columnKey);
+    pushFilters({ sort: next.sort, order: next.order });
+  }
 
   function pushFilters(next: Record<string, string>): void {
     const query = new URLSearchParams(params.toString());
@@ -227,6 +238,7 @@ export function DefaultersView({
         label: 'GR No',
         ...FEE_LIST_TABLE_CELL,
         colStyle: { width: '6.5rem' },
+        sortable: true,
         headerCell: feeListTableHeader('GR No', StudentsIcon),
         render: (row) => {
           const isOpen = expanded.has(row.studentId);
@@ -258,6 +270,7 @@ export function DefaultersView({
         label: 'Student',
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[18%]',
+        sortable: true,
         headerCell: feeListTableHeader('Student', StudentsIcon),
         render: (row) => (
           <TwoLineCell
@@ -303,6 +316,7 @@ export function DefaultersView({
         label: 'Amount',
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[12%]',
+        sortable: true,
         headerCell: feeListTableHeader('Amount', FeesIcon),
         render: (row) => (
           <span className="font-mono text-sm font-medium text-danger tabular-nums">
@@ -338,11 +352,7 @@ export function DefaultersView({
     <div className="w-full space-y-6">
       <WorkspacePageHeader
         title="Defaulters"
-        description={
-          <>
-            Students whose fee was due before <DateDisplay value={page.asOf} /> and is still owed.
-          </>
-        }
+        description={pageIntro('/fees/defaulters')}
         actions={
           <>
             <div className="rounded-lg border border-danger/30 bg-danger/5 px-4 py-2">
@@ -453,6 +463,11 @@ export function DefaultersView({
         error={error}
         isFiltered={isFiltered}
         onClearFilters={clearFilters}
+        sort={{
+          key: sort,
+          direction: order,
+          onToggle: toggleSort,
+        }}
         renderExpanded={(row) =>
           expanded.has(row.studentId) ? renderVouchers(row) : null
         }

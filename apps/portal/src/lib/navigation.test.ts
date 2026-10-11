@@ -38,7 +38,7 @@ describe('the fees section', () => {
     const fees = find(visibleNavItems(ACCOUNTANT), 'Fees');
 
     expect(labels(fees?.children ?? [])).toEqual([
-      'Fee vouchers',
+      'Fee Vouchers',
       'Generate fee',
       'Defaulters',
       'Fee increment',
@@ -52,7 +52,7 @@ describe('the fees section', () => {
     const visible = visibleNavItems(['fees.voucher.read', 'fees.defaulter.read']);
     const fees = find(visible, 'Fees');
 
-    expect(labels(fees?.children ?? [])).toEqual(['Fee vouchers', 'Defaulters']);
+    expect(labels(fees?.children ?? [])).toEqual(['Fee Vouchers', 'Defaulters']);
   });
 
   it('disappears entirely rather than becoming a heading that expands to nothing', () => {

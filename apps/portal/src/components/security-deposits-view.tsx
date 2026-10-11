@@ -60,8 +60,10 @@ import {
 } from '@/components/fees/fee-list-shared';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { pageIntro } from '@/lib/page-copy';
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
+import { nextSortParams } from '@/lib/list-page';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -91,6 +93,8 @@ export interface SecurityDepositsViewProps {
   readonly classes: readonly ClassLevel[];
   readonly limit: number;
   readonly offset: number;
+  readonly sort: 'receivedOn' | 'name' | 'grNo' | 'deposited' | 'left';
+  readonly order: 'asc' | 'desc';
   readonly filters: {
     q: string;
     classLevelId: string;
@@ -106,6 +110,8 @@ export function SecurityDepositsView({
   classes,
   limit,
   offset,
+  sort,
+  order,
   filters,
   error,
   canRefund,
@@ -133,6 +139,11 @@ export function SecurityDepositsView({
   const available = refunding?.leftMinor ?? 0;
 
   const isFiltered = Object.values(filters).some((value) => value !== '');
+
+  function toggleSort(columnKey: string) {
+    const next = nextSortParams(sort, order, columnKey);
+    pushFilters({ sort: next.sort, order: next.order });
+  }
 
   function pushFilters(next: Record<string, string>): void {
     const query = new URLSearchParams(params.toString());
@@ -199,16 +210,18 @@ export function SecurityDepositsView({
         label: 'GR No',
         ...FEE_LIST_TABLE_CELL,
         colStyle: { width: '5.75rem' },
+        sortable: true,
         headerCell: feeListTableHeader('GR No', StudentsIcon),
         render: (row) => (
           <span className="font-mono text-sm leading-none tabular-nums">{row.grNo}</span>
         ),
       },
       {
-        key: 'month',
+        key: 'receivedOn',
         label: 'Received',
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[12%]',
+        sortable: true,
         headerCell: feeListTableHeader('Received', CalendarIcon),
         render: (row) => (
           <TwoLineCell
@@ -223,6 +236,7 @@ export function SecurityDepositsView({
         label: 'Student',
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[16%]',
+        sortable: true,
         headerCell: feeListTableHeader('Student', StudentsIcon),
         render: (row) => (
           <TwoLineCell primary={row.name} secondary={row.className ?? '—'} />
@@ -264,6 +278,7 @@ export function SecurityDepositsView({
         label: 'Deposited',
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[10%]',
+        sortable: true,
         headerCell: feeListTableHeader('Deposited', DepositIcon),
         render: (row) => (
           <span className="font-mono text-sm tabular-nums">
@@ -287,6 +302,7 @@ export function SecurityDepositsView({
       {
         key: 'left',
         label: 'Left',
+        sortable: true,
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[10%]',
         headerCell: feeListTableHeader('Left', FeesIcon),
@@ -322,7 +338,7 @@ export function SecurityDepositsView({
     <div className="w-full space-y-6">
       <WorkspacePageHeader
         title="Security deposits"
-        description="Money the school is holding for families, and what has been given back."
+        description={pageIntro('/fees/security-deposits')}
         actions={
           <>
             <div className="rounded-lg border border-border bg-card px-4 py-2">
@@ -402,6 +418,11 @@ export function SecurityDepositsView({
         error={error}
         isFiltered={isFiltered}
         onClearFilters={clearFilters}
+        sort={{
+          key: sort,
+          direction: order,
+          onToggle: toggleSort,
+        }}
         empty={{
           title: 'No deposits recorded',
           description:

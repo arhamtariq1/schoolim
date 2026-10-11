@@ -40,11 +40,14 @@ import { minorUnits } from '@ilm/utils';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 
+import { useDebouncedSearchFilter } from '@/components/fees/fee-list-shared';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { nextSortParams } from '@/lib/list-page';
 import { StaffDialog } from '@/components/staff-dialog';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { pageIntro } from '@/lib/page-copy';
 import { mutate } from '@/lib/mutate';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
@@ -58,6 +61,8 @@ export interface StaffTableProps {
   error?: string | undefined;
   search: string;
   role: string;
+  sort: 'name' | 'employeeNo' | 'role' | 'createdAt';
+  order: 'asc' | 'desc';
   canManage: boolean;
 }
 
@@ -69,6 +74,8 @@ export function StaffTable({
   error,
   search,
   role,
+  sort,
+  order,
   canManage,
 }: StaffTableProps) {
   const router = useRouter();
@@ -81,13 +88,6 @@ export function StaffTable({
   const [editing, setEditing] = useState<StaffListItem | undefined>(undefined);
   const [deleting, setDeleting] = useState<StaffListItem | undefined>(undefined);
   const [inviting, setInviting] = useState<string | undefined>(undefined);
-  const [searchQuery, setSearchQuery] = useState(search);
-  const searchDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  useEffect(() => {
-    setSearchQuery(search);
-  }, [search]);
-
   async function sendInvite(row: StaffListItem) {
     setInviting(row.id);
     const result = await mutate<StaffInviteResult>(ROUTES.staff.invite(row.id), 'POST');
@@ -129,18 +129,16 @@ export function StaffTable({
     });
   }
 
-  function onSearchQueryChange(value: string) {
-    setSearchQuery(value);
-    if (searchDebounce.current !== undefined) {
-      clearTimeout(searchDebounce.current);
-    }
-    searchDebounce.current = setTimeout(() => {
-      apply({ q: value });
-    }, 350);
+  const { searchQuery, onSearchQueryChange } = useDebouncedSearchFilter(search, (value) => {
+    apply({ q: value });
+  });
+
+  function toggleSort(columnKey: string) {
+    const next = nextSortParams(sort, order, columnKey);
+    apply({ sort: next.sort, order: next.order });
   }
 
   function clearFilters(): void {
-    setSearchQuery('');
     apply({ q: '', role: '' });
   }
 
@@ -176,6 +174,7 @@ export function StaffTable({
         label: 'Name',
         icon: AccountIcon,
         width: 'w-[24%]',
+        sortable: true,
         render: (row) => (
           <TwoLineCell
             primary={row.name}
@@ -193,6 +192,7 @@ export function StaffTable({
         label: 'Role',
         icon: StudentsIcon,
         width: 'w-[14%]',
+        sortable: true,
         render: (row) => (
           <TwoLineCell primary={STAFF_ROLE_LABELS[row.role]} secondary="Job title" />
         ),
@@ -284,14 +284,7 @@ export function StaffTable({
 
   return (
     <div className="w-full space-y-6">
-      <WorkspacePageHeader
-        title="Staff"
-        description={
-          <>
-            {total} {total === 1 ? 'person' : 'people'} on the payroll
-          </>
-        }
-      />
+      <WorkspacePageHeader title="Staff" description={pageIntro('/staff')} />
 
       {error !== undefined ? (
         <div
@@ -343,6 +336,11 @@ export function StaffTable({
         rowKey={(row) => row.id}
         isFiltered={isFiltered}
         onClearFilters={clearFilters}
+        sort={{
+          key: sort,
+          direction: order,
+          onToggle: toggleSort,
+        }}
         empty={{
           title: 'Nobody on the staff list yet',
           description:

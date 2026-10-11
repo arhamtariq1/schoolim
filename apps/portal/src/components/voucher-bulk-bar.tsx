@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   Field,
+  FloatingActionBar,
   Input,
   useToast,
 } from '@ilm/ui';
@@ -141,70 +142,66 @@ export function VoucherBulkBar({
 
   return (
     <>
-      <div
-        role="status"
-        className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-overlay"
-      >
-        {/*
-          The header checkbox ticks the page in front of you and nothing else,
-          which is the only scope it can honestly have — it cannot tick rows it
-          has not loaded. So the bar says what is selected *and* what matches,
-          and the difference between the two is where the next control goes.
-          Leaving that difference unsaid is what made "does this select twenty
-          or five hundred" a question somebody had to ask.
-        */}
-        <span className="text-sm text-foreground">
-          <span className="font-medium">
-            {count} selected
-          </span>
-          {matching > count ? (
-            <span className="text-muted-foreground"> of {matching} matching these filters</span>
-          ) : null}
-        </span>
-
-        {onSelectAllMatching === undefined ? null : (
-          <Button
-            tone="ghost"
-            size="sm"
-            onClick={() => {
-              void onSelectAllMatching();
-            }}
-          >
-            Select all {matching}
-          </Button>
-        )}
-
-        {!tooManyMatching ? null : (
-          <span className="text-sm text-warning">
-            Only {MAX_BULK_VOUCHERS} can be handled at once — filter by class to print a stack.
-          </span>
-        )}
-
-        <div className="ms-auto flex flex-wrap items-center gap-2">
-          <Button size="sm" disabled={overCap} onClick={print}>
-            <PrintIcon className={ICON_SIZE.inline} aria-hidden />
-            Print {count} {count === 1 ? 'challan' : 'challans'}
-          </Button>
-
-          {!canDelete ? null : (
+      <FloatingActionBar
+        message={
+          <>
+            <span className="font-medium">
+              {count} {count === 1 ? 'voucher' : 'vouchers'} selected
+            </span>
+            {matching > count ? (
+              <span className="text-muted-foreground">
+                {' '}
+                of {matching} matching these filters
+              </span>
+            ) : null}
+            {!tooManyMatching ? null : (
+              <span className="text-warning">
+                {' '}
+                — only {MAX_BULK_VOUCHERS} at once; filter by class to print a stack.
+              </span>
+            )}
+          </>
+        }
+        leadingActions={
+          onSelectAllMatching === undefined ? null : (
             <Button
-              tone="outline"
+              tone="ghost"
               size="sm"
-              disabled={overCap}
               onClick={() => {
-                setConfirming(true);
+                void onSelectAllMatching();
               }}
             >
-              <DeleteIcon className={`${ICON_SIZE.inline} text-danger`} aria-hidden />
-              Delete
+              Select all {matching}
             </Button>
-          )}
+          )
+        }
+        actions={
+          <>
+            <Button tone="ghost" size="sm" onClick={onClear}>
+              Clear selection
+            </Button>
 
-          <Button tone="ghost" size="sm" onClick={onClear}>
-            Clear
-          </Button>
-        </div>
-      </div>
+            {!canDelete ? null : (
+              <Button
+                tone="danger"
+                size="sm"
+                disabled={overCap}
+                onClick={() => {
+                  setConfirming(true);
+                }}
+              >
+                <DeleteIcon className={ICON_SIZE.inline} aria-hidden />
+                Delete
+              </Button>
+            )}
+
+            <Button size="sm" disabled={overCap} onClick={print}>
+              <PrintIcon className={ICON_SIZE.inline} aria-hidden />
+              Print {count} {count === 1 ? 'challan' : 'challans'}
+            </Button>
+          </>
+        }
+      />
 
       {/* A plain Dialog rather than ConfirmDialog, for the reason the
           single-voucher delete already found: that component takes no

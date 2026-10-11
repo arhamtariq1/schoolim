@@ -40,13 +40,15 @@ import {
 import { minorUnits } from '@ilm/utils';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 
 import { EditStudentDialog } from './edit-student-dialog';
 
 import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
+import { useDebouncedSearchFilter } from '@/components/fees/fee-list-shared';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { pageIntro } from '@/lib/page-copy';
 import { mutateOrThrow } from '@/lib/mutate';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
@@ -96,7 +98,6 @@ export interface StudentsTableProps {
 export function StudentsTable({
   rows,
   total,
-  aggregates,
   error,
   search,
   status,
@@ -119,13 +120,6 @@ export function StudentsTable({
   const [editing, setEditing] = useState<StudentListItem | undefined>(undefined);
   const [deleting, setDeleting] = useState<StudentListItem | undefined>(undefined);
   const [leaving, setLeaving] = useState<StudentListItem | undefined>(undefined);
-  const [searchQuery, setSearchQuery] = useState(search);
-  const searchDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  useEffect(() => {
-    setSearchQuery(search);
-  }, [search]);
-
   function apply(next: Record<string, string>) {
     const updated = new URLSearchParams(params.toString());
     for (const [key, value] of Object.entries(next)) {
@@ -145,18 +139,11 @@ export function StudentsTable({
     });
   }
 
-  function onSearchQueryChange(value: string) {
-    setSearchQuery(value);
-    if (searchDebounce.current !== undefined) {
-      clearTimeout(searchDebounce.current);
-    }
-    searchDebounce.current = setTimeout(() => {
-      apply({ q: value });
-    }, 350);
-  }
+  const { searchQuery, onSearchQueryChange } = useDebouncedSearchFilter(search, (value) => {
+    apply({ q: value });
+  });
 
   function clearFilters(): void {
-    setSearchQuery('');
     apply({ q: '', status: '', classLevelId: '' });
   }
 
@@ -378,17 +365,7 @@ export function StudentsTable({
 
   return (
     <div className="w-full space-y-6">
-      <WorkspacePageHeader
-        title="Students"
-        description={
-          <>
-            {total} {total === 1 ? 'student' : 'students'}
-            {aggregates['totalActive'] === undefined
-              ? ''
-              : ` · ${aggregates['totalActive']} active`}
-          </>
-        }
-      />
+      <WorkspacePageHeader title="Students" description={pageIntro('/students')} />
 
       {error !== undefined ? (
         <div

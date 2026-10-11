@@ -15,7 +15,7 @@
 
 @theme {
   /* --- Typography: four sizes in app chrome. See docs/16 section 5. -------- */
-  --font-sans: var(--font-noto-sans, 'Noto Sans'), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-open-sans, 'Open Sans'), ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --font-urdu: 'Noto Nastaliq Urdu', serif;
 
@@ -129,23 +129,22 @@
 }
 
 :root {
-  /* The page is NOT the same colour as a card.
-     Pure-white-on-pure-white was the single biggest reason this looked flat:
-     with no tonal difference, every card boundary had to be carried by a
-     border alone, so the screen read as a wireframe. A hair of warmth in the
-     page ground lets white cards lift off it without a heavy shadow. */
-  --bg: oklch(0.985 0.002 286);
-  --surface: oklch(0.995 0.001 286);
+  /* Workspace canvas ≈ Tailwind gray-50 (#f9fafb), cards white. */
+  --canvas-from: oklch(0.988 0.002 264);
+  --canvas-mid: oklch(0.985 0.002 264);
+  --canvas-to: oklch(0.982 0.003 264);
+  --bg: oklch(0.985 0.002 264);
+  --surface: oklch(1 0 0);
   --card: oklch(1 0 0);
 
   /* ~Tailwind gray-800 (#1f2937) — softer than near-black on white. */
   --fg: oklch(0.278 0.033 257);
-  --muted: oklch(0.968 0.002 286);
+  --muted: oklch(0.968 0.003 264);
   --muted-fg: oklch(0.552 0.014 285);
-  --border: oklch(0.916 0.004 286);
+  --border: oklch(0.922 0.004 264);
   /* Inputs carry a slightly stronger edge than layout borders: a form control
      has to look like something you can click into. */
-  --input-border: oklch(0.885 0.005 286);
+  --input-border: oklch(0.885 0.005 264);
   --ring: var(--color-brand-500);
   --primary: var(--color-brand-600);
   --primary-fg: oklch(0.985 0 0);
@@ -160,9 +159,12 @@
 }
 
 .dark {
+  --canvas-from: oklch(0.162 0.006 285);
+  --canvas-mid: oklch(0.155 0.005 285);
+  --canvas-to: oklch(0.148 0.005 285);
   /* Same relationship inverted: the page is the darkest layer, cards sit
      above it, chrome sits between. Three steps, not one flat sheet. */
-  --bg: oklch(0.155 0.005 285);
+  --bg: var(--canvas-to);
   --surface: oklch(0.185 0.005 285);
   --card: oklch(0.205 0.006 285);
 
@@ -184,13 +186,31 @@
   --shadow-tint-strong: oklch(0 0 0 / 45%);
 }
 
+/* Must precede @layer base — used in JSX as `bg-workspace-canvas`. */
+@utility bg-workspace-canvas {
+  background-color: var(--bg);
+  background-image: linear-gradient(
+    180deg,
+    var(--canvas-from) 0%,
+    var(--canvas-mid) 48%,
+    var(--canvas-to) 100%
+  );
+}
+
 @layer base {
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-background font-sans text-foreground;
+    @apply font-sans text-foreground;
+    background-color: var(--bg);
+    background-image: linear-gradient(
+      180deg,
+      var(--canvas-from) 0%,
+      var(--canvas-mid) 48%,
+      var(--canvas-to) 100%
+    );
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }

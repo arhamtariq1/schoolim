@@ -95,7 +95,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
         // First, because it is where anyone opening "Fees" actually wants to
         // be: what has been billed, and what is owed.
         href: '/fees/vouchers',
-        label: 'Fee vouchers',
+        label: 'Fee Vouchers',
         icon: 'FeesIcon',
         permission: 'fees.voucher.read',
       },

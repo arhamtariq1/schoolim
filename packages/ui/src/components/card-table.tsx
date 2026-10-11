@@ -233,15 +233,15 @@ function CardTableBody<TRow>({
             ))}
           </colgroup>
           <thead>
-            <tr className="border-b border-border bg-muted/30">
+            <tr className="border-b border-border bg-primary/[0.04]">
               {columns.map((column) =>
                 column.headerCell !== undefined ? (
                   <th
                     key={column.key}
                     scope="col"
                     className={cn(
-                      'px-4 py-3 align-middle',
-                      column.headerClassName,
+                      'align-middle',
+                      column.headerClassName ?? 'px-4 py-3',
                       column.align === 'end' ? 'text-end' : undefined,
                     )}
                   >
@@ -280,18 +280,18 @@ function CardTableBody<TRow>({
                       onRowClick === undefined
                         ? undefined
                         : (event) => {
-                            if (
-                              (event.target as HTMLElement | null)?.closest(
-                                '[data-stop-row-click]',
-                              ) !== null
-                            ) {
-                              return;
-                            }
-                            onRowClick(row);
+                          if (
+                            (event.target as HTMLElement | null)?.closest(
+                              '[data-stop-row-click]',
+                            ) !== null
+                          ) {
+                            return;
                           }
+                          onRowClick(row);
+                        }
                     }
                     className={cn(
-                      'border-b border-border hover:bg-muted/30',
+                      'border-b border-border hover:bg-primary/[0.03]',
                       onRowClick === undefined ? undefined : 'cursor-pointer',
                       expandedContent === undefined || expandedContent === null
                         ? undefined
@@ -302,8 +302,8 @@ function CardTableBody<TRow>({
                       <td
                         key={column.key}
                         className={cn(
-                          'px-4 py-3 align-middle',
-                          column.cellClassName,
+                          'align-middle',
+                          column.cellClassName ?? 'px-4 py-3',
                           column.align === 'end' ? 'text-end' : undefined,
                         )}
                       >

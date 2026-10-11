@@ -145,15 +145,7 @@ export function MonthlyAttendanceReportView({
     <div className="w-full space-y-6">
       <WorkspacePageHeader
         title={config.pageTitle(classTitle)}
-        description={
-          <>
-            {config.pageDescription}
-            <span className="mt-1 block text-sm text-muted-foreground">
-              {formatMonthLabel(report.month)} · {report.workingDays} working{' '}
-              {report.workingDays === 1 ? 'day' : 'days'}
-            </span>
-          </>
-        }
+        description={config.pageDescription}
       />
 
       {error === undefined ? null : (

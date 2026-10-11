@@ -2,6 +2,12 @@ import { MAX_PAGE_LIMIT, ROUTES, type StaffListItem } from '@ilm/contracts';
 
 import { StaffTable } from '@/components/staff-table';
 import { apiFetch } from '@/lib/api';
+import {
+  DEFAULT_LIST_PAGE_SIZE,
+  parseSortField,
+  parseSortOrder,
+} from '@/lib/list-page';
+import { clampInt } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
 
 /** Staff — everybody on the payroll, whether or not they use the portal. */
@@ -14,10 +20,21 @@ export default async function StaffPage({
   const search = typeof params['q'] === 'string' ? params['q'] : '';
   const role = typeof params['role'] === 'string' ? params['role'] : '';
 
-  const limit = clampInt(params['limit'], 25, 1, MAX_PAGE_LIMIT);
+  const limit = clampInt(params['limit'], DEFAULT_LIST_PAGE_SIZE, 1, MAX_PAGE_LIMIT);
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
+  const sort = parseSortField(
+    params['sort'],
+    ['name', 'employeeNo', 'role', 'createdAt'] as const,
+    'name',
+  );
+  const order = parseSortOrder(params['order']);
 
-  const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  const query = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    sort,
+    order,
+  });
   if (search !== '') {
     query.set('q', search);
   }
@@ -42,21 +59,9 @@ export default async function StaffPage({
         error={result.ok ? undefined : result.message}
         search={search}
         role={role}
+        sort={sort}
+        order={order}
         canManage={session?.permissions.includes('staff.record.update') ?? false}
       />
   );
-}
-
-/** See the note on the students page: a mangled URL becomes a sensible page. */
-function clampInt(
-  raw: string | string[] | undefined,
-  fallback: number,
-  min: number,
-  max: number,
-): number {
-  const value = typeof raw === 'string' ? Number.parseInt(raw, 10) : Number.NaN;
-  if (!Number.isFinite(value)) {
-    return fallback;
-  }
-  return Math.min(max, Math.max(min, value));
 }

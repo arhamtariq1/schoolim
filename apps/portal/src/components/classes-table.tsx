@@ -27,6 +27,7 @@ import { useMemo, useState } from 'react';
 
 import { ListPageToolbar } from '@/components/list-page-toolbar';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { pageIntro } from '@/lib/page-copy';
 import { classDisplayMeta, compareClassesByProgression } from '@/lib/class-level-display';
 
 export type ClassSortKey = 'name' | 'level' | 'sections' | 'students';
@@ -170,8 +171,6 @@ export function ClassesTable(props: ClassesTableProps) {
     setSectionsFilter('');
   }
 
-  const totalSections = classes.reduce((sum, entry) => sum + entry.sections.length, 0);
-
   const columns = useMemo((): CardTableColumn<ClassLevel>[] => {
     return [
       {
@@ -302,15 +301,7 @@ export function ClassesTable(props: ClassesTableProps) {
 
   return (
     <div className="w-full space-y-6">
-      <WorkspacePageHeader
-        title="Classes"
-        description={
-          <>
-            {classes.length} {classes.length === 1 ? 'class' : 'classes'} · {totalSections}{' '}
-            {totalSections === 1 ? 'section' : 'sections'} in this session
-          </>
-        }
-      />
+      <WorkspacePageHeader title="Classes" description={pageIntro('/classes')} />
 
       {error !== undefined ? (
         <div

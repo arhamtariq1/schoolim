@@ -15,6 +15,11 @@ import type { Metadata } from 'next';
 
 import { VouchersView } from '@/components/vouchers-view';
 import { apiFetch } from '@/lib/api';
+import {
+  DEFAULT_LIST_PAGE_SIZE,
+  parseSortField,
+  parseSortOrder,
+} from '@/lib/list-page';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
 
@@ -25,7 +30,7 @@ import { getSession } from '@/lib/session';
  * is a link, and the server does the filtering — this screen must stay fast on
  * a school with four years of history behind it.
  */
-export const metadata: Metadata = { title: 'Fee vouchers' };
+export const metadata: Metadata = { title: 'Fee Vouchers' };
 
 export default async function VouchersPage({
   searchParams,
@@ -44,10 +49,21 @@ export default async function VouchersPage({
     to: readParam(params, 'to'),
   };
 
-  const limit = clampInt(params['limit'], 25, 1, MAX_PAGE_LIMIT);
+  const limit = clampInt(params['limit'], DEFAULT_LIST_PAGE_SIZE, 1, MAX_PAGE_LIMIT);
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
+  const sort = parseSortField(
+    params['sort'],
+    ['issueDate', 'dueDate', 'voucherNo', 'amount', 'studentName'] as const,
+    'issueDate',
+  );
+  const order = parseSortOrder(params['order']);
 
-  const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  const query = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    sort,
+    order,
+  });
   for (const [key, value] of Object.entries(filters)) {
     if (value !== '') {
       query.set(key, value);
@@ -106,6 +122,8 @@ export default async function VouchersPage({
         limit={listResult.ok ? listResult.data.meta.page.limit : limit}
         offset={listResult.ok ? listResult.data.meta.page.offset : offset}
         filters={filters}
+        sort={sort}
+        order={order}
         school={{
           name: schoolResult.ok ? schoolResult.data.data.name : (session?.school.name ?? ''),
           address: schoolResult.ok ? (schoolResult.data.data.address ?? undefined) : undefined,

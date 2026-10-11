@@ -90,7 +90,7 @@ const NAV_LEAF_HREFS: readonly string[] = (() => {
  * `pb-24` on small screens clears the bottom tab bar; from `md` the bar is
  * gone and the padding is even on all four sides.
  */
-const CONTENT_PADDING = "px-4 pt-4 pb-24 md:px-6 md:pt-6 md:pb-6";
+const CONTENT_PADDING = 'px-3 pt-3 pb-20 md:px-4 md:pt-4 md:pb-5';
 
 
 export interface AppShellProps {
@@ -198,7 +198,7 @@ export function AppShell({
         on a phone the bottom tab bar would sit behind the browser's URL bar.
         Auth has nothing anchored to the bottom and does not care; this does.
       */}
-      <div className="fixed inset-x-0 top-0 flex h-dvh overflow-hidden bg-background">
+      <div className="fixed inset-x-0 top-0 flex h-dvh overflow-hidden bg-workspace-canvas">
         <Sidebar
           className="hidden md:flex"
           items={items}
@@ -243,13 +243,13 @@ export function AppShell({
 
           <main
             ref={scrollport}
-            className="scrollbar-hidden min-w-0 flex-1 overflow-y-auto overscroll-y-contain bg-muted/30"
+            className="scrollbar-hidden min-w-0 flex-1 overflow-y-auto overscroll-y-contain bg-workspace-canvas"
           >
             {/* Padding is decided here and nowhere else. Workspace pages use the
                 full width beside the sidebar — tables and dashboards need the
                 room on large monitors, and a centred max-width column left half
                 the canvas empty. */}
-            <div className={`w-full space-y-6 ${CONTENT_PADDING}`}>
+            <div className={`w-full space-y-4 ${CONTENT_PADDING}`}>
               {unverifiedEmail === undefined ? null : <VerifyEmailBanner email={unverifiedEmail} />}
               {children}
             </div>
@@ -389,47 +389,47 @@ const STATIC_HEADER_NOTIFICATIONS: readonly {
   unread: boolean;
   icon: HeaderNotificationIcon;
 }[] = [
-  {
-    id: 'n1',
-    title: 'Fee payment recorded',
-    detail: 'GR 1042 — Rs 12,500 received at reception.',
-    time: 'Today, 9:14 AM',
-    unread: true,
-    icon: FeesIcon,
-  },
-  {
-    id: 'n2',
-    title: 'New admission',
-    detail: 'Ayesha Khan enrolled in Grade 1 · A.',
-    time: 'Yesterday, 4:30 PM',
-    unread: true,
-    icon: StudentsIcon,
-  },
-  {
-    id: 'n3',
-    title: 'Attendance not marked',
-    detail: '3 classes still unmarked for today.',
-    time: 'Yesterday, 8:00 AM',
-    unread: true,
-    icon: AttendanceIcon,
-  },
-  {
-    id: 'n4',
-    title: 'Voucher batch ready',
-    detail: 'October tuition vouchers are ready to print.',
-    time: 'Mon, 6 Oct',
-    unread: false,
-    icon: PrintIcon,
-  },
-  {
-    id: 'n5',
-    title: 'Session calendar updated',
-    detail: 'Mid-term break added to the academic calendar.',
-    time: 'Fri, 3 Oct',
-    unread: false,
-    icon: CalendarIcon,
-  },
-];
+    {
+      id: 'n1',
+      title: 'Fee payment recorded',
+      detail: 'GR 1042 — Rs 12,500 received at reception.',
+      time: 'Today, 9:14 AM',
+      unread: true,
+      icon: FeesIcon,
+    },
+    {
+      id: 'n2',
+      title: 'New admission',
+      detail: 'Ayesha Khan enrolled in Grade 1 · A.',
+      time: 'Yesterday, 4:30 PM',
+      unread: true,
+      icon: StudentsIcon,
+    },
+    {
+      id: 'n3',
+      title: 'Attendance not marked',
+      detail: '3 classes still unmarked for today.',
+      time: 'Yesterday, 8:00 AM',
+      unread: true,
+      icon: AttendanceIcon,
+    },
+    {
+      id: 'n4',
+      title: 'Voucher batch ready',
+      detail: 'October tuition vouchers are ready to print.',
+      time: 'Mon, 6 Oct',
+      unread: false,
+      icon: PrintIcon,
+    },
+    {
+      id: 'n5',
+      title: 'Session calendar updated',
+      detail: 'Mid-term break added to the academic calendar.',
+      time: 'Fri, 3 Oct',
+      unread: false,
+      icon: CalendarIcon,
+    },
+  ];
 
 function HeaderNotificationsMenu() {
   const unreadCount = STATIC_HEADER_NOTIFICATIONS.filter((entry) => entry.unread).length;
@@ -645,10 +645,7 @@ function Sidebar({
         )}
       </div>
 
-      <nav aria-label="Main" className="scrollbar-hidden flex-1 space-y-1 overflow-y-auto px-3 py-4">
-        <p className="px-2 pb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-          Menu
-        </p>
+      <nav aria-label="Main" className="scrollbar-hidden flex-1 space-y-0.5 overflow-y-auto px-2.5 py-3">
         {items.map((item) => (
           <NavBranch key={item.href} item={item} disabled={navLocked} />
         ))}
@@ -715,10 +712,12 @@ function NavLink({
   item,
   compact = false,
   disabled = false,
+  nested = false,
 }: {
   item: NavItem;
   compact?: boolean;
   disabled?: boolean;
+  nested?: boolean;
 }) {
   const pathname = useCanonicalPathname();
   const tenantHref = useTenantHref();
@@ -735,7 +734,9 @@ function NavLink({
           compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : 'px-3 py-2.5',
         )}
       >
-        {Icon === undefined ? null : <Icon className="size-5 shrink-0" />}
+        {Icon === undefined ? null : (
+          <Icon className={cn('shrink-0', nested ? 'size-4' : 'size-5')} />
+        )}
         <span className={compact ? 'truncate' : undefined}>{item.label}</span>
       </span>
     );
@@ -746,14 +747,18 @@ function NavLink({
       href={tenantHref(item.href)}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'flex items-center gap-3 rounded-xl text-sm font-medium transition-colors duration-150',
-        compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : 'px-3 py-2.5',
+        'flex items-center gap-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
+        compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : nested ? 'px-2.5 py-2' : 'px-3 py-2.5',
         isActive
-          ? 'bg-primary/10 text-primary'
+          ? nested
+            ? 'bg-primary/10 text-primary ring-1 ring-primary/15'
+            : 'bg-primary/10 text-primary'
           : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
       )}
     >
-      {Icon === undefined ? null : <Icon className="size-5 shrink-0" />}
+      {Icon === undefined ? null : (
+        <Icon className={cn('shrink-0', nested ? 'size-4' : 'size-5')} />
+      )}
       <span className={compact ? 'truncate' : undefined}>{item.label}</span>
     </Link>
   );
@@ -776,7 +781,7 @@ function NavBranch({
   const isOpen = overridden ?? containsCurrent;
 
   if (children.length === 0) {
-    return <NavLink item={item} disabled={disabled} />;
+    return <NavLink item={item} disabled={disabled} nested={depth > 0} />;
   }
 
   const Icon = NAV_ICONS[item.icon];
@@ -791,7 +796,7 @@ function NavBranch({
           setOverridden(!isOpen);
         }}
         className={cn(
-          'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150',
+          'flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150',
           disabled
             ? 'cursor-not-allowed text-muted-foreground/50'
             : containsCurrent

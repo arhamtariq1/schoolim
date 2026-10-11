@@ -11,6 +11,7 @@ import type { Metadata } from 'next';
 import { AdmissionForm } from '@/components/admission-form';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
 import { apiFetch } from '@/lib/api';
+import { pageIntro } from '@/lib/page-copy';
 import { getSession } from '@/lib/session';
 
 /**
@@ -58,10 +59,7 @@ export default async function NewStudentPage() {
 
   return (
     <div className="w-full space-y-8">
-      <WorkspacePageHeader
-        title="New Admission"
-        description="Enter student details to create a new admission record."
-      />
+      <WorkspacePageHeader title="New admission" description={pageIntro('/students/new')} />
 
       <AdmissionForm
         today={today(systemClock, session?.school.timezone ?? DEFAULT_TIMEZONE)}

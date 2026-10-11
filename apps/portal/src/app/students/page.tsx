@@ -2,6 +2,7 @@ import { MAX_PAGE_LIMIT, ROUTES, type StudentListItem, type StudentListQuery } f
 
 import { StudentsTable } from '@/components/students-table';
 import { apiFetch } from '@/lib/api';
+import { DEFAULT_LIST_PAGE_SIZE } from '@/lib/list-page';
 import { getSession } from '@/lib/session';
 
 /**
@@ -123,7 +124,7 @@ function SignedOut() {
 }
 
 /** Rows per page. Well under the API's cap of 200 (docs/11 §5). */
-const PAGE_LIMIT = 25;
+const PAGE_LIMIT = DEFAULT_LIST_PAGE_SIZE;
 
 const SORTABLE: readonly StudentListQuery['sort'][] = [
   'name',

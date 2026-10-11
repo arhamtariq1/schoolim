@@ -22,6 +22,7 @@ import {
   DialogTitle,
   Field,
   Input,
+  InputIconWrap,
   Money,
   SimpleSelect,
   Textarea,
@@ -31,7 +32,6 @@ import {
 import {
   AccountIcon,
   AcademicsIcon,
-  CalendarIcon,
   ClassIcon,
   CloseIcon,
   DesignationIcon,
@@ -569,9 +569,7 @@ export function AdmissionForm({
               hint="Defaults to today. Backdate when entering an older record."
               required
             >
-              <FieldIconWrap icon={CalendarIcon}>
-                <DatePicker value={admittedOn} onChange={setAdmittedOn} />
-              </FieldIconWrap>
+              <DatePicker value={admittedOn} onChange={setAdmittedOn} />
             </Field>
           </div>
           {sessionId === null ? (
@@ -804,7 +802,7 @@ function AdmissionSection({
 }
 
 function FieldIconWrap({
-  icon: Icon,
+  icon,
   alignTop = false,
   children,
   ...fieldControlProps
@@ -814,20 +812,9 @@ function FieldIconWrap({
   children: ReactElement<{ className?: string; id?: string }>;
 } & Record<string, unknown>) {
   return (
-    <div className="relative">
-      <span
-        className={cn(
-          'pointer-events-none absolute start-0 flex w-10 justify-center text-muted-foreground',
-          alignTop ? 'top-2.5' : 'inset-y-0 items-center',
-        )}
-      >
-        <Icon className={ICON_SIZE.inline} aria-hidden="true" />
-      </span>
-      {cloneElement(children, {
-        ...fieldControlProps,
-        className: cn('ps-10', children.props.className),
-      })}
-    </div>
+    <InputIconWrap icon={icon} alignTop={alignTop}>
+      {cloneElement(children, fieldControlProps)}
+    </InputIconWrap>
   );
 }
 

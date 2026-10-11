@@ -42,6 +42,7 @@ export {
   ChevronLeft as ChevronLeftIcon,
   ArrowLeft as BackIcon,
   MoreHorizontal as MoreIcon,
+  MoreVertical as MoreVerticalIcon,
 
   // --- Status ---------------------------------------------------------------
   CircleAlert as WarningIcon,

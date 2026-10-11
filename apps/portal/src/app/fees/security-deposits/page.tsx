@@ -3,6 +3,11 @@ import type { Metadata } from 'next';
 
 import { SecurityDepositsView } from '@/components/security-deposits-view';
 import { apiFetch } from '@/lib/api';
+import {
+  DEFAULT_LIST_PAGE_SIZE,
+  parseSortField,
+  parseSortOrder,
+} from '@/lib/list-page';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
 
@@ -28,14 +33,23 @@ export default async function SecurityDepositsPage({
     state: readParam(params, 'state'),
   };
 
-  const limit = clampInt(params['limit'], 25, 1, MAX_PAGE_LIMIT);
+  const limit = clampInt(params['limit'], DEFAULT_LIST_PAGE_SIZE, 1, MAX_PAGE_LIMIT);
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
+  const sort = parseSortField(
+    params['sort'],
+    ['receivedOn', 'name', 'grNo', 'deposited', 'left'] as const,
+    'receivedOn',
+  );
+  const order =
+    params['order'] === undefined && params['sort'] === undefined
+      ? 'desc'
+      : parseSortOrder(params['order']);
 
   const query = new URLSearchParams({
     limit: String(limit),
     offset: String(offset),
-    sort: 'receivedOn',
-    order: 'desc',
+    sort,
+    order,
   });
   for (const [key, value] of Object.entries(filters)) {
     if (value !== '') {
@@ -64,6 +78,8 @@ export default async function SecurityDepositsPage({
         classes={academicsResult.ok ? academicsResult.data.data.classes : []}
         limit={limit}
         offset={offset}
+        sort={sort}
+        order={order}
         filters={filters}
         error={listResult.ok ? undefined : listResult.message}
         canRefund={session?.permissions.includes('fees.deposit.update') ?? false}

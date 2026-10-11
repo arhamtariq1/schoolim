@@ -11,6 +11,11 @@ import {
 import { ExpensesView } from '@/components/expenses-view';
 import { apiFetch } from '@/lib/api';
 import {
+  DEFAULT_LIST_PAGE_SIZE,
+  parseSortField,
+  parseSortOrder,
+} from '@/lib/list-page';
+import {
   calendarMonthRange,
   previousCalendarMonthRange,
 } from '@/lib/expense-date-range';
@@ -40,10 +45,21 @@ export default async function ExpensesPage({
     to: read('to') !== '' ? read('to') : defaultMonth.to,
   };
 
-  const limit = clampInt(params['limit'], 20, 1, MAX_PAGE_LIMIT);
+  const limit = clampInt(params['limit'], DEFAULT_LIST_PAGE_SIZE, 1, MAX_PAGE_LIMIT);
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
+  const sort = parseSortField(
+    params['sort'],
+    ['paidOn', 'amount', 'voucherNo', 'createdAt'] as const,
+    'paidOn',
+  );
+  const order = parseSortOrder(params['order']);
 
-  const listQuery = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  const listQuery = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    sort,
+    order,
+  });
   for (const [key, value] of Object.entries(filters)) {
     if (value !== '') {
       listQuery.set(key, value);
@@ -89,6 +105,8 @@ export default async function ExpensesPage({
       limit={listResult.ok ? listResult.data.meta.page.limit : limit}
       offset={listResult.ok ? listResult.data.meta.page.offset : offset}
       filters={filters}
+      sort={sort}
+      order={order}
       error={listResult.ok ? undefined : listResult.message}
       canManage={session?.permissions.includes('finance.expense.create') ?? false}
       paymentMethods={PAYMENT_METHODS}

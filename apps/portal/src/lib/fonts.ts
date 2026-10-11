@@ -1,9 +1,9 @@
-import { Noto_Sans } from 'next/font/google';
+import { Open_Sans } from 'next/font/google';
 
-/** Product sans — https://fonts.google.com/noto/specimen/Noto+Sans */
-export const sansFont = Noto_Sans({
-  subsets: ['latin'],
+/** Product sans — https://fonts.google.com/specimen/Open+Sans */
+export const sansFont = Open_Sans({
+  subsets: ['latin', 'latin-ext'],
   weight: ['400', '500', '600', '700'],
   display: 'swap',
-  variable: '--font-noto-sans',
+  variable: '--font-open-sans',
 });

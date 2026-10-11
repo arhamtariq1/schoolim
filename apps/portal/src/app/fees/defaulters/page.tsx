@@ -4,6 +4,11 @@ import type { Metadata } from 'next';
 
 import { DefaultersView } from '@/components/defaulters-view';
 import { apiFetch } from '@/lib/api';
+import {
+  DEFAULT_LIST_PAGE_SIZE,
+  parseSortField,
+  parseSortOrder,
+} from '@/lib/list-page';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
 
@@ -32,14 +37,23 @@ export default async function DefaultersPage({
     to: readParam(params, 'to'),
   };
 
-  const limit = clampInt(params['limit'], 25, 1, MAX_PAGE_LIMIT);
+  const limit = clampInt(params['limit'], DEFAULT_LIST_PAGE_SIZE, 1, MAX_PAGE_LIMIT);
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
+  const sort = parseSortField(
+    params['sort'],
+    ['amount', 'months', 'name', 'grNo', 'className'] as const,
+    'amount',
+  );
+  const order =
+    params['order'] === undefined && params['sort'] === undefined
+      ? 'desc'
+      : parseSortOrder(params['order']);
 
   const query = new URLSearchParams({
     limit: String(limit),
     offset: String(offset),
-    sort: 'amount',
-    order: 'desc',
+    sort,
+    order,
   });
   for (const [key, value] of Object.entries(filters)) {
     if (value !== '') {
@@ -69,6 +83,8 @@ export default async function DefaultersPage({
         classes={academicsResult.ok ? academicsResult.data.data.classes : []}
         limit={limit}
         offset={offset}
+        sort={sort}
+        order={order}
         filters={filters}
         error={listResult.ok ? undefined : listResult.message}
       />
