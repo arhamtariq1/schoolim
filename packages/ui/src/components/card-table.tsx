@@ -60,6 +60,13 @@ export type CardTableProps<TRow> = {
 
   readonly renderMobileRow?: (row: TRow) => ReactNode;
   readonly onRowClick?: ((row: TRow) => void) | undefined;
+  /** Panel shown directly beneath a row — e.g. overdue vouchers on Defaulters. */
+  readonly renderExpanded?: ((row: TRow) => ReactNode) | undefined;
+
+  /** When `embedded`, renders only the table body (no outer `Card`). */
+  readonly surface?: 'raised' | 'embedded';
+  /** When false, skips the title row (for tabs/toolbars above the table in a parent card). */
+  readonly showHeader?: boolean;
 };
 
 export function CardTable<TRow>({
@@ -81,131 +88,198 @@ export function CardTable<TRow>({
   sort,
   renderMobileRow,
   onRowClick,
+  renderExpanded,
+  surface = 'raised',
+  showHeader = true,
 }: CardTableProps<TRow>) {
   if (error !== undefined) {
     return <ErrorState description={error} {...(onRetry === undefined ? {} : { onRetry })} />;
   }
 
+  const tableInner = isLoading ? (
+    <TableSkeleton columns={columns.length} />
+  ) : (
+    <CardTableBody
+      rows={rows}
+      columns={columns}
+      rowKey={rowKey}
+      caption={caption}
+      minWidthClass={minWidthClass}
+      tableLayout={tableLayout}
+      empty={empty}
+      isFiltered={isFiltered}
+      onClearFilters={onClearFilters}
+      sort={sort}
+      renderMobileRow={renderMobileRow}
+      onRowClick={onRowClick}
+      renderExpanded={renderExpanded}
+    />
+  );
+
+  if (surface === 'embedded') {
+    return <div className="w-full">{tableInner}</div>;
+  }
+
   if (isLoading) {
     return (
       <Card className="w-full overflow-hidden rounded-lg shadow-raised">
-        <CardHeader className="bg-card px-4 pt-4 sm:px-6">
-          <CardTitle className="text-base font-semibold text-foreground">{title}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 sm:p-6">
-          <TableSkeleton columns={columns.length} />
-        </CardContent>
+        {showHeader ? (
+          <CardHeader className="bg-card px-4 pt-4 sm:px-6">
+            <CardTitle className="text-base font-semibold text-foreground">{title}</CardTitle>
+          </CardHeader>
+        ) : null}
+        <CardContent className="p-4 sm:p-6">{tableInner}</CardContent>
       </Card>
     );
   }
 
-  const hasData = rows.length > 0;
-
   return (
     <Card className="w-full overflow-hidden rounded-lg shadow-raised">
-      <CardHeader className="flex flex-row items-start justify-between gap-3 bg-card px-4 pb-2 pt-4 sm:px-6">
-        <div className="min-w-0 space-y-1">
-          <CardTitle className="text-base font-semibold text-foreground">{title}</CardTitle>
-          {description === undefined ? null : (
-            <p className="text-sm text-muted-foreground">{description}</p>
-          )}
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {headerAction}
-          {isFiltered && onClearFilters !== undefined ? (
-            <button
-              type="button"
-              className="text-xs font-medium text-primary hover:underline"
-              onClick={onClearFilters}
-            >
-              Clear filters
-            </button>
-          ) : null}
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        {!hasData ? (
-          isFiltered ? (
-            <NoResultsState
-              {...(onClearFilters === undefined ? {} : { onClearFilters })}
-              className="border-0 shadow-none"
-            />
-          ) : (
-            <EmptyState
-              title={empty.title}
-              {...(empty.description === undefined ? {} : { description: empty.description })}
-              {...(empty.action === undefined ? {} : { action: empty.action })}
-              className="border-0 shadow-none"
-            />
-          )
-        ) : (
-          <>
-            <div className="hidden overflow-x-auto md:block">
-              <table
-                className={cn(
-                  'w-full border-collapse text-sm',
-                  tableLayout === 'auto' ? 'table-auto' : 'table-fixed',
-                  minWidthClass,
-                )}
+      {showHeader ? (
+        <CardHeader className="flex flex-row items-start justify-between gap-3 bg-card px-4 pb-2 pt-4 sm:px-6">
+          <div className="min-w-0 space-y-1">
+            <CardTitle className="text-base font-semibold text-foreground">{title}</CardTitle>
+            {description === undefined ? null : (
+              <p className="text-sm text-muted-foreground">{description}</p>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {headerAction}
+            {isFiltered && onClearFilters !== undefined ? (
+              <button
+                type="button"
+                className="text-xs font-medium text-primary hover:underline"
+                onClick={onClearFilters}
               >
-                {caption === undefined ? null : (
-                  <caption className="sr-only">{caption}</caption>
-                )}
-                <colgroup>
-                  {columns.map((column) => (
-                    <col
-                      key={column.key}
-                      className={column.width ?? undefined}
-                      style={column.colStyle}
-                    />
-                  ))}
-                </colgroup>
-                <thead>
-                  <tr className="border-b border-border bg-muted/30">
-                    {columns.map((column) =>
-                      column.headerCell !== undefined ? (
-                        <th
-                          key={column.key}
-                          scope="col"
-                          className={cn(
-                            'px-4 py-3 align-middle',
-                            column.headerClassName,
-                            column.align === 'end' ? 'text-end' : undefined,
-                          )}
-                        >
-                          {column.headerCell}
-                        </th>
-                      ) : column.sortable && sort !== undefined ? (
-                        <CardTableSortHeader
-                          key={column.key}
-                          label={column.label}
-                          icon={column.icon}
-                          active={sort.key === column.key}
-                          direction={sort.direction}
-                          align={column.align}
-                          onSort={() => {
-                            sort.onToggle(column.key);
-                          }}
-                        />
-                      ) : (
-                        <CardTableHeaderCell
-                          key={column.key}
-                          label={column.label}
-                          icon={column.icon}
-                          align={column.align}
-                        />
-                      ),
+                Clear filters
+              </button>
+            ) : null}
+          </div>
+        </CardHeader>
+      ) : null}
+      <CardContent className="p-0">
+        {tableInner}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CardTableBody<TRow>({
+  rows,
+  columns,
+  rowKey,
+  caption,
+  minWidthClass,
+  tableLayout,
+  empty,
+  isFiltered,
+  onClearFilters,
+  sort,
+  renderMobileRow,
+  onRowClick,
+  renderExpanded,
+}: Pick<
+  CardTableProps<TRow>,
+  | 'rows'
+  | 'columns'
+  | 'rowKey'
+  | 'caption'
+  | 'minWidthClass'
+  | 'tableLayout'
+  | 'empty'
+  | 'isFiltered'
+  | 'onClearFilters'
+  | 'sort'
+  | 'renderMobileRow'
+  | 'onRowClick'
+  | 'renderExpanded'
+>) {
+  const hasData = rows.length > 0;
+
+  if (!hasData) {
+    return isFiltered ? (
+      <NoResultsState
+        {...(onClearFilters === undefined ? {} : { onClearFilters })}
+        className="border-0 shadow-none"
+      />
+    ) : (
+      <EmptyState
+        title={empty.title}
+        {...(empty.description === undefined ? {} : { description: empty.description })}
+        {...(empty.action === undefined ? {} : { action: empty.action })}
+        className="border-0 shadow-none"
+      />
+    );
+  }
+
+  return (
+    <>
+      <div className="hidden overflow-x-auto md:block">
+        <table
+          className={cn(
+            'w-full border-collapse text-sm',
+            tableLayout === 'auto' ? 'table-auto' : 'table-fixed',
+            minWidthClass,
+          )}
+        >
+          {caption === undefined ? null : <caption className="sr-only">{caption}</caption>}
+          <colgroup>
+            {columns.map((column) => (
+              <col
+                key={column.key}
+                className={column.width ?? undefined}
+                style={column.colStyle}
+              />
+            ))}
+          </colgroup>
+          <thead>
+            <tr className="border-b border-border bg-muted/30">
+              {columns.map((column) =>
+                column.headerCell !== undefined ? (
+                  <th
+                    key={column.key}
+                    scope="col"
+                    className={cn(
+                      'px-4 py-3 align-middle',
+                      column.headerClassName,
+                      column.align === 'end' ? 'text-end' : undefined,
                     )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => (
-                    <tr
-                      key={rowKey(row)}
-                      onClick={
-                        onRowClick === undefined
-                          ? undefined
-                          : (event) => {
+                  >
+                    {column.headerCell}
+                  </th>
+                ) : column.sortable && sort !== undefined ? (
+                  <CardTableSortHeader
+                    key={column.key}
+                    label={column.label}
+                    icon={column.icon}
+                    active={sort.key === column.key}
+                    direction={sort.direction}
+                    align={column.align}
+                    onSort={() => {
+                      sort.onToggle(column.key);
+                    }}
+                  />
+                ) : (
+                  <CardTableHeaderCell
+                    key={column.key}
+                    label={column.label}
+                    icon={column.icon}
+                    align={column.align}
+                  />
+                ),
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const expandedContent = renderExpanded?.(row);
+              return (
+                <Fragment key={rowKey(row)}>
+                  <tr
+                    onClick={
+                      onRowClick === undefined
+                        ? undefined
+                        : (event) => {
                             if (
                               (event.target as HTMLElement | null)?.closest(
                                 '[data-stop-row-click]',
@@ -215,58 +289,65 @@ export function CardTable<TRow>({
                             }
                             onRowClick(row);
                           }
-                      }
-                      className={cn(
-                        'border-b border-border last:border-0 hover:bg-muted/30',
-                        onRowClick === undefined ? undefined : 'cursor-pointer',
-                      )}
-                    >
-                      {columns.map((column) => (
-                        <td
-                          key={column.key}
-                          className={cn(
-                            'px-4 py-3 align-middle',
-                            column.cellClassName,
-                            column.align === 'end' ? 'text-end' : undefined,
-                          )}
-                        >
-                          {column.render(row)}
-                        </td>
-                      ))}
+                    }
+                    className={cn(
+                      'border-b border-border hover:bg-muted/30',
+                      onRowClick === undefined ? undefined : 'cursor-pointer',
+                      expandedContent === undefined || expandedContent === null
+                        ? undefined
+                        : 'border-b-0',
+                    )}
+                  >
+                    {columns.map((column) => (
+                      <td
+                        key={column.key}
+                        className={cn(
+                          'px-4 py-3 align-middle',
+                          column.cellClassName,
+                          column.align === 'end' ? 'text-end' : undefined,
+                        )}
+                      >
+                        {column.render(row)}
+                      </td>
+                    ))}
+                  </tr>
+                  {expandedContent === undefined || expandedContent === null ? null : (
+                    <tr className="border-b border-border bg-muted/20">
+                      <td colSpan={columns.length} className="p-0">
+                        {expandedContent}
+                      </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  )}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-            {renderMobileRow === undefined ? (
-              <ul className="divide-y divide-border md:hidden">
-                {rows.map((row) => (
-                  <li key={rowKey(row)} className="space-y-2 px-4 py-3">
-                    {columns
-                      .filter((column) => column.hideOnMobile !== true)
-                      .map((column) => (
-                        <Fragment key={column.key}>
-                          <div className="text-xs font-medium text-muted-foreground">
-                            {column.label}
-                          </div>
-                          <div className="text-sm text-foreground">{column.render(row)}</div>
-                        </Fragment>
-                      ))}
-                  </li>
+      {renderMobileRow === undefined ? (
+        <ul className="divide-y divide-border md:hidden">
+          {rows.map((row) => (
+            <li key={rowKey(row)} className="space-y-2 px-4 py-3">
+              {columns
+                .filter((column) => column.hideOnMobile !== true)
+                .map((column) => (
+                  <Fragment key={column.key}>
+                    <div className="text-xs font-medium text-muted-foreground">{column.label}</div>
+                    <div className="text-sm text-foreground">{column.render(row)}</div>
+                  </Fragment>
                 ))}
-              </ul>
-            ) : (
-              <ul className="divide-y divide-border md:hidden">
-                {rows.map((row) => (
-                  <li key={rowKey(row)}>{renderMobileRow(row)}</li>
-                ))}
-              </ul>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul className="divide-y divide-border md:hidden">
+          {rows.map((row) => (
+            <li key={rowKey(row)}>{renderMobileRow(row)}</li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
 

@@ -221,7 +221,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   },
   {
     href: '/finance',
-    label: 'Finance',
+    label: 'Expense',
     icon: 'FinanceIcon',
     permission: 'finance.expense.read',
   },

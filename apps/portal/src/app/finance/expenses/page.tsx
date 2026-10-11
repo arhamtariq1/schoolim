@@ -1,5 +1,6 @@
 import {
   MAX_PAGE_LIMIT,
+  PAYMENT_METHODS,
   ROUTES,
   type AcademicSession,
   type Expense,
@@ -8,8 +9,11 @@ import {
 } from '@ilm/contracts';
 
 import { ExpensesView } from '@/components/expenses-view';
-import { FinanceTabs } from '@/components/tab-links';
 import { apiFetch } from '@/lib/api';
+import {
+  calendarMonthRange,
+  previousCalendarMonthRange,
+} from '@/lib/expense-date-range';
 import { getSession } from '@/lib/session';
 
 /**
@@ -26,55 +30,69 @@ export default async function ExpensesPage({
   const params = await searchParams;
   const read = (key: string): string => (typeof params[key] === 'string' ? params[key] : '');
 
+  const defaultMonth = calendarMonthRange();
   const filters = {
     q: read('q'),
     categoryId: read('categoryId'),
     sessionId: read('sessionId'),
-    from: read('from'),
-    to: read('to'),
+    method: read('method'),
+    from: read('from') !== '' ? read('from') : defaultMonth.from,
+    to: read('to') !== '' ? read('to') : defaultMonth.to,
   };
 
-  const limit = clampInt(params['limit'], 25, 1, MAX_PAGE_LIMIT);
+  const limit = clampInt(params['limit'], 20, 1, MAX_PAGE_LIMIT);
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
 
-  const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  const listQuery = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   for (const [key, value] of Object.entries(filters)) {
     if (value !== '') {
-      query.set(key, value);
+      listQuery.set(key, value);
     }
   }
 
-  // Three requests in parallel rather than in sequence: the list, and the two
-  // lookups the filters and the form need. Sequentially this page would wait
-  // for three round trips before painting anything.
-  const [session, listResult, categoriesResult, sessionsResult] = await Promise.all([
-    getSession(),
-    apiFetch<{
-      data: Expense[];
-      meta: { page: { total: number; limit: number; offset: number }; totals: ExpenseTotals };
-    }>(`${ROUTES.expenses.list}?${query.toString()}`),
-    apiFetch<{ data: ExpenseCategory[] }>(ROUTES.expenses.categories),
-    apiFetch<{ data: AcademicSession[] }>(ROUTES.academics.sessions),
-  ]);
+  const thisMonth = calendarMonthRange();
+  const lastMonth = previousCalendarMonthRange();
+
+  const monthQuery = (from: string, to: string) =>
+    new URLSearchParams({ from, to, limit: '1', offset: '0' }).toString();
+
+  const [session, listResult, categoriesResult, sessionsResult, monthResult, lastMonthResult] =
+    await Promise.all([
+      getSession(),
+      apiFetch<{
+        data: Expense[];
+        meta: { page: { total: number; limit: number; offset: number }; totals: ExpenseTotals };
+      }>(`${ROUTES.expenses.list}?${listQuery.toString()}`),
+      apiFetch<{ data: ExpenseCategory[] }>(ROUTES.expenses.categories),
+      apiFetch<{ data: AcademicSession[] }>(ROUTES.academics.sessions),
+      apiFetch<{
+        data: Expense[];
+        meta: { page: { total: number; limit: number; offset: number }; totals: ExpenseTotals };
+      }>(`${ROUTES.expenses.list}?${monthQuery(thisMonth.from, thisMonth.to)}`),
+      apiFetch<{
+        data: Expense[];
+        meta: { page: { total: number; limit: number; offset: number }; totals: ExpenseTotals };
+      }>(`${ROUTES.expenses.list}?${monthQuery(lastMonth.from, lastMonth.to)}`),
+    ]);
 
   const emptyTotals: ExpenseTotals = { totalMinor: 0, count: 0 };
 
   return (
-    <div className="space-y-6">
-        <FinanceTabs />
-        <ExpensesView
-          rows={listResult.ok ? listResult.data.data : []}
-          categories={categoriesResult.ok ? categoriesResult.data.data : []}
-          sessions={sessionsResult.ok ? sessionsResult.data.data : []}
-          totals={listResult.ok ? listResult.data.meta.totals : emptyTotals}
-          total={listResult.ok ? listResult.data.meta.page.total : 0}
-          limit={listResult.ok ? listResult.data.meta.page.limit : limit}
-          offset={listResult.ok ? listResult.data.meta.page.offset : offset}
-          filters={filters}
-          error={listResult.ok ? undefined : listResult.message}
-          canManage={session?.permissions.includes('finance.expense.create') ?? false}
-        />
-      </div>
+    <ExpensesView
+      rows={listResult.ok ? listResult.data.data : []}
+      categories={categoriesResult.ok ? categoriesResult.data.data : []}
+      sessions={sessionsResult.ok ? sessionsResult.data.data : []}
+      totals={listResult.ok ? listResult.data.meta.totals : emptyTotals}
+      monthTotals={monthResult.ok ? monthResult.data.meta.totals : emptyTotals}
+      lastMonthTotals={lastMonthResult.ok ? lastMonthResult.data.meta.totals : emptyTotals}
+      total={listResult.ok ? listResult.data.meta.page.total : 0}
+      limit={listResult.ok ? listResult.data.meta.page.limit : limit}
+      offset={listResult.ok ? listResult.data.meta.page.offset : offset}
+      filters={filters}
+      error={listResult.ok ? undefined : listResult.message}
+      canManage={session?.permissions.includes('finance.expense.create') ?? false}
+      paymentMethods={PAYMENT_METHODS}
+    />
   );
 }
 

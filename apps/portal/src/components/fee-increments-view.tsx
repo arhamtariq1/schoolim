@@ -12,7 +12,8 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  DataTable,
+  CardTable,
+  Checkbox,
   DateDisplay,
   DatePicker,
   Dialog,
@@ -22,28 +23,48 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Field,
   Input,
   Money,
   Pagination,
   SimpleSelect,
   StatusBadge,
+  TwoLineCell,
   useToast,
-  type Column,
+  type CardTableColumn,
 } from '@ilm/ui';
 import {
+  AccountIcon,
+  CalendarIcon,
   DeleteIcon,
+  FeesIcon,
   HistoryIcon,
   ICON_SIZE,
-  SearchIcon,
+  MoreIcon,
+  PhoneIcon,
   SpinnerIcon,
+  StudentsIcon,
   TrendDownIcon,
   TrendUpIcon,
 } from '@ilm/ui/icons';
 import { systemClock } from '@ilm/utils';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useMemo, useState, type ReactElement } from 'react';
 
+import {
+  FEE_LIST_TABLE_CELL,
+  afterMenuAction,
+  feeListTableHeader,
+  useDebouncedSearchFilter,
+} from '@/components/fees/fee-list-shared';
+import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
 import { useTenantHref } from '@/lib/use-tenant-href';
@@ -109,11 +130,26 @@ export function FeeIncrementsView({
   canApply,
 }: FeeIncrementsViewProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const params = useSearchParams();
   const tenantHref = useTenantHref();
   const toast = useToast();
 
-  const [draft, setDraft] = useState(filters);
+  const { searchQuery, onSearchQueryChange } = useDebouncedSearchFilter(filters.q, (value) => {
+    pushFilters({ q: value });
+  });
+  const { searchQuery: grFromDraft, onSearchQueryChange: onGrFromChange } = useDebouncedSearchFilter(
+    filters.grFrom,
+    (value) => {
+      pushFilters({ grFrom: value });
+    },
+  );
+  const { searchQuery: grToDraft, onSearchQueryChange: onGrToChange } = useDebouncedSearchFilter(
+    filters.grTo,
+    (value) => {
+      pushFilters({ grTo: value });
+    },
+  );
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [direction, setDirection] = useState<'INCREASE' | 'DECREASE' | undefined>(undefined);
   const [amount, setAmount] = useState('');
@@ -130,33 +166,55 @@ export function FeeIncrementsView({
   const chosen = rows.filter((row) => selected.has(row.studentId));
   const amountMinor = rupeesToMinor(amount);
 
-  function apply(next: Partial<typeof filters>, resetPage = true): void {
-    const merged = { ...draft, ...next };
-    const query = new URLSearchParams();
-    for (const [key, value] of Object.entries(merged)) {
-      if (value !== '') {
+  const isFiltered = Object.values(filters).some((value) => value !== '');
+
+  function pushFilters(next: Record<string, string>): void {
+    const query = new URLSearchParams(params.toString());
+    for (const [key, value] of Object.entries(next)) {
+      if (value === '') {
+        query.delete(key);
+      } else {
         query.set(key, value);
       }
     }
     query.set('limit', String(limit));
-    if (!resetPage) {
-      query.set('offset', String(offset));
-    }
-    router.push(tenantHref(`/fees/increments?${query.toString()}`));
+    query.delete('offset');
+    router.push(`${pathname}?${query.toString()}`);
   }
 
-  function reset(): void {
-    const cleared = {
-      q: '',
-      classLevelId: '',
-      sessionId: '',
-      status: '',
-      gender: '',
-      grFrom: '',
-      grTo: '',
-    };
-    setDraft(cleared);
+  function clearFilters(): void {
     router.push(tenantHref('/fees/increments'));
+  }
+
+  const allOnPageSelected =
+    canApply && rows.length > 0 && rows.every((row) => selected.has(row.studentId));
+  const someOnPageSelected =
+    canApply && rows.some((row) => selected.has(row.studentId)) && !allOnPageSelected;
+
+  function toggleRowSelected(studentId: string, next: boolean): void {
+    setSelected((prev) => {
+      const copy = new Set(prev);
+      if (next) {
+        copy.add(studentId);
+      } else {
+        copy.delete(studentId);
+      }
+      return copy;
+    });
+  }
+
+  function toggleAllOnPage(next: boolean): void {
+    setSelected((prev) => {
+      const copy = new Set(prev);
+      for (const row of rows) {
+        if (next) {
+          copy.add(row.studentId);
+        } else {
+          copy.delete(row.studentId);
+        }
+      }
+      return copy;
+    });
   }
 
   async function openHistory(row: FeeIncrementRow): Promise<void> {
@@ -251,249 +309,253 @@ export function FeeIncrementsView({
     setFormError(undefined);
   }
 
-  const columns: Column<FeeIncrementRow>[] = [
-    {
-      key: 'grNo',
-      header: 'G.R No',
-      render: (row) => <span className="font-mono text-xs select-all">{row.grNo}</span>,
-    },
-    {
-      key: 'name',
-      header: 'Student',
-      render: (row) => (
-        <div>
-          <span className="text-balance">{row.name}</span>
-          {row.sectionName === null && row.className === null ? null : (
-            <span className="block text-xs text-muted-foreground">
-              {[row.className, row.sectionName].filter((part) => part !== null).join(' · ')}
-            </span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'fatherName',
-      header: 'Father',
-      hideOnMobile: true,
-      render: (row) => <span className="text-balance">{row.fatherName ?? '—'}</span>,
-    },
-    {
-      key: 'contact',
-      header: 'Contact',
-      hideOnMobile: true,
-      render: (row) => (
-        <span className="font-mono text-xs">{row.contact ?? '—'}</span>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      hideOnMobile: true,
-      render: (row) => (
-        <StatusBadge tone={row.status === 'ACTIVE' ? 'success' : 'neutral'}>
-          {row.status === 'ACTIVE' ? 'Active' : titleCase(row.status)}
-        </StatusBadge>
-      ),
-    },
-    {
-      key: 'currentFee',
-      header: page.feeHead.name,
-      align: 'end',
-      render: (row) => {
-        if (row.currentPayableMinor === null) {
-          return (
-            <span className="text-xs text-muted-foreground">
-              none agreed
-            </span>
-          );
-        }
-        const hasDiscount = row.currentPayableMinor !== row.currentFeeMinor;
-        return (
-          <div className="font-mono text-sm tabular-nums">
-            <Money valueMinor={row.currentPayableMinor} />
-            {/* The gross is shown beside the discounted figure rather than
-                instead of it: a parent holding a 4,500 voucher and a screen
-                reading 6,000 is how a school loses an argument it should win. */}
-            {hasDiscount && row.currentFeeMinor !== null ? (
-              <span className="block text-xs font-normal text-muted-foreground">
-                of <Money valueMinor={row.currentFeeMinor} withSymbol={false} />
-                {row.discountReason === null ? '' : ` · ${row.discountReason}`}
-              </span>
-            ) : null}
-          </div>
-        );
-      },
-    },
-    {
-      key: 'pending',
-      header: 'Scheduled',
-      align: 'end',
-      hideOnMobile: true,
-      render: (row) =>
-        row.pendingFrom === null || row.pendingPayableMinor === null ? (
-          <span className="text-xs text-muted-foreground">—</span>
-        ) : (
-          <div className="font-mono text-sm tabular-nums text-warning">
-            <Money valueMinor={row.pendingPayableMinor} />
-            <span className="block text-xs font-normal">
-              from <DateDisplay value={row.pendingFrom} />
-            </span>
-          </div>
-        ),
-    },
-    {
-      key: 'admittedOn',
-      header: 'Admitted',
-      hideOnMobile: true,
-      render: (row) =>
-        row.admittedOn === null ? (
-          <span className="text-muted-foreground">—</span>
-        ) : (
-          <DateDisplay value={row.admittedOn} />
-        ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'end',
-      render: (row) => (
-        <Button
-          tone="ghost"
-          size="sm"
-          aria-label={`Fee history of ${row.name}`}
-          onClick={() => {
-            void openHistory(row);
-          }}
-        >
-          <HistoryIcon className={ICON_SIZE.inline} aria-hidden />
-        </Button>
-      ),
-    },
-  ];
+  const feeHeadLabel = page.feeHead.name;
 
-  const isFiltered = Object.values(filters).some((value) => value !== '');
+  const columns = useMemo((): CardTableColumn<FeeIncrementRow>[] => {
+    const grHeaderLeading =
+      canApply === true ? (
+        <Checkbox
+          className="shrink-0"
+          checked={allOnPageSelected ? true : someOnPageSelected ? 'indeterminate' : false}
+          aria-label="Select every student on this page"
+          onCheckedChange={(next) => {
+            toggleAllOnPage(next === true);
+          }}
+        />
+      ) : undefined;
+
+    return [
+      {
+        key: 'grNo',
+        label: 'GR No',
+        ...FEE_LIST_TABLE_CELL,
+        colStyle: { width: '5.75rem' },
+        headerCell: feeListTableHeader('GR No', undefined, grHeaderLeading),
+        render: (row) => (
+          <div className="flex items-center gap-2" data-stop-row-click>
+            {canApply ? (
+              <Checkbox
+                className="shrink-0"
+                checked={selected.has(row.studentId)}
+                aria-label={`Select ${row.name}`}
+                onCheckedChange={(next) => {
+                  toggleRowSelected(row.studentId, next === true);
+                }}
+              />
+            ) : null}
+            <span className="font-mono text-sm leading-none tabular-nums">{row.grNo}</span>
+          </div>
+        ),
+      },
+      {
+        key: 'name',
+        label: 'Student',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[16%]',
+        headerCell: feeListTableHeader('Student', StudentsIcon),
+        render: (row) => (
+          <TwoLineCell
+            primary={row.name}
+            secondary={
+              row.sectionName === null && row.className === null
+                ? '—'
+                : [row.className, row.sectionName].filter((part) => part !== null).join(' · ')
+            }
+          />
+        ),
+      },
+      {
+        key: 'fatherName',
+        label: 'Father',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[12%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Father', AccountIcon),
+        render: (row) => <span className="text-sm">{row.fatherName ?? '—'}</span>,
+      },
+      {
+        key: 'contact',
+        label: 'Contact',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[11%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Contact', PhoneIcon),
+        render: (row) => <span className="font-mono text-sm">{row.contact ?? '—'}</span>,
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[9%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Status'),
+        render: (row) => (
+          <StatusBadge tone={row.status === 'ACTIVE' ? 'success' : 'neutral'}>
+            {row.status === 'ACTIVE' ? 'Active' : titleCase(row.status)}
+          </StatusBadge>
+        ),
+      },
+      {
+        key: 'currentFee',
+        label: feeHeadLabel,
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[12%]',
+        headerCell: feeListTableHeader(feeHeadLabel, FeesIcon),
+        render: (row) => {
+          if (row.currentPayableMinor === null) {
+            return <span className="text-xs text-muted-foreground">none agreed</span>;
+          }
+          const hasDiscount = row.currentPayableMinor !== row.currentFeeMinor;
+          return (
+            <div className="font-mono text-sm tabular-nums">
+              <Money valueMinor={row.currentPayableMinor} />
+              {hasDiscount && row.currentFeeMinor !== null ? (
+                <span className="block text-xs font-normal text-muted-foreground">
+                  of <Money valueMinor={row.currentFeeMinor} withSymbol={false} />
+                  {row.discountReason === null ? '' : ` · ${row.discountReason}`}
+                </span>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
+        key: 'pending',
+        label: 'Scheduled',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[11%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Scheduled', CalendarIcon),
+        render: (row) =>
+          row.pendingFrom === null || row.pendingPayableMinor === null ? (
+            <span className="text-sm text-muted-foreground">—</span>
+          ) : (
+            <div className="font-mono text-sm tabular-nums text-warning">
+              <Money valueMinor={row.pendingPayableMinor} />
+              <span className="block text-xs font-normal">
+                from <DateDisplay value={row.pendingFrom} />
+              </span>
+            </div>
+          ),
+      },
+      {
+        key: 'admittedOn',
+        label: 'Admitted',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[10%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Admitted', CalendarIcon),
+        render: (row) =>
+          row.admittedOn === null ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <DateDisplay value={row.admittedOn} />
+          ),
+      },
+      {
+        key: 'actions',
+        label: 'Actions',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[8%]',
+        headerCell: feeListTableHeader('Actions'),
+        render: (row) => (
+          <IncrementRowActions
+            row={row}
+            onHistory={() => {
+              void openHistory(row);
+            }}
+          />
+        ),
+      },
+    ];
+  }, [allOnPageSelected, canApply, feeHeadLabel, selected, someOnPageSelected]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Fee increment</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Raise or lower {page.feeHead.name.toLowerCase()} for one student or a whole class. Each
-            child keeps their own agreed amount.
-          </p>
-        </div>
-      </header>
+    <div className="w-full space-y-6">
+      <WorkspacePageHeader
+        title="Fee increment"
+        description={`Raise or lower ${page.feeHead.name.toLowerCase()} for one student or a whole class. Each child keeps their own agreed amount.`}
+      />
 
-      <form
-        className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
-        onSubmit={(event: FormEvent) => {
-          event.preventDefault();
-          apply({});
-        }}
-      >
-        <Field label="Search">
-          <div className="relative">
-            <Input
-              value={draft.q}
-              placeholder="Name, father, GR number"
-              onChange={(event) => {
-                setDraft({ ...draft, q: event.target.value });
+      <ListPageToolbar
+        searchQuery={searchQuery}
+        onSearchQueryChange={onSearchQueryChange}
+        searchPlaceholder="Name, father, GR number"
+        searchAriaLabel="Search students for fee increment"
+        filters={
+          <>
+            <SimpleSelect
+              className="w-full sm:w-36"
+              ariaLabel="Filter by class"
+              value={filters.classLevelId}
+              emptyOption={{ value: '', label: 'Any class' }}
+              placeholder="Any class"
+              options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
+              onValueChange={(next) => {
+                pushFilters({ classLevelId: next });
               }}
             />
-            <SearchIcon
-              className={`${ICON_SIZE.inline} pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground`}
-              aria-hidden
+            <SimpleSelect
+              className="w-full sm:w-36"
+              ariaLabel="Filter by session"
+              value={filters.sessionId}
+              emptyOption={{ value: '', label: 'Any session' }}
+              placeholder="Any session"
+              options={sessions.map((entry) => ({ value: entry.id, label: entry.name }))}
+              onValueChange={(next) => {
+                pushFilters({ sessionId: next });
+              }}
             />
-          </div>
-        </Field>
-
-        <Field label="Class">
-          <SimpleSelect
-            value={draft.classLevelId}
-            emptyOption={{ value: '', label: 'Any class' }}
-            options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
-            onValueChange={(next) => {
-              setDraft({ ...draft, classLevelId: next });
-              apply({ classLevelId: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Session">
-          <SimpleSelect
-            value={draft.sessionId}
-            emptyOption={{ value: '', label: 'Any session' }}
-            options={sessions.map((entry) => ({ value: entry.id, label: entry.name }))}
-            onValueChange={(next) => {
-              setDraft({ ...draft, sessionId: next });
-              apply({ sessionId: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Status">
-          <SimpleSelect
-            value={draft.status}
-            emptyOption={{ value: '', label: 'Any status' }}
-            options={[
-              { value: 'ACTIVE', label: 'Active' },
-              { value: 'INACTIVE', label: 'Inactive' },
-              { value: 'LEFT', label: 'Left' },
-            ]}
-            onValueChange={(next) => {
-              setDraft({ ...draft, status: next });
-              apply({ status: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Gender">
-          <SimpleSelect
-            value={draft.gender}
-            emptyOption={{ value: '', label: 'Any' }}
-            options={[
-              { value: 'MALE', label: 'Male' },
-              { value: 'FEMALE', label: 'Female' },
-            ]}
-            onValueChange={(next) => {
-              setDraft({ ...draft, gender: next });
-              apply({ gender: next });
-            }}
-          />
-        </Field>
-
-        {/* A school picks "GR 1 to 200" far more often than it ticks two
-            hundred boxes. */}
-        <Field label="GR number from" hint="Inclusive range">
-          <Input
-            value={draft.grFrom}
-            placeholder="0001"
-            onChange={(event) => {
-              setDraft({ ...draft, grFrom: event.target.value });
-            }}
-          />
-        </Field>
-
-        <Field label="GR number to">
-          <Input
-            value={draft.grTo}
-            placeholder="0200"
-            onChange={(event) => {
-              setDraft({ ...draft, grTo: event.target.value });
-            }}
-          />
-        </Field>
-
-        <div className="flex items-end gap-2">
-          <Button type="submit" tone="outline" className="flex-1">
-            Apply
-          </Button>
-          <Button type="button" tone="ghost" onClick={reset}>
-            Reset
-          </Button>
-        </div>
-      </form>
+            <SimpleSelect
+              className="w-full sm:w-36"
+              ariaLabel="Filter by status"
+              value={filters.status}
+              emptyOption={{ value: '', label: 'Any status' }}
+              placeholder="Any status"
+              options={[
+                { value: 'ACTIVE', label: 'Active' },
+                { value: 'INACTIVE', label: 'Inactive' },
+                { value: 'LEFT', label: 'Left' },
+              ]}
+              onValueChange={(next) => {
+                pushFilters({ status: next });
+              }}
+            />
+            <SimpleSelect
+              className="w-full sm:w-32"
+              ariaLabel="Filter by gender"
+              value={filters.gender}
+              emptyOption={{ value: '', label: 'Any gender' }}
+              placeholder="Any gender"
+              options={[
+                { value: 'MALE', label: 'Male' },
+                { value: 'FEMALE', label: 'Female' },
+              ]}
+              onValueChange={(next) => {
+                pushFilters({ gender: next });
+              }}
+            />
+            <Input
+              className="w-full sm:w-28"
+              aria-label="GR number from"
+              placeholder="GR from"
+              value={grFromDraft}
+              onChange={(event) => {
+                onGrFromChange(event.target.value);
+              }}
+            />
+            <Input
+              className="w-full sm:w-28"
+              aria-label="GR number to"
+              placeholder="GR to"
+              value={grToDraft}
+              onChange={(event) => {
+                onGrToChange(event.target.value);
+              }}
+            />
+          </>
+        }
+      />
 
       {/* The bulk bar appears only when something is selected, so the buttons
           are never offered with nothing to act on. */}
@@ -535,17 +597,16 @@ export function FeeIncrementsView({
         </div>
       ) : null}
 
-      <DataTable
+      <CardTable
+        title="All students"
+        caption="Students and their current fee"
         rows={rows}
         columns={columns}
         rowKey={(row) => row.studentId}
+        minWidthClass="min-w-[56rem]"
         error={error}
-        caption="Students and their current fee"
         isFiltered={isFiltered}
-        onClearFilters={reset}
-        {...(canApply
-          ? { selection: { selected, onChange: setSelected, noun: 'student' } }
-          : {})}
+        onClearFilters={clearFilters}
         empty={{
           title: 'No students yet',
           description:
@@ -789,6 +850,36 @@ export function FeeIncrementsView({
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function IncrementRowActions({
+  row,
+  onHistory,
+}: {
+  readonly row: FeeIncrementRow;
+  readonly onHistory: () => void;
+}): ReactElement {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button tone="ghost" size="sm" aria-label={`Actions for ${row.name}`}>
+          <MoreIcon className={ICON_SIZE.inline} aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>{row.name}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={() => {
+            afterMenuAction(onHistory);
+          }}
+        >
+          <HistoryIcon className={ICON_SIZE.inline} aria-hidden />
+          Fee history
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

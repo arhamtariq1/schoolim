@@ -21,30 +21,38 @@ import { useEffect, useState } from 'react';
  * dark at sunset. Dark is a choice a person makes here.
  *
  * So the stored value is `'light' | 'dark' | null`, where null means light.
- * `layout.tsx` reads the same key and makes the same assumption; the two have
- * to agree or the first paint and the icon disagree.
+ * `layout.tsx` reads the same choice from a cookie on the server; this
+ * component keeps the cookie and localStorage in sync when the user toggles.
  *
  * ## The flash
  *
- * Applying the class from an effect means the first paint is light and the
- * second is dark, which is a white flash on every navigation for a dark-mode
- * user. The blocking script in `layout.tsx` sets the class before the browser
- * paints; this component only handles clicks afterwards. Both read the same
- * localStorage key, and it is defined once here.
+ * React 19 no longer allows inline scripts in the root layout on client
+ * navigations, so the first paint comes from the server reading the theme
+ * cookie. localStorage is still updated here for parity and for one release of
+ * migration from script-only storage.
  */
 
-// Underscored, deliberately. It puts this key in the same family as the
-// session cookies (`ilm_at`, `ilm_rt`, `ilm_csrf`) — the cookie prefix being one
-// of the four places CLAUDE.md permits the placeholder product name at all —
-// and an underscore keeps it clear of the brand-containment grep in CI, which
-// looks for the name as a standalone word. A hyphen there fails the build.
-export const THEME_STORAGE_KEY = 'ilm_theme';
+import {
+  THEME_STORAGE_KEY,
+  themeChoiceFromStoredValue,
+  themeCookieValue,
+  type ThemeChoice,
+} from '@/lib/theme-preference';
 
-type Choice = 'light' | 'dark';
+type Choice = ThemeChoice;
 
 function apply(choice: Choice): void {
   document.documentElement.classList.toggle('dark', choice === 'dark');
   document.documentElement.style.colorScheme = choice;
+}
+
+function persistTheme(choice: Choice): void {
+  document.cookie = themeCookieValue(choice);
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, choice);
+  } catch {
+    // The theme still applies for this page; it just will not be remembered offline.
+  }
 }
 
 export function ThemeToggle() {
@@ -61,19 +69,13 @@ export function ThemeToggle() {
       // the default anyway — only the memory of a choice is lost.
     }
 
-    // Anything other than a stored 'dark' is light, matching the blocking
-    // script in layout.tsx exactly.
-    const resolved: Choice = stored === 'dark' ? 'dark' : 'light';
+    const resolved = themeChoiceFromStoredValue(stored ?? undefined);
 
     setChoice(resolved);
+    persistTheme(resolved);
 
-    // Re-apply, and not redundantly. React's Strict Mode remounts once in
-    // development and resets <html> to only the attributes it manages from
-    // JSX — which throws away the class the blocking script set, so a dark-mode
-    // user's app turns light the moment it hydrates. Next's own guide
-    // (docs/01-app/02-guides/preventing-flash-before-hydration.md, "Re-applying
-    // attributes in development") calls this out. In production this line
-    // writes the class that is already there and costs nothing.
+    // Re-apply after hydration. Strict Mode remounts once in development and
+    // can reset `<html>` classes the server set from the cookie.
     apply(resolved);
   }, []);
 
@@ -81,11 +83,7 @@ export function ThemeToggle() {
     const next: Choice = choice === 'dark' ? 'light' : 'dark';
     setChoice(next);
     apply(next);
-    try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, next);
-    } catch {
-      // The theme still applies for this page; it just will not be remembered.
-    }
+    persistTheme(next);
   }
 
   const label = choice === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
