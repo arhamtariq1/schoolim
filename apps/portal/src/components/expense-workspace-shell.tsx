@@ -156,7 +156,7 @@ function ExpenseStatCard({
   iconClassName: string;
 }) {
   return (
-    <Card className="h-full rounded-xl border border-border bg-card shadow-sm">
+    <Card className="h-full">
       <div className="flex h-full flex-col p-4">
         <div className="flex items-start justify-between gap-2">
           <p className={DASHBOARD_STAT_LABEL_CLASS}>{label}</p>
@@ -178,7 +178,7 @@ function ExpenseStatCard({
 
 function SidebarPanel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Card className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm">
+    <Card className="space-y-3 p-4">
       <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       {children}
     </Card>

@@ -8,7 +8,6 @@ import {
   PhoneIcon,
 } from '@ilm/ui/icons';
 
-import { InputWithIcon } from '@/components/input-with-icon';
 import { ProfileDisplayField } from '@/components/profile-display-field';
 
 /**
@@ -59,9 +58,13 @@ export function ProfilePersonFields({
   if (layout === 'reference') {
     return (
       <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
-        <Field label="Full name" error={fieldErrors['name'] ?? fieldErrors['person.name']} required>
-          <InputWithIcon
-            icon={AccountIcon}
+        <Field
+          label="Full name"
+          error={fieldErrors['name'] ?? fieldErrors['person.name']}
+          required
+          leadingIcon={AccountIcon}
+        >
+          <Input
             name="name"
             autoComplete="name"
             autoFocus={autoFocusName}
@@ -73,8 +76,8 @@ export function ProfilePersonFields({
         </Field>
 
         {email === undefined ? null : (
-          <Field label="Email" required>
-            <InputWithIcon icon={EmailIcon} readOnly disabled value={email} autoComplete="email" />
+          <Field label="Email" required leadingIcon={EmailIcon}>
+            <Input readOnly disabled value={email} autoComplete="email" />
           </Field>
         )}
 
@@ -82,9 +85,9 @@ export function ProfilePersonFields({
           label="Personal contact number"
           error={fieldErrors['phone'] ?? fieldErrors['person.phone']}
           required
+          leadingIcon={PhoneIcon}
         >
-          <InputWithIcon
-            icon={PhoneIcon}
+          <Input
             name="phone"
             type="tel"
             autoComplete="tel"
@@ -101,9 +104,9 @@ export function ProfilePersonFields({
           label="Designation (Optional)"
           error={fieldErrors['designation'] ?? fieldErrors['person.designation']}
           className="sm:col-span-2"
+          leadingIcon={DesignationIcon}
         >
-          <InputWithIcon
-            icon={DesignationIcon}
+          <Input
             name="designation"
             autoComplete="organization-title"
             placeholder="e.g. Principal"
@@ -120,7 +123,12 @@ export function ProfilePersonFields({
   return (
     <fieldset disabled={disabled} className="space-y-4">
       <div className="grid gap-4 lg:grid-cols-3 lg:gap-5">
-        <Field label="Full name" error={fieldErrors['name'] ?? fieldErrors['person.name']} required>
+        <Field
+          label="Full name"
+          error={fieldErrors['name'] ?? fieldErrors['person.name']}
+          required
+          leadingIcon={AccountIcon}
+        >
           <Input
             name="name"
             autoComplete="name"
@@ -133,7 +141,7 @@ export function ProfilePersonFields({
         </Field>
 
         {email === undefined ? null : (
-          <Field label="Email" hint="Sign-in address for this account.">
+          <Field label="Email" hint="Sign-in address for this account." leadingIcon={EmailIcon}>
             <Input readOnly disabled value={email} autoComplete="email" />
           </Field>
         )}
@@ -143,6 +151,7 @@ export function ProfilePersonFields({
           error={fieldErrors['phone'] ?? fieldErrors['person.phone']}
           hint="Include country code, or start with 03."
           required
+          leadingIcon={PhoneIcon}
         >
           <Input
             name="phone"
@@ -163,6 +172,7 @@ export function ProfilePersonFields({
           label="Designation"
           error={fieldErrors['designation'] ?? fieldErrors['person.designation']}
           hint="Optional. For example Principal or Accountant."
+          leadingIcon={DesignationIcon}
         >
           <Input
             name="designation"

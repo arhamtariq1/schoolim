@@ -6,6 +6,7 @@ import {
   type ForgotPasswordResult,
 } from '@ilm/contracts';
 import { Button, Field, Input, useToast } from '@ilm/ui';
+import { EmailIcon, ICON_SIZE, SendIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -86,7 +87,7 @@ export function ForgotPasswordForm() {
       noValidate
       className="space-y-3.5"
     >
-      <Field label="Email" error={fieldErrors['email']} required>
+      <Field label="Email" error={fieldErrors['email']} required leadingIcon={EmailIcon}>
         <Input
           type="email"
           name="email"
@@ -109,6 +110,7 @@ export function ForgotPasswordForm() {
         }
       >
         <Button type="submit" isPending={isPending} className="w-full" size="touch">
+          <SendIcon className={ICON_SIZE.inline} aria-hidden />
           {isPending ? 'Sending…' : 'Send reset code'}
         </Button>
       </AuthFormActions>

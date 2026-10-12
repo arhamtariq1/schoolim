@@ -241,7 +241,7 @@ export function AcademicCalendarView({
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
-        <Card className="overflow-hidden rounded-lg border border-border bg-card">
+        <Card className="overflow-hidden rounded-lg">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/20 px-4 py-3 sm:px-5">
             <div className="flex items-center gap-1">
               <Button
@@ -435,7 +435,7 @@ export function AcademicCalendarView({
         </Card>
 
         <aside>
-          <Card className="rounded-lg border border-border bg-card">
+          <Card className="rounded-lg">
             <div className="px-4 py-3 sm:px-5">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-sm font-semibold text-foreground">
@@ -517,7 +517,7 @@ function StatTile({
   iconClassName: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+    <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-card px-4 py-3 shadow-raised">
       <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-lg', iconClassName)}>
         <Icon className={ICON_SIZE.nav} aria-hidden="true" />
       </span>
@@ -549,7 +549,7 @@ function SelectedDayEventCard({
       : formatEventWhen(entry);
 
   return (
-    <div className="flex items-start gap-3 rounded-md border border-border bg-card p-3">
+    <div className="flex items-start gap-3 rounded-md border border-border/70 bg-card p-3 shadow-raised">
       <div
         className={cn(
           'flex size-10 shrink-0 items-center justify-center rounded-lg',

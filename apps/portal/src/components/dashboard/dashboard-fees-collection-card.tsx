@@ -1,4 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle, cn } from '@ilm/ui';
+import { CardContent, CardHeader, CardTitle, cn } from '@ilm/ui';
+
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 
 import { formatMinorCompact } from '@/components/dashboard/dashboard-chart-theme';
 import type { DashboardFeeCollection } from '@/lib/dashboard-data';
@@ -9,7 +11,7 @@ type DashboardFeesCollectionCardProps = {
 
 export function DashboardFeesCollectionCard({ collection }: DashboardFeesCollectionCardProps) {
   return (
-    <Card className="flex h-full w-full flex-col rounded-2xl shadow-raised">
+    <DashboardCard className="flex h-full w-full flex-col rounded-2xl shadow-raised">
       <CardHeader className="flex flex-row items-start justify-between gap-2 border-0 px-4 pb-0 pt-4">
         <CardTitle className="text-base">Fees collection</CardTitle>
         <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
@@ -55,7 +57,7 @@ export function DashboardFeesCollectionCard({ collection }: DashboardFeesCollect
           />
         </dl>
       </CardContent>
-    </Card>
+    </DashboardCard>
   );
 }
 

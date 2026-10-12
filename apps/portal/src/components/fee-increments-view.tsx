@@ -66,6 +66,7 @@ import {
 } from '@/components/fees/fee-list-shared';
 import { ListDataTable } from '@/components/list-data-table';
 import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
+import { GrNumberRangeFilter } from '@/components/gr-number-range-filter';
 import { ListTableScreen } from '@/components/list-table-screen';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
 import { TableSelectionBar } from '@/components/table-selection-bar';
@@ -534,23 +535,11 @@ export function FeeIncrementsView({
                 pushFilters({ gender: next });
               }}
             />
-            <Input
-              className="w-full sm:w-28"
-              aria-label="GR number from"
-              placeholder="GR from"
-              value={grFromDraft}
-              onChange={(event) => {
-                onGrFromChange(event.target.value);
-              }}
-            />
-            <Input
-              className="w-full sm:w-28"
-              aria-label="GR number to"
-              placeholder="GR to"
-              value={grToDraft}
-              onChange={(event) => {
-                onGrToChange(event.target.value);
-              }}
+            <GrNumberRangeFilter
+              from={grFromDraft}
+              to={grToDraft}
+              onFromChange={onGrFromChange}
+              onToChange={onGrToChange}
             />
               </>
             }

@@ -1,6 +1,8 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@ilm/ui';
+import { CardContent, CardHeader, CardTitle } from '@ilm/ui';
+
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { formatMoney, minorUnits } from '@ilm/utils';
 import type { ApexOptions } from 'apexcharts';
 import dynamic from 'next/dynamic';
@@ -115,7 +117,7 @@ export function DashboardExpenseBreakdownChart({ segments }: DashboardExpenseBre
   }, [segments, theme]);
 
   return (
-    <Card className="flex h-full w-full flex-col rounded-2xl shadow-raised">
+    <DashboardCard className="flex h-full w-full flex-col rounded-2xl shadow-raised">
       <CardHeader className="border-0 px-4 pb-0 pt-4">
         <CardTitle className="text-base">Expense breakdown</CardTitle>
       </CardHeader>
@@ -130,6 +132,6 @@ export function DashboardExpenseBreakdownChart({ segments }: DashboardExpenseBre
           />
         </div>
       </CardContent>
-    </Card>
+    </DashboardCard>
   );
 }

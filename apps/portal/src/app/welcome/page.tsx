@@ -174,7 +174,7 @@ export default function WelcomePage() {
             </h2>
             <div className="mt-8 grid gap-6 sm:grid-cols-2">
               {CAPABILITIES.map(({ Icon, title, body }) => (
-                <div key={title} className="rounded-xl border border-border bg-card p-6">
+                <div key={title} className="rounded-xl border border-border/70 bg-card shadow-raised p-6">
                   <Icon className={`${ICON_SIZE.heading} text-primary`} aria-hidden />
                   <h3 className="mt-3 text-base font-medium text-foreground">{title}</h3>
                   <p className="mt-2 text-sm text-muted-foreground">{body}</p>
@@ -203,7 +203,7 @@ export default function WelcomePage() {
                     // package carries a label, not just a border.
                     'recommended' in plan
                       ? 'rounded-xl border-2 border-primary bg-card p-6'
-                      : 'rounded-xl border border-border bg-card p-6'
+                      : 'rounded-xl border border-border/70 bg-card shadow-raised p-6'
                   }
                 >
                   <div className="flex items-baseline justify-between gap-2">

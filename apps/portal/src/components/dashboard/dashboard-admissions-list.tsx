@@ -2,7 +2,9 @@
 
 
 import type { StudentListItem } from '@ilm/contracts';
-import { Card, CardContent, CardHeader, CardTitle } from '@ilm/ui';
+import { CardContent, CardHeader, CardTitle } from '@ilm/ui';
+
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { calendarDate, daysBetween } from '@ilm/utils';
 import type { Route } from 'next';
 import Link from 'next/link';
@@ -27,7 +29,7 @@ export function DashboardAdmissionsList({
   const tenantHref = useTenantHref();
 
   return (
-    <Card className="flex h-full w-full flex-col rounded-2xl shadow-raised">
+    <DashboardCard className="flex h-full w-full flex-col rounded-2xl shadow-raised">
       <CardHeader className="flex flex-row items-center justify-between gap-2 border-0 px-4 pb-0 pt-4 sm:px-6">
         <CardTitle>Recent admissions</CardTitle>
         <Link href={listHref} className="text-xs font-medium text-primary hover:underline">
@@ -71,7 +73,7 @@ export function DashboardAdmissionsList({
           </ul>
         )}
       </CardContent>
-    </Card>
+    </DashboardCard>
   );
 }
 

@@ -72,6 +72,7 @@ import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection'
 import {
   FEE_LIST_TABLE_CELL,
   afterMenuAction,
+  feeListSortableTableHeader,
   feeListTableHeader,
   useDebouncedSearchFilter,
 } from '@/components/fees/fee-list-shared';
@@ -189,6 +190,8 @@ export function ExpensesView({
     pushFilters({ sort: next.sort, order: next.order });
   }
 
+  const sortState = useMemo(() => ({ key: sort, direction: order }), [sort, order]);
+
   const isFiltered = Object.entries(filters).some(([key, value]) => {
     if (key === 'from' || key === 'to') {
       return false;
@@ -232,9 +235,15 @@ export function ExpensesView({
         key: 'voucherNo',
         label: 'Voucher #',
         ...FEE_LIST_TABLE_CELL,
-        width: 'w-[9%]',
+        colStyle: { width: '7.5rem' },
         sortable: true,
-        headerCell: feeListTableHeader('Voucher #', ExpenseIcon),
+        headerCell: feeListSortableTableHeader(
+          'Voucher #',
+          'voucherNo',
+          sortState,
+          toggleSort,
+          ExpenseIcon,
+        ),
         render: (row) => (
           <span className="font-mono text-sm tabular-nums">{row.voucherNo}</span>
         ),
@@ -271,7 +280,13 @@ export function ExpensesView({
         width: 'w-[10%]',
         hideOnMobile: true,
         sortable: true,
-        headerCell: feeListTableHeader('Date', CalendarIcon),
+        headerCell: feeListSortableTableHeader(
+          'Date',
+          'paidOn',
+          sortState,
+          toggleSort,
+          CalendarIcon,
+        ),
         render: (row) => (
           <span className="text-sm">
             <DateDisplay value={row.paidOn} />
@@ -295,7 +310,13 @@ export function ExpensesView({
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[10%]',
         sortable: true,
-        headerCell: feeListTableHeader('Amount', FeesIcon),
+        headerCell: feeListSortableTableHeader(
+          'Amount',
+          'amount',
+          sortState,
+          toggleSort,
+          FeesIcon,
+        ),
         render: (row) => (
           <Money valueMinor={minorUnits(row.amountMinor)} className={DASHBOARD_STAT_NUMBER_CLASS} />
         ),
@@ -338,6 +359,7 @@ export function ExpensesView({
     categories,
     selected,
     someOnPageSelected,
+    sortState,
     toggleAllOnPage,
     toggleRowSelected,
   ]);
@@ -367,11 +389,12 @@ export function ExpensesView({
               onSearchQueryChange={onSearchQueryChange}
               searchPlaceholder="Search by description, voucher, category…"
               searchAriaLabel="Search expenses"
+              searchClassName="md:max-w-xs lg:max-w-sm"
               filters={
                 <>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button tone="outline" className="w-full gap-2 sm:w-auto">
+                      <Button tone="outline" className="shrink-0 gap-2">
                         <DateRangeIcon className={ICON_SIZE.inline} aria-hidden />
                         {formatInclusiveDateRange(filters.from, filters.to)}
                       </Button>
@@ -473,6 +496,7 @@ export function ExpensesView({
             rows={rows}
             columns={columns}
             rowKey={(row) => row.id}
+            tableLayout="auto"
             minWidthClass="min-w-[64rem]"
             error={error}
             isFiltered={isFiltered}

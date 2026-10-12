@@ -1,7 +1,7 @@
 'use client';
 
 import { brandColorSchema, ROUTES, type SchoolAppearance } from '@ilm/contracts';
-import { brandRamp, Button, cn, Field, Input, useToast } from '@ilm/ui';
+import { brandRamp, Button, cardSurfaceClassName, cn, Field, Input, useToast } from '@ilm/ui';
 import { ApproveIcon, ICON_SIZE, PaletteIcon, SuccessIcon, WarningIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -114,7 +114,7 @@ export function BrandColourCard({ appearance, canConfigure, error }: BrandColour
 
   return (
     <section
-      className="h-full rounded-xl border border-border bg-card p-4 shadow-raised"
+      className={cn('h-full p-4', cardSurfaceClassName)}
       aria-labelledby="brand-colour"
     >
       <h2 id="brand-colour" className="text-base font-medium text-foreground">

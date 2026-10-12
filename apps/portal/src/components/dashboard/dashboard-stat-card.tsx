@@ -1,6 +1,8 @@
 'use client';
 
-import { Card, cn } from '@ilm/ui';
+import { cn } from '@ilm/ui';
+
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { TrendDownIcon, TrendUpIcon } from '@ilm/ui/icons';
 import Link from 'next/link';
 
@@ -104,21 +106,21 @@ export function DashboardStatCard({
 
   if (href === undefined) {
     return (
-      <Card className="h-full rounded-xl border border-border bg-card shadow-sm">{content}</Card>
+      <DashboardCard className="h-full">{content}</DashboardCard>
     );
   }
 
   return (
-    <Card
+    <DashboardCard
       className={cn(
-        'h-full rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md',
+        'h-full',
         'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background',
       )}
     >
       <Link href={href} className="block h-full outline-none">
         {content}
       </Link>
-    </Card>
+    </DashboardCard>
   );
 }
 

@@ -76,7 +76,7 @@ export function listTableSelectColumn<T>(options: {
     key: 'select',
     label: '',
     ...FEE_LIST_SELECT_COLUMN,
-    colStyle: { width: '3rem' },
+    colStyle: { width: '3.25rem', minWidth: '3.25rem' },
     headerCell: feeListSelectCheckboxWrap(
       <Checkbox
         checked={

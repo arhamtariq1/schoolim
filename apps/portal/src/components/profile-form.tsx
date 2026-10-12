@@ -6,11 +6,11 @@ import {
   type UpsertUserProfile,
   type UserProfile,
 } from '@ilm/contracts';
-import { useToast } from '@ilm/ui';
+import { cn, useToast } from '@ilm/ui';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
-import { FormSectionCard, SetupFormFooter } from '@/components/form-section-card';
+import { FormSectionCard, SetupFormFooter, setupFormCardClassName } from '@/components/form-section-card';
 import { ProfileFormActions } from '@/components/profile-form-actions';
 import { ProfilePersonFields } from '@/components/profile-person-fields';
 import {
@@ -159,7 +159,7 @@ export function ProfileForm({
           />
         </SetupFormFooter>
       ) : (
-        <div className="rounded-2xl border border-border/80 bg-card px-6 py-5 shadow-sm sm:px-8">
+        <div className={cn(setupFormCardClassName, 'px-6 py-5 sm:px-8')}>
           <ProfileFormActions
             primaryLabel="Save changes"
             primaryPending={isPending}

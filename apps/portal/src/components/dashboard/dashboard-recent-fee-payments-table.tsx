@@ -2,7 +2,6 @@
 
 import {
   Button,
-  Card,
   CardContent,
   CardHeader,
   CardTitle,
@@ -24,6 +23,7 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { useMemo, type ReactNode } from 'react';
 
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
 import type { DashboardRecentFeePayment } from '@/lib/dashboard-data';
 import { displayPhone } from '@/lib/phone-format';
@@ -46,7 +46,7 @@ export function DashboardRecentFeePaymentsTable({
   );
 
   return (
-    <Card className="overflow-hidden rounded-lg shadow-raised">
+    <DashboardCard className="overflow-hidden rounded-lg shadow-raised">
       <CardHeader className="flex flex-row items-center justify-between gap-2 bg-card px-4 pb-2 pt-4 sm:px-6">
         <CardTitle className="text-base font-semibold text-foreground">Recent fee payments</CardTitle>
         <Link
@@ -209,7 +209,7 @@ export function DashboardRecentFeePaymentsTable({
           </>
         )}
       </CardContent>
-    </Card>
+    </DashboardCard>
   );
 }
 

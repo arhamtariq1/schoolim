@@ -1,9 +1,8 @@
-import { cn } from '@ilm/ui';
+import { cardSurfaceClassName, cn } from '@ilm/ui';
 import type { ReactNode } from 'react';
 
 /** Shared surface for full-width setup screens — a card on the shell's muted ground. */
-export const setupFormCardClassName =
-  'rounded-2xl border border-border/70 bg-card shadow-xs';
+export const setupFormCardClassName = cn(cardSurfaceClassName, 'rounded-2xl');
 
 /**
  * Stacked form section — title, helper line, fields (Venue-style profile editor).
@@ -29,7 +28,7 @@ export function FormSectionCard({
   }
 
   return (
-    <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm sm:p-8">
+    <section className={cn(setupFormCardClassName, 'p-6 sm:p-8')}>
       <FormSectionHeading title={title} description={description} variant="default" />
       {children}
     </section>

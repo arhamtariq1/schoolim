@@ -27,7 +27,7 @@ export function SidebarBrandMark({
   const showSchoolLogo = profileCompleted && schoolLogo.present;
 
   const frameClass = cn(
-    'flex h-10 w-full max-w-[148px] items-center justify-center',
+    'flex h-10 w-full max-w-[148px] items-center justify-start',
     className,
   );
 
@@ -38,7 +38,7 @@ export function SidebarBrandMark({
         <img
           src={schoolLogoImageSrc(schoolLogo.version)}
           alt=""
-          className="max-h-10 max-w-full object-contain object-center"
+          className="max-h-10 max-w-full object-contain object-start"
         />
       </span>
     );
@@ -49,7 +49,7 @@ export function SidebarBrandMark({
       <Image
         src={lemmaLogo}
         alt={BRAND.name}
-        className="max-h-9 w-auto max-w-full object-contain object-center"
+        className="max-h-9 w-auto max-w-full object-contain object-start"
         priority
       />
     </span>

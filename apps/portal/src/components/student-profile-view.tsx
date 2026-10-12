@@ -947,7 +947,7 @@ function SummaryStat({
   iconClassName: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+    <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-card px-4 py-3 shadow-raised">
       <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-lg', iconClassName)}>
         <Icon className="size-5" aria-hidden="true" />
       </span>

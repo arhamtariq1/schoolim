@@ -134,7 +134,7 @@ export function AttendanceMonthGrid({
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card">
+        <div className="overflow-x-auto rounded-xl border border-border/70 bg-card shadow-raised">
           <table className="w-full border-collapse text-sm">
             <caption className="sr-only">
               {heading}, {formatMonthLabel(report.month)}

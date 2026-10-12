@@ -4,8 +4,8 @@ import { Card } from '@ilm/ui';
 import type { ReactNode } from 'react';
 
 export interface ListTableScreenProps {
-  /** Search + filter controls (usually {@link ListPageToolbar}). */
-  readonly filters: ReactNode;
+  /** Search + filter controls (usually {@link ListPageToolbar}). Omit when there are none. */
+  readonly filters?: ReactNode;
   readonly tableTitle: string;
   readonly headerActions?: ReactNode;
   readonly footer?: ReactNode;
@@ -21,8 +21,10 @@ export function ListTableScreen({
   children,
 }: ListTableScreenProps) {
   return (
-    <Card className="overflow-hidden rounded-xl border-border/80 bg-card shadow-xs">
-      <div className="border-b border-border p-4">{filters}</div>
+    <Card className="overflow-hidden">
+      {filters === undefined ? null : (
+        <div className="border-b border-border p-4">{filters}</div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
         <h2 className="text-sm font-semibold text-foreground">{tableTitle}</h2>

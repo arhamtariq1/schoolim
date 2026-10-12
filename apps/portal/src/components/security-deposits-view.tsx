@@ -376,22 +376,6 @@ export function SecurityDepositsView({
       <WorkspacePageHeader
         title="Security deposits"
         description={pageIntro('/fees/security-deposits')}
-        actions={
-          <>
-            <div className="rounded-lg border border-border bg-card px-4 py-2">
-              <p className="text-xs text-muted-foreground">Total deposited</p>
-              <p className="font-mono text-lg font-semibold tabular-nums">
-                <Money valueMinor={page.totalDepositedMinor} />
-              </p>
-            </div>
-            <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-2">
-              <p className="text-xs text-muted-foreground">Total left to refund</p>
-              <p className="font-mono text-lg font-semibold tabular-nums text-warning">
-                <Money valueMinor={page.totalLeftMinor} />
-              </p>
-            </div>
-          </>
-        }
       />
 
       <ListTableScreen

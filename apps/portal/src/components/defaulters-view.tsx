@@ -386,18 +386,7 @@ export function DefaultersView({
 
   return (
     <div className="w-full space-y-6">
-      <WorkspacePageHeader
-        title="Defaulters"
-        description={pageIntro('/fees/defaulters')}
-        actions={
-          <div className="rounded-lg border border-danger/30 bg-danger/5 px-4 py-2">
-            <p className="text-xs text-muted-foreground">Total outstanding</p>
-            <p className="font-mono text-lg font-semibold text-danger tabular-nums">
-              <Money valueMinor={page.totalOwedMinor} />
-            </p>
-          </div>
-        }
-      />
+      <WorkspacePageHeader title="Defaulters" description={pageIntro('/fees/defaulters')} />
 
       <ListTableScreen
         tableTitle="All defaulters"
@@ -475,7 +464,7 @@ export function DefaultersView({
                 pushFilters({ gender: next });
               }}
             />
-            <div className="w-full min-w-[11rem] sm:w-44">
+            <div className="w-44 shrink-0">
               <DatePicker
                 value={
                   filters.from !== '' && (filters.to === '' || filters.to === filters.from)

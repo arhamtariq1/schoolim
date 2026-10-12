@@ -2,6 +2,7 @@
 
 import { acceptInviteRequestSchema, ROUTES, type AcceptInviteResult } from '@ilm/contracts';
 import { Button, Field, PasswordInput, useToast } from '@ilm/ui';
+import { ApproveIcon, ICON_SIZE, LockedIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -120,7 +121,7 @@ export function AcceptInviteForm({
       )}
 
       <div className="space-y-1.5">
-        <Field label="Choose a password" error={fieldErrors['password']} required>
+        <Field label="Choose a password" error={fieldErrors['password']} required leadingIcon={LockedIcon}>
           <PasswordInput
             autoComplete="new-password"
             autoFocus
@@ -134,7 +135,7 @@ export function AcceptInviteForm({
         <PasswordRequirements password={password} />
       </div>
 
-      <Field label="Confirm password" error={fieldErrors['confirm']} required>
+      <Field label="Confirm password" error={fieldErrors['confirm']} required leadingIcon={LockedIcon}>
         <PasswordInput
           autoComplete="new-password"
           placeholder="Re-enter your password"
@@ -159,6 +160,7 @@ export function AcceptInviteForm({
         }
       >
         <Button type="submit" isPending={isPending} className="w-full" size="touch">
+          <ApproveIcon className={ICON_SIZE.inline} aria-hidden />
           {isPending ? 'Setting up…' : 'Set password and continue'}
         </Button>
       </AuthFormActions>

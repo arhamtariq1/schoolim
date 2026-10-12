@@ -10,10 +10,6 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   Checkbox,
   cn,
   DatePicker,
@@ -24,6 +20,7 @@ import {
   Pagination,
   StatusBadge,
   useToast,
+  type CardTableColumn,
 } from '@ilm/ui';
 import {
   ChevronDownIcon,
@@ -40,7 +37,15 @@ import { useMemo, useState, type ComponentType, type ReactNode } from 'react';
 import { closedMessage } from './attendance-class-grid';
 
 import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
+import {
+  FEE_LIST_SELECT_COLUMN,
+  FEE_LIST_TABLE_CELL,
+  feeListSelectCheckboxWrap,
+  feeListTableHeader,
+} from '@/components/fees/fee-list-shared';
+import { ListDataTable } from '@/components/list-data-table';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { ListTableScreen } from '@/components/list-table-screen';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
 import { mutate } from '@/lib/mutate';
 import { useTenantHref } from '@/lib/use-tenant-href';
@@ -48,6 +53,11 @@ import { useTenantHref } from '@/lib/use-tenant-href';
 const QUICK = ['PRESENT', 'ABSENT', 'LEAVE'] as const satisfies readonly AttendanceStatus[];
 type QuickStatus = (typeof QUICK)[number];
 const PAGE_SIZE = 8;
+
+type StudentRosterTableRow = {
+  readonly student: RosterEntry;
+  readonly index: number;
+};
 
 export interface AttendanceRosterProps {
   roster: Roster;
@@ -89,6 +99,161 @@ export function AttendanceRoster({ roster, canMark, error }: AttendanceRosterPro
     return filtered.slice(offset, offset + PAGE_SIZE);
   }, [filtered, offset]);
 
+  const allPageSelected =
+    pageRows.length > 0 && pageRows.every((row) => selected.has(row.studentId));
+
+  function toggleSelectAllOnPage(): void {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (allPageSelected) {
+        for (const row of pageRows) {
+          next.delete(row.studentId);
+        }
+      } else {
+        for (const row of pageRows) {
+          next.add(row.studentId);
+        }
+      }
+      return next;
+    });
+  }
+
+  const tableRows = useMemo(
+    (): StudentRosterTableRow[] =>
+      pageRows.map((student, index) => ({ student, index: offset + index + 1 })),
+    [pageRows, offset],
+  );
+
+  const columns = useMemo((): CardTableColumn<StudentRosterTableRow>[] => {
+    const cols: CardTableColumn<StudentRosterTableRow>[] = [];
+
+    if (editable) {
+      cols.push({
+        key: 'select',
+        label: '',
+        ...FEE_LIST_SELECT_COLUMN,
+        headerCell: feeListSelectCheckboxWrap(
+          <Checkbox
+            checked={allPageSelected}
+            aria-label="Select all on this page"
+            onCheckedChange={() => {
+              toggleSelectAllOnPage();
+            }}
+          />,
+        ),
+        render: (row) =>
+          feeListSelectCheckboxWrap(
+            <Checkbox
+              checked={selected.has(row.student.studentId)}
+              aria-label={`Select ${row.student.name}`}
+              onCheckedChange={(checked) => {
+                setSelected((current) => {
+                  const copy = new Set(current);
+                  if (checked === true) {
+                    copy.add(row.student.studentId);
+                  } else {
+                    copy.delete(row.student.studentId);
+                  }
+                  return copy;
+                });
+              }}
+            />,
+            { stopRowClick: true },
+          ),
+      });
+    }
+
+    cols.push(
+      {
+        key: 'index',
+        label: '#',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[4%]',
+        align: 'end',
+        headerCell: feeListTableHeader('#'),
+        render: (row) => (
+          <span className="font-mono text-xs text-muted-foreground tabular-nums">{row.index}</span>
+        ),
+      },
+      {
+        key: 'student',
+        label: 'Student',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[28%]',
+        headerCell: feeListTableHeader('Student', StudentsIcon),
+        render: (row) => {
+          const { firstName, lastName } = splitName(row.student.name);
+          return (
+            <div className="flex min-w-0 items-center gap-3">
+              <StudentAdmissionAvatar
+                firstName={firstName}
+                lastName={lastName}
+                photoUrl={row.student.photoUrl}
+                className="size-9 text-[11px]"
+              />
+              <span className="truncate font-medium text-foreground">{row.student.name}</span>
+            </div>
+          );
+        },
+      },
+      {
+        key: 'grNo',
+        label: 'GR number',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[12%]',
+        headerCell: feeListTableHeader('GR number', StudentsIcon),
+        render: (row) => (
+          <span className="font-mono text-sm tabular-nums">{row.student.grNo}</span>
+        ),
+      },
+      {
+        key: 'father',
+        label: 'Father name',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[18%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Father name', StudentsIcon),
+        render: (row) => row.student.fatherName ?? '—',
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[28%]',
+        align: 'end',
+        headerCell: feeListTableHeader('Status'),
+        render: (row) => (
+          <div
+            role="radiogroup"
+            aria-label={`Attendance for ${row.student.name}`}
+            className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2"
+            data-stop-row-click
+          >
+            {QUICK.map((option) => (
+              <StatusToggle
+                key={option}
+                status={option}
+                active={(marks[row.student.studentId] ?? 'PRESENT') === option}
+                disabled={!editable}
+                onSelect={() => {
+                  setMarks({ ...marks, [row.student.studentId]: option });
+                }}
+              />
+            ))}
+          </div>
+        ),
+      },
+    );
+
+    return cols;
+  }, [
+    allPageSelected,
+    editable,
+    marks,
+    selected,
+    toggleSelectAllOnPage,
+  ]);
+
   const counts = useMemo(() => {
     const values = Object.values(marks);
     const total = roster.students.length;
@@ -106,9 +271,6 @@ export function AttendanceRoster({ roster, canMark, error }: AttendanceRosterPro
     };
   }, [marks, roster.students.length]);
 
-  const allPageSelected =
-    pageRows.length > 0 && pageRows.every((row) => selected.has(row.studentId));
-
   function setAll(status: AttendanceStatus) {
     setMarks(Object.fromEntries(roster.students.map((student) => [student.studentId, status])));
   }
@@ -120,22 +282,6 @@ export function AttendanceRoster({ roster, canMark, error }: AttendanceRosterPro
       const next = { ...current };
       for (const student of targets) {
         next[student.studentId] = status;
-      }
-      return next;
-    });
-  }
-
-  function toggleSelectAllOnPage(): void {
-    setSelected((current) => {
-      const next = new Set(current);
-      if (allPageSelected) {
-        for (const row of pageRows) {
-          next.delete(row.studentId);
-        }
-      } else {
-        for (const row of pageRows) {
-          next.add(row.studentId);
-        }
       }
       return next;
     });
@@ -235,154 +381,97 @@ export function AttendanceRoster({ roster, canMark, error }: AttendanceRosterPro
         />
       </div>
 
-      <ListPageToolbar
-        searchQuery={term}
-        onSearchQueryChange={(value) => {
-          setTerm(value);
-          setOffset(0);
-        }}
-        searchPlaceholder="Search by name, GR number or father name…"
-        searchAriaLabel="Search students in class"
+      <ListTableScreen
+        tableTitle="Students"
         filters={
-          <>
-            {editable ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button type="button" tone="outline" className="w-full sm:w-auto">
-                    Fill all
-                    <ChevronDownIcon className="size-4" aria-hidden="true" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
-                  {QUICK.map((status) => (
-                    <DropdownMenuItem
-                      key={status}
-                      onSelect={() => {
-                        setSelectedStatus(status);
-                      }}
-                    >
-                      {ATTENDANCE_STATUS_LABELS[status]}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-            <div className="w-full sm:w-44">
-              <DatePicker
-                value={roster.date}
-                aria-label="Attendance date"
-                onChange={(nextValue) => {
-                  router.push(
-                    tenantHref(`/attendance/mark/students/${roster.classLevelId}?date=${nextValue}`),
-                  );
-                }}
-              />
-            </div>
-          </>
-        }
-      />
-
-      <Card className="overflow-hidden shadow-raised">
-        <CardHeader className="border-b border-border bg-card px-4 py-3 sm:px-6">
-          <CardTitle className="text-base font-semibold">Students</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {filtered.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <p className="font-medium text-foreground">
-                {roster.students.length === 0 ? 'Nobody is enrolled here' : 'No student matches that'}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {roster.students.length === 0
-                  ? 'Admit students into this class to mark attendance.'
-                  : 'Clear the search to see the whole class.'}
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[48rem] border-collapse text-sm">
-                  <caption className="sr-only">Class attendance register</caption>
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground">
-                      <th scope="col" className="w-10 px-3 py-3">
-                        {editable ? (
-                          <Checkbox
-                            checked={allPageSelected}
-                            aria-label="Select all on this page"
-                            onCheckedChange={() => {
-                              toggleSelectAllOnPage();
-                            }}
-                          />
-                        ) : null}
-                      </th>
-                      <th scope="col" className="w-10 px-2 py-3 text-end font-medium">
-                        #
-                      </th>
-                      <th scope="col" className="px-4 py-3 text-start font-medium">
-                        Student
-                      </th>
-                      <th scope="col" className="px-4 py-3 text-start font-medium">
-                        GR number
-                      </th>
-                      <th scope="col" className="hidden px-4 py-3 text-start font-medium md:table-cell">
-                        Father name
-                      </th>
-                      <th scope="col" className="px-4 py-3 text-end font-medium">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pageRows.map((student, index) => (
-                      <RosterRow
-                        key={student.studentId}
-                        student={student}
-                        index={offset + index + 1}
-                        status={marks[student.studentId] ?? 'PRESENT'}
-                        editable={editable}
-                        selected={selected.has(student.studentId)}
-                        onSelect={(next) => {
-                          setSelected((current) => {
-                            const copy = new Set(current);
-                            if (next) {
-                              copy.add(student.studentId);
-                            } else {
-                              copy.delete(student.studentId);
-                            }
-                            return copy;
-                          });
-                        }}
-                        onStatus={(status) => {
-                          setMarks({ ...marks, [student.studentId]: status });
-                        }}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {filtered.length > PAGE_SIZE ? (
-                <div className="border-t border-border px-4 py-3">
-                  <Pagination
-                    total={filtered.length}
-                    limit={PAGE_SIZE}
-                    offset={offset}
-                    label="students"
-                    onChange={(next) => {
-                      setOffset(next);
+          <ListPageToolbar
+            searchQuery={term}
+            onSearchQueryChange={(value) => {
+              setTerm(value);
+              setOffset(0);
+            }}
+            searchPlaceholder="Search by name, GR number or father name…"
+            searchAriaLabel="Search students in class"
+            filters={
+              <>
+                {editable ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button type="button" tone="outline" className="shrink-0">
+                        Fill all
+                        <ChevronDownIcon className="size-4" aria-hidden="true" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
+                      {QUICK.map((status) => (
+                        <DropdownMenuItem
+                          key={status}
+                          onSelect={() => {
+                            setSelectedStatus(status);
+                          }}
+                        >
+                          {ATTENDANCE_STATUS_LABELS[status]}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : null}
+                <div className="w-44 shrink-0">
+                  <DatePicker
+                    value={roster.date}
+                    aria-label="Attendance date"
+                    onChange={(nextValue) => {
+                      router.push(
+                        tenantHref(
+                          `/attendance/mark/students/${roster.classLevelId}?date=${nextValue}`,
+                        ),
+                      );
                     }}
                   />
                 </div>
+              </>
+            }
+          />
+        }
+        footer={
+          filtered.length === 0 ? null : (
+            <div className="border-t border-border px-4 py-3">
+              {filtered.length > PAGE_SIZE ? (
+                <Pagination
+                  total={filtered.length}
+                  limit={PAGE_SIZE}
+                  offset={offset}
+                  label="students"
+                  onChange={(next) => {
+                    setOffset(next);
+                  }}
+                />
               ) : (
-                <p className="border-t border-border px-4 py-3 text-sm text-muted-foreground">
-                  Showing {filtered.length === 0 ? 0 : offset + 1}–
-                  {Math.min(offset + PAGE_SIZE, filtered.length)} of {filtered.length} students
+                <p className="text-sm text-muted-foreground">
+                  Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, filtered.length)} of{' '}
+                  {filtered.length} students
                 </p>
               )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+            </div>
+          )
+        }
+      >
+        <ListDataTable
+          caption="Class attendance register"
+          rows={tableRows}
+          columns={columns}
+          rowKey={(row) => row.student.studentId}
+          minWidthClass="min-w-[48rem]"
+          empty={{
+            title:
+              roster.students.length === 0 ? 'Nobody is enrolled here' : 'No student matches that',
+            description:
+              roster.students.length === 0
+                ? 'Admit students into this class to mark attendance.'
+                : 'Clear the search to see the whole class.',
+          }}
+        />
+      </ListTableScreen>
 
       {editable ? (
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4">
@@ -409,79 +498,6 @@ export function AttendanceRoster({ roster, canMark, error }: AttendanceRosterPro
         </div>
       ) : null}
     </div>
-  );
-}
-
-function RosterRow({
-  student,
-  index,
-  status,
-  editable,
-  selected,
-  onSelect,
-  onStatus,
-}: {
-  student: RosterEntry;
-  index: number;
-  status: AttendanceStatus;
-  editable: boolean;
-  selected: boolean;
-  onSelect: (next: boolean) => void;
-  onStatus: (status: AttendanceStatus) => void;
-}) {
-  const { firstName, lastName } = splitName(student.name);
-
-  return (
-    <tr className="border-b border-border last:border-b-0">
-      <td className="px-3 py-3 align-middle">
-        {editable ? (
-          <Checkbox
-            checked={selected}
-            aria-label={`Select ${student.name}`}
-            onCheckedChange={(checked) => {
-              onSelect(checked === true);
-            }}
-          />
-        ) : null}
-      </td>
-      <td className="px-2 py-3 text-end font-mono text-xs text-muted-foreground tabular-nums">
-        {index}
-      </td>
-      <td className="px-4 py-3 align-middle">
-        <div className="flex min-w-0 items-center gap-3">
-          <StudentAdmissionAvatar
-            firstName={firstName}
-            lastName={lastName}
-            photoUrl={student.photoUrl}
-            className="size-9 text-[11px]"
-          />
-          <span className="truncate font-medium text-foreground">{student.name}</span>
-        </div>
-      </td>
-      <td className="px-4 py-3 font-mono text-xs text-foreground tabular-nums">{student.grNo}</td>
-      <td className="hidden px-4 py-3 text-foreground md:table-cell">
-        {student.fatherName ?? '—'}
-      </td>
-      <td className="px-4 py-3 align-middle">
-        <div
-          role="radiogroup"
-          aria-label={`Attendance for ${student.name}`}
-          className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2"
-        >
-          {QUICK.map((option) => (
-            <StatusToggle
-              key={option}
-              status={option}
-              active={status === option}
-              disabled={!editable}
-              onSelect={() => {
-                onStatus(option);
-              }}
-            />
-          ))}
-        </div>
-      </td>
-    </tr>
   );
 }
 
@@ -574,7 +590,7 @@ function StatTile({
   iconClassName: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-raised">
+    <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-card px-4 py-3 shadow-raised">
       <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-lg', iconClassName)}>
         <Icon className="size-5" aria-hidden="true" />
       </span>

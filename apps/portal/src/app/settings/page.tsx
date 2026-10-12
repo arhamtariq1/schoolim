@@ -48,7 +48,7 @@ export default async function SettingsPage() {
             <li key={entry.href}>
               <Link
                 href={entry.href}
-                className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="flex items-center gap-4 rounded-xl border border-border/70 bg-card shadow-raised p-4 hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
                 <entry.icon className={`${ICON_SIZE.heading} shrink-0 text-primary`} aria-hidden />
                 <span className="min-w-0 flex-1">

@@ -616,7 +616,7 @@ function FeesSettingsSection({
   children: ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-raised">
+    <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-raised">
       <div className="flex gap-4 border-b border-border px-6 py-5">
         <span
           className={cn(

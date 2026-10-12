@@ -1,6 +1,8 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, cn } from '@ilm/ui';
+import { CardContent, CardDescription, CardHeader, CardTitle, cn } from '@ilm/ui';
+
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import type { ApexOptions } from 'apexcharts';
 import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
@@ -90,17 +92,17 @@ export function DashboardOverviewChart({
 
   if (tabs.length === 0) {
     return (
-      <Card className="h-full">
+      <DashboardCard className="h-full">
         <CardHeader className="border-0 pb-0">
           <CardTitle>Overview</CardTitle>
           <CardDescription>Charts appear when attendance, fee or student data is available.</CardDescription>
         </CardHeader>
-      </Card>
+      </DashboardCard>
     );
   }
 
   return (
-    <Card className="flex h-full flex-col">
+    <DashboardCard className="flex h-full flex-col">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 border-0 pb-0">
         <div>
           <CardTitle>School overview</CardTitle>
@@ -154,7 +156,7 @@ export function DashboardOverviewChart({
           <ApexChart options={options} series={series} type={type} height={320} width="100%" />
         </div>
       </CardContent>
-    </Card>
+    </DashboardCard>
   );
 }
 

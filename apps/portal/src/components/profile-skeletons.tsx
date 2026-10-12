@@ -3,20 +3,7 @@ import type { ReactNode } from 'react';
 
 import { setupFormCardClassName } from '@/components/form-section-card';
 
-export function PageHeaderSkeleton({ withActions = false }: { withActions?: boolean }) {
-  return (
-    <header
-      className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3"
-      aria-hidden="true"
-    >
-      <div className="min-w-0 space-y-2">
-        <Skeleton className="h-7 w-44 md:h-8 md:w-52" />
-        <Skeleton className="h-4 w-full max-w-xl" />
-      </div>
-      {withActions ? <Skeleton className="h-9 w-32 shrink-0 rounded-md" /> : null}
-    </header>
-  );
-}
+export { WorkspacePageHeaderSkeleton as PageHeaderSkeleton } from '@/components/page-skeletons';
 
 /** Profile workspace — two reference-style section cards. */
 export function ProfileViewSkeleton() {
@@ -34,7 +21,7 @@ export function ProfileViewSkeleton() {
 
 function ReferenceSectionSkeleton({ tall = false }: { tall?: boolean }) {
   return (
-    <section className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
+    <section className="rounded-xl border border-border/70 bg-card shadow-raised p-5 sm:p-6">
       <div className="mb-5 flex gap-3 border-b border-border/70 pb-5">
         <Skeleton className="size-10 rounded-lg" />
         <div className="space-y-2">

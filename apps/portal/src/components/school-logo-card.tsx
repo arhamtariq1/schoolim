@@ -1,7 +1,7 @@
 'use client';
 
 import { ROUTES, type SchoolLogoInfo, type UploadSchoolLogo } from '@ilm/contracts';
-import { Button, useToast } from '@ilm/ui';
+import { Button, cardSurfaceClassName, cn, useToast } from '@ilm/ui';
 import { ICON_SIZE, SpinnerIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useId, useState } from 'react';
@@ -107,7 +107,7 @@ export function SchoolLogoCard({
 
   return (
     <section
-      className="h-full rounded-xl border border-border bg-card p-4 shadow-raised"
+      className={cn('h-full p-4', cardSurfaceClassName)}
       aria-labelledby={headingId}
     >
       <h2 id={headingId} className="text-base font-medium text-foreground">

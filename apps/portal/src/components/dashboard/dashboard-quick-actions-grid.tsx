@@ -1,6 +1,8 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, cn } from '@ilm/ui';
+import { CardContent, CardHeader, CardTitle, cn } from '@ilm/ui';
+
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import {
   AccountIcon,
   AttendanceIcon,
@@ -35,7 +37,7 @@ const QUICK_ACTION_ICONS: Record<
 
 export function DashboardQuickActionsGrid({ actions }: DashboardQuickActionsGridProps) {
   return (
-    <Card className="flex h-full w-full flex-col rounded-2xl shadow-raised">
+    <DashboardCard className="flex h-full w-full flex-col rounded-2xl shadow-raised">
       <CardHeader className="border-0 px-4 pb-0 pt-4 sm:px-6">
         <CardTitle>Quick actions</CardTitle>
       </CardHeader>
@@ -60,6 +62,6 @@ export function DashboardQuickActionsGrid({ actions }: DashboardQuickActionsGrid
           );
         })}
       </CardContent>
-    </Card>
+    </DashboardCard>
   );
 }

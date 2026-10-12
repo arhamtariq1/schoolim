@@ -8,7 +8,6 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  CardTable,
   DatePicker,
   DropdownMenu,
   DropdownMenuContent,
@@ -34,7 +33,13 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, type ReactNode } from 'react';
 
 import { closedMessage } from '@/components/attendance-class-grid';
+import {
+  FEE_LIST_TABLE_CELL,
+  feeListTableHeader,
+} from '@/components/fees/fee-list-shared';
+import { ListDataTable } from '@/components/list-data-table';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { ListTableScreen } from '@/components/list-table-screen';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
 import { classDisplayMeta } from '@/lib/class-level-display';
 import { useTenantHref } from '@/lib/use-tenant-href';
@@ -140,8 +145,10 @@ export function AttendanceClassOverviewTable({
       {
         key: 'index',
         label: '#',
+        ...FEE_LIST_TABLE_CELL,
         width: 'w-[4%]',
         align: 'end',
+        headerCell: feeListTableHeader('#'),
         render: (row) => (
           <span className="font-mono text-sm text-muted-foreground tabular-nums">{row.index}</span>
         ),
@@ -149,8 +156,9 @@ export function AttendanceClassOverviewTable({
       {
         key: 'class',
         label: 'Class',
-        icon: ClassIcon,
+        ...FEE_LIST_TABLE_CELL,
         width: 'w-[18%]',
+        headerCell: feeListTableHeader('Class', ClassIcon),
         render: (row) => {
           const meta = classDisplayMeta(row.className, row.numericOrder);
           return (
@@ -168,9 +176,10 @@ export function AttendanceClassOverviewTable({
       {
         key: 'level',
         label: 'Level',
-        icon: SchoolIcon,
+        ...FEE_LIST_TABLE_CELL,
         width: 'w-[12%]',
         hideOnMobile: true,
+        headerCell: feeListTableHeader('Level', SchoolIcon),
         render: (row) => {
           const meta = classDisplayMeta(row.className, row.numericOrder);
           return <StatusBadge tone={meta.tone}>{meta.levelLabel}</StatusBadge>;
@@ -179,9 +188,10 @@ export function AttendanceClassOverviewTable({
       {
         key: 'strength',
         label: 'Total students',
-        icon: StudentsIcon,
+        ...FEE_LIST_TABLE_CELL,
         align: 'end',
         width: 'w-[11%]',
+        headerCell: feeListTableHeader('Total students', StudentsIcon),
         render: (row) => (
           <span className="font-mono tabular-nums text-foreground">{row.strength}</span>
         ),
@@ -189,25 +199,31 @@ export function AttendanceClassOverviewTable({
       {
         key: 'present',
         label: 'Present',
+        ...FEE_LIST_TABLE_CELL,
         align: 'end',
         width: 'w-[9%]',
         hideOnMobile: true,
+        headerCell: feeListTableHeader('Present', SuccessIcon),
         render: (row) => countCell(row.markedAt !== null ? row.present : null),
       },
       {
         key: 'absent',
         label: 'Absent',
+        ...FEE_LIST_TABLE_CELL,
         align: 'end',
         width: 'w-[9%]',
         hideOnMobile: true,
+        headerCell: feeListTableHeader('Absent', WarningIcon),
         render: (row) => countCell(row.markedAt !== null ? row.absent : null),
       },
       {
         key: 'notMarked',
         label: 'Not marked',
+        ...FEE_LIST_TABLE_CELL,
         align: 'end',
         width: 'w-[10%]',
         hideOnMobile: true,
+        headerCell: feeListTableHeader('Not marked', WarningIcon),
         render: (row) => {
           if (row.markedAt === null) {
             return countCell(row.strength);
@@ -222,7 +238,9 @@ export function AttendanceClassOverviewTable({
       {
         key: 'status',
         label: 'Status',
+        ...FEE_LIST_TABLE_CELL,
         width: 'w-[11%]',
+        headerCell: feeListTableHeader('Status', SuccessIcon),
         render: (row) => {
           if (!working) {
             return (
@@ -253,8 +271,10 @@ export function AttendanceClassOverviewTable({
       {
         key: 'action',
         label: 'Action',
+        ...FEE_LIST_TABLE_CELL,
         align: 'end',
         width: 'w-[16%]',
+        headerCell: feeListTableHeader('Action'),
         render: (row) => {
           const marked = row.markedAt !== null;
           const href = tenantHref(`${hrefPrefix}/${row.classLevelId}${hrefSuffix}`);
@@ -338,92 +358,98 @@ export function AttendanceClassOverviewTable({
         </div>
       ) : null}
 
-      <ListPageToolbar
-        searchQuery={searchQuery}
-        onSearchQueryChange={setSearchQuery}
-        searchPlaceholder="Search classes…"
-        searchAriaLabel="Search classes"
+      <ListTableScreen
+        tableTitle="Class attendance overview"
         filters={
-          <>
-            {levelOptions.length > 0 ? (
-              <SimpleSelect
-                className="w-full sm:w-40"
-                ariaLabel="Filter by level"
-                value={levelFilter}
-                emptyOption={{ value: '', label: 'All levels' }}
-                placeholder="All levels"
-                onValueChange={setLevelFilter}
-                options={levelOptions}
-              />
-            ) : null}
-            <SimpleSelect
-              className="w-full sm:w-40"
-              ariaLabel="Filter by status"
-              value={statusFilter}
-              emptyOption={{ value: '', label: 'All status' }}
-              placeholder="All status"
-              onValueChange={(value) => {
-                setStatusFilter(value as StatusFilter);
-              }}
-              options={[
-                { value: 'marked', label: 'Marked' },
-                { value: 'not_marked', label: 'Not marked' },
-              ]}
-            />
-            {showDatePicker ? (
-              <div className="w-full sm:w-44">
-                <DatePicker
-                  value={overview.date}
-                  max={overview.day.reason === 'FUTURE' ? undefined : overview.date}
-                  aria-label="Attendance date"
-                  onChange={(nextValue) => {
-                    router.push(tenantHref(`${basePath}?date=${nextValue}`));
+          <ListPageToolbar
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            searchPlaceholder="Search classes…"
+            searchAriaLabel="Search classes"
+            filters={
+              <>
+                {levelOptions.length > 0 ? (
+                  <SimpleSelect
+                    className="w-36"
+                    ariaLabel="Filter by level"
+                    value={levelFilter}
+                    triggerIcon={SchoolIcon}
+                    emptyOption={{ value: '', label: 'All levels' }}
+                    placeholder="All levels"
+                    onValueChange={setLevelFilter}
+                    options={levelOptions}
+                  />
+                ) : null}
+                <SimpleSelect
+                  className="w-36"
+                  ariaLabel="Filter by status"
+                  value={statusFilter}
+                  triggerIcon={SuccessIcon}
+                  emptyOption={{ value: '', label: 'All status' }}
+                  placeholder="All status"
+                  onValueChange={(value) => {
+                    setStatusFilter(value as StatusFilter);
                   }}
+                  options={[
+                    { value: 'marked', label: 'Marked' },
+                    { value: 'not_marked', label: 'Not marked' },
+                  ]}
                 />
-              </div>
-            ) : null}
-          </>
+                {showDatePicker ? (
+                  <div className="w-44 shrink-0">
+                    <DatePicker
+                      value={overview.date}
+                      max={overview.day.reason === 'FUTURE' ? undefined : overview.date}
+                      aria-label="Attendance date"
+                      onChange={(nextValue) => {
+                        router.push(tenantHref(`${basePath}?date=${nextValue}`));
+                      }}
+                    />
+                  </div>
+                ) : null}
+              </>
+            }
+          />
         }
-      />
-
-      <CardTable
-        title="Class attendance overview"
-        caption="Classes for attendance"
-        rows={rows}
-        columns={columns}
-        rowKey={(row) => row.classLevelId}
-        minWidthClass="min-w-[56rem]"
-        isFiltered={isFiltered}
-        onClearFilters={clearFilters}
-        empty={{
-          title: overview.classes.length === 0 ? 'No classes yet' : 'No classes match',
-          description:
-            overview.classes.length === 0
-              ? 'Add classes under Academics before marking attendance.'
-              : 'Try a different search or clear the filters.',
-        }}
-        renderMobileRow={(row) => {
-          const meta = classDisplayMeta(row.className, row.numericOrder);
-          const marked = row.markedAt !== null;
-          return (
-            <div className="flex items-center justify-between gap-3 px-4 py-3">
-              <TwoLineCell
-                primary={row.className}
-                secondary={`${meta.levelLabel} · ${String(row.strength)} students`}
-              />
-              {marked ? (
-                <StatusBadge tone="success" size="sm">
-                  Marked
-                </StatusBadge>
-              ) : (
-                <StatusBadge tone="warning" size="sm">
-                  Not marked
-                </StatusBadge>
-              )}
-            </div>
-          );
-        }}
-      />
+      >
+        <ListDataTable
+          caption="Classes for attendance"
+          rows={rows}
+          columns={columns}
+          rowKey={(row) => row.classLevelId}
+          minWidthClass="min-w-[56rem]"
+          isFiltered={isFiltered}
+          onClearFilters={clearFilters}
+          empty={{
+            title: overview.classes.length === 0 ? 'No classes yet' : 'No classes match',
+            description:
+              overview.classes.length === 0
+                ? 'Add classes under Academics before marking attendance.'
+                : 'Try a different search or clear the filters.',
+          }}
+          renderMobileRow={(row) => {
+            const meta = classDisplayMeta(row.className, row.numericOrder);
+            const marked = row.markedAt !== null;
+            return (
+              <div className="flex items-center justify-between gap-3 px-4 py-3">
+                <TwoLineCell
+                  primary={row.className}
+                  secondary={`${meta.levelLabel} · ${String(row.strength)} students`}
+                />
+                {marked ? (
+                  <StatusBadge tone="success" size="sm">
+                    Marked
+                  </StatusBadge>
+                ) : (
+                  <StatusBadge tone="warning" size="sm">
+                    Not marked
+                  </StatusBadge>
+                )}
+              </div>
+            );
+          }}
+        />
+      </ListTableScreen>
     </div>
   );
 }

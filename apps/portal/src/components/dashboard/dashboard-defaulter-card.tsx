@@ -1,6 +1,8 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@ilm/ui';
+import { CardContent, CardHeader, CardTitle } from '@ilm/ui';
+
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { OverdueIcon } from '@ilm/ui/icons';
 import { formatMoney, minorUnits } from '@ilm/utils';
 import type { ApexOptions } from 'apexcharts';
@@ -84,7 +86,7 @@ export function DashboardDefaulterCard({ defaulters, detailsHref }: DashboardDef
   }, [gaugePercent, theme]);
 
   return (
-    <Card className="flex h-full w-full flex-col rounded-lg shadow-raised">
+    <DashboardCard className="flex h-full w-full flex-col rounded-lg shadow-raised">
       <CardHeader className="flex flex-row items-center gap-2 border-0 px-4 pb-0 pt-4">
         <span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
           <OverdueIcon className="size-4" aria-hidden="true" />
@@ -119,6 +121,6 @@ export function DashboardDefaulterCard({ defaulters, detailsHref }: DashboardDef
           <DashboardCardViewLink href={detailsHref} />
         </div>
       </CardContent>
-    </Card>
+    </DashboardCard>
   );
 }

@@ -8,7 +8,6 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  CardTable,
   ConfirmDialog,
   DateDisplay,
   DatePicker,
@@ -45,6 +44,8 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
+import { ListDataTable } from '@/components/list-data-table';
+import { ListTableScreen } from '@/components/list-table-screen';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
 
 import { mutate } from '@/lib/mutate';
@@ -276,19 +277,6 @@ export function SessionsManager({ sessions, error, canConfigure }: SessionsManag
       <WorkspacePageHeader
         title="Academic sessions"
         description="The school year. Sections, enrolments and fees all belong to one, which is what makes rolling over to next year a supported step rather than a data migration."
-        actionsBelow={
-          canConfigure ? (
-            <Button
-              onClick={() => {
-                setEditing(undefined);
-                setDialogOpen(true);
-              }}
-            >
-              <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-              Add session
-            </Button>
-          ) : undefined
-        }
       />
 
       {/* Not a cosmetic warning: with no current session the admission form
@@ -315,38 +303,54 @@ export function SessionsManager({ sessions, error, canConfigure }: SessionsManag
         </div>
       ) : null}
 
-      <CardTable
-        title="All sessions"
-        caption="Academic sessions"
-        rows={sortedSessions}
-        columns={columns}
-        rowKey={(row) => row.id}
-        sort={{
-          key: sortKey,
-          direction: sortDir,
-          onToggle: (key) => {
-            toggleSort(key as 'name' | 'startDate' | 'status');
-          },
-        }}
-        empty={{
-          title: 'No sessions yet',
-          description:
-            'A session is one school year — "2026–2027". Classes get their sections inside it, and students are enrolled into those.',
-          action: canConfigure ? (
+      <ListTableScreen
+        tableTitle="All sessions"
+        headerActions={
+          canConfigure ? (
             <Button
+              size="sm"
               onClick={() => {
                 setEditing(undefined);
                 setDialogOpen(true);
               }}
             >
               <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-              Add the first session
+              Add session
             </Button>
-          ) : undefined,
-        }}
-        renderMobileRow={(row) => (
-          <div className="px-4 py-3">
-            <TwoLineCell
+          ) : null
+        }
+      >
+        <ListDataTable
+          caption="Academic sessions"
+          rows={sortedSessions}
+          columns={columns}
+          rowKey={(row) => row.id}
+          sort={{
+            key: sortKey,
+            direction: sortDir,
+            onToggle: (key) => {
+              toggleSort(key as 'name' | 'startDate' | 'status');
+            },
+          }}
+          empty={{
+            title: 'No sessions yet',
+            description:
+              'A session is one school year — "2026–2027". Classes get their sections inside it, and students are enrolled into those.',
+            action: canConfigure ? (
+              <Button
+                onClick={() => {
+                  setEditing(undefined);
+                  setDialogOpen(true);
+                }}
+              >
+                <CreateIcon className={ICON_SIZE.inline} aria-hidden />
+                Add the first session
+              </Button>
+            ) : undefined,
+          }}
+          renderMobileRow={(row) => (
+            <div className="px-4 py-3">
+              <TwoLineCell
               primary={row.name}
               secondary={
                 <>
@@ -356,7 +360,8 @@ export function SessionsManager({ sessions, error, canConfigure }: SessionsManag
             />
           </div>
         )}
-      />
+        />
+      </ListTableScreen>
 
       {dialogOpen ? (
         <SessionDialog

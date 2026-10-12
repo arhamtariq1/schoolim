@@ -556,7 +556,7 @@ function LayoutChoice({
 
 function Card({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
-    <section className="space-y-4 rounded-xl border border-border bg-card p-4">
+    <section className="space-y-4 rounded-xl border border-border/70 bg-card shadow-raised p-4">
       <h2 className="text-base font-medium text-foreground">{title}</h2>
       {children}
     </section>

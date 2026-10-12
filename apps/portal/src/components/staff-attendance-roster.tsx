@@ -13,10 +13,6 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   Checkbox,
   cn,
   DatePicker,
@@ -27,6 +23,7 @@ import {
   Pagination,
   StatusBadge,
   useToast,
+  type CardTableColumn,
 } from '@ilm/ui';
 import {
   ChevronDownIcon,
@@ -41,7 +38,15 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, type ComponentType, type ReactNode } from 'react';
 
 import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
+import {
+  FEE_LIST_SELECT_COLUMN,
+  FEE_LIST_TABLE_CELL,
+  feeListSelectCheckboxWrap,
+  feeListTableHeader,
+} from '@/components/fees/fee-list-shared';
+import { ListDataTable } from '@/components/list-data-table';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { ListTableScreen } from '@/components/list-table-screen';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
 import { mutate } from '@/lib/mutate';
 import { useTenantHref } from '@/lib/use-tenant-href';
@@ -57,6 +62,11 @@ const MARK_STATUSES = [
 type MarkStatus = (typeof MARK_STATUSES)[number];
 
 const PAGE_SIZE = 8;
+
+type StaffRosterTableRow = {
+  readonly member: StaffRosterEntry;
+  readonly index: number;
+};
 
 export interface StaffAttendanceRosterProps {
   roster: StaffRoster;
@@ -94,6 +104,172 @@ export function StaffAttendanceRosterView({ roster, canMark, error }: StaffAtten
 
   const pageRows = useMemo(() => filtered.slice(offset, offset + PAGE_SIZE), [filtered, offset]);
 
+  const allPageSelected =
+    pageRows.length > 0 && pageRows.every((row) => selected.has(row.staffId));
+
+  function toggleSelectAllOnPage(): void {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (allPageSelected) {
+        for (const row of pageRows) {
+          next.delete(row.staffId);
+        }
+      } else {
+        for (const row of pageRows) {
+          next.add(row.staffId);
+        }
+      }
+      return next;
+    });
+  }
+
+  const tableRows = useMemo(
+    (): StaffRosterTableRow[] =>
+      pageRows.map((member, index) => ({ member, index: offset + index + 1 })),
+    [pageRows, offset],
+  );
+
+  const columns = useMemo((): CardTableColumn<StaffRosterTableRow>[] => {
+    const cols: CardTableColumn<StaffRosterTableRow>[] = [];
+
+    if (editable) {
+      cols.push({
+        key: 'select',
+        label: '',
+        ...FEE_LIST_SELECT_COLUMN,
+        headerCell: feeListSelectCheckboxWrap(
+          <Checkbox
+            checked={allPageSelected}
+            aria-label="Select all on this page"
+            onCheckedChange={() => {
+              toggleSelectAllOnPage();
+            }}
+          />,
+        ),
+        render: (row) =>
+          feeListSelectCheckboxWrap(
+            <Checkbox
+              checked={selected.has(row.member.staffId)}
+              aria-label={`Select ${row.member.name}`}
+              onCheckedChange={(checked) => {
+                setSelected((current) => {
+                  const copy = new Set(current);
+                  if (checked === true) {
+                    copy.add(row.member.staffId);
+                  } else {
+                    copy.delete(row.member.staffId);
+                  }
+                  return copy;
+                });
+              }}
+            />,
+            { stopRowClick: true },
+          ),
+      });
+    }
+
+    cols.push(
+      {
+        key: 'index',
+        label: '#',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[4%]',
+        align: 'end',
+        headerCell: feeListTableHeader('#'),
+        render: (row) => (
+          <span className="font-mono text-xs text-muted-foreground tabular-nums">{row.index}</span>
+        ),
+      },
+      {
+        key: 'staff',
+        label: 'Staff',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[28%]',
+        headerCell: feeListTableHeader('Staff', DesignationIcon),
+        render: (row) => {
+          const { firstName, lastName } = splitName(row.member.name);
+          return (
+            <div className="flex min-w-0 items-center gap-3">
+              <StudentAdmissionAvatar
+                firstName={firstName}
+                lastName={lastName}
+                photoUrl={row.member.photoUrl}
+                className="size-9 text-[11px]"
+              />
+              <div className="min-w-0">
+                <p className="truncate font-medium text-foreground">{row.member.name}</p>
+                {row.member.email === null ? null : (
+                  <p className="truncate text-xs text-muted-foreground md:hidden">
+                    {row.member.email}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        key: 'employeeNo',
+        label: 'Emp. no.',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[12%]',
+        headerCell: feeListTableHeader('Emp. no.', DesignationIcon),
+        render: (row) => (
+          <span className="font-mono text-sm tabular-nums">{row.member.employeeNo}</span>
+        ),
+      },
+      {
+        key: 'role',
+        label: 'Role',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[14%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Role', DesignationIcon),
+        render: (row) => {
+          const roleLabel =
+            row.member.role in STAFF_ROLE_LABELS
+              ? STAFF_ROLE_LABELS[row.member.role as StaffRole]
+              : roleLabelFallback(row.member.role);
+          return (
+            <StatusBadge tone="neutral" size="sm">
+              {roleLabel}
+            </StatusBadge>
+          );
+        },
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[32%]',
+        align: 'end',
+        headerCell: feeListTableHeader('Status'),
+        render: (row) => (
+          <div
+            role="radiogroup"
+            aria-label={`Attendance for ${row.member.name}`}
+            className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2"
+            data-stop-row-click
+          >
+            {MARK_STATUSES.map((option) => (
+              <StatusToggle
+                key={option}
+                status={option}
+                active={(marks[row.member.staffId] ?? 'PRESENT') === option}
+                disabled={!editable}
+                onSelect={() => {
+                  setMarks({ ...marks, [row.member.staffId]: option });
+                }}
+              />
+            ))}
+          </div>
+        ),
+      },
+    );
+
+    return cols;
+  }, [allPageSelected, editable, marks, selected, toggleSelectAllOnPage]);
+
   const counts = useMemo(() => {
     const values = Object.values(marks);
     const total = roster.staff.length;
@@ -115,9 +291,6 @@ export function StaffAttendanceRosterView({ roster, canMark, error }: StaffAtten
     };
   }, [marks, roster.staff.length]);
 
-  const allPageSelected =
-    pageRows.length > 0 && pageRows.every((row) => selected.has(row.staffId));
-
   function setSelectedStatus(status: StaffAttendanceStatus) {
     const targets =
       selected.size > 0
@@ -127,22 +300,6 @@ export function StaffAttendanceRosterView({ roster, canMark, error }: StaffAtten
       const next = { ...current };
       for (const member of targets) {
         next[member.staffId] = status;
-      }
-      return next;
-    });
-  }
-
-  function toggleSelectAllOnPage(): void {
-    setSelected((current) => {
-      const next = new Set(current);
-      if (allPageSelected) {
-        for (const row of pageRows) {
-          next.delete(row.staffId);
-        }
-      } else {
-        for (const row of pageRows) {
-          next.add(row.staffId);
-        }
       }
       return next;
     });
@@ -232,152 +389,92 @@ export function StaffAttendanceRosterView({ roster, canMark, error }: StaffAtten
         />
       </div>
 
-      <ListPageToolbar
-        searchQuery={term}
-        onSearchQueryChange={(value) => {
-          setTerm(value);
-          setOffset(0);
-        }}
-        searchPlaceholder="Search by name, employee no. or email…"
-        searchAriaLabel="Search staff"
+      <ListTableScreen
+        tableTitle="Staff"
         filters={
-          <>
-            {editable ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button type="button" tone="outline" className="w-full sm:w-auto">
-                    Fill all
-                    <ChevronDownIcon className="size-4" aria-hidden="true" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  {MARK_STATUSES.map((status) => (
-                    <DropdownMenuItem
-                      key={status}
-                      onSelect={() => {
-                        setSelectedStatus(status);
-                      }}
-                    >
-                      {STAFF_ATTENDANCE_STATUS_LABELS[status]}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-            <div className="w-full sm:w-44">
-              <DatePicker
-                value={roster.date}
-                aria-label="Attendance date"
-                onChange={(nextValue) => {
-                  router.push(tenantHref(`/attendance/mark/teachers?date=${nextValue}`));
-                }}
-              />
-            </div>
-          </>
-        }
-      />
-
-      <Card className="overflow-hidden shadow-raised">
-        <CardHeader className="border-b border-border bg-card px-4 py-3 sm:px-6">
-          <CardTitle className="text-base font-semibold">Staff</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {filtered.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <p className="font-medium text-foreground">
-                {roster.staff.length === 0 ? 'No staff on this date' : 'Nobody matches that'}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {roster.staff.length === 0
-                  ? 'Someone who joined after this date does not appear on it.'
-                  : 'Clear the search to see everyone.'}
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[56rem] border-collapse text-sm">
-                  <caption className="sr-only">Staff attendance register</caption>
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground">
-                      <th scope="col" className="w-10 px-3 py-3">
-                        {editable ? (
-                          <Checkbox
-                            checked={allPageSelected}
-                            aria-label="Select all on this page"
-                            onCheckedChange={() => {
-                              toggleSelectAllOnPage();
-                            }}
-                          />
-                        ) : null}
-                      </th>
-                      <th scope="col" className="w-10 px-2 py-3 text-end font-medium">
-                        #
-                      </th>
-                      <th scope="col" className="px-4 py-3 text-start font-medium">
-                        Staff
-                      </th>
-                      <th scope="col" className="px-4 py-3 text-start font-medium">
-                        Emp. no.
-                      </th>
-                      <th scope="col" className="hidden px-4 py-3 text-start font-medium md:table-cell">
-                        Role
-                      </th>
-                      <th scope="col" className="px-4 py-3 text-end font-medium">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pageRows.map((member, index) => (
-                      <StaffRow
-                        key={member.staffId}
-                        member={member}
-                        index={offset + index + 1}
-                        status={marks[member.staffId] ?? 'PRESENT'}
-                        editable={editable}
-                        selected={selected.has(member.staffId)}
-                        onSelect={(next) => {
-                          setSelected((current) => {
-                            const copy = new Set(current);
-                            if (next) {
-                              copy.add(member.staffId);
-                            } else {
-                              copy.delete(member.staffId);
-                            }
-                            return copy;
-                          });
-                        }}
-                        onStatus={(status) => {
-                          setMarks({ ...marks, [member.staffId]: status });
-                        }}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {filtered.length > PAGE_SIZE ? (
-                <div className="border-t border-border px-4 py-3">
-                  <Pagination
-                    total={filtered.length}
-                    limit={PAGE_SIZE}
-                    offset={offset}
-                    label="staff"
-                    onChange={(next) => {
-                      setOffset(next);
+          <ListPageToolbar
+            searchQuery={term}
+            onSearchQueryChange={(value) => {
+              setTerm(value);
+              setOffset(0);
+            }}
+            searchPlaceholder="Search by name, employee no. or email…"
+            searchAriaLabel="Search staff"
+            filters={
+              <>
+                {editable ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button type="button" tone="outline" className="shrink-0">
+                        Fill all
+                        <ChevronDownIcon className="size-4" aria-hidden="true" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {MARK_STATUSES.map((status) => (
+                        <DropdownMenuItem
+                          key={status}
+                          onSelect={() => {
+                            setSelectedStatus(status);
+                          }}
+                        >
+                          {STAFF_ATTENDANCE_STATUS_LABELS[status]}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : null}
+                <div className="w-44 shrink-0">
+                  <DatePicker
+                    value={roster.date}
+                    aria-label="Attendance date"
+                    onChange={(nextValue) => {
+                      router.push(tenantHref(`/attendance/mark/teachers?date=${nextValue}`));
                     }}
                   />
                 </div>
+              </>
+            }
+          />
+        }
+        footer={
+          filtered.length === 0 ? null : (
+            <div className="border-t border-border px-4 py-3">
+              {filtered.length > PAGE_SIZE ? (
+                <Pagination
+                  total={filtered.length}
+                  limit={PAGE_SIZE}
+                  offset={offset}
+                  label="staff"
+                  onChange={(next) => {
+                    setOffset(next);
+                  }}
+                />
               ) : (
-                <p className="border-t border-border px-4 py-3 text-sm text-muted-foreground">
-                  Showing {filtered.length === 0 ? 0 : offset + 1}–
-                  {Math.min(offset + PAGE_SIZE, filtered.length)} of {filtered.length} staff
+                <p className="text-sm text-muted-foreground">
+                  Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, filtered.length)} of{' '}
+                  {filtered.length} staff
                 </p>
               )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+            </div>
+          )
+        }
+      >
+        <ListDataTable
+          caption="Staff attendance register"
+          rows={tableRows}
+          columns={columns}
+          rowKey={(row) => row.member.staffId}
+          minWidthClass="min-w-[56rem]"
+          empty={{
+            title: roster.staff.length === 0 ? 'No staff on this date' : 'Nobody matches that',
+            description:
+              roster.staff.length === 0
+                ? 'Someone who joined after this date does not appear on it.'
+                : 'Clear the search to see everyone.',
+          }}
+        />
+      </ListTableScreen>
 
       {editable ? (
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4">
@@ -404,92 +501,6 @@ export function StaffAttendanceRosterView({ roster, canMark, error }: StaffAtten
         </div>
       ) : null}
     </div>
-  );
-}
-
-function StaffRow({
-  member,
-  index,
-  status,
-  editable,
-  selected,
-  onSelect,
-  onStatus,
-}: {
-  member: StaffRosterEntry;
-  index: number;
-  status: StaffAttendanceStatus;
-  editable: boolean;
-  selected: boolean;
-  onSelect: (next: boolean) => void;
-  onStatus: (status: StaffAttendanceStatus) => void;
-}) {
-  const { firstName, lastName } = splitName(member.name);
-  const roleLabel =
-    member.role in STAFF_ROLE_LABELS
-      ? STAFF_ROLE_LABELS[member.role as StaffRole]
-      : roleLabelFallback(member.role);
-
-  return (
-    <tr className="border-b border-border last:border-b-0">
-      <td className="px-3 py-3 align-middle">
-        {editable ? (
-          <Checkbox
-            checked={selected}
-            aria-label={`Select ${member.name}`}
-            onCheckedChange={(checked) => {
-              onSelect(checked === true);
-            }}
-          />
-        ) : null}
-      </td>
-      <td className="px-2 py-3 text-end font-mono text-xs text-muted-foreground tabular-nums">
-        {index}
-      </td>
-      <td className="px-4 py-3 align-middle">
-        <div className="flex min-w-0 items-center gap-3">
-          <StudentAdmissionAvatar
-            firstName={firstName}
-            lastName={lastName}
-            photoUrl={member.photoUrl}
-            className="size-9 text-[11px]"
-          />
-          <div className="min-w-0">
-            <p className="truncate font-medium text-foreground">{member.name}</p>
-            {member.email === null ? null : (
-              <p className="truncate text-xs text-muted-foreground md:hidden">{member.email}</p>
-            )}
-          </div>
-        </div>
-      </td>
-      <td className="px-4 py-3 font-mono text-xs text-foreground tabular-nums">
-        {member.employeeNo}
-      </td>
-      <td className="hidden px-4 py-3 md:table-cell">
-        <StatusBadge tone="neutral" size="sm">
-          {roleLabel}
-        </StatusBadge>
-      </td>
-      <td className="px-4 py-3 align-middle">
-        <div
-          role="radiogroup"
-          aria-label={`Attendance for ${member.name}`}
-          className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2"
-        >
-          {MARK_STATUSES.map((option) => (
-            <StatusToggle
-              key={option}
-              status={option}
-              active={status === option}
-              disabled={!editable}
-              onSelect={() => {
-                onStatus(option);
-              }}
-            />
-          ))}
-        </div>
-      </td>
-    </tr>
   );
 }
 
@@ -592,7 +603,7 @@ function StatTile({
   iconClassName: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-raised">
+    <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-card px-4 py-3 shadow-raised">
       <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-lg', iconClassName)}>
         <Icon className="size-5" aria-hidden="true" />
       </span>

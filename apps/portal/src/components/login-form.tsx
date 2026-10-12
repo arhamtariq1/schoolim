@@ -2,6 +2,7 @@
 
 import { loginRequestSchema, ROUTES, type LoginOutcome, type SchoolChoice } from '@ilm/contracts';
 import { Button, Field, Input, PasswordInput, useToast } from '@ilm/ui';
+import { EmailIcon, ICON_SIZE, LockedIcon, SignInIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -116,9 +117,9 @@ export function LoginForm({
         noValidate
         className="space-y-3.5"
       >
-        <Field label="Email or phone" error={fieldErrors['identifier']} required>
+        <Field label="Email" error={fieldErrors['identifier']} required leadingIcon={EmailIcon}>
           <Input
-            type="text"
+            type="email"
             name="identifier"
             autoComplete="username"
             autoFocus
@@ -131,7 +132,7 @@ export function LoginForm({
           />
         </Field>
 
-        <Field label="Password" error={fieldErrors['password']} required>
+        <Field label="Password" error={fieldErrors['password']} required leadingIcon={LockedIcon}>
           <PasswordInput
             name="password"
             autoComplete="current-password"
@@ -160,6 +161,7 @@ export function LoginForm({
           }
         >
           <Button type="submit" isPending={isPending} className="w-full" size="touch">
+            <SignInIcon className={ICON_SIZE.inline} aria-hidden />
             {isPending ? 'Signing in…' : 'Sign in'}
           </Button>
         </AuthFormActions>

@@ -57,6 +57,7 @@ export {
 
   // --- Account and session --------------------------------------------------
   LogOut as SignOutIcon,
+  LogIn as SignInIcon,
   User as AccountIcon,
   Mail as EmailIcon,
   Phone as PhoneIcon,

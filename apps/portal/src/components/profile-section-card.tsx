@@ -1,4 +1,4 @@
-import { cn } from '@ilm/ui';
+import { cardSurfaceClassName, cn } from '@ilm/ui';
 import type { ComponentType, ReactNode } from 'react';
 
 type ProfileSectionCardProps = {
@@ -21,7 +21,8 @@ export function ProfileSectionCard({
   return (
     <section
       className={cn(
-        'flex h-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6',
+        'flex h-full flex-col p-5 sm:p-6',
+        cardSurfaceClassName,
         className,
       )}
     >

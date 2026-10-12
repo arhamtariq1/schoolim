@@ -615,10 +615,10 @@ function Sidebar({
         className,
       )}
     >
-      <div className="relative flex h-16 shrink-0 items-center justify-center border-b border-border bg-card px-4">
+      <div className="relative flex h-16 shrink-0 items-center justify-start border-b border-border bg-card px-3">
         <Link
           href={tenantHref('/')}
-          className="inline-flex max-w-[148px] items-center justify-center rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="inline-flex max-w-[148px] items-center justify-start rounded-md ps-3 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           aria-label="Home"
         >
           <SidebarBrandMark
@@ -765,7 +765,7 @@ function NavLink({
         compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : cn('py-2 pe-3', navDepthPadding(depth)),
         nested ? 'font-normal' : 'font-medium',
         isActive
-          ? 'bg-primary/10 text-primary ring-1 ring-primary/15'
+          ? 'bg-primary/10 text-primary'
           : 'text-muted-foreground hover:bg-card/70 hover:text-foreground',
       )}
     >

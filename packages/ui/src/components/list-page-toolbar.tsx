@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 
 import { SearchIcon } from '../icons';
+import { cn } from '../lib/cn';
 
 export interface ListPageToolbarProps {
   searchQuery: string;
@@ -10,6 +11,8 @@ export interface ListPageToolbarProps {
   searchPlaceholder: string;
   searchAriaLabel: string;
   filters?: ReactNode;
+  /** Override max width of the search field (e.g. narrow toolbar beside many filters). */
+  searchClassName?: string;
 }
 
 /** Search on the left, filters on the right — shared list screens. */
@@ -19,10 +22,16 @@ export function ListPageToolbar({
   searchPlaceholder,
   searchAriaLabel,
   filters,
+  searchClassName,
 }: ListPageToolbarProps) {
   return (
-    <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-      <div className="relative min-w-0 w-full shrink-0 md:max-w-xl">
+    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div
+        className={cn(
+          'relative min-w-0 w-full shrink-0 md:max-w-md lg:max-w-xl',
+          searchClassName,
+        )}
+      >
         <SearchIcon
           className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden="true"
@@ -39,7 +48,7 @@ export function ListPageToolbar({
         />
       </div>
       {filters === undefined ? null : (
-        <div className="flex flex-wrap items-center gap-2 xl:ms-auto xl:justify-end">
+        <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto md:ms-auto md:justify-end md:overflow-visible [&>*]:shrink-0">
           {filters}
         </div>
       )}

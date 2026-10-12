@@ -1,6 +1,8 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ilm/ui';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@ilm/ui';
+
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { FinanceIcon } from '@ilm/ui/icons';
 import { formatMoney, minorUnits } from '@ilm/utils';
 import type { ApexOptions } from 'apexcharts';
@@ -123,7 +125,7 @@ export function DashboardRevenueChart({ trend }: DashboardRevenueChartProps) {
   }, [theme, trend]);
 
   return (
-    <Card className="flex h-full w-full flex-col rounded-2xl shadow-raised">
+    <DashboardCard className="flex h-full w-full flex-col rounded-2xl shadow-raised">
       <CardHeader className="flex flex-row items-start justify-between gap-3 border-0 px-4 pb-0 pt-4">
         <div className="flex min-w-0 items-start gap-2.5">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -168,7 +170,7 @@ export function DashboardRevenueChart({ trend }: DashboardRevenueChartProps) {
           />
         </div>
       </CardContent>
-    </Card>
+    </DashboardCard>
   );
 }
 

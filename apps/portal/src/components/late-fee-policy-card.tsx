@@ -84,7 +84,7 @@ export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicy
   }
 
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-raised">
+    <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-raised">
       <div className="flex gap-4 border-b border-border px-6 py-5">
         <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-warning/15 text-warning">
           <OverdueIcon className={ICON_SIZE.nav} aria-hidden="true" />

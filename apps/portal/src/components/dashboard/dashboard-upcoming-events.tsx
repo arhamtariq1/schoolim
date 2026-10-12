@@ -1,4 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle, StatusBadge, cn } from '@ilm/ui';
+import { CardContent, CardHeader, CardTitle, StatusBadge, cn } from '@ilm/ui';
+
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 
 import type { DashboardUpcomingEvent } from '@/lib/dashboard-data';
 
@@ -8,7 +10,7 @@ type DashboardUpcomingEventsProps = {
 
 export function DashboardUpcomingEvents({ events }: DashboardUpcomingEventsProps) {
   return (
-    <Card className="flex h-full flex-col">
+    <DashboardCard className="flex h-full flex-col">
       <CardHeader className="border-0 pb-0">
         <CardTitle>Upcoming events</CardTitle>
       </CardHeader>
@@ -19,7 +21,7 @@ export function DashboardUpcomingEvents({ events }: DashboardUpcomingEventsProps
           events.map((event) => (
             <article
               key={event.id}
-              className="flex gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-muted/40"
+              className="flex gap-3 rounded-xl border border-border/70 bg-card shadow-raised p-3 transition-colors hover:bg-muted/40"
             >
               <DateBadge date={event.date} />
               <div className="min-w-0 flex-1">
@@ -36,7 +38,7 @@ export function DashboardUpcomingEvents({ events }: DashboardUpcomingEventsProps
           ))
         )}
       </CardContent>
-    </Card>
+    </DashboardCard>
   );
 }
 

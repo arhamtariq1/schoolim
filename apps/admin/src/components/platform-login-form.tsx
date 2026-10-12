@@ -2,6 +2,7 @@
 
 import { platformLoginSchema, ROUTES } from '@ilm/contracts';
 import { Button, Field, Input, PasswordInput } from '@ilm/ui';
+import { EmailIcon, ICON_SIZE, LockedIcon, SignInIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -79,7 +80,7 @@ export function PlatformLoginForm() {
         </div>
       )}
 
-      <Field label="Email" error={fieldErrors['email']} required>
+      <Field label="Email" error={fieldErrors['email']} required leadingIcon={EmailIcon}>
         <Input
           type="email"
           name="email"
@@ -92,7 +93,7 @@ export function PlatformLoginForm() {
         />
       </Field>
 
-      <Field label="Password" error={fieldErrors['password']} required>
+      <Field label="Password" error={fieldErrors['password']} required leadingIcon={LockedIcon}>
         <PasswordInput
           name="password"
           autoComplete="current-password"
@@ -104,6 +105,7 @@ export function PlatformLoginForm() {
       </Field>
 
       <Button type="submit" isPending={isPending} className="w-full" size="touch">
+        <SignInIcon className={ICON_SIZE.inline} aria-hidden />
         {isPending ? 'Signing in…' : 'Sign in'}
       </Button>
     </form>

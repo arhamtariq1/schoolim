@@ -1,4 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle, cn } from '@ilm/ui';
+import { CardContent, CardHeader, CardTitle, cn } from '@ilm/ui';
+
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 
 import type { DashboardActivityRow } from '@/lib/dashboard-data';
 
@@ -15,7 +17,7 @@ const DOT: Record<DashboardActivityRow['tone'], string> = {
 
 export function DashboardActivityTable({ rows }: DashboardActivityTableProps) {
   return (
-    <Card>
+    <DashboardCard>
       <CardHeader className="border-0 pb-0">
         <CardTitle>Recent activity</CardTitle>
       </CardHeader>
@@ -78,7 +80,7 @@ export function DashboardActivityTable({ rows }: DashboardActivityTableProps) {
           </table>
         </div>
       </CardContent>
-    </Card>
+    </DashboardCard>
   );
 }
 

@@ -332,7 +332,7 @@ export function GenerateFee({
             }}
           />
 
-          <section className="rounded-lg border border-border bg-card p-4 sm:p-5">
+          <section className="rounded-lg border border-border/70 bg-card shadow-raised p-4 sm:p-5">
             <StepHeader
               step={1}
               title={
@@ -396,7 +396,7 @@ export function GenerateFee({
             </div>
           </section>
 
-          <section className="rounded-lg border border-border bg-card p-4 sm:p-5">
+          <section className="rounded-lg border border-border/70 bg-card shadow-raised p-4 sm:p-5">
             <StepHeader step={2} title="Fee period" />
             <div className="mt-4 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -442,7 +442,7 @@ export function GenerateFee({
             </div>
           </section>
 
-          <section className="rounded-lg border border-border bg-card p-4 sm:p-5">
+          <section className="rounded-lg border border-border/70 bg-card shadow-raised p-4 sm:p-5">
             <StepHeader step={3} title="Additional settings" />
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <SettingCard
@@ -814,7 +814,7 @@ function StudentPicker({
       </Field>
 
       {results.length > 0 ? (
-        <ul className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-border bg-card p-1 shadow-lg">
+        <ul className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-border/70 bg-card shadow-raised p-1 shadow-lg">
           {results.map((result) => (
             <li key={result.id}>
               <button
@@ -873,7 +873,7 @@ function FeePicker({
   const available = heads.filter((head) => !chosen.has(head.id));
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="rounded-lg border border-border/70 bg-card shadow-raised p-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="min-w-0 text-base font-semibold text-foreground">Fees to charge</h2>
         <DropdownMenu open={addOpen} onOpenChange={setAddOpen}>
@@ -1086,7 +1086,7 @@ function VoucherPreviewCard({
       : `${student.className}${student.sectionName === null ? '' : ` ${student.sectionName}`}`;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="rounded-lg border border-border/70 bg-card shadow-raised p-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-base font-semibold text-foreground">Voucher preview</h2>
         <Button
@@ -1233,7 +1233,7 @@ function PreviewDetails({
 
   if (preview === undefined || isLoading) {
     return (
-      <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center gap-2 rounded-lg border border-border/70 bg-card shadow-raised p-6 text-sm text-muted-foreground">
         <SpinnerIcon className={`${ICON_SIZE.inline} animate-spin`} aria-hidden />
         Working out the totals…
       </div>
@@ -1245,7 +1245,7 @@ function PreviewDetails({
   const isWholeResult = preview.samples.length >= preview.willCreate;
 
   return (
-    <div className="rounded-lg border border-border bg-card">
+    <div className="rounded-lg border border-border/70 bg-card shadow-raised">
       <div className="border-b border-border px-4 py-3">
         <h2 className="text-base font-medium text-foreground">Before you generate</h2>
         <p className="mt-0.5 text-sm text-muted-foreground">

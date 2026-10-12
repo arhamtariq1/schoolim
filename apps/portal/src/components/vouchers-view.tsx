@@ -596,7 +596,7 @@ export function VouchersView({
         </div>
       ) : null}
 
-      <Card className="overflow-hidden rounded-xl border-border/80 bg-card shadow-xs">
+      <Card className="overflow-hidden">
         <div className="border-b border-border p-4">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div className={`${VOUCHER_TABLE_SEARCH_CLASS} shrink-0`}>

@@ -1,6 +1,8 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@ilm/ui';
+import { CardContent, CardHeader, CardTitle } from '@ilm/ui';
+
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import type { ApexOptions } from 'apexcharts';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
@@ -201,7 +203,7 @@ export function DashboardAttendanceWeekChart({ weekly }: DashboardAttendanceWeek
   }, [categories, theme, weekly]);
 
   return (
-    <Card className="flex h-full w-full flex-col rounded-2xl shadow-raised">
+    <DashboardCard className="flex h-full w-full flex-col rounded-2xl shadow-raised">
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 border-0 px-4 pb-0 pt-4 sm:px-6">
         <CardTitle className="shrink-0">Attendance overview</CardTitle>
         <ul className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-xs font-medium text-muted-foreground">
@@ -231,6 +233,6 @@ export function DashboardAttendanceWeekChart({ weekly }: DashboardAttendanceWeek
           <ApexChart type="bar" height={CHART_HEIGHT} width="100%" options={options} series={series} />
         </div>
       </CardContent>
-    </Card>
+    </DashboardCard>
   );
 }

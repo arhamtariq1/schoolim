@@ -7,6 +7,13 @@ import {
   type SignupStartResult,
 } from '@ilm/contracts';
 import { Button, Checkbox, Field, Input, PasswordInput, useToast } from '@ilm/ui';
+import {
+  AccountIcon,
+  ChevronRightIcon,
+  EmailIcon,
+  ICON_SIZE,
+  LockedIcon,
+} from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
@@ -159,7 +166,12 @@ export function SignupCredentialsForm() {
       className="space-y-3.5"
     >
       <div className="grid gap-3.5 sm:grid-cols-2">
-        <Field label="First name" error={fieldErrors['firstName']} required>
+        <Field
+          label="First name"
+          error={fieldErrors['firstName']}
+          required
+          leadingIcon={AccountIcon}
+        >
           <Input
             name="firstName"
             autoComplete="given-name"
@@ -173,7 +185,12 @@ export function SignupCredentialsForm() {
           />
         </Field>
 
-        <Field label="Last name" error={fieldErrors['lastName']} required>
+        <Field
+          label="Last name"
+          error={fieldErrors['lastName']}
+          required
+          leadingIcon={AccountIcon}
+        >
           <Input
             name="lastName"
             autoComplete="family-name"
@@ -187,7 +204,7 @@ export function SignupCredentialsForm() {
         </Field>
       </div>
 
-      <Field label="Email" error={fieldErrors['email']} required>
+      <Field label="Email" error={fieldErrors['email']} required leadingIcon={EmailIcon}>
         <Input
           name="email"
           type="email"
@@ -202,7 +219,7 @@ export function SignupCredentialsForm() {
       </Field>
 
       <div className="space-y-1.5">
-        <Field label="Password" error={fieldErrors['password']} required>
+        <Field label="Password" error={fieldErrors['password']} required leadingIcon={LockedIcon}>
           <PasswordInput
             name="password"
             autoComplete="new-password"
@@ -217,7 +234,12 @@ export function SignupCredentialsForm() {
         <PasswordRequirements password={password} dense />
       </div>
 
-      <Field label="Confirm password" error={fieldErrors['confirmPassword']} required>
+      <Field
+        label="Confirm password"
+        error={fieldErrors['confirmPassword']}
+        required
+        leadingIcon={LockedIcon}
+      >
         <PasswordInput
           name="confirmPassword"
           autoComplete="new-password"
@@ -263,6 +285,7 @@ export function SignupCredentialsForm() {
           className="w-full"
           size="touch"
         >
+          {isPending ? null : <ChevronRightIcon className={ICON_SIZE.inline} aria-hidden />}
           {isPending ? 'Sending code…' : 'Continue'}
         </Button>
       </AuthFormActions>

@@ -8,6 +8,7 @@ import {
   type SignupVerifyOtpResult,
 } from '@ilm/contracts';
 import { Button, Field, OtpInput, useToast } from '@ilm/ui';
+import { ApproveIcon, ICON_SIZE } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
@@ -316,6 +317,7 @@ export function OtpVerificationForm({
           className="w-full"
           size="touch"
         >
+          <ApproveIcon className={ICON_SIZE.inline} aria-hidden />
           {isPending ? 'Verifying…' : 'Verify code'}
         </Button>
       </AuthFormActions>

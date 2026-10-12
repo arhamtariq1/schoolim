@@ -3,7 +3,6 @@
 import type { StudentListItem } from '@ilm/contracts';
 import {
   Button,
-  Card,
   CardContent,
   CardHeader,
   CardTitle,
@@ -26,6 +25,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, type ReactNode } from 'react';
 
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
 import { displayPhone } from '@/lib/phone-format';
 import { useTenantHref } from '@/lib/use-tenant-href';
@@ -48,7 +48,7 @@ export function DashboardRecentAdmissionsTable({
   }
 
   return (
-    <Card className="overflow-hidden rounded-lg shadow-raised">
+    <DashboardCard className="overflow-hidden rounded-lg shadow-raised">
       <CardHeader className="flex flex-row items-center justify-between gap-2 bg-card px-4 pb-2 pt-4 sm:px-6">
         <CardTitle className="text-base font-semibold text-foreground">Recent admissions</CardTitle>
         <Link href={listHref} className="text-xs font-medium text-primary hover:underline">
@@ -224,7 +224,7 @@ export function DashboardRecentAdmissionsTable({
           </>
         )}
       </CardContent>
-    </Card>
+    </DashboardCard>
   );
 }
 

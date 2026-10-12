@@ -6,10 +6,9 @@ import {
   type UploadSchoolLogo,
 } from '@ilm/contracts';
 import { Field, Input, SearchableSelect, Textarea } from '@ilm/ui';
-import { EmailIcon, PhoneIcon, SchoolIcon } from '@ilm/ui/icons';
+import { EmailIcon, LocationIcon, PhoneIcon, SchoolIcon } from '@ilm/ui/icons';
 import { useMemo } from 'react';
 
-import { InputWithIcon } from '@/components/input-with-icon';
 import { LogoPicker } from '@/components/logo-picker';
 import {
   ProfileDisplayField,
@@ -136,9 +135,8 @@ export function ProfileSchoolEditorFields({
         </div>
       )}
 
-      <Field label="School name" error={fieldErrors['school.name']} required>
-        <InputWithIcon
-          icon={SchoolIcon}
+      <Field label="School name" error={fieldErrors['school.name']} required leadingIcon={SchoolIcon}>
+        <Input
           name="schoolName"
           autoComplete="organization"
           value={values.name}
@@ -149,9 +147,8 @@ export function ProfileSchoolEditorFields({
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="School email" error={fieldErrors['school.email']} required>
-          <InputWithIcon
-            icon={EmailIcon}
+        <Field label="School email" error={fieldErrors['school.email']} required leadingIcon={EmailIcon}>
+          <Input
             name="schoolEmail"
             type="email"
             autoComplete="email"
@@ -166,9 +163,9 @@ export function ProfileSchoolEditorFields({
           label="School contact number"
           error={fieldErrors['school.phone']}
           required
+          leadingIcon={PhoneIcon}
         >
-          <InputWithIcon
-            icon={PhoneIcon}
+          <Input
             name="schoolPhone"
             type="tel"
             inputMode="tel"
@@ -220,6 +217,8 @@ export function ProfileSchoolEditorFields({
           error={fieldErrors['school.address']}
           required
           className="mt-4"
+          leadingIcon={LocationIcon}
+          leadingIconAlignTop
         >
           <Textarea
             name="schoolAddress"

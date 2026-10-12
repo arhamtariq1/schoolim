@@ -2,6 +2,7 @@
 
 import { resetPasswordRequestSchema, ROUTES } from '@ilm/contracts';
 import { Button, Field, PasswordInput, useToast } from '@ilm/ui';
+import { ICON_SIZE, LockedIcon, SaveIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -109,7 +110,7 @@ export function NewPasswordForm({
       )}
 
       <div className="space-y-1.5">
-        <Field label="New password" error={fieldErrors['password']} required>
+        <Field label="New password" error={fieldErrors['password']} required leadingIcon={LockedIcon}>
           <PasswordInput
             name="password"
             autoComplete="new-password"
@@ -125,7 +126,7 @@ export function NewPasswordForm({
         <PasswordRequirements password={password} />
       </div>
 
-      <Field label="Confirm password" error={fieldErrors['confirm']} required>
+      <Field label="Confirm password" error={fieldErrors['confirm']} required leadingIcon={LockedIcon}>
         <PasswordInput
           name="confirm"
           autoComplete="new-password"
@@ -146,6 +147,7 @@ export function NewPasswordForm({
         }
       >
         <Button type="submit" isPending={isPending} className="w-full" size="touch">
+          <SaveIcon className={ICON_SIZE.inline} aria-hidden />
           {isPending ? 'Saving…' : 'Save new password'}
         </Button>
       </AuthFormActions>

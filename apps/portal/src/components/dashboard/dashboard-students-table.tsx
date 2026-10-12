@@ -1,7 +1,9 @@
 'use client';
 
 import type { StudentListItem } from '@ilm/contracts';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, DataTable, DateDisplay, StatusBadge } from '@ilm/ui';
+import { Button, CardContent, CardDescription, CardHeader, CardTitle, DataTable, DateDisplay, StatusBadge } from '@ilm/ui';
+
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -25,7 +27,7 @@ export function DashboardStudentsTable({
   const tenantHref = useTenantHref();
 
   return (
-    <Card>
+    <DashboardCard>
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 border-0 pb-0">
         <div>
           <CardTitle>Recent admissions</CardTitle>
@@ -100,6 +102,6 @@ export function DashboardStudentsTable({
           }}
         />
       </CardContent>
-    </Card>
+    </DashboardCard>
   );
 }

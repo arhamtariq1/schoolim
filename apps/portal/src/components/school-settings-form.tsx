@@ -152,7 +152,7 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
 
   return (
     <form
-      className="rounded-xl border border-border bg-card p-4"
+      className="rounded-xl border border-border/70 bg-card shadow-raised p-4"
       onSubmit={(event) => void save(event)}
       aria-labelledby="school-details"
     >

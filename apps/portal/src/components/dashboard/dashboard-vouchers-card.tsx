@@ -1,4 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle, StatusBadge, cn } from '@ilm/ui';
+import { CardContent, CardHeader, CardTitle, StatusBadge, cn } from '@ilm/ui';
+
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { FeesIcon } from '@ilm/ui/icons';
 import { formatMoney, minorUnits } from '@ilm/utils';
 
@@ -12,7 +14,7 @@ type DashboardVouchersCardProps = {
 
 export function DashboardVouchersCard({ summary, detailsHref }: DashboardVouchersCardProps) {
   return (
-    <Card className="flex h-full w-full flex-col rounded-lg shadow-raised">
+    <DashboardCard className="flex h-full w-full flex-col rounded-lg shadow-raised">
       <CardHeader className="flex flex-row items-center justify-between gap-2 border-0 px-4 pb-0 pt-4">
         <div className="flex items-center gap-2">
           <span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -57,7 +59,7 @@ export function DashboardVouchersCard({ summary, detailsHref }: DashboardVoucher
           <DashboardCardViewLink href={detailsHref} />
         </div>
       </CardContent>
-    </Card>
+    </DashboardCard>
   );
 }
 

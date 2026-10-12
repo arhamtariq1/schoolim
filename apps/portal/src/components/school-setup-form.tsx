@@ -9,7 +9,18 @@ import {
   type UploadSchoolLogo,
 } from '@ilm/contracts';
 import { Button, Field, Input, useToast } from '@ilm/ui';
-import { ErrorIcon, ICON_SIZE, SpinnerIcon, SuccessIcon } from '@ilm/ui/icons';
+import {
+  CreateIcon,
+  EmailIcon,
+  ErrorIcon,
+  ICON_SIZE,
+  LocationIcon,
+  PhoneIcon,
+  SchoolIcon,
+  SpinnerIcon,
+  SuccessIcon,
+  WebIcon,
+} from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
@@ -159,7 +170,12 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
 
       <fieldset disabled={isPending} className="space-y-4">
 
-        <Field label="School name" error={fieldErrors['school.name']} required>
+        <Field
+          label="School name"
+          error={fieldErrors['school.name']}
+          required
+          leadingIcon={SchoolIcon}
+        >
           <Input
             name="schoolName"
             autoComplete="organization"
@@ -176,6 +192,7 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
           error={fieldErrors['school.slug']}
           hint="Permanent. This is where your staff and parents will sign in."
           required
+          leadingIcon={WebIcon}
         >
           <Input
             name="slug"
@@ -204,7 +221,7 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="City" error={fieldErrors['school.city']} required>
+          <Field label="City" error={fieldErrors['school.city']} required leadingIcon={LocationIcon}>
             <Input
               name="city"
               autoComplete="address-level2"
@@ -220,6 +237,7 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
             error={fieldErrors['school.phone']}
             hint="Include the country code, or start with 0 and we will add +92."
             required
+            leadingIcon={PhoneIcon}
           >
             <Input
               name="schoolPhone"
@@ -240,6 +258,7 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
           error={fieldErrors['school.email']}
           hint="The school’s public address — the one on the prospectus, not your login."
           required
+          leadingIcon={EmailIcon}
         >
           <Input
             name="schoolEmail"
@@ -260,6 +279,7 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
       </fieldset>
 
       <Button type="submit" isPending={isPending} className="w-full" size="touch">
+        <CreateIcon className={ICON_SIZE.inline} aria-hidden />
         {isPending ? 'Setting up your school…' : `Start my ${String(TRIAL_DAYS)}-day trial`}
       </Button>
 
