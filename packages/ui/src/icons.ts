@@ -30,6 +30,8 @@ export {
 
   // --- Navigation -----------------------------------------------------------
   LayoutDashboard as DashboardIcon,
+  /** Enrolling a new student — not the generic create (`CreateIcon`) act. */
+  UserPlus as AdmissionIcon,
   Users as StudentsIcon,
   Wallet as FeesIcon,
   CalendarCheck as AttendanceIcon,

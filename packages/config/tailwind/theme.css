@@ -129,11 +129,11 @@
 }
 
 :root {
-  /* Workspace canvas ≈ Tailwind gray-50 (#f9fafb), cards white. */
-  --canvas-from: oklch(0.988 0.002 264);
-  --canvas-mid: oklch(0.985 0.002 264);
-  --canvas-to: oklch(0.982 0.003 264);
-  --bg: oklch(0.985 0.002 264);
+  /* Workspace canvas and cards both white; depth comes from borders, not tint. */
+  --canvas-from: oklch(1 0 0);
+  --canvas-mid: oklch(1 0 0);
+  --canvas-to: oklch(1 0 0);
+  --bg: oklch(1 0 0);
   --surface: oklch(1 0 0);
   --card: oklch(1 0 0);
 

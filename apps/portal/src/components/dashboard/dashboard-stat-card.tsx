@@ -3,6 +3,14 @@
 import { cn } from '@ilm/ui';
 
 import { DashboardCard } from '@/components/dashboard/dashboard-card';
+import {
+  DASHBOARD_TREND_FAVORABLE_BADGE_CLASS,
+  DASHBOARD_TREND_FAVORABLE_ICON_CLASS,
+  DASHBOARD_TREND_NEUTRAL_BADGE_CLASS,
+  DASHBOARD_TREND_NEUTRAL_ICON_CLASS,
+  DASHBOARD_TREND_UNFAVORABLE_BADGE_CLASS,
+  DASHBOARD_TREND_UNFAVORABLE_ICON_CLASS,
+} from '@/components/dashboard/dashboard-trend-styles';
 import { TrendDownIcon, TrendUpIcon } from '@ilm/ui/icons';
 import Link from 'next/link';
 
@@ -32,6 +40,12 @@ export const DASHBOARD_STAT_LABEL_CLASS = 'text-sm font-semibold text-foreground
 
 export const DASHBOARD_STAT_FOOTNOTE_CLASS = 'mt-2 text-xs leading-snug text-muted-foreground';
 
+const DASHBOARD_STAT_CARD_CLASS = cn(
+  'h-full bg-card transition-[border-color,transform] duration-200 ease-out',
+  'hover:-translate-y-0.5 hover:border-primary/35',
+  'focus-within:-translate-y-0.5 focus-within:border-primary/35',
+);
+
 type DashboardStatCardProps = {
   label: string;
   value: string;
@@ -59,14 +73,13 @@ export function DashboardStatCard({
         <p className={DASHBOARD_STAT_LABEL_CLASS}>{label}</p>
         {trend === undefined ? null : (
           <span
-            className={cn(
-              'inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums',
+            className={
               neutral
-                ? 'bg-muted text-muted-foreground'
+                ? DASHBOARD_TREND_NEUTRAL_BADGE_CLASS
                 : trend.positive
-                  ? 'bg-success/10 text-success'
-                  : 'bg-danger/10 text-danger',
-            )}
+                  ? DASHBOARD_TREND_FAVORABLE_BADGE_CLASS
+                  : DASHBOARD_TREND_UNFAVORABLE_BADGE_CLASS
+            }
           >
             {trend.label}
           </span>
@@ -78,14 +91,13 @@ export function DashboardStatCard({
         {trend === undefined ? null : (
           <span
             aria-hidden="true"
-            className={cn(
-              'inline-flex size-7 shrink-0 items-center justify-center rounded-full',
+            className={
               neutral
-                ? 'bg-muted text-muted-foreground'
+                ? DASHBOARD_TREND_NEUTRAL_ICON_CLASS
                 : trendUp
-                  ? 'bg-success/10 text-success'
-                  : 'bg-danger/10 text-danger',
-            )}
+                  ? DASHBOARD_TREND_FAVORABLE_ICON_CLASS
+                  : DASHBOARD_TREND_UNFAVORABLE_ICON_CLASS
+            }
           >
             {neutral ? (
               <span className="text-xs font-bold">—</span>
@@ -105,15 +117,13 @@ export function DashboardStatCard({
   );
 
   if (href === undefined) {
-    return (
-      <DashboardCard className="h-full">{content}</DashboardCard>
-    );
+    return <DashboardCard className={DASHBOARD_STAT_CARD_CLASS}>{content}</DashboardCard>;
   }
 
   return (
     <DashboardCard
       className={cn(
-        'h-full',
+        DASHBOARD_STAT_CARD_CLASS,
         'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background',
       )}
     >

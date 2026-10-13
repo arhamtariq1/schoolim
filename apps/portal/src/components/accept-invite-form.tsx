@@ -6,6 +6,13 @@ import { ApproveIcon, ICON_SIZE, LockedIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
+import {
+  fieldErrorsFromZod,
+  showApiErrorToast,
+  showFormValidationToast,
+  showNetworkErrorToast,
+} from '@/lib/form-validation';
+
 import { AuthFormActions } from './auth-form-actions';
 import { AuthInlineLink, AuthSecondaryNav } from './auth-inline-link';
 import { PasswordRequirements } from './password-requirements';
@@ -57,17 +64,15 @@ export function AcceptInviteForm({
       // Checked here rather than on the server, because the server has no
       // business being told the password twice.
       setFieldErrors({ confirm: 'Both passwords must match.' });
+      toast.error('Both passwords must match.');
       return;
     }
 
     const parsed = acceptInviteRequestSchema.safeParse({ token, password });
 
     if (!parsed.success) {
-      const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        next[issue.path.join('.')] = issue.message;
-      }
-      setFieldErrors(next);
+      setFieldErrors(fieldErrorsFromZod(parsed.error));
+      showFormValidationToast(toast);
       return;
     }
 
@@ -82,6 +87,7 @@ export function AcceptInviteForm({
       });
     } catch {
       setIsPending(false);
+      showNetworkErrorToast(toast);
       setFormError('Could not reach the server. Check your connection and try again.');
       return;
     }
@@ -89,13 +95,16 @@ export function AcceptInviteForm({
     if (!response.ok) {
       const problem = (await response.json().catch(() => ({}))) as { detail?: string };
       setIsPending(false);
-      setFormError(problem.detail ?? 'That did not work. Ask the school to send a new invitation.');
+      const detail =
+        problem.detail ?? 'Ask your school to send a new invitation link.';
+      setFormError(detail);
+      showApiErrorToast(toast, 'Invitation failed', detail);
       return;
     }
 
     const body = (await response.json()) as { data: AcceptInviteResult };
 
-    toast.success('Your account is ready', 'Sign in with the password you just chose.');
+    toast.success('Account ready. Sign in with your new password.');
     router.replace(`/login?email=${encodeURIComponent(body.data.email)}`);
   }
 

@@ -113,12 +113,9 @@ export function StaffTable({
     }
 
     if (result.data.sent) {
-      toast.success(`Invitation sent to ${result.data.email}`, 'The link works once, for 3 days.');
+      toast.success(`Invitation sent to ${result.data.email}.`);
     } else {
-      toast.warning(
-        'Invitation created, but the email did not go',
-        'Check the mail settings, then press Re-send.',
-      );
+      toast.warning('Invitation created, but the email did not send.');
     }
 
     router.refresh();
@@ -173,8 +170,9 @@ export function StaffTable({
     }
 
     toast.success(
-      `${deleting.name} removed`,
-      deleting.hasLogin ? 'Their portal access was revoked immediately.' : undefined,
+      deleting.hasLogin
+        ? `${deleting.name} removed and portal access revoked.`
+        : `${deleting.name} removed.`,
     );
     setDeleting(undefined);
     router.refresh();

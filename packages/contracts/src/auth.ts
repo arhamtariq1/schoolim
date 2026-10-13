@@ -157,6 +157,26 @@ export const resetPasswordRequestSchema = z
 
 export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
 
+/** Signed-in user changes their own password. */
+export const changePasswordRequestSchema = z
+  .object({
+    currentPassword: nonEmptyString.max(256),
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, 'Confirm your password.'),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.password !== value.confirmPassword) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['confirmPassword'],
+        message: 'Passwords do not match.',
+      });
+    }
+  });
+
+export type ChangePasswordRequest = z.infer<typeof changePasswordRequestSchema>;
+
 /**
  * One school a set of credentials just unlocked.
  *

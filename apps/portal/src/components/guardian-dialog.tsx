@@ -125,7 +125,7 @@ export function GuardianDialog({
       return;
     }
 
-    toast.success(`${match.name} linked`, 'Siblings now share one guardian record.');
+    toast.success(`${match.name} linked to this student.`);
     onOpenChange(false);
     router.refresh();
   }

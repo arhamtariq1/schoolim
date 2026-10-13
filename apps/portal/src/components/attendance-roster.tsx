@@ -305,10 +305,9 @@ export function AttendanceRoster({ roster, canMark, error }: AttendanceRosterPro
     }
 
     toast.success(
-      `${String(result.data.saved)} marked`,
       result.data.skipped > 0
-        ? `${String(result.data.skipped)} skipped — not enrolled on this date.`
-        : undefined,
+        ? `${String(result.data.saved)} marked (${String(result.data.skipped)} skipped).`
+        : `${String(result.data.saved)} marked.`,
     );
     router.push(tenantHref(`/attendance/mark/students?date=${roster.date}`));
   }

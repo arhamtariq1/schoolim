@@ -25,10 +25,11 @@ import {
 } from '@/components/profile-school-editor-fields';
 import { ProfileSectionCard } from '@/components/profile-section-card';
 import {
-  FORM_VALIDATION_TOAST,
   fieldErrorsFromZod,
   humanizeFieldErrors,
   phoneDisplayError,
+  showFormValidationToast,
+  showNetworkErrorToast,
   withoutFieldErrors,
 } from '@/lib/form-validation';
 import { mutate } from '@/lib/mutate';
@@ -205,7 +206,7 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
       router.replace('/login');
       router.refresh();
     } catch {
-      toast.error('Could not reach the server.');
+      showNetworkErrorToast(toast);
     }
   }
 
@@ -267,7 +268,7 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
 
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
-      toast.error(FORM_VALIDATION_TOAST);
+      showFormValidationToast(toast);
       return;
     }
 
@@ -277,7 +278,7 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
       effectiveSlug !== initial.school.slug
     ) {
       setFieldErrors({ 'school.slug': 'That web address is already taken.' });
-      toast.error(FORM_VALIDATION_TOAST);
+      showFormValidationToast(toast);
       return;
     }
 
@@ -290,13 +291,15 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
       );
       if (!result.ok) {
         setFieldErrors(humanizeFieldErrors(result.fieldErrors));
-        toast.error(
-          Object.keys(result.fieldErrors).length > 0 ? FORM_VALIDATION_TOAST : result.message,
-        );
+        if (Object.keys(result.fieldErrors).length > 0) {
+          showFormValidationToast(toast);
+        } else {
+          toast.error(result.message);
+        }
         return;
       }
 
-      toast.success('You are set up', 'Welcome — your workspace is ready.');
+      toast.success('Setup complete. Welcome to your workspace.');
 
       const relocateTo = result.data.relocateTo;
       if (relocateTo !== undefined && relocateTo !== '') {
@@ -309,10 +312,7 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
         credentials: 'include',
       });
       if (!refreshed.ok) {
-        toast.warning(
-          'Saved',
-          'Sign out and sign in again if the rest of the portal stays locked.',
-        );
+        toast.warning('Saved. Sign out and back in if anything still looks locked.');
       }
 
       window.location.assign(tenantHref('/'));

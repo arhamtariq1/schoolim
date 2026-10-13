@@ -1,6 +1,7 @@
 import {
   AcademicsIcon,
   AccountIcon,
+  AdmissionIcon,
   AttendanceIcon,
   ClassIcon,
   CreateIcon,
@@ -39,6 +40,7 @@ import type { ComponentType } from 'react';
 // would break the moment the dependency is hoisted differently.
 export const NAV_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   DashboardIcon,
+  AdmissionIcon,
   StudentsIcon,
   CreateIcon,
   FeesIcon,

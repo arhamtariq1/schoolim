@@ -48,7 +48,7 @@ export function DashboardRecentAdmissionsTable({
   }
 
   return (
-    <DashboardCard className="overflow-hidden rounded-lg shadow-raised">
+    <DashboardCard className="overflow-hidden rounded-lg">
       <CardHeader className="flex flex-row items-center justify-between gap-2 bg-card px-4 pb-2 pt-4 sm:px-6">
         <CardTitle className="text-base font-semibold text-foreground">Recent admissions</CardTitle>
         <Link href={listHref} className="text-xs font-medium text-primary hover:underline">

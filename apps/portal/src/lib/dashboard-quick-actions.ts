@@ -3,6 +3,7 @@ import type { Route } from 'next';
 export type DashboardQuickActionTone = 'primary' | 'success' | 'warning' | 'danger' | 'neutral';
 
 export type DashboardQuickActionIconName =
+  | 'AdmissionIcon'
   | 'CreateIcon'
   | 'AttendanceIcon'
   | 'FeesIcon'
@@ -25,7 +26,7 @@ export function buildDashboardQuickActions(
     {
       href: baseHref('/students/new'),
       label: 'Add admission',
-      icon: 'CreateIcon',
+      icon: 'AdmissionIcon',
       tone: 'primary',
     },
     {

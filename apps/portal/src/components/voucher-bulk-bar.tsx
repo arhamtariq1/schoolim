@@ -98,10 +98,7 @@ export function VoucherBulkBar({
     const token = stashPrintSelection([...selected]);
 
     if (token === undefined) {
-      toast.error(
-        'Could not open the print view',
-        'This browser is blocking site storage. Allow it for this site, or print from the row menu.',
-      );
+      toast.error('Could not open print view. Allow site storage for this site and try again.');
       return;
     }
 
@@ -129,10 +126,7 @@ export function VoucherBulkBar({
     } else {
       // Named, not counted. "3 could not be deleted" sends somebody hunting;
       // "SEP-0142 had a payment" is the answer they were about to look for.
-      toast.warning(
-        `${String(deleted)} deleted, ${String(skipped.length)} left alone`,
-        summarise(skipped),
-      );
+      toast.warning(`${String(deleted)} deleted. ${summarise(skipped)}`);
     }
 
     setReason('');

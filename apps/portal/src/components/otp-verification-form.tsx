@@ -16,6 +16,7 @@ import { AuthFormActions } from './auth-form-actions';
 import { AuthInlineLink, AuthSecondaryNav } from './auth-inline-link';
 import { SIGNUP_CONTEXT } from './signup-step-gate';
 
+import { showApiErrorToast, showNetworkErrorToast } from '@/lib/form-validation';
 import { clearSignupDraft } from '@/lib/signup-draft';
 
 /** Query `context` for the forgot-password OTP step. */
@@ -67,7 +68,7 @@ export function OtpVerificationForm({
   }) {
     if (result.sent) {
       setCooldownSeconds(0);
-      toast.success('Code sent', 'Check your inbox for a new code.');
+      toast.success('New verification code sent.');
       return;
     }
 
@@ -76,7 +77,7 @@ export function OtpVerificationForm({
       return;
     }
 
-    toast.warning('Could not send another code just yet.');
+    toast.warning('Please wait before requesting another code.');
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -87,7 +88,7 @@ export function OtpVerificationForm({
 
     setFieldErrors({});
     if (!/^\d{6}$/.test(digits)) {
-      const message = 'Enter the 6-digit code.';
+      const message = 'Enter the 6-digit code from your email.';
       setFieldErrors({ code: message });
       toast.error(message);
       return;
@@ -95,7 +96,7 @@ export function OtpVerificationForm({
 
     if (isPasswordReset) {
       if (email === undefined || email === '') {
-        toast.error('Start again from forgot password.');
+        toast.error('Session expired. Start again from forgot password.');
         router.replace('/forgot-password');
         return;
       }
@@ -115,21 +116,26 @@ export function OtpVerificationForm({
             code?: string;
           };
           if (problem.code === 'AUTH_EMAIL_NOT_FOUND') {
-            toast.error(problem.detail ?? 'No account uses that email.');
+            showApiErrorToast(
+              toast,
+              'Email not found',
+              problem.detail,
+              'No account uses that email address.',
+            );
             router.replace('/forgot-password');
             return;
           }
-          toast.error(problem.detail ?? 'That code is not correct.');
+          showApiErrorToast(toast, 'Incorrect code', problem.detail, 'Check the code and try again.');
           return;
         }
 
         const body = (await response.json()) as { data: ForgotPasswordVerifyOtpResult };
-        toast.success('Code confirmed');
+        toast.success('Code confirmed.');
         router.push(
           `/new-password?email=${encodeURIComponent(body.data.email)}&token=${encodeURIComponent(body.data.resetToken)}`,
         );
       } catch {
-        toast.error('Could not reach the server. Check your connection and try again.');
+        showNetworkErrorToast(toast);
       } finally {
         setIsPending(false);
       }
@@ -137,7 +143,7 @@ export function OtpVerificationForm({
     }
 
     if (!isSignup) {
-      toast.error('Open this page from forgot password or signup.');
+      toast.error('Open this page from signup or forgot password.');
       router.replace('/forgot-password');
       return;
     }
@@ -157,23 +163,24 @@ export function OtpVerificationForm({
           code?: string;
         };
         if (problem.code === 'SIGNUP_SESSION_REQUIRED') {
-          toast.error(problem.detail ?? 'Start signup again.');
+          showApiErrorToast(toast, 'Signup expired', problem.detail, 'Start signup again.');
           router.replace('/signup');
           return;
         }
-        toast.error(problem.detail ?? 'That code is not correct.');
+        showApiErrorToast(toast, 'Incorrect code', problem.detail, 'Check the code and try again.');
         return;
       }
 
       const body = (await response.json()) as { data: SignupVerifyOtpResult };
       clearSignupDraft();
+      toast.success('Email verified. Sign in to continue.');
       const params = new URLSearchParams({
         verified: '1',
         email: body.data.email,
       });
       router.replace(`/login?${params.toString()}`);
     } catch {
-      toast.error('Could not reach the server. Check your connection and try again.');
+      showNetworkErrorToast(toast);
     } finally {
       setIsPending(false);
     }
@@ -205,18 +212,23 @@ export function OtpVerificationForm({
             code?: string;
           };
           if (problem.code === 'AUTH_EMAIL_NOT_FOUND') {
-            toast.error(problem.detail ?? 'No account uses that email.');
+            showApiErrorToast(
+              toast,
+              'Email not found',
+              problem.detail,
+              'No account uses that email address.',
+            );
             router.replace('/forgot-password');
             return;
           }
-          toast.error(problem.detail ?? 'Could not resend the code.');
+          showApiErrorToast(toast, 'Could not resend code', problem.detail, 'Try again in a moment.');
           return;
         }
 
         const body = (await response.json()) as { data: ForgotPasswordResendOtpResult };
         applyResendResult(body.data);
       } catch {
-        toast.error('Could not reach the server. Check your connection and try again.');
+        showNetworkErrorToast(toast);
       } finally {
         setIsResending(false);
       }
@@ -241,18 +253,18 @@ export function OtpVerificationForm({
           code?: string;
         };
         if (problem.code === 'SIGNUP_SESSION_REQUIRED') {
-          toast.error(problem.detail ?? 'Start signup again.');
+          showApiErrorToast(toast, 'Signup expired', problem.detail, 'Start signup again.');
           router.replace('/signup');
           return;
         }
-        toast.error(problem.detail ?? 'Could not resend the code.');
+        showApiErrorToast(toast, 'Could not resend code', problem.detail, 'Try again in a moment.');
         return;
       }
 
       const body = (await response.json()) as { data: SignupResendOtpResult };
       applyResendResult(body.data);
     } catch {
-      toast.error('Could not reach the server. Check your connection and try again.');
+      showNetworkErrorToast(toast);
     } finally {
       setIsResending(false);
     }

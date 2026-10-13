@@ -283,7 +283,7 @@ function AppHeader({
   onOpenMenu: () => void;
 }) {
   return (
-    <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-3 md:gap-4 md:px-5">
+    <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border/50 bg-card px-3 md:gap-4 md:px-5">
       <button
         type="button"
         aria-label="Open menu"
@@ -611,11 +611,11 @@ function Sidebar({
   return (
     <aside
       className={cn(
-        'flex w-64 shrink-0 flex-col border-e border-border bg-card md:flex',
+        'flex w-56 shrink-0 flex-col border-e border-border/50 bg-card md:flex',
         className,
       )}
     >
-      <div className="relative flex h-16 shrink-0 items-center justify-start border-b border-border bg-card px-3">
+      <div className="relative flex h-16 shrink-0 items-center justify-start border-b border-border/50 bg-card px-3">
         <Link
           href={tenantHref('/')}
           className="inline-flex max-w-[148px] items-center justify-start rounded-md ps-3 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
@@ -679,7 +679,7 @@ function SignOutConfirm({
         return;
       }
     } catch {
-      toast.error('Could not reach the server. You are still signed in.');
+      toast.error('You are still signed in. Try again when you are back online.');
       return;
     }
 

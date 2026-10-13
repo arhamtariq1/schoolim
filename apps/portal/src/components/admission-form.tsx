@@ -365,10 +365,7 @@ export function AdmissionForm({
       return;
     }
 
-    toast.success(
-      `${firstName} ${lastName} admitted`,
-      `GR ${result.data.grNo} · Student ID ${result.data.studentCode}`,
-    );
+    toast.success(`${firstName} ${lastName} admitted · GR ${result.data.grNo}.`);
     router.push(tenantHref(`/students/${result.data.id}`));
     router.refresh();
   }

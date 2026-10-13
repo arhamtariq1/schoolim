@@ -177,15 +177,12 @@ export function PromoteStudents({ sessions, canConfigure, error }: PromoteStuden
     setIsRunning(false);
 
     if (!result.ok) {
-      toast.error('Nobody was moved', result.message);
+      toast.error(result.message);
       return;
     }
 
     setDone(result.data);
-    toast.success(
-      `${String(result.data.promoted)} moved into ${preview.to.name}`,
-      'Assign their sections next, then generate fees for the new session.',
-    );
+    toast.success(`${String(result.data.promoted)} students moved into ${preview.to.name}.`);
     router.refresh();
   }
 

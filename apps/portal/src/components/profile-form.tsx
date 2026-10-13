@@ -14,10 +14,10 @@ import { FormSectionCard, SetupFormFooter, setupFormCardClassName } from '@/comp
 import { ProfileFormActions } from '@/components/profile-form-actions';
 import { ProfilePersonFields } from '@/components/profile-person-fields';
 import {
-  FORM_VALIDATION_TOAST,
   fieldErrorsFromZod,
   humanizeFieldErrors,
   phoneDisplayError,
+  showFormValidationToast,
   withoutFieldErrors,
 } from '@/lib/form-validation';
 import { mutate } from '@/lib/mutate';
@@ -68,7 +68,7 @@ export function ProfileForm({
 
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
-      toast.error(FORM_VALIDATION_TOAST);
+      showFormValidationToast(toast);
       return;
     }
 
@@ -77,9 +77,11 @@ export function ProfileForm({
       const result = await mutate<UserProfile>(ROUTES.me.profile, 'PUT', parsed.data);
       if (!result.ok) {
         setFieldErrors(humanizeFieldErrors(result.fieldErrors));
-        toast.error(
-          Object.keys(result.fieldErrors).length > 0 ? FORM_VALIDATION_TOAST : result.message,
-        );
+        if (Object.keys(result.fieldErrors).length > 0) {
+          showFormValidationToast(toast);
+        } else {
+          toast.error(result.message);
+        }
         return;
       }
 
@@ -88,19 +90,16 @@ export function ProfileForm({
         credentials: 'include',
       });
       if (!refreshed.ok) {
-        toast.warning(
-          'Profile saved',
-          'Sign out and sign in again if the rest of the portal stays locked.',
-        );
+        toast.warning('Profile saved. Sign out and back in if anything still looks locked.');
       }
 
       if (mode === 'create') {
-        toast.success('Profile created', 'Welcome — your workspace is ready.');
+        toast.success('Profile created. Welcome to your workspace.');
         window.location.assign(tenantHref('/'));
         return;
       }
 
-      toast.success('Profile updated');
+      toast.success('Profile updated.');
       router.replace('/profile');
       router.refresh();
     } finally {

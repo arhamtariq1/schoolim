@@ -31,6 +31,7 @@ export * from './components/switch';
 export * from './components/tabs';
 export * from './components/textarea';
 export * from './components/toast';
+export * from './toast-messages';
 export * from './components/tooltip';
 export * from './lib/cn';
 export * from './lib/brand-theme';

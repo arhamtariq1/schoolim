@@ -17,6 +17,10 @@ import {
   minorToRupees,
   roundToNearest,
 } from '@/components/dashboard/dashboard-chart-theme';
+import {
+  DASHBOARD_TREND_CAUTION_PILL_CLASS,
+  DASHBOARD_TREND_FAVORABLE_PILL_CLASS,
+} from '@/components/dashboard/dashboard-trend-styles';
 import { useDashboardChartTheme } from '@/components/dashboard/use-dashboard-chart-theme';
 import type { DashboardRevenueMonth } from '@/lib/dashboard-data';
 
@@ -125,7 +129,7 @@ export function DashboardRevenueChart({ trend }: DashboardRevenueChartProps) {
   }, [theme, trend]);
 
   return (
-    <DashboardCard className="flex h-full w-full flex-col rounded-2xl shadow-raised">
+    <DashboardCard className="flex h-full w-full flex-col rounded-2xl">
       <CardHeader className="flex flex-row items-start justify-between gap-3 border-0 px-4 pb-0 pt-4">
         <div className="flex min-w-0 items-start gap-2.5">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -143,8 +147,8 @@ export function DashboardRevenueChart({ trend }: DashboardRevenueChartProps) {
             <span
               className={
                 trendLabel.positive
-                  ? 'mb-1 inline-block rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success'
-                  : 'mb-1 inline-block rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold text-warning'
+                  ? DASHBOARD_TREND_FAVORABLE_PILL_CLASS
+                  : DASHBOARD_TREND_CAUTION_PILL_CLASS
               }
             >
               {trendLabel.label}

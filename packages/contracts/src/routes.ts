@@ -26,6 +26,8 @@ export const ROUTES = {
     forgotPasswordVerifyOtp: `${API_PREFIX}/auth/forgot-password/verify-otp`,
     forgotPasswordResendOtp: `${API_PREFIX}/auth/forgot-password/resend-otp`,
     resetPassword: `${API_PREFIX}/auth/reset-password`,
+    /** Signed-in user sets a new password (profile or forced-change gate). */
+    changePassword: `${API_PREFIX}/auth/change-password`,
     /**
      * Redeem a handoff token for cookies, on the school's own hostname.
      *

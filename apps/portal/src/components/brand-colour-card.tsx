@@ -105,10 +105,7 @@ export function BrandColourCard({ appearance, canConfigure, error }: BrandColour
     }
 
     setChosen(result.data.primaryColor ?? DEFAULT_HEX);
-    toast.success(
-      next === null ? 'Back to the default colour.' : 'Portal colour saved.',
-      'Everyone at this school sees it on their next page.',
-    );
+    toast.success(next === null ? 'Back to the default colour.' : 'Portal colour saved.');
     router.refresh();
   }
 

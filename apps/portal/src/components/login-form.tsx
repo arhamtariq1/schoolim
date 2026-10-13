@@ -6,6 +6,12 @@ import { EmailIcon, ICON_SIZE, LockedIcon, SignInIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
+import {
+  fieldErrorsFromZod,
+  showFormValidationToast,
+  showNetworkErrorToast,
+} from '@/lib/form-validation';
+
 import { AuthFormActions } from './auth-form-actions';
 import { AuthInlineLink } from './auth-inline-link';
 
@@ -46,15 +52,8 @@ export function LoginForm({
 
     const parsed = loginRequestSchema.safeParse({ identifier, password, rememberDevice: false });
     if (!parsed.success) {
-      const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path[0];
-        if (typeof key === 'string') {
-          next[key] = issue.message;
-        }
-      }
-      setFieldErrors(next);
-      toast.error(parsed.error.issues[0]?.message ?? 'Check the highlighted fields.');
+      setFieldErrors(fieldErrorsFromZod(parsed.error));
+      showFormValidationToast(toast);
       return;
     }
 
@@ -69,14 +68,14 @@ export function LoginForm({
 
       if (!response.ok) {
         const problem = (await response.json().catch(() => ({}))) as Problem;
-        toast.error(problem.detail ?? 'Could not sign you in. Try again.');
+        toast.error(problem.detail ?? 'Check your email and password, then try again.');
         return;
       }
 
       const body = (await response.json()) as { data: LoginOutcome };
 
       if (body.data.kind === 'session') {
-        toast.success('Signed in');
+        toast.success('Signed in successfully!');
         const next = body.data.user.mustChangePassword
           ? '/settings/password'
           : body.data.user.profileCompleted
@@ -91,14 +90,14 @@ export function LoginForm({
 
       if (only !== undefined && rest.length === 0) {
         setChoices(undefined);
-        toast.success('Signed in');
+        toast.success('Signed in successfully!');
         window.location.assign(only.continueUrl);
         return;
       }
 
       setChoices(body.data.choices);
     } catch {
-      toast.error('Could not reach the server. Check your connection and try again.');
+      showNetworkErrorToast(toast);
     } finally {
       setIsPending(false);
     }

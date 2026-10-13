@@ -290,16 +290,14 @@ export function GenerateFee({
     }
 
     if (result.data.created === 0) {
-      toast.warning(
-        'Nothing was generated',
-        'Every student in this scope was skipped — most likely they are already billed for these months.',
-      );
+      toast.warning('No vouchers generated — students may already be billed for these months.');
       return;
     }
 
     toast.success(
-      `${String(result.data.created)} ${result.data.created === 1 ? 'voucher' : 'vouchers'} generated`,
-      result.data.skipped > 0 ? `${String(result.data.skipped)} skipped.` : undefined,
+      result.data.skipped > 0
+        ? `${String(result.data.created)} ${result.data.created === 1 ? 'voucher' : 'vouchers'} generated (${String(result.data.skipped)} skipped).`
+        : `${String(result.data.created)} ${result.data.created === 1 ? 'voucher' : 'vouchers'} generated.`,
     );
     router.push(tenantHref('/fees/vouchers'));
   }

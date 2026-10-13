@@ -53,7 +53,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     href: '/students/new',
     label: 'Add admission',
-    icon: 'CreateIcon',
+    icon: 'AdmissionIcon',
     permission: 'students.student.create',
   },
   {

@@ -14,7 +14,7 @@ type DashboardVouchersCardProps = {
 
 export function DashboardVouchersCard({ summary, detailsHref }: DashboardVouchersCardProps) {
   return (
-    <DashboardCard className="flex h-full w-full flex-col rounded-lg shadow-raised">
+    <DashboardCard className="flex h-full w-full flex-col rounded-lg">
       <CardHeader className="flex flex-row items-center justify-between gap-2 border-0 px-4 pb-0 pt-4">
         <div className="flex items-center gap-2">
           <span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -35,14 +35,14 @@ export function DashboardVouchersCard({ summary, detailsHref }: DashboardVoucher
           <p className="text-lg font-semibold tracking-tight text-foreground">
             {formatMoney(minorUnits(summary.totalAmountMinor), { withSymbol: true })}
           </p>
-          <StatusBadge tone="success" className="mt-1">
+          <StatusBadge tone="neutral" className="mt-1 bg-primary/10 text-primary">
             {summary.paidPercent.toFixed(2)}% paid
           </StatusBadge>
         </div>
 
         <dl className="mt-auto space-y-2 text-sm">
           <VoucherRow
-            tone="success"
+            tone="primary"
             label="Paid"
             count={summary.paidCount}
             amountMinor={summary.paidAmountMinor}
@@ -69,7 +69,7 @@ function VoucherRow({
   count,
   amountMinor,
 }: {
-  tone: 'success' | 'warning';
+  tone: 'primary' | 'warning';
   label: string;
   count: number;
   amountMinor: number;
@@ -81,7 +81,7 @@ function VoucherRow({
           aria-hidden="true"
           className={cn(
             'size-2 shrink-0 rounded-full',
-            tone === 'success' ? 'bg-success' : 'bg-warning',
+            tone === 'primary' ? 'bg-primary' : 'bg-warning',
           )}
         />
         <dt className="text-muted-foreground">

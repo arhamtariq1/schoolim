@@ -26,6 +26,12 @@ import { useEffect, useState, type FormEvent } from 'react';
 
 import { LogoPicker } from './logo-picker';
 
+import {
+  fieldErrorsFromZod,
+  showApiErrorToast,
+  showFormValidationToast,
+  showNetworkErrorToast,
+} from '@/lib/form-validation';
 import { clearSignupDraft } from '@/lib/signup-draft';
 import { TENANT_MODE } from '@/lib/tenant-mode';
 
@@ -109,12 +115,8 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
     });
 
     if (!parsed.success) {
-      const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        next[issue.path.join('.')] = issue.message;
-      }
-      setFieldErrors(next);
-      toast.error(parsed.error.issues[0]?.message ?? 'Check the highlighted fields.');
+      setFieldErrors(fieldErrorsFromZod(parsed.error));
+      showFormValidationToast(toast);
       return;
     }
 
@@ -133,21 +135,26 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
           code?: string;
         };
         if (problem.code === 'SIGNUP_EMAIL_UNVERIFIED' || problem.code === 'SIGNUP_SESSION_REQUIRED') {
-          toast.error(problem.detail ?? 'Confirm your email first.');
+          showApiErrorToast(toast, 'Email not verified', problem.detail, 'Confirm your email first.');
           router.replace('/signup');
           return;
         }
-        toast.error(problem.detail ?? 'Could not create your school. Try again.');
+        showApiErrorToast(
+          toast,
+          'School not created',
+          problem.detail,
+          'Could not create your school. Try again.',
+        );
         setIsPending(false);
         return;
       }
 
       const body = (await response.json()) as { data: SignupResult };
       clearSignupDraft();
-      toast.success('School created', 'Sign in to open your portal.');
+      toast.success('School created successfully.');
       window.location.assign(body.data.loginUrl);
     } catch {
-      toast.error('Could not reach the server. Check your connection and try again.');
+      showNetworkErrorToast(toast);
       setIsPending(false);
     }
   }

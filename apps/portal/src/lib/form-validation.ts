@@ -3,8 +3,23 @@ import type { ZodError } from 'zod';
 
 import { toE164 } from '@/lib/phone-format';
 
-/** Same copy as signup/login client validation (docs/16 §8). */
-export const FORM_VALIDATION_TOAST = 'Check the highlighted fields below.';
+export {
+  FORM_VALIDATION_TOAST,
+  NETWORK_ERROR_TOAST,
+  showApiErrorToast,
+  showFormValidationToast,
+  showNetworkErrorToast,
+} from '@ilm/ui';
+
+/** Maps Zod paths from reset-password schema to form field names. */
+export function fieldErrorsFromResetPassword(error: ZodError): Record<string, string> {
+  const next = fieldErrorsFromZod(error);
+  if (next.confirmPassword !== undefined) {
+    next.confirm = next.confirmPassword;
+    delete next.confirmPassword;
+  }
+  return next;
+}
 
 export function fieldErrorsFromZod(error: ZodError): Record<string, string> {
   const next: Record<string, string> = {};
@@ -64,7 +79,7 @@ export function withoutFieldErrors(
 export function phoneDisplayError(display: string): string | undefined {
   const trimmed = display.trim();
   if (trimmed === '') {
-    return 'This is required.';
+    return 'This field is required.';
   }
   const e164 = toE164(trimmed);
   if (!phoneSchema.safeParse(e164).success) {
@@ -74,6 +89,13 @@ export function phoneDisplayError(display: string): string | undefined {
 }
 
 function humanizeValidationMessage(path: string, message: string): string {
+  if (
+    message === 'This cannot be empty.' ||
+    message === 'This field is required.' ||
+    message === 'This is required.'
+  ) {
+    return 'This field is required.';
+  }
   if (
     path.endsWith('phone') ||
     message.includes('E.164') ||

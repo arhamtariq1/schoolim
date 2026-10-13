@@ -147,10 +147,9 @@ export function FeeHeadsManager({ initialHeads, error, canConfigure }: FeeHeadsM
     const removed = (result.data as { data?: { removedStudentCharges?: number } })?.data
       ?.removedStudentCharges;
     toast.success(
-      `${pendingDelete.name} deleted`,
       removed !== undefined && removed > 0
-        ? `Removed from ${String(removed)} ${removed === 1 ? 'student' : 'students'}.`
-        : undefined,
+        ? `${pendingDelete.name} deleted (removed from ${String(removed)} ${removed === 1 ? 'student' : 'students'}).`
+        : `${pendingDelete.name} deleted.`,
     );
     router.refresh();
   }

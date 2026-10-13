@@ -29,7 +29,7 @@ export function DashboardAdmissionsList({
   const tenantHref = useTenantHref();
 
   return (
-    <DashboardCard className="flex h-full w-full flex-col rounded-2xl shadow-raised">
+    <DashboardCard className="flex h-full w-full flex-col rounded-2xl">
       <CardHeader className="flex flex-row items-center justify-between gap-2 border-0 px-4 pb-0 pt-4 sm:px-6">
         <CardTitle>Recent admissions</CardTitle>
         <Link href={listHref} className="text-xs font-medium text-primary hover:underline">

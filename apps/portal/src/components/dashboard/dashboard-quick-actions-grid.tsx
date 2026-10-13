@@ -5,6 +5,7 @@ import { CardContent, CardHeader, CardTitle, cn } from '@ilm/ui';
 import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import {
   AccountIcon,
+  AdmissionIcon,
   AttendanceIcon,
   CreateIcon,
   FeesIcon,
@@ -27,6 +28,7 @@ const QUICK_ACTION_ICONS: Record<
   DashboardQuickActionIconName,
   ComponentType<{ className?: string }>
 > = {
+  AdmissionIcon,
   CreateIcon,
   AttendanceIcon,
   FeesIcon,
@@ -37,7 +39,7 @@ const QUICK_ACTION_ICONS: Record<
 
 export function DashboardQuickActionsGrid({ actions }: DashboardQuickActionsGridProps) {
   return (
-    <DashboardCard className="flex h-full w-full flex-col rounded-2xl shadow-raised">
+    <DashboardCard className="flex h-full w-full flex-col rounded-2xl">
       <CardHeader className="border-0 px-4 pb-0 pt-4 sm:px-6">
         <CardTitle>Quick actions</CardTitle>
       </CardHeader>

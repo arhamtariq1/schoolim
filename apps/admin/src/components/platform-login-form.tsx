@@ -1,7 +1,16 @@
 'use client';
 
 import { platformLoginSchema, ROUTES } from '@ilm/contracts';
-import { Button, Field, Input, PasswordInput } from '@ilm/ui';
+import {
+  Button,
+  Field,
+  Input,
+  PasswordInput,
+  showApiErrorToast,
+  showFormValidationToast,
+  showNetworkErrorToast,
+  useToast,
+} from '@ilm/ui';
 import { EmailIcon, ICON_SIZE, LockedIcon, SignInIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
@@ -14,6 +23,7 @@ import { useState, type FormEvent } from 'react';
  * server cannot drift.
  */
 export function PlatformLoginForm() {
+  const toast = useToast();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,6 +46,7 @@ export function PlatformLoginForm() {
         }
       }
       setFieldErrors(next);
+      showFormValidationToast(toast);
       return;
     }
 
@@ -50,13 +61,17 @@ export function PlatformLoginForm() {
 
       if (!response.ok) {
         const problem = (await response.json().catch(() => ({}))) as { detail?: string };
-        setFormError(problem.detail ?? 'Could not sign you in. Try again.');
+        const detail = problem.detail ?? 'Check your email and password, then try again.';
+        setFormError(detail);
+        showApiErrorToast(toast, 'Sign-in failed', detail);
         return;
       }
 
+      toast.success('Signed in successfully!');
       router.replace('/schools');
       router.refresh();
     } catch {
+      showNetworkErrorToast(toast);
       setFormError('Could not reach the server. Check your connection and try again.');
     } finally {
       setIsPending(false);

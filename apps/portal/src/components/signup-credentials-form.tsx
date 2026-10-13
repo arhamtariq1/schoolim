@@ -22,6 +22,12 @@ import { AuthInlineLink } from './auth-inline-link';
 import { PasswordRequirements } from './password-requirements';
 import { SIGNUP_CONTEXT } from './signup-step-gate';
 
+import {
+  fieldErrorsFromZod,
+  showApiErrorToast,
+  showFormValidationToast,
+  showNetworkErrorToast,
+} from '@/lib/form-validation';
 import { readSignupDraft, saveSignupDraft } from '@/lib/signup-draft';
 
 /**
@@ -108,17 +114,12 @@ export function SignupCredentialsForm() {
     });
 
     if (!parsed.success) {
-      const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path.join('.');
-        if (key !== '') {
-          next[key] = issue.message;
-        }
+      setFieldErrors(fieldErrorsFromZod(parsed.error));
+      if (!accepted) {
+        toast.error('Accept the terms and privacy policy to continue.');
+      } else {
+        showFormValidationToast(toast);
       }
-      setFieldErrors(next);
-      toast.error(
-        !accepted ? 'Accept the terms to continue.' : 'Check the highlighted fields below.',
-      );
       return;
     }
 
@@ -133,7 +134,7 @@ export function SignupCredentialsForm() {
 
       if (!response.ok) {
         const problem = (await response.json().catch(() => ({}))) as { detail?: string };
-        toast.error(problem.detail ?? 'Could not start signup. Try again.');
+        showApiErrorToast(toast, 'Signup failed', problem.detail, 'Could not start signup. Try again.');
         return;
       }
 
@@ -146,12 +147,12 @@ export function SignupCredentialsForm() {
         confirmPassword,
         accepted,
       });
-      toast.success('Check your email', `We sent a code to ${body.data.email}.`);
+      toast.success(`Verification code sent to ${body.data.email}.`);
       router.push(
         `/otp-verification?context=${SIGNUP_CONTEXT}&email=${encodeURIComponent(body.data.email)}`,
       );
     } catch {
-      toast.error('Could not reach the server. Check your connection and try again.');
+      showNetworkErrorToast(toast);
     } finally {
       setIsPending(false);
     }

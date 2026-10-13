@@ -6,6 +6,13 @@ import { ICON_SIZE, LockedIcon, SaveIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
+import {
+  fieldErrorsFromResetPassword,
+  showApiErrorToast,
+  showFormValidationToast,
+  showNetworkErrorToast,
+} from '@/lib/form-validation';
+
 import { AuthFormActions } from './auth-form-actions';
 import { AuthInlineLink } from './auth-inline-link';
 import { PasswordRequirements } from './password-requirements';
@@ -36,7 +43,7 @@ export function NewPasswordForm({
     }
 
     if (token === undefined || token === '') {
-      toast.error('Start again from forgot password.');
+      toast.error('Reset link expired. Request a new code from forgot password.');
       router.replace('/forgot-password');
       return;
     }
@@ -49,17 +56,8 @@ export function NewPasswordForm({
     });
 
     if (!parsed.success) {
-      const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path.join('.');
-        if (key === 'confirmPassword') {
-          next['confirm'] = issue.message;
-        } else if (key !== '') {
-          next[key] = issue.message;
-        }
-      }
-      setFieldErrors(next);
-      toast.error(parsed.error.issues[0]?.message ?? 'Check the highlighted fields.');
+      setFieldErrors(fieldErrorsFromResetPassword(parsed.error));
+      showFormValidationToast(toast);
       return;
     }
 
@@ -78,18 +76,28 @@ export function NewPasswordForm({
           code?: string;
         };
         if (problem.code === 'AUTH_RESET_TOKEN_INVALID') {
-          toast.error(problem.detail ?? 'That reset has expired. Start again.');
+          showApiErrorToast(
+            toast,
+            'Reset link expired',
+            problem.detail,
+            'Request a new code from forgot password.',
+          );
           router.replace('/forgot-password');
           return;
         }
-        toast.error(problem.detail ?? 'Could not update your password. Try again.');
+        showApiErrorToast(
+          toast,
+          'Password not updated',
+          problem.detail,
+          'Could not save your new password. Try again.',
+        );
         return;
       }
 
-      toast.success('Password updated', 'Sign in with your new password.');
+      toast.success('Password updated successfully.');
       router.push('/login');
     } catch {
-      toast.error('Could not reach the server. Check your connection and try again.');
+      showNetworkErrorToast(toast);
     } finally {
       setIsPending(false);
     }

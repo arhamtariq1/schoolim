@@ -11,6 +11,7 @@ import {
   type ApexSeriesTotals,
   roundToNearest,
 } from '@/components/dashboard/dashboard-chart-theme';
+import { useDashboardChartTheme } from '@/components/dashboard/use-dashboard-chart-theme';
 import type {
   DashboardClassAttendance,
   DashboardFees,
@@ -29,8 +30,6 @@ type DashboardOverviewChartProps = {
   isWorkingDay: boolean;
 };
 
-const CHART_PRIMARY = '#147F8A';
-const CHART_SUCCESS = '#16a34a';
 const CHART_DANGER = '#dc2626';
 const CHART_MUTED = '#94a3b8';
 
@@ -41,6 +40,8 @@ export function DashboardOverviewChart({
   students,
   isWorkingDay,
 }: DashboardOverviewChartProps) {
+  const chartTheme = useDashboardChartTheme();
+
   const tabs = useMemo(() => {
     const items: ChartTab[] = [];
     if (attendanceByClass.length > 0 && isWorkingDay) {
@@ -69,7 +70,7 @@ export function DashboardOverviewChart({
           { name: 'Absent', data: attendanceByClass.map((row) => row.absent) },
           { name: 'Leave', data: attendanceByClass.map((row) => row.leave) },
         ],
-        options: barOptions(categories),
+        options: barOptions(categories, chartTheme.primary),
       };
     }
 
@@ -77,7 +78,11 @@ export function DashboardOverviewChart({
       return {
         type: 'donut' as const,
         series: [fees.paidMinor / 100, fees.outstandingMinor / 100],
-        options: donutOptions(['Collected', 'Outstanding'], [CHART_SUCCESS, CHART_DANGER], true),
+        options: donutOptions(
+          ['Collected', 'Outstanding'],
+          [chartTheme.primary, CHART_DANGER],
+          true,
+        ),
       };
     }
 
@@ -86,9 +91,13 @@ export function DashboardOverviewChart({
     return {
       type: 'donut' as const,
       series: [activeCount, other],
-      options: donutOptions(['Active', 'Other statuses'], [CHART_PRIMARY, CHART_MUTED], false),
+      options: donutOptions(
+        ['Active', 'Other statuses'],
+        [chartTheme.primary, CHART_MUTED],
+        false,
+      ),
     };
-  }, [attendanceByClass, effectiveTab, fees, students]);
+  }, [attendanceByClass, chartTheme.primary, effectiveTab, fees, students]);
 
   if (tabs.length === 0) {
     return (
@@ -137,9 +146,9 @@ export function DashboardOverviewChart({
       <CardContent className="flex flex-1 flex-col pt-2">
         {effectiveTab === 'attendance' && attendanceTotals !== undefined ? (
           <dl className="mb-3 grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="rounded-lg bg-success/10 py-2">
+            <div className="rounded-lg bg-primary/10 py-2">
               <dt className="text-muted-foreground">Present</dt>
-              <dd className="text-lg font-semibold text-success">{attendanceTotals.present}</dd>
+              <dd className="text-lg font-semibold text-primary">{attendanceTotals.present}</dd>
             </div>
             <div className="rounded-lg bg-danger/10 py-2">
               <dt className="text-muted-foreground">Absent</dt>
@@ -160,7 +169,7 @@ export function DashboardOverviewChart({
   );
 }
 
-function barOptions(categories: string[]): ApexOptions {
+function barOptions(categories: string[], presentColor: string): ApexOptions {
   return {
     chart: {
       type: 'bar',
@@ -175,7 +184,7 @@ function barOptions(categories: string[]): ApexOptions {
         borderRadius: 4,
       },
     },
-    colors: [CHART_SUCCESS, CHART_DANGER, CHART_MUTED],
+    colors: [presentColor, CHART_DANGER, CHART_MUTED],
     dataLabels: { enabled: false },
     stroke: { show: true, width: 1, colors: ['transparent'] },
     xaxis: {

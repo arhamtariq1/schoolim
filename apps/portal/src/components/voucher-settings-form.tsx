@@ -18,6 +18,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 
 import { VoucherChallan } from './voucher-challan';
 
+import { showFormValidationToast } from '@/lib/form-validation';
 import { mutate } from '@/lib/mutate';
 
 /**
@@ -207,7 +208,7 @@ export function VoucherSettingsForm({
       setFieldErrors(next);
       // The message lands beside the field, but that field may be under the fold
       // on a phone, so say out loud that something needs looking at.
-      toast.error('Check the highlighted fields.');
+      showFormValidationToast(toast);
       return;
     }
 
@@ -226,7 +227,7 @@ export function VoucherSettingsForm({
     // would offer to re-save what was just discarded.
     setDraft(result.data);
     setChannelText(result.data.kuickpayChannels.join('\n'));
-    toast.success('Challan saved', 'Every challan printed from now on uses it.');
+    toast.success('Challan settings saved.');
     router.refresh();
   }
 

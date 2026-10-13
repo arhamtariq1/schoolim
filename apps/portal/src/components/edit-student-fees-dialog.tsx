@@ -178,10 +178,7 @@ export function EditStudentFeesDialog({
       return;
     }
 
-    toast.success(
-      `Fees saved for ${studentName}`,
-      'Vouchers generated from now on use these amounts; ones already issued are unchanged.',
-    );
+    toast.success(`Fees saved for ${studentName}.`);
     onOpenChange(false);
     router.refresh();
   }

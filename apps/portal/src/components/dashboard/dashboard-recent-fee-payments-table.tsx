@@ -46,7 +46,7 @@ export function DashboardRecentFeePaymentsTable({
   );
 
   return (
-    <DashboardCard className="overflow-hidden rounded-lg shadow-raised">
+    <DashboardCard className="overflow-hidden rounded-lg">
       <CardHeader className="flex flex-row items-center justify-between gap-2 bg-card px-4 pb-2 pt-4 sm:px-6">
         <CardTitle className="text-base font-semibold text-foreground">Recent fee payments</CardTitle>
         <Link

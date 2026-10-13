@@ -294,14 +294,14 @@ export function FeeIncrementsView({
 
     close();
     setSelected(new Set());
+    const verb = direction === 'INCREASE' ? 'Increased' : 'Decreased';
+    const appliedLine = `${verb} the fee for ${String(applied)} ${applied === 1 ? 'student' : 'students'}.`;
     toast.success(
       replayed
         ? 'That change had already been applied.'
-        : `${direction === 'INCREASE' ? 'Increased' : 'Decreased'} the fee for ${String(applied)} ${applied === 1 ? 'student' : 'students'}.`,
-      // The students a batch left alone are named in the toast, not swallowed:
-      // "raised 38 fees" when 40 were picked is the kind of silence that gets
-      // found at the counter.
-      skipped === 0 ? undefined : describeSkips(skips),
+        : skipped === 0
+          ? appliedLine
+          : `${appliedLine} ${describeSkips(skips)}`,
     );
     router.refresh();
   }

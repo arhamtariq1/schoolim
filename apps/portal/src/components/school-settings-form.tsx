@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, type FormEvent } from 'react';
 
 import { SchoolLevelPicker } from '@/components/school-level-picker';
+import { showFormValidationToast } from '@/lib/form-validation';
 import { mutate } from '@/lib/mutate';
 import { schoolSlugAffixes } from '@/lib/school-slug-preview';
 
@@ -129,7 +130,7 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
         next[issue.path.join('.')] = issue.message;
       }
       setFieldErrors(next);
-      toast.error('Check the highlighted fields.');
+      showFormValidationToast(toast);
       return;
     }
 

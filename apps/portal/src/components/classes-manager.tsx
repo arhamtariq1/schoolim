@@ -99,10 +99,9 @@ export function ClassesManager({
     }
 
     toast.success(
-      `${className} — ${section.name} renumbered`,
       result.data.renumbered === 0
-        ? 'There is nobody in this section yet.'
-        : `${String(result.data.renumbered)} students, roll 1 to ${String(result.data.renumbered)}, in name order.`,
+        ? `${className} — ${section.name}: no students to renumber yet.`
+        : `${className} — ${section.name}: ${String(result.data.renumbered)} students renumbered.`,
     );
     router.refresh();
   }

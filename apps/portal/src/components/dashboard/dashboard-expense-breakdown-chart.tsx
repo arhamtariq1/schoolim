@@ -117,7 +117,7 @@ export function DashboardExpenseBreakdownChart({ segments }: DashboardExpenseBre
   }, [segments, theme]);
 
   return (
-    <DashboardCard className="flex h-full w-full flex-col rounded-2xl shadow-raised">
+    <DashboardCard className="flex h-full w-full flex-col rounded-2xl">
       <CardHeader className="border-0 px-4 pb-0 pt-4">
         <CardTitle className="text-base">Expense breakdown</CardTitle>
       </CardHeader>

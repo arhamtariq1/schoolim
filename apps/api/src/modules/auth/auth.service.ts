@@ -530,6 +530,75 @@ export class AuthService {
     };
   }
 
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+    now: Date,
+  ): Promise<{ ok: true }> {
+    const user = await this.prisma.admin.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        schoolId: true,
+        passwordHash: true,
+        status: true,
+        deletedAt: true,
+      },
+    });
+
+    if (
+      user === null ||
+      user.deletedAt !== null ||
+      user.status !== 'ACTIVE' ||
+      user.passwordHash === null
+    ) {
+      throw new BusinessRuleError('AUTH_TOKEN_INVALID', 'Your session has ended. Sign in again.');
+    }
+
+    const currentOk = await this.passwords.verify(user.passwordHash, currentPassword);
+    if (!currentOk) {
+      throw new BusinessRuleError('AUTH_PASSWORD_INCORRECT', 'Current password is not correct.');
+    }
+
+    if (await this.passwords.verify(user.passwordHash, newPassword)) {
+      throw new BusinessRuleError(
+        'AUTH_PASSWORD_REUSED',
+        'Choose a password you have not used before.',
+      );
+    }
+
+    const passwordHash = await this.passwords.hash(newPassword);
+
+    await this.prisma.admin.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          passwordHash,
+          mustChangePassword: false,
+          failedLoginCount: 0,
+          lockedUntil: null,
+          tokenVersion: { increment: 1 },
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          schoolId: user.schoolId,
+          action: 'user.password.change',
+          entityType: 'User',
+          entityId: userId,
+          actorType: 'USER',
+          actorUserId: userId,
+        },
+      });
+    });
+
+    this.logger.log({ userId, at: now.toISOString() }, 'Password changed');
+
+    return { ok: true };
+  }
+
   private async recordFailure(userId: string, failures: number, now: Date): Promise<void> {
     const locked = failures >= MAX_FAILED_LOGINS;
     await this.prisma.admin.user.update({

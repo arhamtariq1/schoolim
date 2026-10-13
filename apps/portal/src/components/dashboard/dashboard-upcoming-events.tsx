@@ -21,7 +21,7 @@ export function DashboardUpcomingEvents({ events }: DashboardUpcomingEventsProps
           events.map((event) => (
             <article
               key={event.id}
-              className="flex gap-3 rounded-xl border border-border/70 bg-card shadow-raised p-3 transition-colors hover:bg-muted/40"
+              className="flex gap-3 rounded-xl border border-border/70 bg-card p-3 transition-colors hover:border-primary/30 hover:bg-muted/20"
             >
               <DateBadge date={event.date} />
               <div className="min-w-0 flex-1">

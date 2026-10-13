@@ -47,6 +47,10 @@ export const ERROR_CODES = [
   'AUTH_OTP_EXPIRED',
   /** Reset token missing, used, or expired. */
   'AUTH_RESET_TOKEN_INVALID',
+  /** Signed-in password change: current password did not match. */
+  'AUTH_PASSWORD_INCORRECT',
+  /** New password matches the current one. */
+  'AUTH_PASSWORD_REUSED',
 
   // --- Request shape --------------------------------------------------------
   'VALIDATION_FAILED',
@@ -152,6 +156,8 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, number>> = {
   AUTH_OTP_INVALID: 400,
   AUTH_OTP_EXPIRED: 400,
   AUTH_RESET_TOKEN_INVALID: 400,
+  AUTH_PASSWORD_INCORRECT: 400,
+  AUTH_PASSWORD_REUSED: 400,
 
   VALIDATION_FAILED: 400,
   NOT_FOUND: 404,

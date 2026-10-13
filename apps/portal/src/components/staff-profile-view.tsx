@@ -68,7 +68,7 @@ export function StaffProfileView({
     if (result.data.sent) {
       toast.success(`Invitation sent to ${result.data.email}`);
     } else {
-      toast.warning('Invitation created, but the email did not go', 'Try Re-send from the menu.');
+      toast.warning('Invitation created, but the email did not send.');
     }
     router.refresh();
   }

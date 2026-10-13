@@ -10,12 +10,14 @@ import {
   type UserProfile,
 } from '@ilm/contracts';
 import { Button, useToast } from '@ilm/ui';
-import { AccountIcon, EditIcon, LockedIcon, SchoolIcon, ICON_SIZE } from '@ilm/ui/icons';
+import { AccountIcon, EditIcon, SchoolIcon, ICON_SIZE } from '@ilm/ui/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
+import { ChangePasswordDialog } from '@/components/change-password-dialog';
 import { ProfileAccountBanner } from '@/components/profile-account-banner';
+import { ProfileAppearanceSummary } from '@/components/profile-appearance-summary';
 import { ProfileFormActions } from '@/components/profile-form-actions';
 import { ProfilePersonFields } from '@/components/profile-person-fields';
 import {
@@ -25,11 +27,11 @@ import {
 } from '@/components/profile-school-editor-fields';
 import { ProfileSectionCard } from '@/components/profile-section-card';
 import {
-  FORM_VALIDATION_TOAST,
   fieldErrorsFromZod,
   prefixFieldErrors,
   humanizeFieldErrors,
   phoneDisplayError,
+  showFormValidationToast,
   withoutFieldErrors,
 } from '@/lib/form-validation';
 import { mutate } from '@/lib/mutate';
@@ -179,7 +181,7 @@ export function ProfileWorkspaceEditor({
     };
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
-      toast.error(FORM_VALIDATION_TOAST);
+      showFormValidationToast(toast);
       return;
     }
 
@@ -192,9 +194,11 @@ export function ProfileWorkspaceEditor({
       const personResult = await mutate<UserProfile>(ROUTES.me.profile, 'PUT', personParsed.data);
       if (!personResult.ok) {
         setFieldErrors(humanizeFieldErrors(personResult.fieldErrors));
-        toast.error(
-          Object.keys(personResult.fieldErrors).length > 0 ? FORM_VALIDATION_TOAST : personResult.message,
-        );
+        if (Object.keys(personResult.fieldErrors).length > 0) {
+          showFormValidationToast(toast);
+        } else {
+          toast.error(personResult.message);
+        }
         return;
       }
 
@@ -219,12 +223,12 @@ export function ProfileWorkspaceEditor({
       await fetch(ROUTES.auth.refresh, { method: 'POST', credentials: 'include' });
 
       if (mode === 'create') {
-        toast.success('Profile created', 'Welcome — your workspace is ready.');
+        toast.success('Profile created. Welcome to your workspace.');
         window.location.assign(tenantHref('/'));
         return;
       }
 
-      toast.success('Profile saved');
+      toast.success('Profile saved.');
       router.replace('/profile');
       router.refresh();
     } finally {
@@ -232,23 +236,12 @@ export function ProfileWorkspaceEditor({
     }
   }
 
-  const changePasswordAction =
-    readOnly ? null : (
-      <Button asChild tone="outline" size="sm">
-        <Link href="/settings/password" className="cursor-pointer">
-          <LockedIcon className={ICON_SIZE.inline} aria-hidden="true" />
-          Change Password
-        </Link>
-      </Button>
-    );
-
   const body = (
     <div className="flex w-full flex-col gap-4">
       <ProfileSectionCard
         icon={AccountIcon}
         title="Account Information"
         description="Your personal details and account access."
-        action={changePasswordAction}
       >
         <ProfileAccountBanner
           name={name}
@@ -301,6 +294,15 @@ export function ProfileWorkspaceEditor({
         />
       </ProfileSectionCard>
       )}
+
+      {canEditSchool ? (
+        readOnly ? (
+          <ProfileAppearanceSummary
+            appearance={{ primaryColor: workspace.settings.primaryColor }}
+            logo={workspace.logo}
+          />
+        ) : null
+      ) : null}
     </div>
   );
 
@@ -308,7 +310,8 @@ export function ProfileWorkspaceEditor({
     return (
       <>
         {body}
-        <div className="flex justify-end pt-4">
+        <div className="flex flex-col-reverse gap-3 border-t border-border/70 pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <ChangePasswordDialog triggerSize="default" />
           <Button asChild>
             <Link href="/profile/edit" className="cursor-pointer">
               <EditIcon className={ICON_SIZE.inline} aria-hidden="true" />
@@ -330,15 +333,18 @@ export function ProfileWorkspaceEditor({
     >
       {body}
       {children}
-      <div className="border-t border-border/70 pt-5">
-        <ProfileFormActions
-          primaryLabel="Save changes"
-          primaryPending={isPending}
-          cancelLabel="Cancel"
-          onCancel={() => {
-            router.push(mode === 'create' ? tenantHref('/') : '/profile');
-          }}
-        />
+      <div className="flex flex-col-reverse gap-4 border-t border-border/70 pt-5 sm:flex-row sm:items-center sm:justify-between">
+        <ChangePasswordDialog triggerSize="default" />
+        <div className="w-full sm:ml-auto sm:w-auto">
+          <ProfileFormActions
+            primaryLabel="Save changes"
+            primaryPending={isPending}
+            cancelLabel="Cancel"
+            onCancel={() => {
+              router.push(mode === 'create' ? tenantHref('/') : '/profile');
+            }}
+          />
+        </div>
       </div>
     </form>
   );

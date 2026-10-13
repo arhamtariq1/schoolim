@@ -2,9 +2,9 @@ import type { ComponentProps } from 'react';
 
 import { cn } from '../lib/cn';
 
-/** Raised card surface — hairline border + shadow. Use on sections and list shells, not inputs. */
+/** Card surface — white ground, hairline border, very light elevation. */
 export const cardSurfaceClassName =
-  'rounded-xl border border-border/70 bg-card text-card-foreground shadow-raised';
+  'rounded-xl border border-border/70 bg-card text-card-foreground shadow-xs';
 
 /**
  * The surface everything sits on.

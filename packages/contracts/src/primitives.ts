@@ -97,7 +97,7 @@ export const slugSchema = z
  * because these primitives are shared, fixing them here fixes every form
  * (docs/11 §4: `detail` is written for a school accountant, not a developer).
  */
-export const nonEmptyString = z.string().trim().min(1, 'This cannot be empty.');
+export const nonEmptyString = z.string().trim().min(1, 'This field is required.');
 
 /** Free-text a person typed: trimmed, length-capped, never unbounded. */
 export function textSchema(max: number) {

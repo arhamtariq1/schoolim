@@ -162,8 +162,7 @@ export function AdmitStudentDialog({
     // leads. Then open the new record — reception usually wants to add a fee or
     // a second guardian while the parent is still at the desk.
     toast.success(
-      `${form.firstName} ${form.lastName} admitted`,
-      `GR ${result.data.grNo} · Student ID ${result.data.studentCode}`,
+      `${form.firstName} ${form.lastName} admitted · GR ${result.data.grNo}.`,
     );
 
     setForm(EMPTY);

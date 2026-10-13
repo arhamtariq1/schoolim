@@ -1,5 +1,6 @@
 import '@/app/globals.css';
 
+import { ToastProvider } from '@ilm/ui';
 import { BRAND } from '@ilm/utils';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
@@ -18,7 +19,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body
         className={`${sansFont.className} min-h-dvh bg-background text-foreground antialiased`}
       >
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );

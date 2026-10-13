@@ -242,10 +242,7 @@ export function VouchersView({
     const token = stashPrintSelection(ids);
 
     if (token === undefined) {
-      toast.error(
-        'Could not open the print view',
-        'This browser is blocking site storage. Allow it for this site and try again.',
-      );
+      toast.error('Could not open print view. Allow site storage for this site and try again.');
       return;
     }
 
@@ -366,7 +363,7 @@ export function VouchersView({
       toast.error(result.message);
       return;
     }
-    toast.success(`${cancelling.voucherNo} deleted`, 'Those months can be billed again.');
+    toast.success(`${cancelling.voucherNo} deleted.`);
     setCancelling(undefined);
     setCancelReason('');
     router.refresh();
@@ -1108,7 +1105,7 @@ function CollectDialog({
       setFormError(result.message);
       return;
     }
-    toast.success('Payment recorded', `Receipt for ${voucher.studentName}.`);
+    toast.success(`Payment recorded for ${voucher.studentName}.`);
     onDone();
   }
 
