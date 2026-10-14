@@ -35,7 +35,7 @@ export class LateFeePolicyService {
   async get(): Promise<LateFeePolicy> {
     return this.prisma.tenant(async (tx) => {
       const school = await tx.school.findFirst({
-        select: { lateFeePercent: true, lateFeeFlat: true },
+        select: { lateFeePercent: true, lateFeeFlat: true, lateFeeGraceDays: true },
       });
       if (school === null) {
         throw new NotFoundError('school');
@@ -47,6 +47,7 @@ export class LateFeePolicyService {
         // touches a float.
         percentBasisPoints: fromDecimalString(school.lateFeePercent.toFixed(2)),
         flatMinor: minorUnits(fromDecimalString(school.lateFeeFlat.toFixed(2))),
+        graceDays: school.lateFeeGraceDays,
       };
     });
   }
@@ -64,6 +65,7 @@ export class LateFeePolicyService {
           // Back the other way: 500 basis points is `5.00` in a `numeric(5,2)`.
           lateFeePercent: toDecimalString(minorUnits(input.percentBasisPoints)),
           lateFeeFlat: toDecimalString(minorUnits(input.flatMinor)),
+          lateFeeGraceDays: input.graceDays,
         },
       });
     });

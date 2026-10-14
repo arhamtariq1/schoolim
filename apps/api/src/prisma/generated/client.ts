@@ -267,6 +267,14 @@ export type Holiday = Prisma.HolidayModel
  */
 export type FeeHead = Prisma.FeeHeadModel
 /**
+ * Model FeeHeadClassLevel
+ * Which classes a fee head applies to.
+ * 
+ * No rows for a head means "all classes" — that is the default, and the
+ * admission form / default catalogue treat an empty link set as unrestricted.
+ */
+export type FeeHeadClassLevel = Prisma.FeeHeadClassLevelModel
+/**
  * Model StudentFee
  * What one child was agreed to pay for one head, fixed at admission.
  * 

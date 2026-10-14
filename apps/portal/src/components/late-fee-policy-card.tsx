@@ -1,7 +1,7 @@
 'use client';
 
 import { ROUTES, type LateFeePolicy } from '@ilm/contracts';
-import { Button, Field, Input, Money, useToast } from '@ilm/ui';
+import { Button, Field, Input, Money, SimpleSelect, useToast } from '@ilm/ui';
 import { ICON_SIZE, OverdueIcon } from '@ilm/ui/icons';
 import { minorUnits, percentageOfMoney } from '@ilm/utils';
 import { useRouter } from 'next/navigation';
@@ -17,9 +17,20 @@ import { mutate } from '@/lib/mutate';
  * billed for. A late fee is assigned to nobody: it is a consequence of a due
  * date passing, worked out per voucher, and it is owed only by whoever actually
  * pays late.
+ *
+ * A school picks **one** shape — percentage or fixed — not both. The API still
+ * stores both columns (the other is zero) so older challans and generation keep
+ * a single compute path.
  */
 
 const EXAMPLE_MINOR = 600_000;
+
+const MODE_OPTIONS = [
+  { value: 'percentage', label: 'Percentage' },
+  { value: 'fixed', label: 'Fixed amount' },
+] as const;
+
+type LateFeeMode = (typeof MODE_OPTIONS)[number]['value'];
 
 export interface LateFeePolicyCardProps {
   readonly policy: LateFeePolicy;
@@ -31,32 +42,52 @@ export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicy
   const router = useRouter();
   const toast = useToast();
 
+  const [mode, setMode] = useState<LateFeeMode>(() => modeFromPolicy(policy));
   const [percent, setPercent] = useState(() => displayPercent(policy.percentBasisPoints));
   const [flat, setFlat] = useState(() => displayFlat(policy.flatMinor));
+  const [graceDays, setGraceDays] = useState(() => String(policy.graceDays));
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState<string | undefined>(undefined);
 
-  const percentBasisPoints = percentToBasisPoints(percent);
-  const flatMinor = flat.trim() === '' ? 0 : rupeesToMinor(flat);
+  const percentBasisPoints =
+    mode === 'percentage' ? percentToBasisPoints(percent) : 0;
+  const flatMinor =
+    mode === 'fixed' ? (flat.trim() === '' ? 0 : rupeesToMinor(flat)) : 0;
+  const graceDaysValue = parseGraceDays(graceDays);
 
-  const percentInvalid = percentBasisPoints === undefined;
-  const flatInvalid = flatMinor === undefined;
+  const percentInvalid = mode === 'percentage' && percentBasisPoints === undefined;
+  const flatInvalid = mode === 'fixed' && flatMinor === undefined;
+  const graceInvalid = graceDaysValue === undefined;
 
+  const savedMode = modeFromPolicy(policy);
   const isDirty =
-    percentBasisPoints !== policy.percentBasisPoints || (flatMinor ?? -1) !== policy.flatMinor;
+    mode !== savedMode ||
+    (mode === 'percentage'
+      ? percentBasisPoints !== policy.percentBasisPoints
+      : (flatMinor ?? -1) !== policy.flatMinor) ||
+    (graceDaysValue ?? -1) !== policy.graceDays;
 
   const exampleMinor =
-    percentInvalid || flatInvalid
+    percentInvalid || flatInvalid || percentBasisPoints === undefined || flatMinor === undefined
       ? undefined
       : percentageOfMoney(minorUnits(EXAMPLE_MINOR), percentBasisPoints) + flatMinor;
 
   const policyIsZero = policy.percentBasisPoints === 0 && policy.flatMinor === 0;
   const draftIsZero =
-    !percentInvalid && !flatInvalid && percentBasisPoints === 0 && flatMinor === 0;
+    !percentInvalid &&
+    !flatInvalid &&
+    percentBasisPoints !== undefined &&
+    flatMinor !== undefined &&
+    percentBasisPoints === 0 &&
+    flatMinor === 0;
 
   async function save(event: FormEvent): Promise<void> {
     event.preventDefault();
-    if (percentBasisPoints === undefined || flatMinor === undefined) {
+    if (
+      percentBasisPoints === undefined ||
+      flatMinor === undefined ||
+      graceDaysValue === undefined
+    ) {
       return;
     }
 
@@ -66,6 +97,7 @@ export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicy
     const result = await mutate<LateFeePolicy>(ROUTES.fees.lateFeePolicy, 'PUT', {
       percentBasisPoints,
       flatMinor,
+      graceDays: graceDaysValue,
     });
 
     setIsSaving(false);
@@ -94,9 +126,8 @@ export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicy
             Late fee
           </h2>
           <p className="text-sm text-muted-foreground">
-            Added to a challan when it is paid after the due date. It is not a fee type, because it
-            is owed only by a family who actually pays late — so it is set once here rather than
-            assigned to anybody.{' '}
+            Added to a challan when it is paid after the due date. Choose percentage or a fixed
+            amount — only one applies.{' '}
             <strong className="font-medium text-foreground">
               Changing it never re-rates a voucher that has already been issued.
             </strong>
@@ -128,37 +159,70 @@ export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicy
             void save(event);
           }}
         >
-          <div className="grid gap-5 md:grid-cols-2">
-            <Field
-              label="Percentage"
-              hint="Of the amount payable within the due date"
-              error={percentInvalid ? 'Enter a percentage between 0 and 100.' : undefined}
-            >
-              <Input
-                inputMode="decimal"
-                value={percent}
-                placeholder="0"
-                className="font-mono tabular-nums"
-                disabled={!canConfigure}
-                onChange={(event) => {
-                  setPercent(event.target.value);
+          <div className="grid gap-5 md:grid-cols-3">
+            <Field label="Late fee type" required>
+              <SimpleSelect
+                value={mode}
+                onValueChange={(next) => {
+                  setMode(next as LateFeeMode);
                 }}
+                options={[...MODE_OPTIONS]}
+                ariaLabel="Late fee type"
+                disabled={!canConfigure}
               />
             </Field>
 
+            {mode === 'percentage' ? (
+              <Field
+                label="Percentage"
+                hint="Of the amount payable within the due date"
+                error={percentInvalid ? 'Enter a percentage between 0 and 100.' : undefined}
+                required
+              >
+                <Input
+                  inputMode="decimal"
+                  value={percent}
+                  placeholder="0"
+                  className="tabular-nums"
+                  disabled={!canConfigure}
+                  onChange={(event) => {
+                    setPercent(event.target.value);
+                  }}
+                />
+              </Field>
+            ) : (
+              <Field
+                label="Fixed amount (PKR)"
+                hint="Charged in full after the grace period"
+                error={flatInvalid ? 'Enter an amount, or leave it blank.' : undefined}
+                required
+              >
+                <Input
+                  inputMode="decimal"
+                  value={flat}
+                  placeholder="0"
+                  className="tabular-nums"
+                  disabled={!canConfigure}
+                  onChange={(event) => {
+                    setFlat(event.target.value);
+                  }}
+                />
+              </Field>
+            )}
+
             <Field
-              label="Fixed amount (PKR)"
-              hint="Added on top of the percentage"
-              error={flatInvalid ? 'Enter an amount, or leave it blank.' : undefined}
+              label="Apply after (days)"
+              hint="Days after the due date before the surcharge applies. 0 = next day."
+              error={graceInvalid ? 'Enter a whole number from 0 to 90.' : undefined}
             >
               <Input
-                inputMode="decimal"
-                value={flat}
+                inputMode="numeric"
+                value={graceDays}
                 placeholder="0"
-                className="font-mono tabular-nums"
+                className="tabular-nums"
                 disabled={!canConfigure}
                 onChange={(event) => {
-                  setFlat(event.target.value);
+                  setGraceDays(event.target.value);
                 }}
               />
             </Field>
@@ -169,7 +233,7 @@ export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicy
               <Button
                 type="submit"
                 className="h-10 w-full sm:w-auto"
-                disabled={isSaving || !isDirty || percentInvalid || flatInvalid}
+                disabled={isSaving || !isDirty || percentInvalid || flatInvalid || graceInvalid}
                 isPending={isSaving}
               >
                 Save late fee
@@ -187,7 +251,11 @@ export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicy
           ) : exampleMinor === undefined ? null : (
             <>
               On a <Money valueMinor={minorUnits(EXAMPLE_MINOR)} /> challan, a parent paying after
-              the due date would owe{' '}
+              the due date
+              {graceDaysValue !== undefined && graceDaysValue > 0
+                ? ` (plus ${String(graceDaysValue)} grace ${graceDaysValue === 1 ? 'day' : 'days'})`
+                : ''}{' '}
+              would owe{' '}
               <strong className="font-medium text-foreground">
                 <Money valueMinor={minorUnits(EXAMPLE_MINOR + exampleMinor)} />
               </strong>{' '}
@@ -200,6 +268,13 @@ export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicy
   );
 }
 
+function modeFromPolicy(policy: LateFeePolicy): LateFeeMode {
+  if (policy.flatMinor > 0 && policy.percentBasisPoints === 0) {
+    return 'fixed';
+  }
+  return 'percentage';
+}
+
 function displayPercent(basisPoints: number): string {
   const text = basisPointsToPercent(basisPoints);
   return text === '' ? '0' : text;
@@ -208,6 +283,18 @@ function displayPercent(basisPoints: number): string {
 function displayFlat(minor: number): string {
   const text = minorToPlain(minor);
   return text === '' ? '0' : text;
+}
+
+function parseGraceDays(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (trimmed === '') {
+    return 0;
+  }
+  if (!/^\d{1,2}$/.test(trimmed)) {
+    return undefined;
+  }
+  const days = Number(trimmed);
+  return days > 90 ? undefined : days;
 }
 
 function basisPointsToPercent(basisPoints: number): string {

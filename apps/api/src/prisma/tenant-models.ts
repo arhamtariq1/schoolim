@@ -34,6 +34,7 @@ export const TENANT_MODELS = [
   'Enrollment',
   // Phase 2 — fees
   'FeeHead',
+  'FeeHeadClassLevel',
   'StudentFee',
   'Holiday',
   'Staff',

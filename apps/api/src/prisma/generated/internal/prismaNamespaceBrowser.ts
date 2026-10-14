@@ -78,6 +78,7 @@ export const ModelName = {
   Expense: 'Expense',
   Holiday: 'Holiday',
   FeeHead: 'FeeHead',
+  FeeHeadClassLevel: 'FeeHeadClassLevel',
   StudentFee: 'StudentFee',
   NumberSequence: 'NumberSequence',
   JobRun: 'JobRun',
@@ -206,6 +207,7 @@ export const SchoolScalarFieldEnum = {
   status: 'status',
   lateFeePercent: 'lateFeePercent',
   lateFeeFlat: 'lateFeeFlat',
+  lateFeeGraceDays: 'lateFeeGraceDays',
   workingDays: 'workingDays',
   attendanceBackdateDays: 'attendanceBackdateDays',
   onboardedAt: 'onboardedAt',
@@ -603,6 +605,17 @@ export const FeeHeadScalarFieldEnum = {
 } as const
 
 export type FeeHeadScalarFieldEnum = (typeof FeeHeadScalarFieldEnum)[keyof typeof FeeHeadScalarFieldEnum]
+
+
+export const FeeHeadClassLevelScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  feeHeadId: 'feeHeadId',
+  classLevelId: 'classLevelId',
+  createdAt: 'createdAt'
+} as const
+
+export type FeeHeadClassLevelScalarFieldEnum = (typeof FeeHeadClassLevelScalarFieldEnum)[keyof typeof FeeHeadClassLevelScalarFieldEnum]
 
 
 export const StudentFeeScalarFieldEnum = {

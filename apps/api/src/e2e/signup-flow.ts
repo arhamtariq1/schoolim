@@ -107,10 +107,10 @@ export async function schoolSlugForUserEmail(admin: PrismaClient, email: string)
 }
 
 /**
- * Walk credentials → OTP (provisions tenant, no session).
+ * Walk credentials → OTP (provisions tenant + handoff URL).
  *
  * School details are finished later via `/me/onboarding` inside the portal.
- * Returns the OTP verify response (`email`, `verified`).
+ * Returns the OTP verify response (`email`, `verified`, `continueUrl`).
  */
 export async function runSignupFlow(
   app: NestFastifyApplication,

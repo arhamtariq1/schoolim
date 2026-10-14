@@ -139,6 +139,7 @@ export function ProfileSchoolEditorFields({
         <Input
           name="schoolName"
           autoComplete="organization"
+          placeholder="e.g. Everest Grammar School"
           value={values.name}
           onChange={(event) => {
             onChange({ name: event.target.value });

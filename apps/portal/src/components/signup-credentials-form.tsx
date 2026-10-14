@@ -7,13 +7,7 @@ import {
   type SignupStartResult,
 } from '@ilm/contracts';
 import { Button, Checkbox, Field, Input, PasswordInput, useToast } from '@ilm/ui';
-import {
-  AccountIcon,
-  ChevronRightIcon,
-  EmailIcon,
-  ICON_SIZE,
-  LockedIcon,
-} from '@ilm/ui/icons';
+import { AccountIcon, EmailIcon, ICON_SIZE, LockedIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
@@ -286,7 +280,6 @@ export function SignupCredentialsForm() {
           className="w-full"
           size="touch"
         >
-          {isPending ? null : <ChevronRightIcon className={ICON_SIZE.inline} aria-hidden />}
           {isPending ? 'Sending code…' : 'Continue'}
         </Button>
       </AuthFormActions>

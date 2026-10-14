@@ -954,9 +954,16 @@ export class VouchersService {
         0,
       );
 
-      // Paying after the due date owes the surcharge, and at that point it
-      // becomes a real charge on this voucher rather than a number in a box.
-      const paidLate = new Date(input.paidOn) > voucher.dueDate;
+      // Paying after the due date (plus any grace days) owes the surcharge, and
+      // at that point it becomes a real charge on this voucher rather than a
+      // number in a box.
+      const school = await tx.school.findFirst({
+        select: { lateFeeGraceDays: true },
+      });
+      const graceDays = school?.lateFeeGraceDays ?? 0;
+      const lateFrom = new Date(voucher.dueDate);
+      lateFrom.setUTCDate(lateFrom.getUTCDate() + graceDays);
+      const paidLate = new Date(input.paidOn) > lateFrom;
       const lateFee = paidLate ? decimalToMinor(voucher.lateFeeAmount) : 0;
 
       if (lateFee > 0) {

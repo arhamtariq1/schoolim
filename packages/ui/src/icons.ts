@@ -70,6 +70,9 @@ export {
   Palette as PaletteIcon,
   Eye as ShowPasswordIcon,
   EyeOff as HidePasswordIcon,
+  /** Pause a catalogue row without deleting it (fee heads, etc.). */
+  PowerOff as TurnOffIcon,
+  Power as TurnOnIcon,
 
   // --- Academic structure ---------------------------------------------------
   GraduationCap as ClassIcon,
@@ -88,6 +91,18 @@ export {
   PiggyBank as DepositIcon,
   /** Somebody who has not paid by the day it was due. */
   AlarmClock as OverdueIcon,
+  /** Challan page layout (copies per sheet). */
+  PanelsTopLeft as PageLayoutIcon,
+  /** Names printed on each challan copy. */
+  Tags as TagIcon,
+  /** What appears on the challan body. */
+  ListChecks as ListChecksIcon,
+  /** Kuickpay consumer number on a challan. */
+  Zap as QuickpayIcon,
+  /** 1LINK consumer number on a challan. */
+  Link2 as LinkIcon,
+  /** Bank / school mark upload. */
+  Image as ImageIcon,
 
   // --- Dates ----------------------------------------------------------------
   Calendar as CalendarIcon,

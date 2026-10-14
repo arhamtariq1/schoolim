@@ -12,14 +12,39 @@ import {
   type CopyCount,
   type VoucherSettings,
 } from '@ilm/contracts';
-import { Button, CheckboxField, Field, Input, Textarea, useToast } from '@ilm/ui';
+import { Button, CheckboxField, cn, Field, Input, Textarea, useToast } from '@ilm/ui';
+import {
+  ApproveIcon,
+  ExportIcon,
+  ICON_SIZE,
+  LinkIcon,
+  ListChecksIcon,
+  PageLayoutIcon,
+  QuickpayIcon,
+  SaveIcon,
+  TagIcon,
+  ViewIcon,
+} from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react';
 
 import { VoucherChallan } from './voucher-challan';
 
 import { showFormValidationToast } from '@/lib/form-validation';
 import { mutate } from '@/lib/mutate';
+
+/** Printable area of an A4 sheet in the orientation this layout uses (mm). */
+const PREVIEW_SHEET_MM: Record<CopyCount, { width: number; height: number }> = {
+  3: { width: 281, height: 194 },
+  4: { width: 194, height: 281 },
+};
 
 /**
  * Settings › Fee challan.
@@ -118,6 +143,8 @@ export interface VoucherSettingsFormProps {
   };
   readonly canConfigure: boolean;
   readonly error?: string | undefined;
+  /** Bank logo card — sits under the live preview in the right column. */
+  readonly bankLogoSlot?: ReactNode;
 }
 
 export function VoucherSettingsForm({
@@ -125,6 +152,7 @@ export function VoucherSettingsForm({
   school,
   canConfigure,
   error,
+  bankLogoSlot,
 }: VoucherSettingsFormProps) {
   const router = useRouter();
   const toast = useToast();
@@ -137,12 +165,62 @@ export function VoucherSettingsForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
+  const [focusedCopy, setFocusedCopy] = useState(0);
 
   /** The draft exactly as the challan — and the server — will receive it. */
   const preview: VoucherSettings = {
     ...draft,
     kuickpayChannels: toChannels(channelText),
   };
+
+  const [printRoot, setPrintRoot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setPrintRoot(document.body);
+  }, []);
+
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  /**
+   * Renders the sheet to a real A4 PDF: three copies across (landscape) or four
+   * in a square (portrait). The libraries load on click, so they cost the
+   * settings page nothing until a school actually downloads one.
+   */
+  async function downloadChallan(): Promise<void> {
+    const root = document.querySelector<HTMLElement>('.challan-print-root');
+    if (root === null) {
+      return;
+    }
+    setIsDownloading(true);
+    const portrait = preview.copyCount === 4;
+    // A4 minus 8mm margins, in CSS pixels at 96dpi.
+    const widthPx = portrait ? 733 : 1062;
+    const saved = root.getAttribute('style');
+    root.setAttribute(
+      'style',
+      `display:block;position:fixed;top:0;left:-10000px;width:${String(widthPx)}px;background:#fff`,
+    );
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas-pro'),
+        import('jspdf'),
+      ]);
+      const canvas = await html2canvas(root, { scale: 3, backgroundColor: '#ffffff' });
+      const pdf = new jsPDF({ orientation: portrait ? 'portrait' : 'landscape', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth() - 16;
+      const pageH = pdf.internal.pageSize.getHeight() - 16;
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 8, 8, pageW, pageH);
+      pdf.save(`fee-challan-${String(preview.copyCount)}-copies.pdf`);
+    } catch {
+      toast.error('Could not create the PDF. Please try again.');
+    } finally {
+      if (saved === null) {
+        root.removeAttribute('style');
+      } else {
+        root.setAttribute('style', saved);
+      }
+      setIsDownloading(false);
+    }
+  }
 
   const sampleKuickpay = kuickpayConsumerNo(preview, SAMPLE.grNo);
   const sampleOnelink = onelinkConsumerNo(preview, SAMPLE.grNo);
@@ -152,6 +230,7 @@ export function VoucherSettingsForm({
     fieldErrors['copyLabels.0'] ??
     fieldErrors['copyLabels.1'] ??
     fieldErrors['copyLabels.2'];
+  const activeCopy = Math.min(focusedCopy, draft.copyLabels.length - 1);
 
   function set<K extends keyof VoucherSettings>(key: K, value: VoucherSettings[K]): void {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -180,6 +259,7 @@ export function VoucherSettingsForm({
         (_, index) => current.copyLabels[index] ?? DEFAULT_COPY_LABELS[count][index] ?? '',
       ),
     }));
+    setFocusedCopy((current) => Math.min(current, count - 1));
   }
 
   async function save(event: FormEvent): Promise<void> {
@@ -233,7 +313,7 @@ export function VoucherSettingsForm({
 
   return (
     <form
-      className="grid items-start gap-6 xl:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]"
+      className="grid items-start gap-6 xl:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]"
       onSubmit={(event) => void save(event)}
       noValidate
     >
@@ -245,59 +325,86 @@ export function VoucherSettingsForm({
             read-only viewer and a save in flight are the same state as far as
             the inputs are concerned. */}
         <fieldset disabled={!canConfigure || isSaving} className="space-y-4">
-          <Card title="The page">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-foreground">Copies per sheet</p>
-              <p className="text-xs text-muted-foreground">
-                A4 either way. Three stack down the page; four sit in a square.
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {COPY_COUNTS.map((count) => (
-                  <LayoutChoice
-                    key={count}
-                    count={count}
-                    checked={draft.copyCount === count}
-                    onSelect={() => {
-                      setCopyCount(count);
-                    }}
-                  />
-                ))}
-              </div>
+          <SettingsCard
+            icon={<PageLayoutIcon className={ICON_SIZE.nav} aria-hidden />}
+            title="Page Layout"
+            description="Copies per sheet. A4 either way. Three across a landscape sheet; four in a portrait square."
+          >
+            <div className="grid grid-cols-2 gap-3">
+              {COPY_COUNTS.map((count) => (
+                <LayoutChoice
+                  key={count}
+                  count={count}
+                  checked={draft.copyCount === count}
+                  onSelect={() => {
+                    setCopyCount(count);
+                  }}
+                />
+              ))}
             </div>
+          </SettingsCard>
 
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-foreground">Copy names</p>
-              <p className="text-xs text-muted-foreground">
-                One per copy, in order. Most schools keep School, Bank, Student.
-              </p>
-              {/* One input per copy, not a textarea of lines: the count is a
-                  setting, and a box you can delete a line from produces a
-                  payload the server has to refuse. */}
-              <div className="grid gap-2 sm:grid-cols-2">
-                {draft.copyLabels.map((label, index) => (
-                  <Input
-                    // The index is the identity: two copies may legitimately
-                    // share a name, and it is the position being edited.
+          <SettingsCard
+            icon={<TagIcon className={ICON_SIZE.nav} aria-hidden />}
+            title="Copy Names"
+            description="One name per copy, in order. Most schools keep School, Bank, Student."
+          >
+            <div className="flex flex-col gap-2">
+              {draft.copyLabels.map((label, index) => {
+                const selected = index === activeCopy;
+                return (
+                  <div
                     key={index}
-                    value={label}
-                    maxLength={40}
-                    aria-label={`Copy ${String(index + 1)} name`}
-                    aria-invalid={copyLabelError !== undefined}
-                    onChange={(event) => {
-                      setCopyLabel(index, event.target.value);
-                    }}
-                  />
-                ))}
-              </div>
-              {copyLabelError === undefined ? null : (
-                <p role="alert" className="text-xs text-danger">
-                  {copyLabelError}
-                </p>
-              )}
+                    className={cn(
+                      'flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors',
+                      selected
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border bg-background hover:border-primary/40',
+                    )}
+                  >
+                    <button
+                      type="button"
+                      className="flex size-5 shrink-0 items-center justify-center rounded-full border border-border text-primary"
+                      aria-label={`Focus preview on copy ${String(index + 1)}`}
+                      aria-pressed={selected}
+                      onClick={() => {
+                        setFocusedCopy(index);
+                      }}
+                    >
+                      {selected ? (
+                        <ApproveIcon className="size-3.5" aria-hidden />
+                      ) : (
+                        <span className="size-2 rounded-full bg-transparent" aria-hidden />
+                      )}
+                    </button>
+                    <Input
+                      value={label}
+                      maxLength={40}
+                      aria-label={`Copy ${String(index + 1)} name`}
+                      aria-invalid={copyLabelError !== undefined}
+                      className="h-8 border-0 bg-transparent px-1 shadow-none focus-visible:ring-0"
+                      onFocus={() => {
+                        setFocusedCopy(index);
+                      }}
+                      onChange={(event) => {
+                        setCopyLabel(index, event.target.value);
+                      }}
+                    />
+                  </div>
+                );
+              })}
             </div>
-          </Card>
+            {copyLabelError === undefined ? null : (
+              <p role="alert" className="text-xs text-danger">
+                {copyLabelError}
+              </p>
+            )}
+          </SettingsCard>
 
-          <Card title="What it shows">
+          <SettingsCard
+            icon={<ListChecksIcon className={ICON_SIZE.nav} aria-hidden />}
+            title="What it shows"
+          >
             <CheckboxField
               label="Print the school logo"
               hint={
@@ -340,9 +447,12 @@ export function VoucherSettingsForm({
                 }}
               />
             </Field>
-          </Card>
+          </SettingsCard>
 
-          <Card title="Kuickpay">
+          <SettingsCard
+            icon={<QuickpayIcon className={ICON_SIZE.nav} aria-hidden />}
+            title="Kuickpay"
+          >
             <CheckboxField
               label="Print a Kuickpay ID"
               hint="Parents pay in cash at any outlet on the list below."
@@ -370,7 +480,7 @@ export function VoucherSettingsForm({
                   <Input
                     inputMode="numeric"
                     autoComplete="off"
-                    className="font-mono"
+                    className="tabular-nums"
                     placeholder="1514"
                     maxLength={12}
                     value={draft.kuickpayPrefix ?? ''}
@@ -385,7 +495,10 @@ export function VoucherSettingsForm({
                 {sampleKuickpay === undefined ? null : (
                   <p className="text-xs text-muted-foreground">
                     A child with GR 810 would quote{' '}
-                    <span className="font-mono font-medium text-foreground">{sampleKuickpay}</span>.
+                    <span className="font-medium tabular-nums text-foreground">
+                      {sampleKuickpay}
+                    </span>
+                    .
                   </p>
                 )}
 
@@ -396,7 +509,7 @@ export function VoucherSettingsForm({
                 >
                   <Textarea
                     rows={6}
-                    className="font-mono text-xs"
+                    className="text-xs"
                     value={channelText}
                     onChange={(event) => {
                       setChannelText(event.target.value);
@@ -416,9 +529,12 @@ export function VoucherSettingsForm({
                 </Button>
               </>
             )}
-          </Card>
+          </SettingsCard>
 
-          <Card title="1LINK">
+          <SettingsCard
+            icon={<LinkIcon className={ICON_SIZE.nav} aria-hidden />}
+            title="1LINK"
+          >
             <CheckboxField
               label="Print a 1LINK ID"
               hint={
@@ -443,7 +559,7 @@ export function VoucherSettingsForm({
                   <Input
                     inputMode="numeric"
                     autoComplete="off"
-                    className="font-mono"
+                    className="tabular-nums"
                     placeholder="100047"
                     maxLength={12}
                     value={draft.onelinkInstitutionId ?? ''}
@@ -456,17 +572,23 @@ export function VoucherSettingsForm({
                 {sampleOnelink === undefined ? null : (
                   <p className="text-xs text-muted-foreground">
                     That child’s 1LINK number would be{' '}
-                    <span className="font-mono font-medium text-foreground">{sampleOnelink}</span>.
+                    <span className="font-medium tabular-nums text-foreground">
+                      {sampleOnelink}
+                    </span>
+                    .
                   </p>
                 )}
               </>
             )}
-          </Card>
+          </SettingsCard>
         </fieldset>
 
+        {bankLogoSlot}
+
         {canConfigure ? (
-          <Button type="submit" isPending={isSaving}>
-            Save challan
+          <Button type="submit" isPending={isSaving} className="w-full sm:w-auto">
+            <SaveIcon className={ICON_SIZE.inline} aria-hidden />
+            Save Challan
           </Button>
         ) : (
           <p className="text-sm text-muted-foreground">
@@ -478,25 +600,122 @@ export function VoucherSettingsForm({
       {/* `no-print`: the print stylesheet promotes any `.voucher-challan` on the
           page to the sheet, and a settings screen must not be able to emit a
           challan for a child who does not exist. */}
-      <div className="no-print space-y-2 xl:sticky xl:top-4">
-        <p className="text-sm text-muted-foreground">
-          Live preview — the challan itself, with a made-up child on it.
-        </p>
-        {/* The sheet at its real size, zoomed down to fit — not reflowed. The
-            width is the printable area of an A4 in the orientation this layout
-            uses, so the preview has the paper's proportions and the copies fill
-            it exactly as they will. Scaling rather than narrowing is what keeps
-            it honest: a narrower preview makes a challan look cramped that is
-            not, and a school would redesign around a problem it does not have. */}
-        <div className="overflow-x-auto rounded-xl border border-border bg-white p-3">
-          <div
-            className={`[zoom:0.55] ${preview.copyCount === 4 ? 'w-[194mm]' : 'w-[281mm]'}`}
-          >
-            <VoucherChallan voucher={SAMPLE} school={school} settings={preview} />
+      <div className="no-print xl:sticky xl:top-4">
+        <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-raised">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-4 sm:px-5">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <ViewIcon className={ICON_SIZE.nav} aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-base font-semibold text-foreground">Live Preview</h2>
+                <p className="text-xs text-muted-foreground sm:text-sm">
+                  How the challan will look with the current settings.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              tone="outline"
+              isPending={isDownloading}
+              onClick={() => {
+                void downloadChallan();
+              }}
+            >
+              <ExportIcon className={ICON_SIZE.inline} aria-hidden />
+              Download PDF ({String(preview.copyCount)} copies)
+            </Button>
+          </div>
+
+          <div className="bg-muted/40 p-3 sm:p-4">
+            <ChallanLivePreview copyCount={preview.copyCount}>
+              <VoucherChallan voucher={SAMPLE} school={school} settings={preview} preview />
+            </ChallanLivePreview>
+          </div>
+        </section>
+      </div>
+
+      {printRoot === null
+        ? null
+        : createPortal(
+            <div className="challan-print-root print-stack">
+              <VoucherChallan voucher={SAMPLE} school={school} settings={preview} />
+            </div>,
+            printRoot,
+          )}
+    </form>
+  );
+}
+
+/**
+ * Scales the real A4 challan sheet to the full width of the preview pane.
+ *
+ * `transform: scale` keeps print proportions honest; the outer height is
+ * collapsed to the scaled size so the card does not leave empty side gutters
+ * or a tall blank strip under the sheet. Text is not selectable — this is a
+ * picture of a challan, not a document to copy from.
+ */
+function ChallanLivePreview({
+  copyCount,
+  children,
+}: {
+  readonly copyCount: CopyCount;
+  readonly children: ReactNode;
+}) {
+  const sheet = PREVIEW_SHEET_MM[copyCount];
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.5);
+
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (frame === null) {
+      return;
+    }
+
+    const paperWidthPx = (sheet.width / 25.4) * 96;
+    const target = frame;
+
+    function measure(): void {
+      const width = target.getBoundingClientRect().width;
+      if (width <= 0 || paperWidthPx <= 0) {
+        return;
+      }
+      // Always fill the pane width — including upscaling a portrait (4-copy)
+      // sheet so it does not sit as a narrow column in a wide card.
+      setScale((width - 2) / paperWidthPx);
+    }
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(target);
+    return () => {
+      observer.disconnect();
+    };
+  }, [sheet.width]);
+
+  const scaledHeightPx = ((sheet.height / 25.4) * 96) * scale;
+
+  return (
+    <div
+      ref={frameRef}
+      className="w-full overflow-hidden rounded-lg border border-border bg-muted/30"
+    >
+      <div className="relative w-full bg-white" style={{ height: scaledHeightPx }}>
+        <div
+          className="origin-top-left select-none"
+          style={{
+            width: `${String(sheet.width)}mm`,
+            height: `${String(sheet.height)}mm`,
+            transform: `scale(${String(scale)})`,
+          }}
+        >
+          <div className="pointer-events-none box-border h-full w-full select-none p-[2mm] [&_*]:select-none [&_.voucher-challan]:h-full [&_.voucher-challan]:w-full">
+            {children}
           </div>
         </div>
       </div>
-    </form>
+    </div>
   );
 }
 
@@ -519,9 +738,12 @@ function LayoutChoice({
 }) {
   return (
     <label
-      className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
-        checked ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-      }`}
+      className={cn(
+        'relative flex cursor-pointer flex-col gap-3 rounded-xl border p-3 transition-colors',
+        checked
+          ? 'border-primary bg-primary/5 shadow-xs'
+          : 'border-border bg-background hover:border-primary/40',
+      )}
     >
       <input
         type="radio"
@@ -531,23 +753,36 @@ function LayoutChoice({
         onChange={onSelect}
       />
 
+      {checked ? (
+        <span className="absolute right-2 top-2 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <ApproveIcon className="size-3" aria-hidden />
+        </span>
+      ) : null}
+
       {/* A4 proportions, and the sheet turns with the layout — three copies go
           across a landscape page, four down a portrait one. Which way up the
           paper goes is half of what is being chosen here. */}
       <span
         aria-hidden
-        className={`grid shrink-0 gap-[2px] rounded-xs border border-border bg-background p-[2px] ${
-          count === 4 ? 'h-12 w-[2.12rem] grid-cols-2' : 'h-[2.12rem] w-12 grid-cols-3'
-        }`}
+        className={cn(
+          'grid shrink-0 gap-[2px] self-start rounded-sm border border-border bg-card p-[3px]',
+          count === 4 ? 'h-14 w-[2.5rem] grid-cols-2' : 'h-[2.5rem] w-14 grid-cols-3',
+        )}
       >
         {Array.from({ length: count }, (_, index) => (
-          <span key={index} className="rounded-[1px] bg-muted-foreground/30" />
+          <span
+            key={index}
+            className={cn(
+              'rounded-[2px]',
+              checked ? 'bg-primary/70' : 'bg-muted-foreground/25',
+            )}
+          />
         ))}
       </span>
 
       <span className="min-w-0">
-        <span className="block text-sm font-medium text-foreground">{count} copies</span>
-        <span className="block text-xs text-muted-foreground">
+        <span className="block text-sm font-semibold text-foreground">{count} Copies</span>
+        <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
           {count === 3 ? 'Across a landscape sheet' : 'Two by two, portrait'}
         </span>
       </span>
@@ -555,11 +790,31 @@ function LayoutChoice({
   );
 }
 
-function Card({ title, children }: { readonly title: string; readonly children: ReactNode }) {
+function SettingsCard({
+  icon,
+  title,
+  description,
+  children,
+}: {
+  readonly icon: ReactNode;
+  readonly title: string;
+  readonly description?: string;
+  readonly children: ReactNode;
+}) {
   return (
-    <section className="space-y-4 rounded-xl border border-border/70 bg-card shadow-raised p-4">
-      <h2 className="text-base font-medium text-foreground">{title}</h2>
-      {children}
+    <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-raised">
+      <div className="flex gap-3 border-b border-border px-4 py-3.5">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          {icon}
+        </span>
+        <div className="min-w-0 space-y-0.5">
+          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+          {description === undefined ? null : (
+            <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+          )}
+        </div>
+      </div>
+      <div className="space-y-4 px-4 py-4">{children}</div>
     </section>
   );
 }

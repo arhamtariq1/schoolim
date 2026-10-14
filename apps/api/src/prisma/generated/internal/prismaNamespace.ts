@@ -424,6 +424,7 @@ export const ModelName = {
   Expense: 'Expense',
   Holiday: 'Holiday',
   FeeHead: 'FeeHead',
+  FeeHeadClassLevel: 'FeeHeadClassLevel',
   StudentFee: 'StudentFee',
   NumberSequence: 'NumberSequence',
   JobRun: 'JobRun',
@@ -454,7 +455,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "platformUser" | "platformSession" | "signupIntent" | "schoolGroup" | "school" | "schoolDomain" | "user" | "userRole" | "session" | "invitation" | "passwordReset" | "authHandoff" | "emailVerification" | "schoolAgreement" | "auditLog" | "academicSession" | "classLevel" | "section" | "student" | "guardian" | "studentGuardian" | "enrollment" | "staff" | "expenseCategory" | "expense" | "holiday" | "feeHead" | "studentFee" | "numberSequence" | "jobRun" | "feeVoucher" | "feeVoucherLine" | "feeVoucherPeriod" | "feeVoucherArrear" | "feePayment" | "feePaymentAllocation" | "attendanceRecord" | "staffAttendanceRecord" | "securityDeposit" | "securityDepositRefund" | "schoolLogo" | "schoolVoucherSettings"
+    modelProps: "platformUser" | "platformSession" | "signupIntent" | "schoolGroup" | "school" | "schoolDomain" | "user" | "userRole" | "session" | "invitation" | "passwordReset" | "authHandoff" | "emailVerification" | "schoolAgreement" | "auditLog" | "academicSession" | "classLevel" | "section" | "student" | "guardian" | "studentGuardian" | "enrollment" | "staff" | "expenseCategory" | "expense" | "holiday" | "feeHead" | "feeHeadClassLevel" | "studentFee" | "numberSequence" | "jobRun" | "feeVoucher" | "feeVoucherLine" | "feeVoucherPeriod" | "feeVoucherArrear" | "feePayment" | "feePaymentAllocation" | "attendanceRecord" | "staffAttendanceRecord" | "securityDeposit" | "securityDepositRefund" | "schoolLogo" | "schoolVoucherSettings"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2456,6 +2457,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    FeeHeadClassLevel: {
+      payload: Prisma.$FeeHeadClassLevelPayload<ExtArgs>
+      fields: Prisma.FeeHeadClassLevelFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FeeHeadClassLevelFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FeeHeadClassLevelPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FeeHeadClassLevelFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FeeHeadClassLevelPayload>
+        }
+        findFirst: {
+          args: Prisma.FeeHeadClassLevelFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FeeHeadClassLevelPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FeeHeadClassLevelFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FeeHeadClassLevelPayload>
+        }
+        findMany: {
+          args: Prisma.FeeHeadClassLevelFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FeeHeadClassLevelPayload>[]
+        }
+        create: {
+          args: Prisma.FeeHeadClassLevelCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FeeHeadClassLevelPayload>
+        }
+        createMany: {
+          args: Prisma.FeeHeadClassLevelCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FeeHeadClassLevelCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FeeHeadClassLevelPayload>[]
+        }
+        delete: {
+          args: Prisma.FeeHeadClassLevelDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FeeHeadClassLevelPayload>
+        }
+        update: {
+          args: Prisma.FeeHeadClassLevelUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FeeHeadClassLevelPayload>
+        }
+        deleteMany: {
+          args: Prisma.FeeHeadClassLevelDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FeeHeadClassLevelUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FeeHeadClassLevelUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FeeHeadClassLevelPayload>[]
+        }
+        upsert: {
+          args: Prisma.FeeHeadClassLevelUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FeeHeadClassLevelPayload>
+        }
+        aggregate: {
+          args: Prisma.FeeHeadClassLevelAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFeeHeadClassLevel>
+        }
+        groupBy: {
+          args: Prisma.FeeHeadClassLevelGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FeeHeadClassLevelGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FeeHeadClassLevelCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FeeHeadClassLevelCountAggregateOutputType> | number
+        }
+      }
+    }
     StudentFee: {
       payload: Prisma.$StudentFeePayload<ExtArgs>
       fields: Prisma.StudentFeeFieldRefs
@@ -3700,6 +3775,7 @@ export const SchoolScalarFieldEnum = {
   status: 'status',
   lateFeePercent: 'lateFeePercent',
   lateFeeFlat: 'lateFeeFlat',
+  lateFeeGraceDays: 'lateFeeGraceDays',
   workingDays: 'workingDays',
   attendanceBackdateDays: 'attendanceBackdateDays',
   onboardedAt: 'onboardedAt',
@@ -4097,6 +4173,17 @@ export const FeeHeadScalarFieldEnum = {
 } as const
 
 export type FeeHeadScalarFieldEnum = (typeof FeeHeadScalarFieldEnum)[keyof typeof FeeHeadScalarFieldEnum]
+
+
+export const FeeHeadClassLevelScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  feeHeadId: 'feeHeadId',
+  classLevelId: 'classLevelId',
+  createdAt: 'createdAt'
+} as const
+
+export type FeeHeadClassLevelScalarFieldEnum = (typeof FeeHeadClassLevelScalarFieldEnum)[keyof typeof FeeHeadClassLevelScalarFieldEnum]
 
 
 export const StudentFeeScalarFieldEnum = {
@@ -5062,6 +5149,7 @@ export type GlobalOmitConfig = {
   expense?: Prisma.ExpenseOmit
   holiday?: Prisma.HolidayOmit
   feeHead?: Prisma.FeeHeadOmit
+  feeHeadClassLevel?: Prisma.FeeHeadClassLevelOmit
   studentFee?: Prisma.StudentFeeOmit
   numberSequence?: Prisma.NumberSequenceOmit
   jobRun?: Prisma.JobRunOmit

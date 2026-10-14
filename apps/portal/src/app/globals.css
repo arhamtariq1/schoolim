@@ -27,7 +27,19 @@
    A browser that ignores named pages prints on its default size and the
    columns still come out in order — narrower than intended, not broken.
 --------------------------------------------------------------------------- */
+.challan-print-root {
+  display: none;
+}
+
 @media print {
+  body.printing-challan > :not(.challan-print-root) {
+    display: none !important;
+  }
+
+  body.printing-challan .challan-print-root {
+    display: block;
+  }
+
   body * {
     visibility: hidden;
   }
@@ -68,6 +80,12 @@
     break-after: page;
     break-inside: avoid;
     padding: 0;
+    /* Fill the printable area so copies are not a short strip on a tall sheet. */
+    height: 194mm;
+  }
+
+  .print-stack > .voucher-challan.challan-portrait {
+    height: 281mm;
   }
 
   .print-stack > .voucher-challan:last-child {

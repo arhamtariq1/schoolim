@@ -88,6 +88,17 @@ export const feeHeadSchema = z.object({
    */
   frequency: feeFrequencySchema,
   /**
+   * Classes this head applies to.
+   *
+   * Empty means every class. Non-empty is an allow-list for new admissions.
+   */
+  classLevels: z.array(
+    z.object({
+      id: idSchema,
+      name: z.string(),
+    }),
+  ),
+  /**
    * How many children are billed against this head.
    *
    * Travels with the row because the list needs it to decide whether "Delete"
@@ -105,6 +116,8 @@ export const createFeeHeadSchema = z
     defaultAmountMinor: positiveMinorUnitsSchema,
     frequency: feeFrequencySchema.default('ONE_TIME'),
     sortOrder: z.int().min(0).max(9999).optional(),
+    /** Empty / omitted = all classes. Non-empty = only these class levels. */
+    classLevelIds: z.array(idSchema).max(200).optional(),
   })
   .strict();
 
@@ -233,6 +246,13 @@ export const lateFeePolicySchema = z.object({
   percentBasisPoints: basisPointsSchema,
   /** A fixed amount, added on top of the percentage. */
   flatMinor: positiveMinorUnitsSchema,
+  /**
+   * Days after the due date before the surcharge applies.
+   *
+   * `0` means the day after the due date (current challan behaviour). A school
+   * that prints "due the 10th, late from the 15th" sets this to 5.
+   */
+  graceDays: z.int().min(0).max(90),
 });
 
 export type LateFeePolicy = z.infer<typeof lateFeePolicySchema>;

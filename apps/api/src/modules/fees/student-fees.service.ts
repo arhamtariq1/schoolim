@@ -212,15 +212,27 @@ export async function readStructure(
  */
 export async function defaultFeeLines(
   tx: TransactionClient,
+  classLevelId?: string,
 ): Promise<{ feeHeadId: string; amountMinor: MinorUnits }[]> {
   const rows = await tx.feeHead.findMany({
     where: { isActive: true },
     orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-    select: { id: true, defaultAmount: true },
+    select: {
+      id: true,
+      defaultAmount: true,
+      classLevels: { select: { classLevelId: true } },
+    },
   });
 
-  return rows.map((row) => ({
-    feeHeadId: row.id,
-    amountMinor: fromDecimalString(row.defaultAmount.toFixed(2)),
-  }));
+  return rows
+    .filter((row) => {
+      if (classLevelId === undefined || row.classLevels.length === 0) {
+        return true;
+      }
+      return row.classLevels.some((link) => link.classLevelId === classLevelId);
+    })
+    .map((row) => ({
+      feeHeadId: row.id,
+      amountMinor: fromDecimalString(row.defaultAmount.toFixed(2)),
+    }));
 }

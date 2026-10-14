@@ -2,7 +2,7 @@
 
 import { resetPasswordRequestSchema, ROUTES } from '@ilm/contracts';
 import { Button, Field, PasswordInput, useToast } from '@ilm/ui';
-import { ICON_SIZE, LockedIcon, SaveIcon } from '@ilm/ui/icons';
+import { ICON_SIZE, LockedIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -155,7 +155,6 @@ export function NewPasswordForm({
         }
       >
         <Button type="submit" isPending={isPending} className="w-full" size="touch">
-          <SaveIcon className={ICON_SIZE.inline} aria-hidden />
           {isPending ? 'Saving…' : 'Save new password'}
         </Button>
       </AuthFormActions>

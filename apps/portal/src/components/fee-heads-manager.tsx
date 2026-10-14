@@ -7,6 +7,7 @@ import {
   FEE_HEAD_TYPES,
   FEE_FREQUENCIES,
   ROUTES,
+  type ClassLevel,
   type FeeHead,
   type FeeHeadType,
   type FeeFrequency,
@@ -14,6 +15,7 @@ import {
 import {
   Button,
   CardTable,
+  Checkbox,
   cn,
   ConfirmDialog,
   DropdownMenu,
@@ -22,16 +24,17 @@ import {
   DropdownMenuTrigger,
   Field,
   Input,
-  Label,
   Money,
-  RadioGroup,
-  RadioGroupItem,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   SimpleSelect,
   StatusBadge,
   useToast,
   type CardTableColumn,
 } from '@ilm/ui';
 import {
+  ChevronDownIcon,
   ClassIcon,
   CreateIcon,
   DeleteIcon,
@@ -40,14 +43,26 @@ import {
   FilterIcon,
   ICON_SIZE,
   MoreIcon,
+  TurnOffIcon,
+  TurnOnIcon,
   UndoIcon,
 } from '@ilm/ui/icons';
 import { minorUnits } from '@ilm/utils';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
 import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { TableSelectionBar } from '@/components/table-selection-bar';
+import { fetchJson } from '@/lib/mutate';
 import { mutate } from '@/lib/mutate';
+import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
+
+const APPLICABLE_OPTIONS = [
+  { value: 'all', label: 'All Classes' },
+  { value: 'specific', label: 'Specific Classes' },
+] as const;
+
+type ApplicableMode = (typeof APPLICABLE_OPTIONS)[number]['value'];
 
 const TYPE_OPTIONS = FEE_HEAD_TYPES.map((type) => ({
   value: type,
@@ -58,8 +73,6 @@ const FREQUENCY_OPTIONS = FEE_FREQUENCIES.map((value) => ({
   value,
   label: FEE_FREQUENCY_TABLE_LABELS[value],
 }));
-
-const TYPE_FILTER_OPTIONS = [{ value: '', label: 'All types' }, ...TYPE_OPTIONS];
 
 /** Pill colours per fee type — semantic tokens only. */
 const TYPE_BADGE_CLASS: Readonly<Record<FeeHeadType, string>> = {
@@ -76,21 +89,59 @@ const TYPE_BADGE_CLASS: Readonly<Record<FeeHeadType, string>> = {
 
 export interface FeeHeadsManagerProps {
   initialHeads: FeeHead[];
+  classes: readonly Pick<ClassLevel, 'id' | 'name'>[];
   error?: string | undefined;
   canConfigure: boolean;
 }
 
-export function FeeHeadsManager({ initialHeads, error, canConfigure }: FeeHeadsManagerProps) {
+export function FeeHeadsManager({
+  initialHeads,
+  classes,
+  error: initialError,
+  canConfigure,
+}: FeeHeadsManagerProps) {
   const router = useRouter();
   const toast = useToast();
 
+  const [heads, setHeads] = useState(initialHeads);
+  const [loadError, setLoadError] = useState(initialError);
   const [editing, setEditing] = useState<FeeHead | undefined>(undefined);
   const [pendingDelete, setPendingDelete] = useState<FeeHead | undefined>(undefined);
+  const [pendingBulkDelete, setPendingBulkDelete] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
 
-  const heads = initialHeads;
+  useEffect(() => {
+    setHeads(initialHeads);
+    setLoadError(initialError);
+  }, [initialHeads, initialError]);
+
+  // If the server render missed the catalogue (common after a mid-deploy 500),
+  // retry from the browser so a hard refresh is not the only recovery path.
+  useEffect(() => {
+    if (initialError === undefined) {
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      const result = await fetchJson<{ data: FeeHead[] }>(ROUTES.fees.heads);
+      if (cancelled) {
+        return;
+      }
+      if (result.ok) {
+        setHeads(result.data.data);
+        setLoadError(undefined);
+        return;
+      }
+      setLoadError(result.message);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialError]);
 
   const filteredHeads = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -108,11 +159,26 @@ export function FeeHeadsManager({ initialHeads, error, canConfigure }: FeeHeadsM
     });
   }, [heads, searchQuery, typeFilter]);
 
+  const tableRows = useMemo(
+    () => filteredHeads.map((head, index) => ({ ...head, index: index + 1 })),
+    [filteredHeads],
+  );
+
+  const {
+    selected,
+    clearSelection,
+    allOnPageSelected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  } = useRowSelection(tableRows, (row) => row.id);
+
   const isFiltered = searchQuery.trim() !== '' || typeFilter !== '';
 
   function clearFilters(): void {
     setSearchQuery('');
     setTypeFilter('');
+    clearSelection();
   }
 
   async function toggleActive(head: FeeHead) {
@@ -151,18 +217,71 @@ export function FeeHeadsManager({ initialHeads, error, canConfigure }: FeeHeadsM
         ? `${pendingDelete.name} deleted (removed from ${String(removed)} ${removed === 1 ? 'student' : 'students'}).`
         : `${pendingDelete.name} deleted.`,
     );
+    clearSelection();
+    router.refresh();
+  }
+
+  async function confirmBulkDelete() {
+    const ids = [...selected];
+    if (ids.length === 0) {
+      return;
+    }
+
+    setIsBusy(true);
+    let deleted = 0;
+    let failed = 0;
+    for (const id of ids) {
+      const result = await mutate(ROUTES.fees.head(id), 'DELETE');
+      if (result.ok) {
+        deleted += 1;
+      } else {
+        failed += 1;
+      }
+    }
+    setIsBusy(false);
+    setPendingBulkDelete(false);
+    clearSelection();
+
+    if (deleted > 0) {
+      toast.success(
+        deleted === 1 ? '1 fee type deleted.' : `${String(deleted)} fee types deleted.`,
+      );
+    }
+    if (failed > 0) {
+      toast.error(
+        failed === 1
+          ? '1 fee type could not be deleted.'
+          : `${String(failed)} fee types could not be deleted.`,
+      );
+    }
     router.refresh();
   }
 
   const columns = useMemo((): CardTableColumn<FeeHead & { index: number }>[] => {
+    const selectColumn = canConfigure
+      ? [
+          listTableSelectColumn({
+            selected,
+            allOnPageSelected,
+            someOnPageSelected,
+            toggleAllOnPage,
+            toggleRowSelected,
+            getRowId: (row) => row.id,
+            rowAriaLabel: (row) => row.name,
+            selectAllAriaLabel: 'Select every fee on this page',
+          }),
+        ]
+      : [];
+
     return [
+      ...selectColumn,
       {
         key: 'index',
         label: '#',
         width: 'w-[4%]',
         align: 'end',
         render: (row) => (
-          <span className="font-mono text-sm text-muted-foreground tabular-nums">{row.index}.</span>
+          <span className="text-sm text-muted-foreground tabular-nums">{row.index}.</span>
         ),
       },
       {
@@ -202,9 +321,7 @@ export function FeeHeadsManager({ initialHeads, error, canConfigure }: FeeHeadsM
         icon: FeesIcon,
         align: 'end',
         width: 'w-[12%]',
-        render: (row) => (
-          <Money valueMinor={minorUnits(row.defaultAmountMinor)} className="font-mono tabular-nums" />
-        ),
+        render: (row) => <Money valueMinor={minorUnits(row.defaultAmountMinor)} />,
       },
       {
         key: 'applicable',
@@ -212,7 +329,13 @@ export function FeeHeadsManager({ initialHeads, error, canConfigure }: FeeHeadsM
         icon: ClassIcon,
         width: 'w-[14%]',
         hideOnMobile: true,
-        render: () => <span className="text-sm text-foreground">All Classes</span>,
+        render: (row) => (
+          <span className="text-sm text-foreground">
+            {(row.classLevels?.length ?? 0) === 0
+              ? 'All Classes'
+              : row.classLevels.map((entry) => entry.name).join(', ')}
+          </span>
+        ),
       },
       {
         key: 'frequency',
@@ -260,12 +383,15 @@ export function FeeHeadsManager({ initialHeads, error, canConfigure }: FeeHeadsM
           ),
       },
     ];
-  }, [canConfigure, isBusy]);
-
-  const tableRows = useMemo(
-    () => filteredHeads.map((head, index) => ({ ...head, index: index + 1 })),
-    [filteredHeads],
-  );
+  }, [
+    canConfigure,
+    isBusy,
+    selected,
+    allOnPageSelected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  ]);
 
   return (
     <div className="space-y-8">
@@ -273,6 +399,7 @@ export function FeeHeadsManager({ initialHeads, error, canConfigure }: FeeHeadsM
         <FeeHeadForm
           key={editing?.id ?? 'create'}
           editing={editing}
+          classes={classes}
           onDone={() => {
             setEditing(undefined);
             router.refresh();
@@ -298,7 +425,9 @@ export function FeeHeadsManager({ initialHeads, error, canConfigure }: FeeHeadsM
               className="w-full sm:w-44"
               value={typeFilter}
               onValueChange={setTypeFilter}
-              options={TYPE_FILTER_OPTIONS}
+              options={TYPE_OPTIONS}
+              emptyOption={{ value: '', label: 'All types' }}
+              placeholder="All types"
               ariaLabel="Filter by fee type"
             />
           }
@@ -310,7 +439,10 @@ export function FeeHeadsManager({ initialHeads, error, canConfigure }: FeeHeadsM
           rows={tableRows}
           columns={columns}
           rowKey={(row) => row.id}
-          error={error}
+          error={loadError}
+          onRetry={() => {
+            router.refresh();
+          }}
           isFiltered={isFiltered}
           onClearFilters={clearFilters}
           empty={{
@@ -320,6 +452,27 @@ export function FeeHeadsManager({ initialHeads, error, canConfigure }: FeeHeadsM
           }}
         />
       </div>
+
+      {canConfigure ? (
+        <TableSelectionBar
+          count={selected.size}
+          noun="fee type"
+          onClear={clearSelection}
+          actions={
+            <Button
+              tone="danger"
+              size="sm"
+              disabled={isBusy || selected.size === 0}
+              onClick={() => {
+                setPendingBulkDelete(true);
+              }}
+            >
+              <DeleteIcon className={ICON_SIZE.inline} aria-hidden />
+              Delete selected
+            </Button>
+          }
+        />
+      ) : null}
 
       <ConfirmDialog
         open={pendingDelete !== undefined}
@@ -347,6 +500,26 @@ export function FeeHeadsManager({ initialHeads, error, canConfigure }: FeeHeadsM
         tone="danger"
         onConfirm={() => {
           void confirmDelete();
+        }}
+      />
+
+      <ConfirmDialog
+        open={pendingBulkDelete}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingBulkDelete(false);
+          }
+        }}
+        title={
+          selected.size === 1
+            ? 'Delete 1 fee type?'
+            : `Delete ${String(selected.size)} fee types?`
+        }
+        description="Deleting removes each charge from student fee structures where it is used. Turn off instead if you only want new admissions affected."
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={() => {
+          void confirmBulkDelete();
         }}
       />
     </div>
@@ -395,6 +568,11 @@ function FeeRowActions({
               onToggle();
             }}
           >
+            {head.isActive ? (
+              <TurnOffIcon className="size-4" aria-hidden="true" />
+            ) : (
+              <TurnOnIcon className="size-4" aria-hidden="true" />
+            )}
             {head.isActive ? 'Turn off' : 'Turn on'}
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -414,10 +592,12 @@ function FeeRowActions({
 
 function FeeHeadForm({
   editing,
+  classes,
   onDone,
   onCancelEdit,
 }: {
   editing: FeeHead | undefined;
+  classes: readonly Pick<ClassLevel, 'id' | 'name'>[];
   onDone: () => void;
   onCancelEdit: () => void;
 }) {
@@ -429,6 +609,12 @@ function FeeHeadForm({
     editing === undefined ? '' : (editing.defaultAmountMinor / 100).toFixed(2),
   );
   const [frequency, setFrequency] = useState<FeeFrequency>(editing?.frequency ?? 'ONE_TIME');
+  const [applicable, setApplicable] = useState<ApplicableMode>(
+    editing !== undefined && (editing.classLevels?.length ?? 0) > 0 ? 'specific' : 'all',
+  );
+  const [classLevelIds, setClassLevelIds] = useState<string[]>(
+    () => editing?.classLevels?.map((entry) => entry.id) ?? [],
+  );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [isPending, setIsPending] = useState(false);
@@ -438,6 +624,8 @@ function FeeHeadForm({
     setName('');
     setAmount('');
     setFrequency('ONE_TIME');
+    setApplicable('all');
+    setClassLevelIds([]);
     setFieldErrors({});
     setFormError(undefined);
     onCancelEdit();
@@ -454,11 +642,17 @@ function FeeHeadForm({
       return;
     }
 
+    if (applicable === 'specific' && classLevelIds.length === 0) {
+      setFieldErrors({ classLevelIds: 'Select at least one class.' });
+      return;
+    }
+
     const parsed = createFeeHeadSchema.safeParse({
       type,
       name,
       frequency,
       defaultAmountMinor: Math.trunc(rupees * 100 + (rupees < 0 ? -0.5 : 0.5)),
+      classLevelIds: applicable === 'all' ? [] : classLevelIds,
     });
 
     if (!parsed.success) {
@@ -480,6 +674,11 @@ function FeeHeadForm({
     if (!result.ok) {
       setFormError(result.message);
       setFieldErrors(result.fieldErrors);
+      // Duplicate name means the catalogue already has this row — refresh so
+      // the table catches up instead of staying on a stale empty/error state.
+      if (result.status === 409) {
+        onDone();
+      }
       return;
     }
 
@@ -491,6 +690,8 @@ function FeeHeadForm({
       setAmount('');
       setType('CUSTOM');
       setFrequency('ONE_TIME');
+      setApplicable('all');
+      setClassLevelIds([]);
     }
     onDone();
   }
@@ -548,7 +749,7 @@ function FeeHeadForm({
               value={amount}
               inputMode="decimal"
               placeholder="0.00"
-              className="text-end font-mono tabular-nums"
+              className="text-end tabular-nums"
               onChange={(event) => {
                 setAmount(event.target.value);
               }}
@@ -558,21 +759,39 @@ function FeeHeadForm({
 
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           <Field label="Applicable To" required>
-            <RadioGroup value="all" className="flex flex-col gap-3 pt-1 sm:flex-row sm:gap-6">
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="all" id="fee-applicable-all" />
-                <Label htmlFor="fee-applicable-all" className="font-normal">
-                  All Classes
-                </Label>
-              </div>
-              <div className="flex items-center gap-2 opacity-50">
-                <RadioGroupItem value="specific" id="fee-applicable-specific" disabled />
-                <Label htmlFor="fee-applicable-specific" className="font-normal">
-                  Specific Classes
-                </Label>
-              </div>
-            </RadioGroup>
+            <SimpleSelect
+              value={applicable}
+              onValueChange={(next) => {
+                const mode = next as ApplicableMode;
+                setApplicable(mode);
+                if (mode === 'all') {
+                  setClassLevelIds([]);
+                  setFieldErrors((current) => {
+                    const { classLevelIds: _removed, ...rest } = current;
+                    return rest;
+                  });
+                }
+              }}
+              options={[...APPLICABLE_OPTIONS]}
+              ariaLabel="Applicable to"
+            />
           </Field>
+
+          {applicable === 'specific' ? (
+            <Field label="Classes" error={fieldErrors['classLevelIds']} required>
+              <ClassMultiSelect
+                classes={classes}
+                value={classLevelIds}
+                onChange={(next) => {
+                  setClassLevelIds(next);
+                  setFieldErrors((current) => {
+                    const { classLevelIds: _removed, ...rest } = current;
+                    return rest;
+                  });
+                }}
+              />
+            </Field>
+          ) : null}
 
           <Field label="Frequency" error={fieldErrors['frequency']} required>
             <SimpleSelect
@@ -634,6 +853,73 @@ function FeesSettingsSection({
       </div>
       <div className="px-6 py-6">{children}</div>
     </section>
+  );
+}
+
+function ClassMultiSelect({
+  classes,
+  value,
+  onChange,
+}: {
+  classes: readonly Pick<ClassLevel, 'id' | 'name'>[];
+  value: readonly string[];
+  onChange: (next: string[]) => void;
+}) {
+  const selected = new Set(value);
+  const label =
+    value.length === 0
+      ? 'Select classes'
+      : value.length === 1
+        ? (classes.find((entry) => entry.id === value[0])?.name ?? '1 class')
+        : `${String(value.length)} classes selected`;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-sm',
+            'hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+            value.length === 0 ? 'text-muted-foreground' : 'text-foreground',
+          )}
+          aria-label="Select classes"
+        >
+          <span className="truncate">{label}</span>
+          <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-2" align="start">
+        {classes.length === 0 ? (
+          <p className="px-2 py-3 text-sm text-muted-foreground">
+            No classes yet. Add classes under Academics first.
+          </p>
+        ) : (
+          <ul className="max-h-56 space-y-0.5 overflow-y-auto">
+            {classes.map((entry) => {
+              const checked = selected.has(entry.id);
+              return (
+                <li key={entry.id}>
+                  <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted">
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(next) => {
+                        if (next === true) {
+                          onChange([...value, entry.id]);
+                          return;
+                        }
+                        onChange(value.filter((id) => id !== entry.id));
+                      }}
+                    />
+                    <span className="min-w-0 truncate">{entry.name}</span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
 

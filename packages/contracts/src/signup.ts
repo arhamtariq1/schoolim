@@ -14,8 +14,9 @@ import { uploadSchoolLogoSchema } from './school-logo';
  * Self-serve signup — ADR-0010.
  *
  * 1. **Credentials** — name, email, password. Terms accepted. An OTP is mailed.
- * 2. **OTP** — proves the address, creates the tenant, and hands the browser
- *    onto the school host at `/profile` to finish school + owner details.
+ * 2. **OTP** — proves the address, creates the tenant, and returns a one-time
+ *    handoff URL on the school's host so the browser enters logged in (then
+ *    `/profile` onboarding if needed).
  *
  * Progress before OTP is an opaque httpOnly cookie (`COOKIES.signupToken`).
  * After OTP there is a real school session; the rest of the portal stays locked
@@ -86,6 +87,8 @@ export type SignupVerifyOtpRequest = z.infer<typeof signupVerifyOtpRequestSchema
 export const signupVerifyOtpResultSchema = z.object({
   email: emailSchema,
   verified: z.literal(true),
+  /** School-host `/auth/continue?t=…` — same handoff as apex sign-in. */
+  continueUrl: z.url(),
 });
 
 export type SignupVerifyOtpResult = z.infer<typeof signupVerifyOtpResultSchema>;

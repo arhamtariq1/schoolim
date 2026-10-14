@@ -8,6 +8,7 @@ import {
 
 import { SchoolLogoCard } from '@/components/school-logo-card';
 import { VoucherSettingsForm } from '@/components/voucher-settings-form';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -46,35 +47,29 @@ export default async function VoucherSettingsPage() {
     : { present: false, mimeType: null, byteSize: null, version: null };
 
   return (
-    <div className="space-y-6">
-        <div className="max-w-2xl">
-          <h1 className="text-xl font-semibold text-foreground">Fee challan</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            What every printed challan says, and how a parent pays it. Changes apply to challans
-            printed from now on — one already in a parent’s hand is unaffected.
-          </p>
-        </div>
+    <div className="w-full space-y-8">
+      <WorkspacePageHeader
+        title="Fee challan"
+        description="What every printed challan says, and how a parent pays it. Changes apply to challans printed from now on — one already in a parent’s hand is unaffected."
+      />
 
-        <VoucherSettingsForm
-          settings={settings}
-          school={{
-            // The session name is the fallback: a failed settings read should
-            // not leave the preview headed by a blank school.
-            name: school?.name ?? session?.school.name ?? '',
-            address: school?.address ?? undefined,
-            phone: school?.phone ?? undefined,
-            logoVersion: logoVersion ?? undefined,
-            bankLogoVersion: bankLogo.version ?? undefined,
-            // The challan is inked in the school's own colour, the same one the
-            // portal is painted in.
-            accentColor:
-              school?.primaryColor ?? session?.school.primaryColor ?? undefined,
-          }}
-          canConfigure={canConfigure}
-          error={voucherResult.ok ? undefined : voucherResult.message}
-        />
-
-        <div className="max-w-2xl">
+      <VoucherSettingsForm
+        settings={settings}
+        school={{
+          // The session name is the fallback: a failed settings read should
+          // not leave the preview headed by a blank school.
+          name: school?.name ?? session?.school.name ?? '',
+          address: school?.address ?? undefined,
+          phone: school?.phone ?? undefined,
+          logoVersion: logoVersion ?? undefined,
+          bankLogoVersion: bankLogo.version ?? undefined,
+          // The challan is inked in the school's own colour, the same one the
+          // portal is painted in.
+          accentColor: school?.primaryColor ?? session?.school.primaryColor ?? undefined,
+        }}
+        canConfigure={canConfigure}
+        error={voucherResult.ok ? undefined : voucherResult.message}
+        bankLogoSlot={
           <SchoolLogoCard
             info={bankLogo}
             canConfigure={canConfigure}
@@ -84,7 +79,8 @@ export default async function VoucherSettingsPage() {
             noun="Bank logo"
             error={bankLogoResult.ok ? undefined : bankLogoResult.message}
           />
-        </div>
-      </div>
+        }
+      />
+    </div>
   );
 }

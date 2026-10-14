@@ -205,13 +205,13 @@ export const NAV_ITEMS: readonly NavItem[] = [
         // too. Running it is `academics.structure.configure`.
         permission: 'academics.structure.read',
       },
-      {
-        href: '/academics/holidays',
-        label: 'Calendar',
-        icon: 'HolidayIcon',
-        permission: 'academics.structure.read',
-      },
     ],
+  },
+  {
+    href: '/academics/holidays',
+    label: 'Calendar',
+    icon: 'HolidayIcon',
+    permission: 'academics.structure.read',
   },
   {
     href: '/staff',

@@ -3,7 +3,11 @@ import { fromDecimalString, minorUnits, toDecimalString, type MinorUnits } from 
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../prisma/prisma.service';
-import { ConflictError, NotFoundError } from '../../shared/errors/domain-error';
+import {
+  BusinessRuleError,
+  ConflictError,
+  NotFoundError,
+} from '../../shared/errors/domain-error';
 
 /**
  * The fee catalogue — docs/modules/fees-and-finance.md §2.
@@ -38,34 +42,19 @@ export class FeeHeadsService {
     return this.prisma.tenant(async (tx) => {
       const rows = await tx.feeHead.findMany({
         orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-        select: {
-          id: true,
-          type: true,
-          name: true,
-          defaultAmount: true,
-          sortOrder: true,
-          frequency: true,
-          isActive: true,
-          _count: { select: { studentFees: true } },
-        },
+        select: feeHeadSelect,
       });
 
-      return rows.map((row) => ({
-        id: row.id,
-        type: row.type,
-        name: row.name,
-        defaultAmountMinor: fromDecimalString(row.defaultAmount.toFixed(2)),
-        sortOrder: row.sortOrder,
-        frequency: row.frequency,
-        isActive: row.isActive,
-        studentCount: row._count.studentFees,
-      }));
+      return rows.map(toFeeHead);
     });
   }
 
   async create(input: CreateFeeHead): Promise<FeeHead> {
     return this.prisma
       .tenant(async (tx) => {
+        const classLevelIds = input.classLevelIds ?? [];
+        await assertClassLevelsExist(tx, classLevelIds);
+
         // Appended to the end unless the caller says otherwise, so a school
         // adding its sixth head does not have to think about ordering at all.
         const sortOrder =
@@ -84,22 +73,16 @@ export class FeeHeadsService {
             // never a parameter). The cast is the codebase's standing shape for
             // that gap between the generated type and the extension.
           } as never,
-          select: {
-            id: true,
-            type: true,
-            name: true,
-            defaultAmount: true,
-            sortOrder: true,
-            frequency: true,
-            isActive: true,
-          },
+          select: { id: true },
         });
 
-        return {
-          ...created,
-          defaultAmountMinor: fromDecimalString(created.defaultAmount.toFixed(2)),
-          studentCount: 0,
-        };
+        await syncClassLevels(tx, created.id, classLevelIds);
+
+        const row = await tx.feeHead.findUniqueOrThrow({
+          where: { id: created.id },
+          select: feeHeadSelect,
+        });
+        return toFeeHead(row);
       })
       .catch((error: unknown) => {
         if (isUniqueViolation(error)) {
@@ -126,7 +109,11 @@ export class FeeHeadsService {
           throw new NotFoundError('fee head');
         }
 
-        const updated = await tx.feeHead.update({
+        if (input.classLevelIds !== undefined) {
+          await assertClassLevelsExist(tx, input.classLevelIds);
+        }
+
+        await tx.feeHead.update({
           where: { id },
           data: {
             ...(input.type === undefined ? {} : { type: input.type }),
@@ -138,28 +125,17 @@ export class FeeHeadsService {
             ...(input.frequency === undefined ? {} : { frequency: input.frequency }),
             ...(input.isActive === undefined ? {} : { isActive: input.isActive }),
           },
-          select: {
-            id: true,
-            type: true,
-            name: true,
-            defaultAmount: true,
-            sortOrder: true,
-            frequency: true,
-            isActive: true,
-            _count: { select: { studentFees: true } },
-          },
         });
 
-        return {
-          id: updated.id,
-          type: updated.type,
-          name: updated.name,
-          defaultAmountMinor: fromDecimalString(updated.defaultAmount.toFixed(2)),
-          sortOrder: updated.sortOrder,
-          frequency: updated.frequency,
-          isActive: updated.isActive,
-          studentCount: updated._count.studentFees,
-        };
+        if (input.classLevelIds !== undefined) {
+          await syncClassLevels(tx, id, input.classLevelIds);
+        }
+
+        const row = await tx.feeHead.findUniqueOrThrow({
+          where: { id },
+          select: feeHeadSelect,
+        });
+        return toFeeHead(row);
       })
       .catch((error: unknown) => {
         if (isUniqueViolation(error)) {
@@ -203,6 +179,9 @@ export class FeeHeadsService {
       const removedStudentCharges = head._count.studentFees;
 
       // Children first, then the parent. The order is the whole point.
+      // Class links cascade from the head FK, but deleting them first keeps
+      // the intent obvious in the code.
+      await tx.feeHeadClassLevel.deleteMany({ where: { feeHeadId: id } });
       await tx.studentFee.deleteMany({ where: { feeHeadId: id } });
       await tx.feeHead.delete({ where: { id } });
 
@@ -217,24 +196,156 @@ export class FeeHeadsService {
    * starts from" has exactly one definition. The form renders these; the server
    * falls back to them when an admission arrives with no `fees` at all.
    */
-  async defaultLines(): Promise<
-    { feeHeadId: string; name: string; type: FeeHead['type']; amountMinor: MinorUnits }[]
-  > {
+  async defaultLines(
+    classLevelId?: string,
+  ): Promise<{ feeHeadId: string; name: string; type: FeeHead['type']; amountMinor: MinorUnits }[]> {
     return this.prisma.tenant(async (tx) => {
-      const rows = await tx.feeHead.findMany({
-        where: { isActive: true },
-        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-        select: { id: true, name: true, type: true, defaultAmount: true },
-      });
-
-      return rows.map((row) => ({
-        feeHeadId: row.id,
-        name: row.name,
-        type: row.type,
-        amountMinor: fromDecimalString(row.defaultAmount.toFixed(2)),
-      }));
+      return defaultFeeLinesDetailed(tx, classLevelId);
     });
   }
+}
+
+const feeHeadSelect = {
+  id: true,
+  type: true,
+  name: true,
+  defaultAmount: true,
+  sortOrder: true,
+  frequency: true,
+  isActive: true,
+  _count: { select: { studentFees: true } },
+  classLevels: {
+    select: {
+      classLevel: { select: { id: true, name: true, numericOrder: true } },
+    },
+  },
+} as const;
+
+type FeeHeadRow = {
+  id: string;
+  type: FeeHead['type'];
+  name: string;
+  defaultAmount: { toFixed: (digits: number) => string };
+  sortOrder: number;
+  frequency: FeeHead['frequency'];
+  isActive: boolean;
+  _count: { studentFees: number };
+  classLevels: { classLevel: { id: string; name: string; numericOrder: number } }[];
+};
+
+function toFeeHead(row: FeeHeadRow): FeeHead {
+  const classLevels = row.classLevels
+    .map((link) => ({
+      id: link.classLevel.id,
+      name: link.classLevel.name,
+      numericOrder: link.classLevel.numericOrder,
+    }))
+    .sort((a, b) => a.numericOrder - b.numericOrder || a.name.localeCompare(b.name))
+    .map(({ id, name }) => ({ id, name }));
+
+  return {
+    id: row.id,
+    type: row.type,
+    name: row.name,
+    defaultAmountMinor: fromDecimalString(row.defaultAmount.toFixed(2)),
+    sortOrder: row.sortOrder,
+    frequency: row.frequency,
+    isActive: row.isActive,
+    classLevels,
+    studentCount: row._count.studentFees,
+  };
+}
+
+async function assertClassLevelsExist(
+  tx: { classLevel: { findMany: (args: unknown) => Promise<{ id: string }[]> } },
+  classLevelIds: readonly string[],
+): Promise<void> {
+  if (classLevelIds.length === 0) {
+    return;
+  }
+  const unique = [...new Set(classLevelIds)];
+  const found = await tx.classLevel.findMany({
+    where: { id: { in: unique } },
+    select: { id: true },
+  });
+  if (found.length !== unique.length) {
+    throw new BusinessRuleError(
+      'FEES_CLASS_UNKNOWN',
+      'One or more selected classes were not found. Refresh and try again.',
+    );
+  }
+}
+
+async function syncClassLevels(
+  tx: {
+    feeHeadClassLevel: {
+      deleteMany: (args: unknown) => Promise<unknown>;
+      createMany: (args: unknown) => Promise<unknown>;
+    };
+  },
+  feeHeadId: string,
+  classLevelIds: readonly string[],
+): Promise<void> {
+  await tx.feeHeadClassLevel.deleteMany({ where: { feeHeadId } });
+  const unique = [...new Set(classLevelIds)];
+  if (unique.length === 0) {
+    return;
+  }
+  await tx.feeHeadClassLevel.createMany({
+    data: unique.map((classLevelId) => ({
+      feeHeadId,
+      classLevelId,
+    })),
+  } as never);
+}
+
+/**
+ * Active catalogue lines, optionally filtered to a class.
+ *
+ * Heads with no class links apply everywhere. Heads with links apply only when
+ * the admission's class is on that list.
+ */
+export async function defaultFeeLinesDetailed(
+  tx: {
+    feeHead: {
+      findMany: (args: unknown) => Promise<
+        {
+          id: string;
+          name: string;
+          type: FeeHead['type'];
+          defaultAmount: { toFixed: (digits: number) => string };
+          classLevels: { classLevelId: string }[];
+        }[]
+      >;
+    };
+  },
+  classLevelId?: string,
+): Promise<{ feeHeadId: string; name: string; type: FeeHead['type']; amountMinor: MinorUnits }[]> {
+  const rows = await tx.feeHead.findMany({
+    where: { isActive: true },
+    orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      defaultAmount: true,
+      classLevels: { select: { classLevelId: true } },
+    },
+  });
+
+  return rows
+    .filter((row) => {
+      if (classLevelId === undefined || row.classLevels.length === 0) {
+        return true;
+      }
+      return row.classLevels.some((link) => link.classLevelId === classLevelId);
+    })
+    .map((row) => ({
+      feeHeadId: row.id,
+      name: row.name,
+      type: row.type,
+      amountMinor: fromDecimalString(row.defaultAmount.toFixed(2)),
+    }));
 }
 
 function isUniqueViolation(error: unknown): boolean {

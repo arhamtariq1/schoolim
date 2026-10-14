@@ -236,6 +236,7 @@ export type ClassLevelWhereInput = {
   sections?: Prisma.SectionListRelationFilter
   enrollments?: Prisma.EnrollmentListRelationFilter
   attendanceRecords?: Prisma.AttendanceRecordListRelationFilter
+  feeHeadLinks?: Prisma.FeeHeadClassLevelListRelationFilter
 }
 
 export type ClassLevelOrderByWithRelationInput = {
@@ -250,6 +251,7 @@ export type ClassLevelOrderByWithRelationInput = {
   sections?: Prisma.SectionOrderByRelationAggregateInput
   enrollments?: Prisma.EnrollmentOrderByRelationAggregateInput
   attendanceRecords?: Prisma.AttendanceRecordOrderByRelationAggregateInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelOrderByRelationAggregateInput
 }
 
 export type ClassLevelWhereUniqueInput = Prisma.AtLeast<{
@@ -268,6 +270,7 @@ export type ClassLevelWhereUniqueInput = Prisma.AtLeast<{
   sections?: Prisma.SectionListRelationFilter
   enrollments?: Prisma.EnrollmentListRelationFilter
   attendanceRecords?: Prisma.AttendanceRecordListRelationFilter
+  feeHeadLinks?: Prisma.FeeHeadClassLevelListRelationFilter
 }, "id" | "schoolId_name">
 
 export type ClassLevelOrderByWithAggregationInput = {
@@ -309,6 +312,7 @@ export type ClassLevelCreateInput = {
   sections?: Prisma.SectionCreateNestedManyWithoutClassLevelInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutClassLevelInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutClassLevelInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutClassLevelInput
 }
 
 export type ClassLevelUncheckedCreateInput = {
@@ -322,6 +326,7 @@ export type ClassLevelUncheckedCreateInput = {
   sections?: Prisma.SectionUncheckedCreateNestedManyWithoutClassLevelInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutClassLevelInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutClassLevelInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutClassLevelInput
 }
 
 export type ClassLevelUpdateInput = {
@@ -335,6 +340,7 @@ export type ClassLevelUpdateInput = {
   sections?: Prisma.SectionUpdateManyWithoutClassLevelNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutClassLevelNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutClassLevelNestedInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUpdateManyWithoutClassLevelNestedInput
 }
 
 export type ClassLevelUncheckedUpdateInput = {
@@ -348,6 +354,7 @@ export type ClassLevelUncheckedUpdateInput = {
   sections?: Prisma.SectionUncheckedUpdateManyWithoutClassLevelNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutClassLevelNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutClassLevelNestedInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutClassLevelNestedInput
 }
 
 export type ClassLevelCreateManyInput = {
@@ -507,6 +514,20 @@ export type ClassLevelUpdateOneRequiredWithoutEnrollmentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ClassLevelUpdateToOneWithWhereWithoutEnrollmentsInput, Prisma.ClassLevelUpdateWithoutEnrollmentsInput>, Prisma.ClassLevelUncheckedUpdateWithoutEnrollmentsInput>
 }
 
+export type ClassLevelCreateNestedOneWithoutFeeHeadLinksInput = {
+  create?: Prisma.XOR<Prisma.ClassLevelCreateWithoutFeeHeadLinksInput, Prisma.ClassLevelUncheckedCreateWithoutFeeHeadLinksInput>
+  connectOrCreate?: Prisma.ClassLevelCreateOrConnectWithoutFeeHeadLinksInput
+  connect?: Prisma.ClassLevelWhereUniqueInput
+}
+
+export type ClassLevelUpdateOneRequiredWithoutFeeHeadLinksNestedInput = {
+  create?: Prisma.XOR<Prisma.ClassLevelCreateWithoutFeeHeadLinksInput, Prisma.ClassLevelUncheckedCreateWithoutFeeHeadLinksInput>
+  connectOrCreate?: Prisma.ClassLevelCreateOrConnectWithoutFeeHeadLinksInput
+  upsert?: Prisma.ClassLevelUpsertWithoutFeeHeadLinksInput
+  connect?: Prisma.ClassLevelWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ClassLevelUpdateToOneWithWhereWithoutFeeHeadLinksInput, Prisma.ClassLevelUpdateWithoutFeeHeadLinksInput>, Prisma.ClassLevelUncheckedUpdateWithoutFeeHeadLinksInput>
+}
+
 export type ClassLevelCreateNestedOneWithoutAttendanceRecordsInput = {
   create?: Prisma.XOR<Prisma.ClassLevelCreateWithoutAttendanceRecordsInput, Prisma.ClassLevelUncheckedCreateWithoutAttendanceRecordsInput>
   connectOrCreate?: Prisma.ClassLevelCreateOrConnectWithoutAttendanceRecordsInput
@@ -531,6 +552,7 @@ export type ClassLevelCreateWithoutSchoolInput = {
   sections?: Prisma.SectionCreateNestedManyWithoutClassLevelInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutClassLevelInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutClassLevelInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutClassLevelInput
 }
 
 export type ClassLevelUncheckedCreateWithoutSchoolInput = {
@@ -543,6 +565,7 @@ export type ClassLevelUncheckedCreateWithoutSchoolInput = {
   sections?: Prisma.SectionUncheckedCreateNestedManyWithoutClassLevelInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutClassLevelInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutClassLevelInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutClassLevelInput
 }
 
 export type ClassLevelCreateOrConnectWithoutSchoolInput = {
@@ -594,6 +617,7 @@ export type ClassLevelCreateWithoutSectionsInput = {
   school: Prisma.SchoolCreateNestedOneWithoutClassLevelsInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutClassLevelInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutClassLevelInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutClassLevelInput
 }
 
 export type ClassLevelUncheckedCreateWithoutSectionsInput = {
@@ -606,6 +630,7 @@ export type ClassLevelUncheckedCreateWithoutSectionsInput = {
   updatedAt?: Date | string
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutClassLevelInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutClassLevelInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutClassLevelInput
 }
 
 export type ClassLevelCreateOrConnectWithoutSectionsInput = {
@@ -634,6 +659,7 @@ export type ClassLevelUpdateWithoutSectionsInput = {
   school?: Prisma.SchoolUpdateOneRequiredWithoutClassLevelsNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutClassLevelNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutClassLevelNestedInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUpdateManyWithoutClassLevelNestedInput
 }
 
 export type ClassLevelUncheckedUpdateWithoutSectionsInput = {
@@ -646,6 +672,7 @@ export type ClassLevelUncheckedUpdateWithoutSectionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutClassLevelNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutClassLevelNestedInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutClassLevelNestedInput
 }
 
 export type ClassLevelCreateWithoutEnrollmentsInput = {
@@ -658,6 +685,7 @@ export type ClassLevelCreateWithoutEnrollmentsInput = {
   school: Prisma.SchoolCreateNestedOneWithoutClassLevelsInput
   sections?: Prisma.SectionCreateNestedManyWithoutClassLevelInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutClassLevelInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutClassLevelInput
 }
 
 export type ClassLevelUncheckedCreateWithoutEnrollmentsInput = {
@@ -670,6 +698,7 @@ export type ClassLevelUncheckedCreateWithoutEnrollmentsInput = {
   updatedAt?: Date | string
   sections?: Prisma.SectionUncheckedCreateNestedManyWithoutClassLevelInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutClassLevelInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutClassLevelInput
 }
 
 export type ClassLevelCreateOrConnectWithoutEnrollmentsInput = {
@@ -698,6 +727,7 @@ export type ClassLevelUpdateWithoutEnrollmentsInput = {
   school?: Prisma.SchoolUpdateOneRequiredWithoutClassLevelsNestedInput
   sections?: Prisma.SectionUpdateManyWithoutClassLevelNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutClassLevelNestedInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUpdateManyWithoutClassLevelNestedInput
 }
 
 export type ClassLevelUncheckedUpdateWithoutEnrollmentsInput = {
@@ -709,6 +739,75 @@ export type ClassLevelUncheckedUpdateWithoutEnrollmentsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sections?: Prisma.SectionUncheckedUpdateManyWithoutClassLevelNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutClassLevelNestedInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutClassLevelNestedInput
+}
+
+export type ClassLevelCreateWithoutFeeHeadLinksInput = {
+  id?: string
+  name: string
+  numericOrder: number
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  school: Prisma.SchoolCreateNestedOneWithoutClassLevelsInput
+  sections?: Prisma.SectionCreateNestedManyWithoutClassLevelInput
+  enrollments?: Prisma.EnrollmentCreateNestedManyWithoutClassLevelInput
+  attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutClassLevelInput
+}
+
+export type ClassLevelUncheckedCreateWithoutFeeHeadLinksInput = {
+  id?: string
+  schoolId: string
+  name: string
+  numericOrder: number
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  sections?: Prisma.SectionUncheckedCreateNestedManyWithoutClassLevelInput
+  enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutClassLevelInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutClassLevelInput
+}
+
+export type ClassLevelCreateOrConnectWithoutFeeHeadLinksInput = {
+  where: Prisma.ClassLevelWhereUniqueInput
+  create: Prisma.XOR<Prisma.ClassLevelCreateWithoutFeeHeadLinksInput, Prisma.ClassLevelUncheckedCreateWithoutFeeHeadLinksInput>
+}
+
+export type ClassLevelUpsertWithoutFeeHeadLinksInput = {
+  update: Prisma.XOR<Prisma.ClassLevelUpdateWithoutFeeHeadLinksInput, Prisma.ClassLevelUncheckedUpdateWithoutFeeHeadLinksInput>
+  create: Prisma.XOR<Prisma.ClassLevelCreateWithoutFeeHeadLinksInput, Prisma.ClassLevelUncheckedCreateWithoutFeeHeadLinksInput>
+  where?: Prisma.ClassLevelWhereInput
+}
+
+export type ClassLevelUpdateToOneWithWhereWithoutFeeHeadLinksInput = {
+  where?: Prisma.ClassLevelWhereInput
+  data: Prisma.XOR<Prisma.ClassLevelUpdateWithoutFeeHeadLinksInput, Prisma.ClassLevelUncheckedUpdateWithoutFeeHeadLinksInput>
+}
+
+export type ClassLevelUpdateWithoutFeeHeadLinksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  numericOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  school?: Prisma.SchoolUpdateOneRequiredWithoutClassLevelsNestedInput
+  sections?: Prisma.SectionUpdateManyWithoutClassLevelNestedInput
+  enrollments?: Prisma.EnrollmentUpdateManyWithoutClassLevelNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutClassLevelNestedInput
+}
+
+export type ClassLevelUncheckedUpdateWithoutFeeHeadLinksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  numericOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sections?: Prisma.SectionUncheckedUpdateManyWithoutClassLevelNestedInput
+  enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutClassLevelNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutClassLevelNestedInput
 }
 
@@ -722,6 +821,7 @@ export type ClassLevelCreateWithoutAttendanceRecordsInput = {
   school: Prisma.SchoolCreateNestedOneWithoutClassLevelsInput
   sections?: Prisma.SectionCreateNestedManyWithoutClassLevelInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutClassLevelInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutClassLevelInput
 }
 
 export type ClassLevelUncheckedCreateWithoutAttendanceRecordsInput = {
@@ -734,6 +834,7 @@ export type ClassLevelUncheckedCreateWithoutAttendanceRecordsInput = {
   updatedAt?: Date | string
   sections?: Prisma.SectionUncheckedCreateNestedManyWithoutClassLevelInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutClassLevelInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutClassLevelInput
 }
 
 export type ClassLevelCreateOrConnectWithoutAttendanceRecordsInput = {
@@ -762,6 +863,7 @@ export type ClassLevelUpdateWithoutAttendanceRecordsInput = {
   school?: Prisma.SchoolUpdateOneRequiredWithoutClassLevelsNestedInput
   sections?: Prisma.SectionUpdateManyWithoutClassLevelNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutClassLevelNestedInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUpdateManyWithoutClassLevelNestedInput
 }
 
 export type ClassLevelUncheckedUpdateWithoutAttendanceRecordsInput = {
@@ -774,6 +876,7 @@ export type ClassLevelUncheckedUpdateWithoutAttendanceRecordsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sections?: Prisma.SectionUncheckedUpdateManyWithoutClassLevelNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutClassLevelNestedInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutClassLevelNestedInput
 }
 
 export type ClassLevelCreateManySchoolInput = {
@@ -795,6 +898,7 @@ export type ClassLevelUpdateWithoutSchoolInput = {
   sections?: Prisma.SectionUpdateManyWithoutClassLevelNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutClassLevelNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutClassLevelNestedInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUpdateManyWithoutClassLevelNestedInput
 }
 
 export type ClassLevelUncheckedUpdateWithoutSchoolInput = {
@@ -807,6 +911,7 @@ export type ClassLevelUncheckedUpdateWithoutSchoolInput = {
   sections?: Prisma.SectionUncheckedUpdateManyWithoutClassLevelNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutClassLevelNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutClassLevelNestedInput
+  feeHeadLinks?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutClassLevelNestedInput
 }
 
 export type ClassLevelUncheckedUpdateManyWithoutSchoolInput = {
@@ -827,12 +932,14 @@ export type ClassLevelCountOutputType = {
   sections: number
   enrollments: number
   attendanceRecords: number
+  feeHeadLinks: number
 }
 
 export type ClassLevelCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   sections?: boolean | ClassLevelCountOutputTypeCountSectionsArgs
   enrollments?: boolean | ClassLevelCountOutputTypeCountEnrollmentsArgs
   attendanceRecords?: boolean | ClassLevelCountOutputTypeCountAttendanceRecordsArgs
+  feeHeadLinks?: boolean | ClassLevelCountOutputTypeCountFeeHeadLinksArgs
 }
 
 /**
@@ -866,6 +973,13 @@ export type ClassLevelCountOutputTypeCountAttendanceRecordsArgs<ExtArgs extends 
   where?: Prisma.AttendanceRecordWhereInput
 }
 
+/**
+ * ClassLevelCountOutputType without action
+ */
+export type ClassLevelCountOutputTypeCountFeeHeadLinksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FeeHeadClassLevelWhereInput
+}
+
 
 export type ClassLevelSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -879,6 +993,7 @@ export type ClassLevelSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   sections?: boolean | Prisma.ClassLevel$sectionsArgs<ExtArgs>
   enrollments?: boolean | Prisma.ClassLevel$enrollmentsArgs<ExtArgs>
   attendanceRecords?: boolean | Prisma.ClassLevel$attendanceRecordsArgs<ExtArgs>
+  feeHeadLinks?: boolean | Prisma.ClassLevel$feeHeadLinksArgs<ExtArgs>
   _count?: boolean | Prisma.ClassLevelCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["classLevel"]>
 
@@ -920,6 +1035,7 @@ export type ClassLevelInclude<ExtArgs extends runtime.Types.Extensions.InternalA
   sections?: boolean | Prisma.ClassLevel$sectionsArgs<ExtArgs>
   enrollments?: boolean | Prisma.ClassLevel$enrollmentsArgs<ExtArgs>
   attendanceRecords?: boolean | Prisma.ClassLevel$attendanceRecordsArgs<ExtArgs>
+  feeHeadLinks?: boolean | Prisma.ClassLevel$feeHeadLinksArgs<ExtArgs>
   _count?: boolean | Prisma.ClassLevelCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ClassLevelIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -936,6 +1052,7 @@ export type $ClassLevelPayload<ExtArgs extends runtime.Types.Extensions.Internal
     sections: Prisma.$SectionPayload<ExtArgs>[]
     enrollments: Prisma.$EnrollmentPayload<ExtArgs>[]
     attendanceRecords: Prisma.$AttendanceRecordPayload<ExtArgs>[]
+    feeHeadLinks: Prisma.$FeeHeadClassLevelPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1346,6 +1463,7 @@ export interface Prisma__ClassLevelClient<T, Null = never, ExtArgs extends runti
   sections<T extends Prisma.ClassLevel$sectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClassLevel$sectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   enrollments<T extends Prisma.ClassLevel$enrollmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClassLevel$enrollmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EnrollmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   attendanceRecords<T extends Prisma.ClassLevel$attendanceRecordsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClassLevel$attendanceRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AttendanceRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  feeHeadLinks<T extends Prisma.ClassLevel$feeHeadLinksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClassLevel$feeHeadLinksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FeeHeadClassLevelPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1852,6 +1970,30 @@ export type ClassLevel$attendanceRecordsArgs<ExtArgs extends runtime.Types.Exten
   take?: number
   skip?: number
   distinct?: Prisma.AttendanceRecordScalarFieldEnum | Prisma.AttendanceRecordScalarFieldEnum[]
+}
+
+/**
+ * ClassLevel.feeHeadLinks
+ */
+export type ClassLevel$feeHeadLinksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FeeHeadClassLevel
+   */
+  select?: Prisma.FeeHeadClassLevelSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FeeHeadClassLevel
+   */
+  omit?: Prisma.FeeHeadClassLevelOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FeeHeadClassLevelInclude<ExtArgs> | null
+  where?: Prisma.FeeHeadClassLevelWhereInput
+  orderBy?: Prisma.FeeHeadClassLevelOrderByWithRelationInput | Prisma.FeeHeadClassLevelOrderByWithRelationInput[]
+  cursor?: Prisma.FeeHeadClassLevelWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FeeHeadClassLevelScalarFieldEnum | Prisma.FeeHeadClassLevelScalarFieldEnum[]
 }
 
 /**

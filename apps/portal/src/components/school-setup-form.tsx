@@ -10,7 +10,6 @@ import {
 } from '@ilm/contracts';
 import { Button, Field, Input, useToast } from '@ilm/ui';
 import {
-  CreateIcon,
   EmailIcon,
   ErrorIcon,
   ICON_SIZE,
@@ -286,7 +285,6 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
       </fieldset>
 
       <Button type="submit" isPending={isPending} className="w-full" size="touch">
-        <CreateIcon className={ICON_SIZE.inline} aria-hidden />
         {isPending ? 'Setting up your school…' : `Start my ${String(TRIAL_DAYS)}-day trial`}
       </Button>
 

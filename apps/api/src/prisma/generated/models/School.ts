@@ -30,6 +30,7 @@ export type AggregateSchool = {
 export type SchoolAvgAggregateOutputType = {
   lateFeePercent: runtime.Decimal | null
   lateFeeFlat: runtime.Decimal | null
+  lateFeeGraceDays: number | null
   workingDays: number | null
   attendanceBackdateDays: number | null
 }
@@ -37,6 +38,7 @@ export type SchoolAvgAggregateOutputType = {
 export type SchoolSumAggregateOutputType = {
   lateFeePercent: runtime.Decimal | null
   lateFeeFlat: runtime.Decimal | null
+  lateFeeGraceDays: number | null
   workingDays: number[]
   attendanceBackdateDays: number | null
 }
@@ -60,6 +62,7 @@ export type SchoolMinAggregateOutputType = {
   status: $Enums.SchoolStatus | null
   lateFeePercent: runtime.Decimal | null
   lateFeeFlat: runtime.Decimal | null
+  lateFeeGraceDays: number | null
   attendanceBackdateDays: number | null
   onboardedAt: Date | null
   trialEndsAt: Date | null
@@ -86,6 +89,7 @@ export type SchoolMaxAggregateOutputType = {
   status: $Enums.SchoolStatus | null
   lateFeePercent: runtime.Decimal | null
   lateFeeFlat: runtime.Decimal | null
+  lateFeeGraceDays: number | null
   attendanceBackdateDays: number | null
   onboardedAt: Date | null
   trialEndsAt: Date | null
@@ -115,6 +119,7 @@ export type SchoolCountAggregateOutputType = {
   status: number
   lateFeePercent: number
   lateFeeFlat: number
+  lateFeeGraceDays: number
   workingDays: number
   attendanceBackdateDays: number
   onboardedAt: number
@@ -128,6 +133,7 @@ export type SchoolCountAggregateOutputType = {
 export type SchoolAvgAggregateInputType = {
   lateFeePercent?: true
   lateFeeFlat?: true
+  lateFeeGraceDays?: true
   workingDays?: true
   attendanceBackdateDays?: true
 }
@@ -135,6 +141,7 @@ export type SchoolAvgAggregateInputType = {
 export type SchoolSumAggregateInputType = {
   lateFeePercent?: true
   lateFeeFlat?: true
+  lateFeeGraceDays?: true
   workingDays?: true
   attendanceBackdateDays?: true
 }
@@ -158,6 +165,7 @@ export type SchoolMinAggregateInputType = {
   status?: true
   lateFeePercent?: true
   lateFeeFlat?: true
+  lateFeeGraceDays?: true
   attendanceBackdateDays?: true
   onboardedAt?: true
   trialEndsAt?: true
@@ -184,6 +192,7 @@ export type SchoolMaxAggregateInputType = {
   status?: true
   lateFeePercent?: true
   lateFeeFlat?: true
+  lateFeeGraceDays?: true
   attendanceBackdateDays?: true
   onboardedAt?: true
   trialEndsAt?: true
@@ -213,6 +222,7 @@ export type SchoolCountAggregateInputType = {
   status?: true
   lateFeePercent?: true
   lateFeeFlat?: true
+  lateFeeGraceDays?: true
   workingDays?: true
   attendanceBackdateDays?: true
   onboardedAt?: true
@@ -330,6 +340,7 @@ export type SchoolGroupByOutputType = {
   status: $Enums.SchoolStatus
   lateFeePercent: runtime.Decimal
   lateFeeFlat: runtime.Decimal
+  lateFeeGraceDays: number
   workingDays: number[]
   attendanceBackdateDays: number
   onboardedAt: Date | null
@@ -383,6 +394,7 @@ export type SchoolWhereInput = {
   status?: Prisma.EnumSchoolStatusFilter<"School"> | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFilter<"School"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFilter<"School"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFilter<"School"> | number
   workingDays?: Prisma.IntNullableListFilter<"School">
   attendanceBackdateDays?: Prisma.IntFilter<"School"> | number
   onboardedAt?: Prisma.DateTimeNullableFilter<"School"> | Date | string | null
@@ -407,6 +419,7 @@ export type SchoolWhereInput = {
   studentGuardians?: Prisma.StudentGuardianListRelationFilter
   enrollments?: Prisma.EnrollmentListRelationFilter
   feeHeads?: Prisma.FeeHeadListRelationFilter
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelListRelationFilter
   holidays?: Prisma.HolidayListRelationFilter
   staff?: Prisma.StaffListRelationFilter
   expenseCategories?: Prisma.ExpenseCategoryListRelationFilter
@@ -450,6 +463,7 @@ export type SchoolOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   lateFeePercent?: Prisma.SortOrder
   lateFeeFlat?: Prisma.SortOrder
+  lateFeeGraceDays?: Prisma.SortOrder
   workingDays?: Prisma.SortOrder
   attendanceBackdateDays?: Prisma.SortOrder
   onboardedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -474,6 +488,7 @@ export type SchoolOrderByWithRelationInput = {
   studentGuardians?: Prisma.StudentGuardianOrderByRelationAggregateInput
   enrollments?: Prisma.EnrollmentOrderByRelationAggregateInput
   feeHeads?: Prisma.FeeHeadOrderByRelationAggregateInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelOrderByRelationAggregateInput
   holidays?: Prisma.HolidayOrderByRelationAggregateInput
   staff?: Prisma.StaffOrderByRelationAggregateInput
   expenseCategories?: Prisma.ExpenseCategoryOrderByRelationAggregateInput
@@ -520,6 +535,7 @@ export type SchoolWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumSchoolStatusFilter<"School"> | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFilter<"School"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFilter<"School"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFilter<"School"> | number
   workingDays?: Prisma.IntNullableListFilter<"School">
   attendanceBackdateDays?: Prisma.IntFilter<"School"> | number
   onboardedAt?: Prisma.DateTimeNullableFilter<"School"> | Date | string | null
@@ -544,6 +560,7 @@ export type SchoolWhereUniqueInput = Prisma.AtLeast<{
   studentGuardians?: Prisma.StudentGuardianListRelationFilter
   enrollments?: Prisma.EnrollmentListRelationFilter
   feeHeads?: Prisma.FeeHeadListRelationFilter
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelListRelationFilter
   holidays?: Prisma.HolidayListRelationFilter
   staff?: Prisma.StaffListRelationFilter
   expenseCategories?: Prisma.ExpenseCategoryListRelationFilter
@@ -587,6 +604,7 @@ export type SchoolOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   lateFeePercent?: Prisma.SortOrder
   lateFeeFlat?: Prisma.SortOrder
+  lateFeeGraceDays?: Prisma.SortOrder
   workingDays?: Prisma.SortOrder
   attendanceBackdateDays?: Prisma.SortOrder
   onboardedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -625,6 +643,7 @@ export type SchoolScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumSchoolStatusWithAggregatesFilter<"School"> | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalWithAggregatesFilter<"School"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalWithAggregatesFilter<"School"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntWithAggregatesFilter<"School"> | number
   workingDays?: Prisma.IntNullableListFilter<"School">
   attendanceBackdateDays?: Prisma.IntWithAggregatesFilter<"School"> | number
   onboardedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"School"> | Date | string | null
@@ -654,6 +673,7 @@ export type SchoolCreateInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -678,6 +698,7 @@ export type SchoolCreateInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -721,6 +742,7 @@ export type SchoolUncheckedCreateInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -744,6 +766,7 @@ export type SchoolUncheckedCreateInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -786,6 +809,7 @@ export type SchoolUpdateInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -810,6 +834,7 @@ export type SchoolUpdateInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -853,6 +878,7 @@ export type SchoolUncheckedUpdateInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -876,6 +902,7 @@ export type SchoolUncheckedUpdateInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -919,6 +946,7 @@ export type SchoolCreateManyInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -948,6 +976,7 @@ export type SchoolUpdateManyMutationInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -978,6 +1007,7 @@ export type SchoolUncheckedUpdateManyInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1034,6 +1064,7 @@ export type SchoolCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   lateFeePercent?: Prisma.SortOrder
   lateFeeFlat?: Prisma.SortOrder
+  lateFeeGraceDays?: Prisma.SortOrder
   workingDays?: Prisma.SortOrder
   attendanceBackdateDays?: Prisma.SortOrder
   onboardedAt?: Prisma.SortOrder
@@ -1045,6 +1076,7 @@ export type SchoolCountOrderByAggregateInput = {
 export type SchoolAvgOrderByAggregateInput = {
   lateFeePercent?: Prisma.SortOrder
   lateFeeFlat?: Prisma.SortOrder
+  lateFeeGraceDays?: Prisma.SortOrder
   workingDays?: Prisma.SortOrder
   attendanceBackdateDays?: Prisma.SortOrder
 }
@@ -1068,6 +1100,7 @@ export type SchoolMaxOrderByAggregateInput = {
   status?: Prisma.SortOrder
   lateFeePercent?: Prisma.SortOrder
   lateFeeFlat?: Prisma.SortOrder
+  lateFeeGraceDays?: Prisma.SortOrder
   attendanceBackdateDays?: Prisma.SortOrder
   onboardedAt?: Prisma.SortOrder
   trialEndsAt?: Prisma.SortOrder
@@ -1094,6 +1127,7 @@ export type SchoolMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   lateFeePercent?: Prisma.SortOrder
   lateFeeFlat?: Prisma.SortOrder
+  lateFeeGraceDays?: Prisma.SortOrder
   attendanceBackdateDays?: Prisma.SortOrder
   onboardedAt?: Prisma.SortOrder
   trialEndsAt?: Prisma.SortOrder
@@ -1104,6 +1138,7 @@ export type SchoolMinOrderByAggregateInput = {
 export type SchoolSumOrderByAggregateInput = {
   lateFeePercent?: Prisma.SortOrder
   lateFeeFlat?: Prisma.SortOrder
+  lateFeeGraceDays?: Prisma.SortOrder
   workingDays?: Prisma.SortOrder
   attendanceBackdateDays?: Prisma.SortOrder
 }
@@ -1493,6 +1528,20 @@ export type SchoolUpdateOneRequiredWithoutFeeHeadsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.SchoolUpdateToOneWithWhereWithoutFeeHeadsInput, Prisma.SchoolUpdateWithoutFeeHeadsInput>, Prisma.SchoolUncheckedUpdateWithoutFeeHeadsInput>
 }
 
+export type SchoolCreateNestedOneWithoutFeeHeadClassLevelsInput = {
+  create?: Prisma.XOR<Prisma.SchoolCreateWithoutFeeHeadClassLevelsInput, Prisma.SchoolUncheckedCreateWithoutFeeHeadClassLevelsInput>
+  connectOrCreate?: Prisma.SchoolCreateOrConnectWithoutFeeHeadClassLevelsInput
+  connect?: Prisma.SchoolWhereUniqueInput
+}
+
+export type SchoolUpdateOneRequiredWithoutFeeHeadClassLevelsNestedInput = {
+  create?: Prisma.XOR<Prisma.SchoolCreateWithoutFeeHeadClassLevelsInput, Prisma.SchoolUncheckedCreateWithoutFeeHeadClassLevelsInput>
+  connectOrCreate?: Prisma.SchoolCreateOrConnectWithoutFeeHeadClassLevelsInput
+  upsert?: Prisma.SchoolUpsertWithoutFeeHeadClassLevelsInput
+  connect?: Prisma.SchoolWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.SchoolUpdateToOneWithWhereWithoutFeeHeadClassLevelsInput, Prisma.SchoolUpdateWithoutFeeHeadClassLevelsInput>, Prisma.SchoolUncheckedUpdateWithoutFeeHeadClassLevelsInput>
+}
+
 export type SchoolCreateNestedOneWithoutStudentFeesInput = {
   create?: Prisma.XOR<Prisma.SchoolCreateWithoutStudentFeesInput, Prisma.SchoolUncheckedCreateWithoutStudentFeesInput>
   connectOrCreate?: Prisma.SchoolCreateOrConnectWithoutStudentFeesInput
@@ -1724,6 +1773,7 @@ export type SchoolCreateWithoutSchoolGroupInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -1747,6 +1797,7 @@ export type SchoolCreateWithoutSchoolGroupInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -1789,6 +1840,7 @@ export type SchoolUncheckedCreateWithoutSchoolGroupInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -1812,6 +1864,7 @@ export type SchoolUncheckedCreateWithoutSchoolGroupInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -1884,6 +1937,7 @@ export type SchoolScalarWhereInput = {
   status?: Prisma.EnumSchoolStatusFilter<"School"> | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFilter<"School"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFilter<"School"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFilter<"School"> | number
   workingDays?: Prisma.IntNullableListFilter<"School">
   attendanceBackdateDays?: Prisma.IntFilter<"School"> | number
   onboardedAt?: Prisma.DateTimeNullableFilter<"School"> | Date | string | null
@@ -1913,6 +1967,7 @@ export type SchoolCreateWithoutDomainsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -1936,6 +1991,7 @@ export type SchoolCreateWithoutDomainsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -1979,6 +2035,7 @@ export type SchoolUncheckedCreateWithoutDomainsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -2001,6 +2058,7 @@ export type SchoolUncheckedCreateWithoutDomainsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -2059,6 +2117,7 @@ export type SchoolUpdateWithoutDomainsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2082,6 +2141,7 @@ export type SchoolUpdateWithoutDomainsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -2125,6 +2185,7 @@ export type SchoolUncheckedUpdateWithoutDomainsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2147,6 +2208,7 @@ export type SchoolUncheckedUpdateWithoutDomainsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -2189,6 +2251,7 @@ export type SchoolCreateWithoutUsersInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -2212,6 +2275,7 @@ export type SchoolCreateWithoutUsersInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -2255,6 +2319,7 @@ export type SchoolUncheckedCreateWithoutUsersInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -2277,6 +2342,7 @@ export type SchoolUncheckedCreateWithoutUsersInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -2335,6 +2401,7 @@ export type SchoolUpdateWithoutUsersInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2358,6 +2425,7 @@ export type SchoolUpdateWithoutUsersInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -2401,6 +2469,7 @@ export type SchoolUncheckedUpdateWithoutUsersInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2423,6 +2492,7 @@ export type SchoolUncheckedUpdateWithoutUsersInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -2465,6 +2535,7 @@ export type SchoolCreateWithoutUserRolesInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -2488,6 +2559,7 @@ export type SchoolCreateWithoutUserRolesInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -2531,6 +2603,7 @@ export type SchoolUncheckedCreateWithoutUserRolesInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -2553,6 +2626,7 @@ export type SchoolUncheckedCreateWithoutUserRolesInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -2611,6 +2685,7 @@ export type SchoolUpdateWithoutUserRolesInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2634,6 +2709,7 @@ export type SchoolUpdateWithoutUserRolesInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -2677,6 +2753,7 @@ export type SchoolUncheckedUpdateWithoutUserRolesInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2699,6 +2776,7 @@ export type SchoolUncheckedUpdateWithoutUserRolesInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -2741,6 +2819,7 @@ export type SchoolCreateWithoutSessionsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -2764,6 +2843,7 @@ export type SchoolCreateWithoutSessionsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -2807,6 +2887,7 @@ export type SchoolUncheckedCreateWithoutSessionsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -2829,6 +2910,7 @@ export type SchoolUncheckedCreateWithoutSessionsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -2887,6 +2969,7 @@ export type SchoolUpdateWithoutSessionsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2910,6 +2993,7 @@ export type SchoolUpdateWithoutSessionsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -2953,6 +3037,7 @@ export type SchoolUncheckedUpdateWithoutSessionsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2975,6 +3060,7 @@ export type SchoolUncheckedUpdateWithoutSessionsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -3017,6 +3103,7 @@ export type SchoolCreateWithoutInvitationsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -3040,6 +3127,7 @@ export type SchoolCreateWithoutInvitationsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -3083,6 +3171,7 @@ export type SchoolUncheckedCreateWithoutInvitationsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -3105,6 +3194,7 @@ export type SchoolUncheckedCreateWithoutInvitationsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -3163,6 +3253,7 @@ export type SchoolUpdateWithoutInvitationsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3186,6 +3277,7 @@ export type SchoolUpdateWithoutInvitationsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -3229,6 +3321,7 @@ export type SchoolUncheckedUpdateWithoutInvitationsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3251,6 +3344,7 @@ export type SchoolUncheckedUpdateWithoutInvitationsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -3293,6 +3387,7 @@ export type SchoolCreateWithoutPasswordResetsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -3316,6 +3411,7 @@ export type SchoolCreateWithoutPasswordResetsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -3359,6 +3455,7 @@ export type SchoolUncheckedCreateWithoutPasswordResetsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -3381,6 +3478,7 @@ export type SchoolUncheckedCreateWithoutPasswordResetsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -3439,6 +3537,7 @@ export type SchoolUpdateWithoutPasswordResetsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3462,6 +3561,7 @@ export type SchoolUpdateWithoutPasswordResetsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -3505,6 +3605,7 @@ export type SchoolUncheckedUpdateWithoutPasswordResetsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3527,6 +3628,7 @@ export type SchoolUncheckedUpdateWithoutPasswordResetsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -3569,6 +3671,7 @@ export type SchoolCreateWithoutAuthHandoffsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -3592,6 +3695,7 @@ export type SchoolCreateWithoutAuthHandoffsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -3635,6 +3739,7 @@ export type SchoolUncheckedCreateWithoutAuthHandoffsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -3657,6 +3762,7 @@ export type SchoolUncheckedCreateWithoutAuthHandoffsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -3715,6 +3821,7 @@ export type SchoolUpdateWithoutAuthHandoffsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3738,6 +3845,7 @@ export type SchoolUpdateWithoutAuthHandoffsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -3781,6 +3889,7 @@ export type SchoolUncheckedUpdateWithoutAuthHandoffsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3803,6 +3912,7 @@ export type SchoolUncheckedUpdateWithoutAuthHandoffsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -3845,6 +3955,7 @@ export type SchoolCreateWithoutEmailVerificationsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -3868,6 +3979,7 @@ export type SchoolCreateWithoutEmailVerificationsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -3911,6 +4023,7 @@ export type SchoolUncheckedCreateWithoutEmailVerificationsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -3933,6 +4046,7 @@ export type SchoolUncheckedCreateWithoutEmailVerificationsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -3991,6 +4105,7 @@ export type SchoolUpdateWithoutEmailVerificationsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4014,6 +4129,7 @@ export type SchoolUpdateWithoutEmailVerificationsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -4057,6 +4173,7 @@ export type SchoolUncheckedUpdateWithoutEmailVerificationsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4079,6 +4196,7 @@ export type SchoolUncheckedUpdateWithoutEmailVerificationsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -4121,6 +4239,7 @@ export type SchoolCreateWithoutAgreementsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -4144,6 +4263,7 @@ export type SchoolCreateWithoutAgreementsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -4187,6 +4307,7 @@ export type SchoolUncheckedCreateWithoutAgreementsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -4209,6 +4330,7 @@ export type SchoolUncheckedCreateWithoutAgreementsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -4267,6 +4389,7 @@ export type SchoolUpdateWithoutAgreementsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4290,6 +4413,7 @@ export type SchoolUpdateWithoutAgreementsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -4333,6 +4457,7 @@ export type SchoolUncheckedUpdateWithoutAgreementsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4355,6 +4480,7 @@ export type SchoolUncheckedUpdateWithoutAgreementsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -4397,6 +4523,7 @@ export type SchoolCreateWithoutAcademicSessionsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -4420,6 +4547,7 @@ export type SchoolCreateWithoutAcademicSessionsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -4463,6 +4591,7 @@ export type SchoolUncheckedCreateWithoutAcademicSessionsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -4485,6 +4614,7 @@ export type SchoolUncheckedCreateWithoutAcademicSessionsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -4543,6 +4673,7 @@ export type SchoolUpdateWithoutAcademicSessionsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4566,6 +4697,7 @@ export type SchoolUpdateWithoutAcademicSessionsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -4609,6 +4741,7 @@ export type SchoolUncheckedUpdateWithoutAcademicSessionsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4631,6 +4764,7 @@ export type SchoolUncheckedUpdateWithoutAcademicSessionsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -4673,6 +4807,7 @@ export type SchoolCreateWithoutClassLevelsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -4696,6 +4831,7 @@ export type SchoolCreateWithoutClassLevelsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -4739,6 +4875,7 @@ export type SchoolUncheckedCreateWithoutClassLevelsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -4761,6 +4898,7 @@ export type SchoolUncheckedCreateWithoutClassLevelsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -4819,6 +4957,7 @@ export type SchoolUpdateWithoutClassLevelsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4842,6 +4981,7 @@ export type SchoolUpdateWithoutClassLevelsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -4885,6 +5025,7 @@ export type SchoolUncheckedUpdateWithoutClassLevelsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4907,6 +5048,7 @@ export type SchoolUncheckedUpdateWithoutClassLevelsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -4949,6 +5091,7 @@ export type SchoolCreateWithoutSchoolSectionsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -4972,6 +5115,7 @@ export type SchoolCreateWithoutSchoolSectionsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -5015,6 +5159,7 @@ export type SchoolUncheckedCreateWithoutSchoolSectionsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -5037,6 +5182,7 @@ export type SchoolUncheckedCreateWithoutSchoolSectionsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -5095,6 +5241,7 @@ export type SchoolUpdateWithoutSchoolSectionsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -5118,6 +5265,7 @@ export type SchoolUpdateWithoutSchoolSectionsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -5161,6 +5309,7 @@ export type SchoolUncheckedUpdateWithoutSchoolSectionsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -5183,6 +5332,7 @@ export type SchoolUncheckedUpdateWithoutSchoolSectionsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -5225,6 +5375,7 @@ export type SchoolCreateWithoutStudentsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -5248,6 +5399,7 @@ export type SchoolCreateWithoutStudentsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -5291,6 +5443,7 @@ export type SchoolUncheckedCreateWithoutStudentsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -5313,6 +5466,7 @@ export type SchoolUncheckedCreateWithoutStudentsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -5371,6 +5525,7 @@ export type SchoolUpdateWithoutStudentsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -5394,6 +5549,7 @@ export type SchoolUpdateWithoutStudentsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -5437,6 +5593,7 @@ export type SchoolUncheckedUpdateWithoutStudentsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -5459,6 +5616,7 @@ export type SchoolUncheckedUpdateWithoutStudentsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -5501,6 +5659,7 @@ export type SchoolCreateWithoutGuardiansInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -5524,6 +5683,7 @@ export type SchoolCreateWithoutGuardiansInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -5567,6 +5727,7 @@ export type SchoolUncheckedCreateWithoutGuardiansInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -5589,6 +5750,7 @@ export type SchoolUncheckedCreateWithoutGuardiansInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -5647,6 +5809,7 @@ export type SchoolUpdateWithoutGuardiansInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -5670,6 +5833,7 @@ export type SchoolUpdateWithoutGuardiansInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -5713,6 +5877,7 @@ export type SchoolUncheckedUpdateWithoutGuardiansInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -5735,6 +5900,7 @@ export type SchoolUncheckedUpdateWithoutGuardiansInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -5777,6 +5943,7 @@ export type SchoolCreateWithoutStudentGuardiansInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -5800,6 +5967,7 @@ export type SchoolCreateWithoutStudentGuardiansInput = {
   guardians?: Prisma.GuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -5843,6 +6011,7 @@ export type SchoolUncheckedCreateWithoutStudentGuardiansInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -5865,6 +6034,7 @@ export type SchoolUncheckedCreateWithoutStudentGuardiansInput = {
   guardians?: Prisma.GuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -5923,6 +6093,7 @@ export type SchoolUpdateWithoutStudentGuardiansInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -5946,6 +6117,7 @@ export type SchoolUpdateWithoutStudentGuardiansInput = {
   guardians?: Prisma.GuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -5989,6 +6161,7 @@ export type SchoolUncheckedUpdateWithoutStudentGuardiansInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -6011,6 +6184,7 @@ export type SchoolUncheckedUpdateWithoutStudentGuardiansInput = {
   guardians?: Prisma.GuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -6053,6 +6227,7 @@ export type SchoolCreateWithoutEnrollmentsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -6076,6 +6251,7 @@ export type SchoolCreateWithoutEnrollmentsInput = {
   guardians?: Prisma.GuardianCreateNestedManyWithoutSchoolInput
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -6119,6 +6295,7 @@ export type SchoolUncheckedCreateWithoutEnrollmentsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -6141,6 +6318,7 @@ export type SchoolUncheckedCreateWithoutEnrollmentsInput = {
   guardians?: Prisma.GuardianUncheckedCreateNestedManyWithoutSchoolInput
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -6199,6 +6377,7 @@ export type SchoolUpdateWithoutEnrollmentsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -6222,6 +6401,7 @@ export type SchoolUpdateWithoutEnrollmentsInput = {
   guardians?: Prisma.GuardianUpdateManyWithoutSchoolNestedInput
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -6265,6 +6445,7 @@ export type SchoolUncheckedUpdateWithoutEnrollmentsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -6287,6 +6468,7 @@ export type SchoolUncheckedUpdateWithoutEnrollmentsInput = {
   guardians?: Prisma.GuardianUncheckedUpdateManyWithoutSchoolNestedInput
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -6329,6 +6511,7 @@ export type SchoolCreateWithoutStaffInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -6353,6 +6536,7 @@ export type SchoolCreateWithoutStaffInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
   expenses?: Prisma.ExpenseCreateNestedManyWithoutSchoolInput
@@ -6395,6 +6579,7 @@ export type SchoolUncheckedCreateWithoutStaffInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -6418,6 +6603,7 @@ export type SchoolUncheckedCreateWithoutStaffInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
   expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutSchoolInput
@@ -6475,6 +6661,7 @@ export type SchoolUpdateWithoutStaffInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -6499,6 +6686,7 @@ export type SchoolUpdateWithoutStaffInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
   expenses?: Prisma.ExpenseUpdateManyWithoutSchoolNestedInput
@@ -6541,6 +6729,7 @@ export type SchoolUncheckedUpdateWithoutStaffInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -6564,6 +6753,7 @@ export type SchoolUncheckedUpdateWithoutStaffInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
   expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutSchoolNestedInput
@@ -6605,6 +6795,7 @@ export type SchoolCreateWithoutExpenseCategoriesInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -6629,6 +6820,7 @@ export type SchoolCreateWithoutExpenseCategoriesInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenses?: Prisma.ExpenseCreateNestedManyWithoutSchoolInput
@@ -6671,6 +6863,7 @@ export type SchoolUncheckedCreateWithoutExpenseCategoriesInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -6694,6 +6887,7 @@ export type SchoolUncheckedCreateWithoutExpenseCategoriesInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutSchoolInput
@@ -6751,6 +6945,7 @@ export type SchoolUpdateWithoutExpenseCategoriesInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -6775,6 +6970,7 @@ export type SchoolUpdateWithoutExpenseCategoriesInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenses?: Prisma.ExpenseUpdateManyWithoutSchoolNestedInput
@@ -6817,6 +7013,7 @@ export type SchoolUncheckedUpdateWithoutExpenseCategoriesInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -6840,6 +7037,7 @@ export type SchoolUncheckedUpdateWithoutExpenseCategoriesInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutSchoolNestedInput
@@ -6881,6 +7079,7 @@ export type SchoolCreateWithoutExpensesInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -6905,6 +7104,7 @@ export type SchoolCreateWithoutExpensesInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -6947,6 +7147,7 @@ export type SchoolUncheckedCreateWithoutExpensesInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -6970,6 +7171,7 @@ export type SchoolUncheckedCreateWithoutExpensesInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -7027,6 +7229,7 @@ export type SchoolUpdateWithoutExpensesInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7051,6 +7254,7 @@ export type SchoolUpdateWithoutExpensesInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -7093,6 +7297,7 @@ export type SchoolUncheckedUpdateWithoutExpensesInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7116,6 +7321,7 @@ export type SchoolUncheckedUpdateWithoutExpensesInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -7157,6 +7363,7 @@ export type SchoolCreateWithoutHolidaysInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -7181,6 +7388,7 @@ export type SchoolCreateWithoutHolidaysInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
   expenses?: Prisma.ExpenseCreateNestedManyWithoutSchoolInput
@@ -7223,6 +7431,7 @@ export type SchoolUncheckedCreateWithoutHolidaysInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -7246,6 +7455,7 @@ export type SchoolUncheckedCreateWithoutHolidaysInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
   expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutSchoolInput
@@ -7303,6 +7513,7 @@ export type SchoolUpdateWithoutHolidaysInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7327,6 +7538,7 @@ export type SchoolUpdateWithoutHolidaysInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
   expenses?: Prisma.ExpenseUpdateManyWithoutSchoolNestedInput
@@ -7369,6 +7581,7 @@ export type SchoolUncheckedUpdateWithoutHolidaysInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7392,6 +7605,7 @@ export type SchoolUncheckedUpdateWithoutHolidaysInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
   expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutSchoolNestedInput
@@ -7433,6 +7647,7 @@ export type SchoolCreateWithoutFeeHeadsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -7456,6 +7671,7 @@ export type SchoolCreateWithoutFeeHeadsInput = {
   guardians?: Prisma.GuardianCreateNestedManyWithoutSchoolInput
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -7499,6 +7715,7 @@ export type SchoolUncheckedCreateWithoutFeeHeadsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -7521,6 +7738,7 @@ export type SchoolUncheckedCreateWithoutFeeHeadsInput = {
   guardians?: Prisma.GuardianUncheckedCreateNestedManyWithoutSchoolInput
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -7579,6 +7797,7 @@ export type SchoolUpdateWithoutFeeHeadsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7602,6 +7821,7 @@ export type SchoolUpdateWithoutFeeHeadsInput = {
   guardians?: Prisma.GuardianUpdateManyWithoutSchoolNestedInput
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -7645,6 +7865,7 @@ export type SchoolUncheckedUpdateWithoutFeeHeadsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7667,6 +7888,291 @@ export type SchoolUncheckedUpdateWithoutFeeHeadsInput = {
   guardians?: Prisma.GuardianUncheckedUpdateManyWithoutSchoolNestedInput
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
+  holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
+  staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
+  expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutSchoolNestedInput
+  jobRuns?: Prisma.JobRunUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVouchers?: Prisma.FeeVoucherUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSchoolNestedInput
+  feePayments?: Prisma.FeePaymentUncheckedUpdateManyWithoutSchoolNestedInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutSchoolNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutSchoolNestedInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUncheckedUpdateManyWithoutSchoolNestedInput
+  studentFees?: Prisma.StudentFeeUncheckedUpdateManyWithoutSchoolNestedInput
+  numberSequences?: Prisma.NumberSequenceUncheckedUpdateManyWithoutSchoolNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
+  images?: Prisma.SchoolLogoUncheckedUpdateManyWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
+}
+
+export type SchoolCreateWithoutFeeHeadClassLevelsInput = {
+  id?: string
+  name: string
+  slug: string
+  legalName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  timezone?: string
+  locale?: string
+  currency?: string
+  country?: string
+  city?: string | null
+  address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolCreateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolCreateaLevelClassNamesInput | string[]
+  phone?: string | null
+  email?: string | null
+  status?: $Enums.SchoolStatus
+  lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
+  workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
+  attendanceBackdateDays?: number
+  onboardedAt?: Date | string | null
+  trialEndsAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  schoolGroup?: Prisma.SchoolGroupCreateNestedOneWithoutSchoolsInput
+  domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
+  users?: Prisma.UserCreateNestedManyWithoutSchoolInput
+  userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
+  passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
+  authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutSchoolInput
+  emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutSchoolInput
+  agreements?: Prisma.SchoolAgreementCreateNestedManyWithoutSchoolInput
+  academicSessions?: Prisma.AcademicSessionCreateNestedManyWithoutSchoolInput
+  classLevels?: Prisma.ClassLevelCreateNestedManyWithoutSchoolInput
+  schoolSections?: Prisma.SectionCreateNestedManyWithoutSchoolInput
+  students?: Prisma.StudentCreateNestedManyWithoutSchoolInput
+  guardians?: Prisma.GuardianCreateNestedManyWithoutSchoolInput
+  studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
+  enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
+  feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
+  staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
+  expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutSchoolInput
+  jobRuns?: Prisma.JobRunCreateNestedManyWithoutSchoolInput
+  feeVouchers?: Prisma.FeeVoucherCreateNestedManyWithoutSchoolInput
+  feeVoucherLines?: Prisma.FeeVoucherLineCreateNestedManyWithoutSchoolInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodCreateNestedManyWithoutSchoolInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSchoolInput
+  feePayments?: Prisma.FeePaymentCreateNestedManyWithoutSchoolInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutSchoolInput
+  attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutSchoolInput
+  staffAttendance?: Prisma.StaffAttendanceRecordCreateNestedManyWithoutSchoolInput
+  studentFees?: Prisma.StudentFeeCreateNestedManyWithoutSchoolInput
+  numberSequences?: Prisma.NumberSequenceCreateNestedManyWithoutSchoolInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
+  images?: Prisma.SchoolLogoCreateNestedManyWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
+}
+
+export type SchoolUncheckedCreateWithoutFeeHeadClassLevelsInput = {
+  id?: string
+  schoolGroupId?: string | null
+  name: string
+  slug: string
+  legalName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  timezone?: string
+  locale?: string
+  currency?: string
+  country?: string
+  city?: string | null
+  address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolCreateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolCreateaLevelClassNamesInput | string[]
+  phone?: string | null
+  email?: string | null
+  status?: $Enums.SchoolStatus
+  lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
+  workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
+  attendanceBackdateDays?: number
+  onboardedAt?: Date | string | null
+  trialEndsAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
+  userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
+  passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutSchoolInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutSchoolInput
+  agreements?: Prisma.SchoolAgreementUncheckedCreateNestedManyWithoutSchoolInput
+  academicSessions?: Prisma.AcademicSessionUncheckedCreateNestedManyWithoutSchoolInput
+  classLevels?: Prisma.ClassLevelUncheckedCreateNestedManyWithoutSchoolInput
+  schoolSections?: Prisma.SectionUncheckedCreateNestedManyWithoutSchoolInput
+  students?: Prisma.StudentUncheckedCreateNestedManyWithoutSchoolInput
+  guardians?: Prisma.GuardianUncheckedCreateNestedManyWithoutSchoolInput
+  studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
+  enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
+  staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
+  expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutSchoolInput
+  jobRuns?: Prisma.JobRunUncheckedCreateNestedManyWithoutSchoolInput
+  feeVouchers?: Prisma.FeeVoucherUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSchoolInput
+  feePayments?: Prisma.FeePaymentUncheckedCreateNestedManyWithoutSchoolInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutSchoolInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutSchoolInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUncheckedCreateNestedManyWithoutSchoolInput
+  studentFees?: Prisma.StudentFeeUncheckedCreateNestedManyWithoutSchoolInput
+  numberSequences?: Prisma.NumberSequenceUncheckedCreateNestedManyWithoutSchoolInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
+  images?: Prisma.SchoolLogoUncheckedCreateNestedManyWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
+}
+
+export type SchoolCreateOrConnectWithoutFeeHeadClassLevelsInput = {
+  where: Prisma.SchoolWhereUniqueInput
+  create: Prisma.XOR<Prisma.SchoolCreateWithoutFeeHeadClassLevelsInput, Prisma.SchoolUncheckedCreateWithoutFeeHeadClassLevelsInput>
+}
+
+export type SchoolUpsertWithoutFeeHeadClassLevelsInput = {
+  update: Prisma.XOR<Prisma.SchoolUpdateWithoutFeeHeadClassLevelsInput, Prisma.SchoolUncheckedUpdateWithoutFeeHeadClassLevelsInput>
+  create: Prisma.XOR<Prisma.SchoolCreateWithoutFeeHeadClassLevelsInput, Prisma.SchoolUncheckedCreateWithoutFeeHeadClassLevelsInput>
+  where?: Prisma.SchoolWhereInput
+}
+
+export type SchoolUpdateToOneWithWhereWithoutFeeHeadClassLevelsInput = {
+  where?: Prisma.SchoolWhereInput
+  data: Prisma.XOR<Prisma.SchoolUpdateWithoutFeeHeadClassLevelsInput, Prisma.SchoolUncheckedUpdateWithoutFeeHeadClassLevelsInput>
+}
+
+export type SchoolUpdateWithoutFeeHeadClassLevelsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  legalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  country?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolUpdateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolUpdateaLevelClassNamesInput | string[]
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
+  lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
+  attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
+  onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  trialEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  schoolGroup?: Prisma.SchoolGroupUpdateOneWithoutSchoolsNestedInput
+  domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
+  users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
+  userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
+  passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
+  authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutSchoolNestedInput
+  emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutSchoolNestedInput
+  agreements?: Prisma.SchoolAgreementUpdateManyWithoutSchoolNestedInput
+  academicSessions?: Prisma.AcademicSessionUpdateManyWithoutSchoolNestedInput
+  classLevels?: Prisma.ClassLevelUpdateManyWithoutSchoolNestedInput
+  schoolSections?: Prisma.SectionUpdateManyWithoutSchoolNestedInput
+  students?: Prisma.StudentUpdateManyWithoutSchoolNestedInput
+  guardians?: Prisma.GuardianUpdateManyWithoutSchoolNestedInput
+  studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
+  enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
+  feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
+  staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
+  expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
+  expenses?: Prisma.ExpenseUpdateManyWithoutSchoolNestedInput
+  jobRuns?: Prisma.JobRunUpdateManyWithoutSchoolNestedInput
+  feeVouchers?: Prisma.FeeVoucherUpdateManyWithoutSchoolNestedInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUpdateManyWithoutSchoolNestedInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUpdateManyWithoutSchoolNestedInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUpdateManyWithoutSchoolNestedInput
+  feePayments?: Prisma.FeePaymentUpdateManyWithoutSchoolNestedInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUpdateManyWithoutSchoolNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutSchoolNestedInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUpdateManyWithoutSchoolNestedInput
+  studentFees?: Prisma.StudentFeeUpdateManyWithoutSchoolNestedInput
+  numberSequences?: Prisma.NumberSequenceUpdateManyWithoutSchoolNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
+  images?: Prisma.SchoolLogoUpdateManyWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
+}
+
+export type SchoolUncheckedUpdateWithoutFeeHeadClassLevelsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  legalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  country?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolUpdateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolUpdateaLevelClassNamesInput | string[]
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
+  lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
+  attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
+  onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  trialEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
+  userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
+  passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutSchoolNestedInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutSchoolNestedInput
+  agreements?: Prisma.SchoolAgreementUncheckedUpdateManyWithoutSchoolNestedInput
+  academicSessions?: Prisma.AcademicSessionUncheckedUpdateManyWithoutSchoolNestedInput
+  classLevels?: Prisma.ClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
+  schoolSections?: Prisma.SectionUncheckedUpdateManyWithoutSchoolNestedInput
+  students?: Prisma.StudentUncheckedUpdateManyWithoutSchoolNestedInput
+  guardians?: Prisma.GuardianUncheckedUpdateManyWithoutSchoolNestedInput
+  studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
+  enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -7709,6 +8215,7 @@ export type SchoolCreateWithoutStudentFeesInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -7733,6 +8240,7 @@ export type SchoolCreateWithoutStudentFeesInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -7775,6 +8283,7 @@ export type SchoolUncheckedCreateWithoutStudentFeesInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -7798,6 +8307,7 @@ export type SchoolUncheckedCreateWithoutStudentFeesInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -7855,6 +8365,7 @@ export type SchoolUpdateWithoutStudentFeesInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7879,6 +8390,7 @@ export type SchoolUpdateWithoutStudentFeesInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -7921,6 +8433,7 @@ export type SchoolUncheckedUpdateWithoutStudentFeesInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7944,6 +8457,7 @@ export type SchoolUncheckedUpdateWithoutStudentFeesInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -7985,6 +8499,7 @@ export type SchoolCreateWithoutNumberSequencesInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -8009,6 +8524,7 @@ export type SchoolCreateWithoutNumberSequencesInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -8051,6 +8567,7 @@ export type SchoolUncheckedCreateWithoutNumberSequencesInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -8074,6 +8591,7 @@ export type SchoolUncheckedCreateWithoutNumberSequencesInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -8131,6 +8649,7 @@ export type SchoolUpdateWithoutNumberSequencesInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8155,6 +8674,7 @@ export type SchoolUpdateWithoutNumberSequencesInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -8197,6 +8717,7 @@ export type SchoolUncheckedUpdateWithoutNumberSequencesInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8220,6 +8741,7 @@ export type SchoolUncheckedUpdateWithoutNumberSequencesInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -8261,6 +8783,7 @@ export type SchoolCreateWithoutJobRunsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -8285,6 +8808,7 @@ export type SchoolCreateWithoutJobRunsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -8327,6 +8851,7 @@ export type SchoolUncheckedCreateWithoutJobRunsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -8350,6 +8875,7 @@ export type SchoolUncheckedCreateWithoutJobRunsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -8407,6 +8933,7 @@ export type SchoolUpdateWithoutJobRunsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8431,6 +8958,7 @@ export type SchoolUpdateWithoutJobRunsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -8473,6 +9001,7 @@ export type SchoolUncheckedUpdateWithoutJobRunsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8496,6 +9025,7 @@ export type SchoolUncheckedUpdateWithoutJobRunsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -8537,6 +9067,7 @@ export type SchoolCreateWithoutFeeVouchersInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -8561,6 +9092,7 @@ export type SchoolCreateWithoutFeeVouchersInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -8603,6 +9135,7 @@ export type SchoolUncheckedCreateWithoutFeeVouchersInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -8626,6 +9159,7 @@ export type SchoolUncheckedCreateWithoutFeeVouchersInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -8683,6 +9217,7 @@ export type SchoolUpdateWithoutFeeVouchersInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8707,6 +9242,7 @@ export type SchoolUpdateWithoutFeeVouchersInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -8749,6 +9285,7 @@ export type SchoolUncheckedUpdateWithoutFeeVouchersInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8772,6 +9309,7 @@ export type SchoolUncheckedUpdateWithoutFeeVouchersInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -8813,6 +9351,7 @@ export type SchoolCreateWithoutFeeVoucherLinesInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -8837,6 +9376,7 @@ export type SchoolCreateWithoutFeeVoucherLinesInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -8879,6 +9419,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherLinesInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -8902,6 +9443,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherLinesInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -8959,6 +9501,7 @@ export type SchoolUpdateWithoutFeeVoucherLinesInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8983,6 +9526,7 @@ export type SchoolUpdateWithoutFeeVoucherLinesInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -9025,6 +9569,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherLinesInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9048,6 +9593,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherLinesInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -9089,6 +9635,7 @@ export type SchoolCreateWithoutFeeVoucherPeriodsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -9113,6 +9660,7 @@ export type SchoolCreateWithoutFeeVoucherPeriodsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -9155,6 +9703,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherPeriodsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -9178,6 +9727,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherPeriodsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -9235,6 +9785,7 @@ export type SchoolUpdateWithoutFeeVoucherPeriodsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9259,6 +9810,7 @@ export type SchoolUpdateWithoutFeeVoucherPeriodsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -9301,6 +9853,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherPeriodsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9324,6 +9877,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherPeriodsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -9365,6 +9919,7 @@ export type SchoolCreateWithoutFeeVoucherArrearsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -9389,6 +9944,7 @@ export type SchoolCreateWithoutFeeVoucherArrearsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -9431,6 +9987,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherArrearsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -9454,6 +10011,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherArrearsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -9511,6 +10069,7 @@ export type SchoolUpdateWithoutFeeVoucherArrearsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9535,6 +10094,7 @@ export type SchoolUpdateWithoutFeeVoucherArrearsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -9577,6 +10137,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherArrearsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9600,6 +10161,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherArrearsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -9641,6 +10203,7 @@ export type SchoolCreateWithoutFeePaymentsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -9665,6 +10228,7 @@ export type SchoolCreateWithoutFeePaymentsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -9707,6 +10271,7 @@ export type SchoolUncheckedCreateWithoutFeePaymentsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -9730,6 +10295,7 @@ export type SchoolUncheckedCreateWithoutFeePaymentsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -9787,6 +10353,7 @@ export type SchoolUpdateWithoutFeePaymentsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9811,6 +10378,7 @@ export type SchoolUpdateWithoutFeePaymentsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -9853,6 +10421,7 @@ export type SchoolUncheckedUpdateWithoutFeePaymentsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9876,6 +10445,7 @@ export type SchoolUncheckedUpdateWithoutFeePaymentsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -9917,6 +10487,7 @@ export type SchoolCreateWithoutFeePaymentAllocationsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -9941,6 +10512,7 @@ export type SchoolCreateWithoutFeePaymentAllocationsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -9983,6 +10555,7 @@ export type SchoolUncheckedCreateWithoutFeePaymentAllocationsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -10006,6 +10579,7 @@ export type SchoolUncheckedCreateWithoutFeePaymentAllocationsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -10063,6 +10637,7 @@ export type SchoolUpdateWithoutFeePaymentAllocationsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10087,6 +10662,7 @@ export type SchoolUpdateWithoutFeePaymentAllocationsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -10129,6 +10705,7 @@ export type SchoolUncheckedUpdateWithoutFeePaymentAllocationsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10152,6 +10729,7 @@ export type SchoolUncheckedUpdateWithoutFeePaymentAllocationsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -10193,6 +10771,7 @@ export type SchoolCreateWithoutAttendanceRecordsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -10217,6 +10796,7 @@ export type SchoolCreateWithoutAttendanceRecordsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -10259,6 +10839,7 @@ export type SchoolUncheckedCreateWithoutAttendanceRecordsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -10282,6 +10863,7 @@ export type SchoolUncheckedCreateWithoutAttendanceRecordsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -10339,6 +10921,7 @@ export type SchoolUpdateWithoutAttendanceRecordsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10363,6 +10946,7 @@ export type SchoolUpdateWithoutAttendanceRecordsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -10405,6 +10989,7 @@ export type SchoolUncheckedUpdateWithoutAttendanceRecordsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10428,6 +11013,7 @@ export type SchoolUncheckedUpdateWithoutAttendanceRecordsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -10469,6 +11055,7 @@ export type SchoolCreateWithoutStaffAttendanceInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -10493,6 +11080,7 @@ export type SchoolCreateWithoutStaffAttendanceInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -10535,6 +11123,7 @@ export type SchoolUncheckedCreateWithoutStaffAttendanceInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -10558,6 +11147,7 @@ export type SchoolUncheckedCreateWithoutStaffAttendanceInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -10615,6 +11205,7 @@ export type SchoolUpdateWithoutStaffAttendanceInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10639,6 +11230,7 @@ export type SchoolUpdateWithoutStaffAttendanceInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -10681,6 +11273,7 @@ export type SchoolUncheckedUpdateWithoutStaffAttendanceInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10704,6 +11297,7 @@ export type SchoolUncheckedUpdateWithoutStaffAttendanceInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -10745,6 +11339,7 @@ export type SchoolCreateWithoutSecurityDepositsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -10769,6 +11364,7 @@ export type SchoolCreateWithoutSecurityDepositsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -10811,6 +11407,7 @@ export type SchoolUncheckedCreateWithoutSecurityDepositsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -10834,6 +11431,7 @@ export type SchoolUncheckedCreateWithoutSecurityDepositsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -10891,6 +11489,7 @@ export type SchoolUpdateWithoutSecurityDepositsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10915,6 +11514,7 @@ export type SchoolUpdateWithoutSecurityDepositsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -10957,6 +11557,7 @@ export type SchoolUncheckedUpdateWithoutSecurityDepositsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10980,6 +11581,7 @@ export type SchoolUncheckedUpdateWithoutSecurityDepositsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -11021,6 +11623,7 @@ export type SchoolCreateWithoutSecurityDepositRefundsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -11045,6 +11648,7 @@ export type SchoolCreateWithoutSecurityDepositRefundsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -11087,6 +11691,7 @@ export type SchoolUncheckedCreateWithoutSecurityDepositRefundsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -11110,6 +11715,7 @@ export type SchoolUncheckedCreateWithoutSecurityDepositRefundsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -11167,6 +11773,7 @@ export type SchoolUpdateWithoutSecurityDepositRefundsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -11191,6 +11798,7 @@ export type SchoolUpdateWithoutSecurityDepositRefundsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -11233,6 +11841,7 @@ export type SchoolUncheckedUpdateWithoutSecurityDepositRefundsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -11256,6 +11865,7 @@ export type SchoolUncheckedUpdateWithoutSecurityDepositRefundsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -11297,6 +11907,7 @@ export type SchoolCreateWithoutImagesInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -11321,6 +11932,7 @@ export type SchoolCreateWithoutImagesInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -11363,6 +11975,7 @@ export type SchoolUncheckedCreateWithoutImagesInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -11386,6 +11999,7 @@ export type SchoolUncheckedCreateWithoutImagesInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -11443,6 +12057,7 @@ export type SchoolUpdateWithoutImagesInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -11467,6 +12082,7 @@ export type SchoolUpdateWithoutImagesInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -11509,6 +12125,7 @@ export type SchoolUncheckedUpdateWithoutImagesInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -11532,6 +12149,7 @@ export type SchoolUncheckedUpdateWithoutImagesInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -11573,6 +12191,7 @@ export type SchoolCreateWithoutVoucherSettingsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -11597,6 +12216,7 @@ export type SchoolCreateWithoutVoucherSettingsInput = {
   studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
@@ -11639,6 +12259,7 @@ export type SchoolUncheckedCreateWithoutVoucherSettingsInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -11662,6 +12283,7 @@ export type SchoolUncheckedCreateWithoutVoucherSettingsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
   feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
   holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
   staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
@@ -11719,6 +12341,7 @@ export type SchoolUpdateWithoutVoucherSettingsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -11743,6 +12366,7 @@ export type SchoolUpdateWithoutVoucherSettingsInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -11785,6 +12409,7 @@ export type SchoolUncheckedUpdateWithoutVoucherSettingsInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -11808,6 +12433,7 @@ export type SchoolUncheckedUpdateWithoutVoucherSettingsInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -11849,6 +12475,7 @@ export type SchoolCreateManySchoolGroupInput = {
   status?: $Enums.SchoolStatus
   lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
   workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
   attendanceBackdateDays?: number
   onboardedAt?: Date | string | null
@@ -11878,6 +12505,7 @@ export type SchoolUpdateWithoutSchoolGroupInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -11901,6 +12529,7 @@ export type SchoolUpdateWithoutSchoolGroupInput = {
   studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
@@ -11943,6 +12572,7 @@ export type SchoolUncheckedUpdateWithoutSchoolGroupInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -11966,6 +12596,7 @@ export type SchoolUncheckedUpdateWithoutSchoolGroupInput = {
   studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
   feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
   holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
   staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
   expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -12008,6 +12639,7 @@ export type SchoolUncheckedUpdateManyWithoutSchoolGroupInput = {
   status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
   lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
   workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
   attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
   onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12039,6 +12671,7 @@ export type SchoolCountOutputType = {
   studentGuardians: number
   enrollments: number
   feeHeads: number
+  feeHeadClassLevels: number
   holidays: number
   staff: number
   expenseCategories: number
@@ -12077,6 +12710,7 @@ export type SchoolCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   studentGuardians?: boolean | SchoolCountOutputTypeCountStudentGuardiansArgs
   enrollments?: boolean | SchoolCountOutputTypeCountEnrollmentsArgs
   feeHeads?: boolean | SchoolCountOutputTypeCountFeeHeadsArgs
+  feeHeadClassLevels?: boolean | SchoolCountOutputTypeCountFeeHeadClassLevelsArgs
   holidays?: boolean | SchoolCountOutputTypeCountHolidaysArgs
   staff?: boolean | SchoolCountOutputTypeCountStaffArgs
   expenseCategories?: boolean | SchoolCountOutputTypeCountExpenseCategoriesArgs
@@ -12229,6 +12863,13 @@ export type SchoolCountOutputTypeCountFeeHeadsArgs<ExtArgs extends runtime.Types
 /**
  * SchoolCountOutputType without action
  */
+export type SchoolCountOutputTypeCountFeeHeadClassLevelsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FeeHeadClassLevelWhereInput
+}
+
+/**
+ * SchoolCountOutputType without action
+ */
 export type SchoolCountOutputTypeCountHolidaysArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.HolidayWhereInput
 }
@@ -12375,6 +13016,7 @@ export type SchoolSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   status?: boolean
   lateFeePercent?: boolean
   lateFeeFlat?: boolean
+  lateFeeGraceDays?: boolean
   workingDays?: boolean
   attendanceBackdateDays?: boolean
   onboardedAt?: boolean
@@ -12399,6 +13041,7 @@ export type SchoolSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   studentGuardians?: boolean | Prisma.School$studentGuardiansArgs<ExtArgs>
   enrollments?: boolean | Prisma.School$enrollmentsArgs<ExtArgs>
   feeHeads?: boolean | Prisma.School$feeHeadsArgs<ExtArgs>
+  feeHeadClassLevels?: boolean | Prisma.School$feeHeadClassLevelsArgs<ExtArgs>
   holidays?: boolean | Prisma.School$holidaysArgs<ExtArgs>
   staff?: boolean | Prisma.School$staffArgs<ExtArgs>
   expenseCategories?: boolean | Prisma.School$expenseCategoriesArgs<ExtArgs>
@@ -12443,6 +13086,7 @@ export type SchoolSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   status?: boolean
   lateFeePercent?: boolean
   lateFeeFlat?: boolean
+  lateFeeGraceDays?: boolean
   workingDays?: boolean
   attendanceBackdateDays?: boolean
   onboardedAt?: boolean
@@ -12474,6 +13118,7 @@ export type SchoolSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   status?: boolean
   lateFeePercent?: boolean
   lateFeeFlat?: boolean
+  lateFeeGraceDays?: boolean
   workingDays?: boolean
   attendanceBackdateDays?: boolean
   onboardedAt?: boolean
@@ -12505,6 +13150,7 @@ export type SchoolSelectScalar = {
   status?: boolean
   lateFeePercent?: boolean
   lateFeeFlat?: boolean
+  lateFeeGraceDays?: boolean
   workingDays?: boolean
   attendanceBackdateDays?: boolean
   onboardedAt?: boolean
@@ -12513,7 +13159,7 @@ export type SchoolSelectScalar = {
   updatedAt?: boolean
 }
 
-export type SchoolOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolGroupId" | "name" | "slug" | "legalName" | "logoUrl" | "primaryColor" | "timezone" | "locale" | "currency" | "country" | "city" | "address" | "schoolLevels" | "oLevelClassNames" | "aLevelClassNames" | "phone" | "email" | "status" | "lateFeePercent" | "lateFeeFlat" | "workingDays" | "attendanceBackdateDays" | "onboardedAt" | "trialEndsAt" | "createdAt" | "updatedAt", ExtArgs["result"]["school"]>
+export type SchoolOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolGroupId" | "name" | "slug" | "legalName" | "logoUrl" | "primaryColor" | "timezone" | "locale" | "currency" | "country" | "city" | "address" | "schoolLevels" | "oLevelClassNames" | "aLevelClassNames" | "phone" | "email" | "status" | "lateFeePercent" | "lateFeeFlat" | "lateFeeGraceDays" | "workingDays" | "attendanceBackdateDays" | "onboardedAt" | "trialEndsAt" | "createdAt" | "updatedAt", ExtArgs["result"]["school"]>
 export type SchoolInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   schoolGroup?: boolean | Prisma.School$schoolGroupArgs<ExtArgs>
   domains?: boolean | Prisma.School$domainsArgs<ExtArgs>
@@ -12533,6 +13179,7 @@ export type SchoolInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   studentGuardians?: boolean | Prisma.School$studentGuardiansArgs<ExtArgs>
   enrollments?: boolean | Prisma.School$enrollmentsArgs<ExtArgs>
   feeHeads?: boolean | Prisma.School$feeHeadsArgs<ExtArgs>
+  feeHeadClassLevels?: boolean | Prisma.School$feeHeadClassLevelsArgs<ExtArgs>
   holidays?: boolean | Prisma.School$holidaysArgs<ExtArgs>
   staff?: boolean | Prisma.School$staffArgs<ExtArgs>
   expenseCategories?: boolean | Prisma.School$expenseCategoriesArgs<ExtArgs>
@@ -12582,6 +13229,7 @@ export type $SchoolPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     studentGuardians: Prisma.$StudentGuardianPayload<ExtArgs>[]
     enrollments: Prisma.$EnrollmentPayload<ExtArgs>[]
     feeHeads: Prisma.$FeeHeadPayload<ExtArgs>[]
+    feeHeadClassLevels: Prisma.$FeeHeadClassLevelPayload<ExtArgs>[]
     holidays: Prisma.$HolidayPayload<ExtArgs>[]
     staff: Prisma.$StaffPayload<ExtArgs>[]
     expenseCategories: Prisma.$ExpenseCategoryPayload<ExtArgs>[]
@@ -12645,6 +13293,10 @@ export type $SchoolPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
      */
     lateFeePercent: runtime.Decimal
     lateFeeFlat: runtime.Decimal
+    /**
+     * Days after the due date before the surcharge applies. Zero = next day.
+     */
+    lateFeeGraceDays: number
     /**
      * ISO day numbers the school runs — 1 is Monday, 7 is Sunday. The
      * denominator of every attendance percentage, together with `holidays`.
@@ -13071,6 +13723,7 @@ export interface Prisma__SchoolClient<T, Null = never, ExtArgs extends runtime.T
   studentGuardians<T extends Prisma.School$studentGuardiansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$studentGuardiansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StudentGuardianPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   enrollments<T extends Prisma.School$enrollmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$enrollmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EnrollmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   feeHeads<T extends Prisma.School$feeHeadsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$feeHeadsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FeeHeadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  feeHeadClassLevels<T extends Prisma.School$feeHeadClassLevelsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$feeHeadClassLevelsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FeeHeadClassLevelPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   holidays<T extends Prisma.School$holidaysArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$holidaysArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$HolidayPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   staff<T extends Prisma.School$staffArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$staffArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StaffPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   expenseCategories<T extends Prisma.School$expenseCategoriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$expenseCategoriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ExpenseCategoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -13140,6 +13793,7 @@ export interface SchoolFieldRefs {
   readonly status: Prisma.FieldRef<"School", 'SchoolStatus'>
   readonly lateFeePercent: Prisma.FieldRef<"School", 'Decimal'>
   readonly lateFeeFlat: Prisma.FieldRef<"School", 'Decimal'>
+  readonly lateFeeGraceDays: Prisma.FieldRef<"School", 'Int'>
   readonly workingDays: Prisma.FieldRef<"School", 'Int[]'>
   readonly attendanceBackdateDays: Prisma.FieldRef<"School", 'Int'>
   readonly onboardedAt: Prisma.FieldRef<"School", 'DateTime'>
@@ -13971,6 +14625,30 @@ export type School$feeHeadsArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   distinct?: Prisma.FeeHeadScalarFieldEnum | Prisma.FeeHeadScalarFieldEnum[]
+}
+
+/**
+ * School.feeHeadClassLevels
+ */
+export type School$feeHeadClassLevelsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FeeHeadClassLevel
+   */
+  select?: Prisma.FeeHeadClassLevelSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FeeHeadClassLevel
+   */
+  omit?: Prisma.FeeHeadClassLevelOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FeeHeadClassLevelInclude<ExtArgs> | null
+  where?: Prisma.FeeHeadClassLevelWhereInput
+  orderBy?: Prisma.FeeHeadClassLevelOrderByWithRelationInput | Prisma.FeeHeadClassLevelOrderByWithRelationInput[]
+  cursor?: Prisma.FeeHeadClassLevelWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FeeHeadClassLevelScalarFieldEnum | Prisma.FeeHeadClassLevelScalarFieldEnum[]
 }
 
 /**

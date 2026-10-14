@@ -8,7 +8,6 @@ import {
   type SignupVerifyOtpResult,
 } from '@ilm/contracts';
 import { Button, Field, OtpInput, useToast } from '@ilm/ui';
-import { ApproveIcon, ICON_SIZE } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
@@ -173,12 +172,8 @@ export function OtpVerificationForm({
 
       const body = (await response.json()) as { data: SignupVerifyOtpResult };
       clearSignupDraft();
-      toast.success('Email verified. Sign in to continue.');
-      const params = new URLSearchParams({
-        verified: '1',
-        email: body.data.email,
-      });
-      router.replace(`/login?${params.toString()}`);
+      toast.success('Email verified. Opening your school…');
+      window.location.assign(body.data.continueUrl);
     } catch {
       showNetworkErrorToast(toast);
     } finally {
@@ -329,7 +324,6 @@ export function OtpVerificationForm({
           className="w-full"
           size="touch"
         >
-          <ApproveIcon className={ICON_SIZE.inline} aria-hidden />
           {isPending ? 'Verifying…' : 'Verify code'}
         </Button>
       </AuthFormActions>

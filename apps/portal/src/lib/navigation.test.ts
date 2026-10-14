@@ -81,6 +81,17 @@ describe('the fees section', () => {
   });
 });
 
+describe('calendar', () => {
+  it('is its own top-level item, not a child of Academics', () => {
+    const items = visibleNavItems(['academics.structure.read']);
+    const academics = find(items, 'Academics');
+
+    expect(labels(items)).toContain('Calendar');
+    expect(find(items, 'Calendar')?.href).toBe('/academics/holidays');
+    expect(labels(academics?.children ?? [])).not.toContain('Calendar');
+  });
+});
+
 describe('admission', () => {
   it('is its own top-level item, not a child of Students', () => {
     const items = visibleNavItems(['students.student.read', 'students.student.create']);

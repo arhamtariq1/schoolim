@@ -214,7 +214,7 @@ export class StudentsService {
       // a staff child, and the two must not collapse into each other.
       const lines =
         input.fees ??
-        (await defaultFeeLines(tx)).map((line) => ({
+        (await defaultFeeLines(tx, input.enrollment.classLevelId)).map((line) => ({
           feeHeadId: line.feeHeadId,
           amountMinor: line.amountMinor,
         }));

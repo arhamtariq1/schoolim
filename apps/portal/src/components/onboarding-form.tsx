@@ -49,6 +49,7 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
   const [personName, setPersonName] = useState(initial.name);
   const [personPhone, setPersonPhone] = useState(displayPhone(initial.phone ?? ''));
   const [designation, setDesignation] = useState(initial.designation ?? '');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(initial.avatarUrl);
 
   const [schoolName, setSchoolName] = useState(
     initial.school.onboarded ? initial.school.name : '',
@@ -245,6 +246,7 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
         name: personName,
         phone: toE164(personPhone),
         ...(designation.trim() === '' ? {} : { designation: designation.trim() }),
+        ...(avatarUrl === null || avatarUrl === '' ? {} : { avatarUrl }),
       },
       school: {
         name: schoolName,
@@ -340,6 +342,11 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
             email={initial.email}
             phone={toE164(personPhone) || initial.phone}
             roleLabel={designation.trim() === '' ? 'Owner' : designation}
+            avatarSrc={avatarUrl}
+            onAvatarChange={setAvatarUrl}
+            onAvatarError={(message) => {
+              toast.error(message);
+            }}
           />
           <ProfilePersonFields
             layout="reference"

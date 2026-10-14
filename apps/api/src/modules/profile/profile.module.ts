@@ -330,6 +330,9 @@ export class ProfileService {
             name: input.person.name,
             phone: input.person.phone,
             designation: input.person.designation ?? null,
+            ...(input.person.avatarUrl === undefined
+              ? {}
+              : { avatarUrl: input.person.avatarUrl }),
             profileCompletedAt: now,
           },
           select: {

@@ -41,7 +41,8 @@ export const upsertUserProfileSchema = z
     name: textSchema(120),
     phone: phoneSchema,
     designation: textSchema(80).optional(),
-    avatarUrl: z.string().url().max(2048).optional().nullable(),
+    /** Optional data URL or https URL — same size ceiling as staff photos. */
+    avatarUrl: z.string().trim().max(800_000).optional().nullable(),
   })
   .strict();
 
@@ -59,6 +60,8 @@ export const completeOnboardingSchema = z
         name: textSchema(120),
         phone: phoneSchema,
         designation: textSchema(80).optional(),
+        /** Optional data URL or https URL — same size ceiling as staff photos. */
+        avatarUrl: z.string().trim().max(800_000).optional().nullable(),
       })
       .strict(),
     school: z

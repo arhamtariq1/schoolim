@@ -1,4 +1,9 @@
-import { ROUTES, type FeeHead, type LateFeePolicy } from '@ilm/contracts';
+import {
+  ROUTES,
+  type ClassLevel,
+  type FeeHead,
+  type LateFeePolicy,
+} from '@ilm/contracts';
 
 import { FeeHeadsManager } from '@/components/fee-heads-manager';
 import { LateFeePolicyCard } from '@/components/late-fee-policy-card';
@@ -22,10 +27,13 @@ import { getSession } from '@/lib/session';
  * data that was one query away (docs/16 §7).
  */
 export default async function FeeSettingsPage() {
-  const [session, result, lateFeeResult] = await Promise.all([
+  const [session, result, lateFeeResult, classesResult] = await Promise.all([
     getSession(),
     apiFetch<{ data: FeeHead[] }>(ROUTES.fees.heads),
     apiFetch<{ data: LateFeePolicy }>(ROUTES.fees.lateFeePolicy),
+    // Class levels, not setup: setup returns [] when there is no current
+    // session, and fee applicability is about the class catalogue itself.
+    apiFetch<{ data: ClassLevel[] }>(ROUTES.academics.classes),
   ]);
 
   // A school that has never set one charges nothing, which is also what the
@@ -33,7 +41,12 @@ export default async function FeeSettingsPage() {
   // would have said, with the reason beside it.
   const policy: LateFeePolicy = lateFeeResult.ok
     ? lateFeeResult.data.data
-    : { percentBasisPoints: 0, flatMinor: 0 };
+    : { percentBasisPoints: 0, flatMinor: 0, graceDays: 0 };
+
+  const classes = (classesResult.ok ? classesResult.data.data : []).map((entry) => ({
+    id: entry.id,
+    name: entry.name,
+  }));
 
   const canConfigure = session?.permissions.includes('fees.plan.configure') ?? false;
 
@@ -46,6 +59,7 @@ export default async function FeeSettingsPage() {
 
       <FeeHeadsManager
         initialHeads={result.ok ? result.data.data : []}
+        classes={classes}
         error={result.ok ? undefined : result.message}
         canConfigure={canConfigure}
       />

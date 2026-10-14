@@ -2,7 +2,7 @@
 
 import { loginRequestSchema, ROUTES, type LoginOutcome, type SchoolChoice } from '@ilm/contracts';
 import { Button, Field, Input, PasswordInput, useToast } from '@ilm/ui';
-import { EmailIcon, ICON_SIZE, LockedIcon, SignInIcon } from '@ilm/ui/icons';
+import { EmailIcon, ICON_SIZE, LockedIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -160,7 +160,6 @@ export function LoginForm({
           }
         >
           <Button type="submit" isPending={isPending} className="w-full" size="touch">
-            <SignInIcon className={ICON_SIZE.inline} aria-hidden />
             {isPending ? 'Signing in…' : 'Sign in'}
           </Button>
         </AuthFormActions>

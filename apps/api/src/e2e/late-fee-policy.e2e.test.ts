@@ -105,7 +105,9 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await admin.$executeRaw`
-    UPDATE schools SET late_fee_percent = 0, late_fee_flat = 0 WHERE id = ${SCHOOL}::uuid
+    UPDATE schools
+       SET late_fee_percent = 0, late_fee_flat = 0, late_fee_grace_days = 0
+     WHERE id = ${SCHOOL}::uuid
   `;
 });
 
@@ -138,43 +140,49 @@ describe('reading and writing the policy', () => {
   it('starts at nothing, which is what an unconfigured school charges', async () => {
     const policy = await read();
 
-    expect(policy).toEqual({ percentBasisPoints: 0, flatMinor: 0 });
+    expect(policy).toEqual({ percentBasisPoints: 0, flatMinor: 0, graceDays: 0 });
   });
 
   it('survives the round trip through a numeric(5,2) column', async () => {
     // 2.5% is `250` on the wire and `2.50` in the column. Getting this wrong by
     // a factor of a hundred is the whole reason the test exists.
-    const saved = await write({ percentBasisPoints: 250, flatMinor: 20_000 });
+    const saved = await write({ percentBasisPoints: 250, flatMinor: 20_000, graceDays: 5 });
 
     expect(saved.status).toBe(200);
-    expect(saved.data).toEqual({ percentBasisPoints: 250, flatMinor: 20_000 });
-    expect(await read()).toEqual({ percentBasisPoints: 250, flatMinor: 20_000 });
+    expect(saved.data).toEqual({ percentBasisPoints: 250, flatMinor: 20_000, graceDays: 5 });
+    expect(await read()).toEqual({ percentBasisPoints: 250, flatMinor: 20_000, graceDays: 5 });
 
-    const row = await admin.$queryRawUnsafe<{ percent: string; flat: string }[]>(
-      `SELECT late_fee_percent::text AS percent, late_fee_flat::text AS flat
+    const row = await admin.$queryRawUnsafe<
+      { percent: string; flat: string; grace: number }[]
+    >(
+      `SELECT late_fee_percent::text AS percent, late_fee_flat::text AS flat,
+              late_fee_grace_days AS grace
          FROM schools WHERE id = $1::uuid`,
       SCHOOL,
     );
     expect(row[0]?.percent).toBe('2.50');
     expect(row[0]?.flat).toBe('200.00');
+    expect(row[0]?.grace).toBe(5);
   });
 
   it('takes a percentage on its own, and a flat amount on its own', async () => {
-    expect((await write({ percentBasisPoints: 500, flatMinor: 0 })).data).toEqual({
+    expect((await write({ percentBasisPoints: 500, flatMinor: 0, graceDays: 0 })).data).toEqual({
       percentBasisPoints: 500,
       flatMinor: 0,
+      graceDays: 0,
     });
-    expect((await write({ percentBasisPoints: 0, flatMinor: 50_000 })).data).toEqual({
+    expect((await write({ percentBasisPoints: 0, flatMinor: 50_000, graceDays: 0 })).data).toEqual({
       percentBasisPoints: 0,
       flatMinor: 50_000,
+      graceDays: 0,
     });
   });
 
   it('can be turned back off', async () => {
-    await write({ percentBasisPoints: 500, flatMinor: 50_000 });
-    const off = await write({ percentBasisPoints: 0, flatMinor: 0 });
+    await write({ percentBasisPoints: 500, flatMinor: 50_000, graceDays: 3 });
+    const off = await write({ percentBasisPoints: 0, flatMinor: 0, graceDays: 0 });
 
-    expect(off.data).toEqual({ percentBasisPoints: 0, flatMinor: 0 });
+    expect(off.data).toEqual({ percentBasisPoints: 0, flatMinor: 0, graceDays: 0 });
   });
 
   it('refuses a rate over 100% or below zero', async () => {
@@ -183,7 +191,7 @@ describe('reading and writing the policy', () => {
         method: 'PUT',
         url: ROUTES.fees.lateFeePolicy,
         headers: { host: HOST, cookie: jar },
-        payload: { percentBasisPoints, flatMinor: 0 },
+        payload: { percentBasisPoints, flatMinor: 0, graceDays: 0 },
       });
       expect(response.statusCode).toBe(400);
     }
@@ -194,7 +202,7 @@ describe('reading and writing the policy', () => {
       method: 'PUT',
       url: ROUTES.fees.lateFeePolicy,
       headers: { host: HOST, cookie: jar },
-      payload: { percentBasisPoints: 0, flatMinor: -100 },
+      payload: { percentBasisPoints: 0, flatMinor: -100, graceDays: 0 },
     });
     expect(negative.statusCode).toBe(400);
 
@@ -202,7 +210,7 @@ describe('reading and writing the policy', () => {
       method: 'PUT',
       url: ROUTES.fees.lateFeePolicy,
       headers: { host: HOST, cookie: jar },
-      payload: { percentBasisPoints: 250.5, flatMinor: 0 },
+      payload: { percentBasisPoints: 250.5, flatMinor: 0, graceDays: 0 },
     });
     expect(fractional.statusCode).toBe(400);
   });
@@ -271,7 +279,7 @@ describe('what it does to a voucher', () => {
   });
 
   it('rates a voucher at the policy in force when it is written', async () => {
-    await write({ percentBasisPoints: 500, flatMinor: 10_000 });
+    await write({ percentBasisPoints: 500, flatMinor: 10_000, graceDays: 0 });
     const id = await voucher();
 
     await app.inject({
@@ -286,7 +294,7 @@ describe('what it does to a voucher', () => {
   });
 
   it('leaves an already-issued voucher alone when the policy changes', async () => {
-    await write({ percentBasisPoints: 500, flatMinor: 0 });
+    await write({ percentBasisPoints: 500, flatMinor: 0, graceDays: 0 });
     const id = await voucher();
     await app.inject({
       method: 'PATCH',
@@ -298,13 +306,13 @@ describe('what it does to a voucher', () => {
 
     // The school doubles its late fee. The challan the parent is holding still
     // says 300, so the voucher must still say 300.
-    await write({ percentBasisPoints: 1000, flatMinor: 0 });
+    await write({ percentBasisPoints: 1000, flatMinor: 0, graceDays: 0 });
 
     expect((await detail(id)).lateFeeMinor).toBe(30_000);
   });
 
   it('drops the late fee when the switch on the voucher is turned off', async () => {
-    await write({ percentBasisPoints: 500, flatMinor: 0 });
+    await write({ percentBasisPoints: 500, flatMinor: 0, graceDays: 0 });
     const id = await voucher();
 
     await app.inject({

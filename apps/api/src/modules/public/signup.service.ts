@@ -15,6 +15,7 @@ import {
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { ENV, type Env } from '../../config/env';
+import { HandoffService } from '../auth/handoff.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from '../../shared/auth/password.service';
 import { BusinessRuleError, ConflictError } from '../../shared/errors/domain-error';
@@ -26,10 +27,10 @@ import { STORAGE_PROVIDERS } from '../../shared/storage/storage.port';
 import { schoolOrigin } from '../../shared/tenancy/school-origin';
 
 /**
- * Self-serve signup — credentials → OTP (creates tenant) → sign in at apex.
+ * Self-serve signup — credentials → OTP (creates tenant) → handoff onto school host.
  *
- * Runs on the **admin** connection until the school exists. OTP verification does
- * not mint a session; the owner signs in manually, then completes `/profile/create`.
+ * Runs on the **admin** connection until the school exists. OTP verification mints
+ * a one-time handoff (ADR-0009) so the owner enters logged in, then `/profile`.
  */
 
 /** Overall intent lifetime. Restart from /signup after this. */
@@ -59,6 +60,7 @@ export class SignupService {
     private readonly prisma: PrismaService,
     private readonly passwords: PasswordService,
     @Inject(MAIL) private readonly mail: MailPort,
+    private readonly handoffs: HandoffService,
     @Inject(ENV) private readonly env: Env,
   ) {}
 
@@ -354,9 +356,22 @@ export class SignupService {
       'School provisioned after signup OTP',
     );
 
+    const token = await this.handoffs.mint(
+      created.school.id,
+      created.ownerId,
+      now,
+      context,
+    );
+
     return {
       email: intent.email,
       verified: true,
+      continueUrl: `${schoolOrigin(
+        created.school.slug,
+        this.env.APP_DOMAIN,
+        this.env.WEB_URL,
+        this.env.PORTAL_TENANT_MODE,
+      )}/auth/continue?t=${token}`,
     };
   }
 

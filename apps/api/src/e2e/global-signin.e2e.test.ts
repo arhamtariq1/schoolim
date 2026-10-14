@@ -319,7 +319,7 @@ describe('self-serve signup', () => {
     },
   };
 
-  it('provisions the school after credentials and OTP without minting a session', async () => {
+  it('provisions the school after credentials and OTP with a handoff URL', async () => {
     const response = await runSignupFlow(app, mailer, flow, APEX);
 
     expect(response.statusCode).toBe(201);
@@ -328,11 +328,13 @@ describe('self-serve signup', () => {
       data: {
         email: string;
         verified: true;
+        continueUrl: string;
       };
     }>().data;
 
     expect(body.email).toBe(flow.email);
     expect(body.verified).toBe(true);
+    expect(body.continueUrl).toMatch(/\/auth\/continue\?t=/);
 
     const slug = await schoolSlugForUserEmail(admin, flow.email);
 

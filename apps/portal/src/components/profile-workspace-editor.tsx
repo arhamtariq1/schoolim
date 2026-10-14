@@ -74,6 +74,7 @@ export function ProfileWorkspaceEditor({
   const [name, setName] = useState(profile.name);
   const [phone, setPhone] = useState(displayPhone(profile.phone ?? ''));
   const [designation, setDesignation] = useState(profile.designation ?? '');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatarUrl);
   const [school, setSchool] = useState<ProfileSchoolEditorValues>(() =>
     schoolValuesFromProfile(profile, initialProvince, {
       oLevelClassNames: workspace.settings.oLevelClassNames,
@@ -147,6 +148,7 @@ export function ProfileWorkspaceEditor({
       name,
       phone: toE164(phone),
       ...(designation.trim() === '' ? {} : { designation: designation.trim() }),
+      avatarUrl: avatarUrl === '' ? null : avatarUrl,
     };
     const personParsed = upsertUserProfileSchema.safeParse(personPayload);
     const personSchemaErrors = personParsed.success ? {} : fieldErrorsFromZod(personParsed.error);
@@ -249,6 +251,11 @@ export function ProfileWorkspaceEditor({
           phone={toE164(phone) || profile.phone}
           roleLabel={roleLabel}
           readOnly={readOnly}
+          avatarSrc={avatarUrl}
+          onAvatarChange={readOnly ? undefined : setAvatarUrl}
+          onAvatarError={(message) => {
+            toast.error(message);
+          }}
         />
         <ProfilePersonFields
           layout="reference"
