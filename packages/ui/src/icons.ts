@@ -88,7 +88,7 @@ export {
   /** Money going back to a family, which is not the same act as an undo. */
   HandCoins as RefundIcon,
   /** Money the school holds but has not earned. */
-  PiggyBank as DepositIcon,
+  ShieldCheck as DepositIcon,
   /** Somebody who has not paid by the day it was due. */
   AlarmClock as OverdueIcon,
   /** Challan page layout (copies per sheet). */

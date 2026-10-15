@@ -5,16 +5,25 @@ import type { ComponentProps, ReactNode } from 'react';
 import { cn } from '../lib/cn';
 import { ErrorIcon, InfoIcon, SuccessIcon, WarningIcon } from '../icons';
 
-const badge = cva('inline-flex items-center gap-1.5 rounded-full font-medium', {
+/**
+ * The one status badge design — the Students table's (`rounded-md`, `px-2.5
+ * py-1`, `text-xs font-medium`, a 16px glyph). Every list, detail screen and
+ * card takes it from here rather than restating it, so a status looks the same
+ * wherever it appears and a change is one edit.
+ */
+const badge = cva('inline-flex items-center gap-1.5 rounded-md font-medium', {
   variants: {
     tone: {
-      neutral: 'bg-muted text-muted-foreground',
+      // The brand colour, not gray: a status that is neither good, bad nor a
+      // warning is still a status, and gray reads as "disabled". `primary` has a
+      // separate dark-mode value, so this holds in both themes.
+      neutral: 'bg-primary/10 text-primary',
       success: 'bg-success/10 text-success',
       warning: 'bg-warning/10 text-warning',
       danger: 'bg-danger/10 text-danger',
       info: 'bg-info/10 text-info',
     },
-    size: { sm: 'px-2 py-0.5 text-xs', md: 'px-2.5 py-1 text-sm' },
+    size: { sm: 'px-2.5 py-1 text-xs', md: 'px-3 py-1.5 text-sm' },
   },
   defaultVariants: { tone: 'neutral', size: 'sm' },
 });
@@ -67,7 +76,7 @@ export function StatusBadge({
   return (
     <span className={cn(badge({ tone, size }), className)} {...props}>
       {showIcon ? (
-        <ResolvedIcon className="size-3.5 shrink-0 opacity-90" aria-hidden="true" />
+        <ResolvedIcon className="size-4 shrink-0 opacity-90" aria-hidden="true" />
       ) : null}
       <span>{children as ReactNode}</span>
     </span>

@@ -66,7 +66,6 @@ import {
 } from '@/components/fees/fee-list-shared';
 import { ListDataTable } from '@/components/list-data-table';
 import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
-import { GrNumberRangeFilter } from '@/components/gr-number-range-filter';
 import { ListTableScreen } from '@/components/list-table-screen';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
 import { TableSelectionBar } from '@/components/table-selection-bar';
@@ -122,8 +121,6 @@ export interface FeeIncrementsViewProps {
     sessionId: string;
     status: string;
     gender: string;
-    grFrom: string;
-    grTo: string;
   };
   readonly error?: string | undefined;
   readonly canApply: boolean;
@@ -151,18 +148,6 @@ export function FeeIncrementsView({
   const { searchQuery, onSearchQueryChange } = useDebouncedSearchFilter(filters.q, (value) => {
     pushFilters({ q: value });
   });
-  const { searchQuery: grFromDraft, onSearchQueryChange: onGrFromChange } = useDebouncedSearchFilter(
-    filters.grFrom,
-    (value) => {
-      pushFilters({ grFrom: value });
-    },
-  );
-  const { searchQuery: grToDraft, onSearchQueryChange: onGrToChange } = useDebouncedSearchFilter(
-    filters.grTo,
-    (value) => {
-      pushFilters({ grTo: value });
-    },
-  );
 
   const rows = page.rows;
 
@@ -534,12 +519,6 @@ export function FeeIncrementsView({
               onValueChange={(next) => {
                 pushFilters({ gender: next });
               }}
-            />
-            <GrNumberRangeFilter
-              from={grFromDraft}
-              to={grToDraft}
-              onFromChange={onGrFromChange}
-              onToChange={onGrToChange}
             />
               </>
             }

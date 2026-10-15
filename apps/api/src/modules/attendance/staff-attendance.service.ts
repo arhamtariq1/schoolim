@@ -10,7 +10,8 @@ import { Injectable } from '@nestjs/common';
 
 import { type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
-import { BusinessRuleError } from '../../shared/errors/domain-error';
+import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
+import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
 
 import {
   attendanceBasisPoints,
@@ -39,7 +40,10 @@ import {
  */
 @Injectable()
 export class StaffAttendanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly context: TenantContextService,
+  ) {}
 
   async roster(date: string | undefined, canUnlock: boolean): Promise<StaffRoster> {
     return this.prisma.tenant(async (tx) => {
@@ -158,7 +162,30 @@ export class StaffAttendanceService {
     });
   }
 
-  async monthlyReport(query: MonthlyReportQuery): Promise<MonthlyReport> {
+  /**
+   * The signed-in member of staff's own month, and nobody else's.
+   *
+   * Found through `staff.user_id` from the caller's own session, never from an
+   * id in the request — so there is no parameter to change to read a colleague.
+   */
+  async myReport(query: MonthlyReportQuery): Promise<MonthlyReport> {
+    const userId = this.context.userId;
+    const mine =
+      userId === undefined
+        ? null
+        : await this.prisma.tenant((tx) =>
+            tx.staff.findFirst({
+              where: { userId, deletedAt: null },
+              select: { id: true },
+            }),
+          );
+    if (mine === null) {
+      throw new NotFoundError('staff record');
+    }
+    return this.monthlyReport(query, mine.id);
+  }
+
+  async monthlyReport(query: MonthlyReportQuery, onlyStaffId?: string): Promise<MonthlyReport> {
     return this.prisma.tenant(async (tx) => {
       const context = await this.loadContext(tx);
       const days = describeMonth(query.month, context.calendar);
@@ -168,6 +195,7 @@ export class StaffAttendanceService {
 
       const staff = await tx.staff.findMany({
         where: {
+          ...(onlyStaffId === undefined ? {} : { id: onlyStaffId }),
           OR: [{ leftOn: null }, { leftOn: { gte: new Date(first) } }],
           AND: [{ OR: [{ joinedOn: null }, { joinedOn: { lte: new Date(last) } }] }],
           ...(query.q === undefined

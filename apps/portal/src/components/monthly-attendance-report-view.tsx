@@ -12,6 +12,7 @@ import {
   NoResultsState,
   Pagination,
   StatusBadge,
+  type StatusTone,
 } from '@ilm/ui';
 import {
   ChevronLeftIcon,
@@ -170,7 +171,7 @@ export function MonthlyAttendanceReportView({
           badge={summary.shareLabel(summary.present)}
           icon={SuccessIcon}
           iconClassName="bg-success/10 text-success"
-          badgeClassName="bg-success/10 text-success"
+          badgeTone="success"
         />
         <SummaryTile
           label="Absent"
@@ -178,7 +179,7 @@ export function MonthlyAttendanceReportView({
           badge={summary.shareLabel(summary.absent)}
           icon={ErrorIcon}
           iconClassName="bg-danger/10 text-danger"
-          badgeClassName="bg-danger/10 text-danger"
+          badgeTone="danger"
         />
         {config.showLateCard ? (
           <SummaryTile
@@ -187,7 +188,7 @@ export function MonthlyAttendanceReportView({
             badge={summary.shareLabel(summary.late)}
             icon={OverdueIcon}
             iconClassName="bg-warning/15 text-warning"
-            badgeClassName="bg-warning/15 text-warning"
+            badgeTone="warning"
           />
         ) : null}
         <SummaryTile
@@ -196,7 +197,7 @@ export function MonthlyAttendanceReportView({
           badge={summary.shareLabel(summary.leave)}
           icon={HolidayIcon}
           iconClassName="bg-primary/10 text-primary"
-          badgeClassName="bg-primary/10 text-primary"
+          badgeTone="info"
         />
         <SummaryTile
           label="Not marked"
@@ -204,7 +205,7 @@ export function MonthlyAttendanceReportView({
           badge={summary.shareLabel(summary.notMarked)}
           icon={EmptyIcon}
           iconClassName="bg-muted text-muted-foreground"
-          badgeClassName="bg-muted text-muted-foreground"
+          badgeTone="neutral"
         />
       </div>
 
@@ -549,14 +550,14 @@ function SummaryTile({
   badge,
   icon: Icon,
   iconClassName,
-  badgeClassName,
+  badgeTone,
 }: {
   label: string;
   value: string;
   badge?: string;
   icon: typeof StudentsIcon;
   iconClassName: string;
-  badgeClassName?: string;
+  badgeTone?: StatusTone;
 }) {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-card px-4 py-3 shadow-raised">
@@ -568,7 +569,7 @@ function SummaryTile({
         <div className="mt-0.5 flex flex-wrap items-center gap-2">
           <p className="font-mono text-lg font-semibold tabular-nums text-foreground">{value}</p>
           {badge === undefined ? null : (
-            <StatusBadge tone="neutral" size="sm" className={badgeClassName}>
+            <StatusBadge tone={badgeTone ?? 'neutral'} size="sm">
               {badge}
             </StatusBadge>
           )}

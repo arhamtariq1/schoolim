@@ -1,11 +1,24 @@
-import { grantFor, type Permission, type PermissionGrant, type SchoolRole } from '@ilm/contracts';
-import { CanActivate, Injectable, SetMetadata, type ExecutionContext } from '@nestjs/common';
+import {
+  grantFor,
+  PERMISSION_GRANT,
+  type Permission,
+  type PermissionGrant,
+  type SchoolRole,
+} from '@ilm/contracts';
+import {
+  applyDecorators,
+  CanActivate,
+  Injectable,
+  SetMetadata,
+  type ExecutionContext,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 import { PermissionDeniedError } from '../errors/domain-error';
 import { TenantContextService } from '../tenancy/tenant-context.service';
 
 export const REQUIRED_PERMISSION = 'rbac:permission';
+export const REQUIRES_UNSCOPED_GRANT = 'rbac:unscoped';
 
 /**
  * Declare the permission a route requires.
@@ -15,6 +28,20 @@ export const REQUIRED_PERMISSION = 'rbac:permission';
  */
 export const RequirePermission = (permission: Permission): MethodDecorator =>
   SetMetadata(REQUIRED_PERMISSION, permission);
+
+/**
+ * Declare a permission a route needs **across the whole school**.
+ *
+ * For a route that has no per-row clause to narrow: a scoped grant would pass
+ * `RequirePermission` and then hand back everything, because nothing in the
+ * handler knows what "scoped" means. Where there is no scope to apply, the
+ * honest answer for a scoped holder is no.
+ */
+export const RequireUnscopedPermission = (permission: Permission): MethodDecorator =>
+  applyDecorators(
+    SetMetadata(REQUIRED_PERMISSION, permission),
+    SetMetadata(REQUIRES_UNSCOPED_GRANT, true),
+  );
 
 /**
  * Third guard in the chain: coarse capability.
@@ -52,6 +79,14 @@ export class RbacGuard implements CanActivate {
     const grant: PermissionGrant | undefined = grantFor(roles, required);
 
     if (grant === undefined) {
+      throw new PermissionDeniedError(required);
+    }
+
+    const needsUnscoped = this.reflector.getAllAndOverride<boolean | undefined>(
+      REQUIRES_UNSCOPED_GRANT,
+      [execution.getHandler(), execution.getClass()],
+    );
+    if (needsUnscoped === true && grant !== PERMISSION_GRANT.ALL) {
       throw new PermissionDeniedError(required);
     }
 

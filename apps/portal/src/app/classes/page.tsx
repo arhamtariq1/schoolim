@@ -45,7 +45,8 @@ export default async function ClassesPage({
       activeSessionId={activeSessionId}
       error={classesResult.ok ? undefined : classesResult.message}
       canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
-      canRenumber={session?.permissions.includes('students.student.update') ?? false}
+      // Roll numbers are GR numbers now; there is nothing left to renumber.
+      canRenumber={false}
       enabledSchoolLevels={enabledSchoolLevels}
     />
   );

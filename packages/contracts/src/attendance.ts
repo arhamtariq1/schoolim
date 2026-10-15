@@ -274,6 +274,8 @@ export const monthlyReportQuerySchema = z
     sectionId: idSchema.optional(),
     sessionId: idSchema.optional(),
     q: z.string().trim().max(80).optional(),
+    /** Staff report only: narrow to one person, for their profile page. */
+    staffId: idSchema.optional(),
   })
   .strict();
 

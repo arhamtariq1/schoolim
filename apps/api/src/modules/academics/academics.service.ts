@@ -2,6 +2,7 @@ import { type ClassLevelWithSections, type CurrentSession } from '@ilm/contracts
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../prisma/prisma.service';
+import { ClassScopeService } from '../../shared/rbac/class-scope.service';
 
 /**
  * Classes, sections and the academic session a placement is being made into.
@@ -29,7 +30,10 @@ import { PrismaService } from '../../prisma/prisma.service';
  */
 @Injectable()
 export class AcademicsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly classScope: ClassScopeService,
+  ) {}
 
   async currentSession(): Promise<CurrentSession | undefined> {
     return this.prisma.tenant(async (tx) => {
@@ -80,7 +84,12 @@ export class AcademicsService {
           })
         )?.id;
 
+      // A teacher's class tree holds the classes they take and no others — in
+      // the query, so an unassigned class is never read at all.
+      const scope = await this.classScope.classLevelIds(tx, 'academics.structure.read');
+
       const levels = await tx.classLevel.findMany({
+        ...(scope === undefined ? {} : { where: { id: { in: [...scope] } } }),
         // `numericOrder`, never alphabetical: sorted by name, "Grade 10" comes
         // before "Grade 2" and a dropdown becomes a puzzle.
         orderBy: { numericOrder: 'asc' },

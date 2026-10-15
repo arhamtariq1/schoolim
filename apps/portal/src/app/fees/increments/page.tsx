@@ -40,8 +40,6 @@ export default async function FeeIncrementsPage({
     sessionId: readParam(params, 'sessionId'),
     status: readParam(params, 'status'),
     gender: readParam(params, 'gender'),
-    grFrom: readParam(params, 'grFrom'),
-    grTo: readParam(params, 'grTo'),
   };
 
   const limit = clampInt(params['limit'], DEFAULT_LIST_PAGE_SIZE, 1, MAX_PAGE_LIMIT);

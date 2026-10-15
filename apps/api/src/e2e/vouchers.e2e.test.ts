@@ -230,6 +230,17 @@ beforeEach(async () => {
       SCHOOL_B,
     );
   }
+
+  // Voucher numbering has to be configured before anything can be generated.
+  // FV-000001 is what every existing school's counter already prints.
+  await admin.$executeRawUnsafe(
+    `INSERT INTO number_sequences (id, school_id, kind, next_value, prefix, pad, updated_at)
+     SELECT gen_random_uuid(), school, 'voucher', 1, 'FV-', 6, now()
+       FROM unnest(ARRAY[$1::uuid, $2::uuid]) AS school
+     ON CONFLICT (school_id, kind) DO NOTHING`,
+    SCHOOL_A,
+    SCHOOL_B,
+  );
 });
 
 let keyCounter = 0;
@@ -1221,3 +1232,147 @@ interface ChallanBody {
   sectionName: string | null;
   lines: { id: string }[];
 }
+
+describe('voucher number settings', () => {
+  async function putNumber(startingNumber: unknown) {
+    const response = await app.inject({
+      method: 'PUT',
+      url: ROUTES.school.voucherNumber,
+      headers: { host: HOST_A, cookie: jar },
+      payload: { startingNumber } as object,
+    });
+    return response.statusCode;
+  }
+
+  async function readNumber() {
+    const response = await get(ROUTES.school.voucherNumber);
+    return (JSON.parse(response.body) as { data: Record<string, unknown> }).data;
+  }
+
+  async function unconfigure(): Promise<void> {
+    await admin.$executeRaw`DELETE FROM number_sequences WHERE school_id = ${SCHOOL_A}::uuid AND kind = 'voucher'`;
+  }
+
+  async function numbers(): Promise<string[]> {
+    const rows = await admin.$queryRawUnsafe<{ voucher_no: string }[]>(
+      `SELECT voucher_no FROM fee_vouchers WHERE school_id = $1::uuid ORDER BY voucher_no`,
+      SCHOOL_A,
+    );
+    return rows.map((row) => row.voucher_no);
+  }
+
+  it('generates nothing — and invents no counter — until a start is set', async () => {
+    await unconfigure();
+
+    const response = await generate();
+
+    expect(response.statusCode).toBeGreaterThanOrEqual(400);
+    expect(await numbers()).toEqual([]);
+    expect(await readNumber()).toMatchObject({ configured: false, nextVoucherNo: null });
+
+    // And no failed run was left behind for the refusal.
+    const runs = await admin.$queryRawUnsafe<{ n: bigint }[]>(
+      `SELECT count(*) AS n FROM job_runs WHERE school_id = $1::uuid`,
+      SCHOOL_A,
+    );
+    expect(Number(runs[0]?.n)).toBe(0);
+  });
+
+  it('numbers vouchers from the configured start, in sequence', async () => {
+    await unconfigure();
+    expect(await putNumber('V-1001')).toBe(200);
+
+    await generate();
+
+    expect(await numbers()).toEqual(['V-1001', 'V-1002']);
+    expect(await readNumber()).toMatchObject({ configured: true, nextNumber: 1003 });
+  });
+
+  it('takes any pattern that ends in the number, like ITGS-F-001', async () => {
+    await unconfigure();
+    expect(await putNumber('ITGS-F-001')).toBe(200);
+
+    await generate();
+
+    expect(await numbers()).toEqual(['ITGS-F-001', 'ITGS-F-002']);
+  });
+
+  it('keeps the width the start was typed with, so FV-000001 carries on as FV-000002', async () => {
+    await unconfigure();
+    await putNumber('FV-000010');
+
+    await generate();
+
+    expect(await numbers()).toEqual(['FV-000010', 'FV-000011']);
+  });
+
+  it('will not move back onto a number already issued, and carries on after moving forward', async () => {
+    await generate();
+    const highest = Number((await readNumber())['highestIssued']);
+
+    expect(await putNumber(String(highest))).toBeGreaterThanOrEqual(400);
+    expect(await putNumber('1')).toBeGreaterThanOrEqual(400);
+
+    expect(await putNumber('FV-000500')).toBe(200);
+    await generate({ billMonths: ['2026-10'], issueDate: '2026-10-01', dueDate: '2026-10-15', validTill: '2026-10-25' });
+    expect((await numbers()).slice(-2)).toEqual(['FV-000500', 'FV-000501']);
+  });
+
+  it('refuses a start that is not letters-then-digits', async () => {
+    for (const value of [0, '0', 'abc', '1A', 'FV-', '123456789', '']) {
+      expect(await putNumber(value)).toBe(400);
+    }
+  });
+
+  it('never lets two vouchers in one school share a number, even past the service', async () => {
+    await generate();
+
+    await expect(
+      admin.$executeRawUnsafe(
+        `UPDATE fee_vouchers SET voucher_no = (SELECT min(voucher_no) FROM fee_vouchers WHERE school_id = $1::uuid)
+          WHERE school_id = $1::uuid AND voucher_no = (SELECT max(voucher_no) FROM fee_vouchers WHERE school_id = $1::uuid)`,
+        SCHOOL_A,
+      ),
+    ).rejects.toThrow();
+  });
+});
+
+describe('sorting the list', () => {
+  it('orders by voucher number both ways, decided by the server', async () => {
+    await generate();
+
+    const ascending = (await listVouchers('?sort=voucherNo&order=asc')).data.map((row) => row.voucherNo);
+    const descending = (await listVouchers('?sort=voucherNo&order=desc')).data.map((row) => row.voucherNo);
+
+    expect(ascending).toEqual([...ascending].sort());
+    expect(descending).toEqual([...ascending].reverse());
+  });
+
+  it('orders by student name', async () => {
+    await generate();
+
+    const names = (await listVouchers('?sort=studentName&order=asc')).data.map((row) => row.studentName);
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+  });
+
+  it('accepts every column the screen offers, and refuses one it does not', async () => {
+    await generate();
+
+    for (const sort of ['issueDate', 'dueDate', 'voucherNo', 'amount', 'studentName', 'status']) {
+      expect((await get(`${ROUTES.vouchers.list}?sort=${sort}&order=desc`)).statusCode).toBe(200);
+    }
+    expect((await get(`${ROUTES.vouchers.list}?sort=password&order=asc`)).statusCode).toBe(400);
+  });
+
+  it('keeps the order stable across pages when the sorted column ties', async () => {
+    await generate();
+
+    // Two vouchers, one issue date. Paging one at a time must still show both.
+    const first = (await listVouchers('?sort=issueDate&order=asc&limit=1&offset=0')).data;
+    const second = (await listVouchers('?sort=issueDate&order=asc&limit=1&offset=1')).data;
+
+    expect(first).toHaveLength(1);
+    expect(second).toHaveLength(1);
+    expect(first[0]?.id).not.toBe(second[0]?.id);
+  });
+});

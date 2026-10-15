@@ -9,6 +9,7 @@ import { TokenService } from './auth/token.service';
 import { LogMailer } from './mail/log.mailer';
 import { MAIL, type MailPort } from './mail/mail.port';
 import { SmtpMailer } from './mail/smtp.mailer';
+import { ClassScopeService } from './rbac/class-scope.service';
 import { CloudinaryStore } from './storage/cloudinary.store';
 import { DatabaseStore } from './storage/database.store';
 import { STORAGE, type StoragePort } from './storage/storage.port';
@@ -69,6 +70,7 @@ function remoteStore(env: Env): StoragePort | undefined {
     PrismaService,
     TokenService,
     PasswordService,
+    ClassScopeService,
     {
       provide: STORAGE,
       // Same shape as MAIL below, and for the same reason (ADR-0011, ADR-0013):
@@ -99,6 +101,7 @@ function remoteStore(env: Env): StoragePort | undefined {
     PrismaService,
     TokenService,
     PasswordService,
+    ClassScopeService,
     MAIL,
     STORAGE,
   ],

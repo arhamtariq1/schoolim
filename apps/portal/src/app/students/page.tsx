@@ -75,7 +75,9 @@ export default async function StudentsPage({
         aggregates: Record<string, number>;
       };
     }>(`${ROUTES.students.list}?${query.toString()}`),
-    apiFetch<{ data: { classes: { id: string; name: string }[] } }>(ROUTES.academics.setup),
+    // Scoped on the server: a teacher is offered only their own classes, and
+    // reception (who cannot read the academic structure) is offered all of them.
+    apiFetch<{ data: { id: string; name: string }[] }>(ROUTES.students.classOptions),
   ]);
 
   const isFiltered = search !== '' || status !== '' || classLevelId !== '';
@@ -98,7 +100,7 @@ export default async function StudentsPage({
         search={search}
         status={status}
         classLevelId={classLevelId}
-        classes={setup.ok ? setup.data.data.classes.map((entry) => ({ id: entry.id, name: entry.name })) : []}
+        classes={setup.ok ? setup.data.data : []}
         isFiltered={isFiltered}
         limit={result.ok ? result.data.meta.page.limit : limit}
         offset={result.ok ? result.data.meta.page.offset : offset}

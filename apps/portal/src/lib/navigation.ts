@@ -51,6 +51,13 @@ export const NAV_ITEMS: readonly NavItem[] = [
     permission: 'dashboard.workspace.read',
   },
   {
+    // A guardian's whole portal: their children, one at a time, read-only.
+    href: '/parent',
+    label: 'My children',
+    icon: 'StudentsIcon',
+    permission: 'parent.child.read',
+  },
+  {
     href: '/students/new',
     label: 'Add admission',
     icon: 'AdmissionIcon',
@@ -152,9 +159,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
             href: '/attendance/mark/teachers',
             label: 'Staff',
             icon: 'AccountIcon',
-            permission: 'attendance.record.read',
+            permission: 'attendance.staff.read',
           },
         ],
+      },
+      {
+        href: '/attendance/my',
+        label: 'My attendance',
+        icon: 'AccountIcon',
+        permission: 'attendance.own.read',
       },
       {
         href: '/attendance/reports',
@@ -172,11 +185,17 @@ export const NAV_ITEMS: readonly NavItem[] = [
             href: '/attendance/reports/teachers',
             label: 'Staff',
             icon: 'AccountIcon',
-            permission: 'attendance.report.read',
+            permission: 'attendance.staff.read',
           },
         ],
       },
     ],
+  },
+  {
+    href: '/marks',
+    label: 'Marks',
+    icon: 'ClassIcon',
+    permission: 'exams.result.read',
   },
   {
     href: '/academics',
@@ -194,16 +213,16 @@ export const NAV_ITEMS: readonly NavItem[] = [
         href: '/academics/sessions',
         label: 'Sessions',
         icon: 'SessionIcon',
-        permission: 'academics.structure.read',
+        // The office's. A teacher reads Classes (their own) and nothing school-wide.
+        permission: 'academics.session.configure',
       },
       {
         href: '/academics/promote',
         label: 'Promote students',
         icon: 'ForwardIcon',
-        // Readable by anyone who may see the structure — the preview answers
-        // "why is next year empty", which is a question a receptionist asks
-        // too. Running it is `academics.structure.configure`.
-        permission: 'academics.structure.read',
+        // School-wide counts of who moves where, so the office's: a teacher's
+        // read of the structure is limited to their own classes.
+        permission: 'academics.session.configure',
       },
     ],
   },
@@ -238,6 +257,20 @@ export const NAV_ITEMS: readonly NavItem[] = [
  * the capped nav; configuration in the gear).
  */
 export const SETTINGS_MENU_ITEMS: readonly NavItem[] = [
+  // Everybody with a workspace has a profile and a password. Without these a
+  // teacher's gear icon had nothing behind it and was shown disabled.
+  {
+    href: '/profile',
+    label: 'My profile',
+    icon: 'AccountIcon',
+    permission: 'dashboard.workspace.read',
+  },
+  {
+    href: '/settings/password',
+    label: 'Password',
+    icon: 'DesignationIcon',
+    permission: 'dashboard.workspace.read',
+  },
   {
     href: '/settings/fees',
     label: 'Fee types',
@@ -246,9 +279,15 @@ export const SETTINGS_MENU_ITEMS: readonly NavItem[] = [
   },
   {
     href: '/settings/voucher',
-    label: 'Fee challan',
+    label: 'Voucher Settings',
     icon: 'PrintIcon',
     permission: 'fees.voucher.read',
+  },
+  {
+    href: '/settings/gr-number',
+    label: 'GR numbers',
+    icon: 'DesignationIcon',
+    permission: 'settings.school.configure',
   },
 ];
 

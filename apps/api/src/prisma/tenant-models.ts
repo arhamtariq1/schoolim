@@ -38,6 +38,18 @@ export const TENANT_MODELS = [
   'StudentFee',
   'Holiday',
   'Staff',
+  /** ADR-0014: which classes a teacher takes — what their scoped grants compile into. */
+  'StaffClassAssignment',
+  /** Salary paid per month. Append-only: the app role cannot UPDATE or DELETE. */
+  'StaffSalaryPayment',
+  /** Marks: subjects, tests and exams, and per-student results. */
+  'Subject',
+  'AssessmentType',
+  /** Which subjects and assessment types each class has. */
+  'ClassSubject',
+  'ClassAssessmentType',
+  'Assessment',
+  'MarkEntry',
   'ExpenseCategory',
   'Expense',
   // Vouchers, payments, and the batch engine behind them.

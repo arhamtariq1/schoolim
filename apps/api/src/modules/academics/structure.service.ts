@@ -1,6 +1,7 @@
 import {
   type AcademicSession,
   type ClassLevel,
+  type ClassTeacher,
   type CreateClassLevel,
   type CreateSection,
   type CreateSession,
@@ -13,6 +14,7 @@ import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/errors/domain-error';
+import { classInScope, ClassScopeService } from '../../shared/rbac/class-scope.service';
 
 /**
  * Sessions, classes and sections — the structure everything else hangs off.
@@ -32,7 +34,10 @@ import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/er
  */
 @Injectable()
 export class StructureService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly classScope: ClassScopeService,
+  ) {}
 
   // --- Sessions -------------------------------------------------------------
 
@@ -246,60 +251,57 @@ export class StructureService {
    * year is still running, and a page that can only ever show the current year
    * cannot be used for that.
    */
+  /**
+   * The classes the caller may see: every class for the office, only their own
+   * for a teacher. Applied to the query rather than to the result, so the counts
+   * and teachers of a class that is not theirs are never even computed.
+   */
   async listClasses(sessionId?: string): Promise<ClassLevel[]> {
     return this.prisma.tenant(async (tx) => {
-      const scopeId =
-        sessionId ??
-        (
-          await tx.academicSession.findFirst({
-            where: { isCurrent: true },
-            select: { id: true },
-          })
-        )?.id;
+      const scope = await this.classScope.classLevelIds(tx, 'academics.structure.read');
+      const all = await this.listClassesWithin(tx, sessionId, undefined, scope);
+      return all;
+    });
+  }
 
-      const rows = await tx.classLevel.findMany({
-        orderBy: [{ numericOrder: 'asc' }, { name: 'asc' }],
+  /**
+   * The teachers who take one class, with what a class page shows of them.
+   *
+   * Active staff only, from the same assignments the staff form writes — so a
+   * teacher appears here the moment they are given the class, and not after they
+   * have left. A class that does not exist is "not found", not an empty list.
+   */
+  async teachersOf(classLevelId: string): Promise<ClassTeacher[]> {
+    return this.prisma.tenant(async (tx) => {
+      const found = await tx.classLevel.findUnique({
+        where: { id: classLevelId },
+        select: { id: true },
+      });
+      // A class that is not theirs is the same answer as one that does not exist.
+      const scope = await this.classScope.classLevelIds(tx, 'academics.structure.read');
+      if (found === null || !classInScope(scope, classLevelId)) {
+        throw new NotFoundError('class');
+      }
+
+      const rows = await tx.staffClassAssignment.findMany({
+        where: { classLevelId, staff: { deletedAt: null, status: 'ACTIVE' } },
+        orderBy: { staff: { name: 'asc' } },
         select: {
-          id: true,
-          name: true,
-          numericOrder: true,
-          isActive: true,
-          _count: { select: { enrollments: true } },
-          // Always selected, never a false branch. A conditional that can
-          // yield false collapses the nested select type, so row.sections
-          // silently becomes the bare model with no session and no _count —
-          // which typechecks at the call site and is wrong at runtime.
-          // Matching nothing is an empty "in" instead.
-          sections: {
-            where: scopeId === undefined ? { id: { in: [] } } : { sessionId: scopeId },
-            orderBy: { name: 'asc' },
+          staff: {
             select: {
               id: true,
               name: true,
-              capacity: true,
-              sessionId: true,
-              session: { select: { name: true } },
-              _count: { select: { enrollments: true } },
+              employeeNo: true,
+              designation: true,
+              email: true,
+              phone: true,
+              photoUrl: true,
             },
           },
         },
       });
 
-      return rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        numericOrder: row.numericOrder,
-        isActive: row.isActive,
-        studentCount: row._count.enrollments,
-        sections: (row.sections ?? []).map((section) => ({
-          id: section.id,
-          name: section.name,
-          capacity: section.capacity,
-          sessionId: section.sessionId,
-          sessionName: section.session.name,
-          studentCount: section._count.enrollments,
-        })),
-      }));
+      return rows.map((row) => row.staff);
     });
   }
 
@@ -314,7 +316,7 @@ export class StructureService {
           } as never,
           select: { id: true, name: true, numericOrder: true, isActive: true },
         });
-        return { ...created, sections: [], studentCount: 0 };
+        return { ...created, sections: [], studentCount: 0, sessionStudentCount: 0, teachers: [] };
       })
       .catch((error: unknown) => {
         if (isUniqueViolation(error)) {
@@ -500,76 +502,27 @@ export class StructureService {
   }
 
   /**
-   * Renumber a section's register, 1..n, in alphabetical order.
+   * Renumbering a register is no longer possible, and says so.
    *
-   * ## Why a school needs this at all
-   *
-   * Rolls are handed out as children are admitted, so by the time a class is
-   * full its register is in the order the front desk happened to take the
-   * admissions in. Most schools here then renumber alphabetically once the
-   * class settles, and again after promotion, because a register read out in
-   * name order is the one a teacher can actually follow. Doing that by hand is
-   * thirty edits that must not collide.
-   *
-   * ## Why it is two passes
-   *
-   * A unique index says no two children in a section share a roll, and a
-   * straight `UPDATE ... SET roll_no = <new>` walks straight into it: the
-   * moment the child who is becoming 3 is written while the current 3 still
-   * exists, the statement fails. Prisma has no deferrable constraints here, so
-   * the rolls go negative first — a range nothing else uses and the index is
-   * happy to hold — and then come back as 1..n. Both passes are in one
-   * transaction, so no one ever reads the negative register.
-   *
-   * ## What it leaves alone
-   *
-   * Only live enrolments are numbered. A child who left mid-year keeps their
-   * history and is not given a place on a register they are no longer on.
+   * It used to rewrite a section's rolls 1..n in name order. A roll number is
+   * now the child's GR number — one number, issued once at admission, the same
+   * on every document — and renumbering would give a child a roll that is no
+   * longer their GR. The route stays so an old client gets an explanation rather
+   * than a 404, and so another school's section id still answers "not found"
+   * and not "refused", which would confirm that it exists.
    */
   async renumberSection(id: string): Promise<{ renumbered: number }> {
     return this.prisma.tenant(async (tx) => {
-      const section = await tx.section.findUnique({
-        where: { id },
-        select: { id: true, sessionId: true },
-      });
+      const section = await tx.section.findUnique({ where: { id }, select: { id: true } });
 
       if (section === null) {
         throw new NotFoundError('section');
       }
 
-      // The same lock admission takes, for the same reason: a renumber running
-      // while somebody is being admitted into this section would otherwise
-      // hand out a roll that the renumber has already used.
-      await tx.$queryRaw`SELECT id FROM sections WHERE id = ${id}::uuid FOR UPDATE`;
-
-      const enrolments = await tx.enrollment.findMany({
-        where: { sectionId: id, status: 'ENROLLED' },
-        orderBy: [
-          { student: { lastName: 'asc' } },
-          { student: { firstName: 'asc' } },
-          // Two children with the same name in one section is not rare. `grNo`
-          // breaks the tie so the result is the same on every run rather than
-          // depending on what order the database felt like returning.
-          { student: { grNo: 'asc' } },
-        ],
-        select: { id: true },
-      });
-
-      for (const [index, enrolment] of enrolments.entries()) {
-        await tx.enrollment.update({
-          where: { id: enrolment.id },
-          data: { rollNo: -(index + 1) },
-        });
-      }
-
-      for (const [index, enrolment] of enrolments.entries()) {
-        await tx.enrollment.update({
-          where: { id: enrolment.id },
-          data: { rollNo: index + 1 },
-        });
-      }
-
-      return { renumbered: enrolments.length };
+      throw new BusinessRuleError(
+        'BUSINESS_RULE_VIOLATION',
+        'Roll numbers are GR numbers and cannot be renumbered. Each student keeps the GR number they were admitted with.',
+      );
     });
   }
 
@@ -607,6 +560,7 @@ export class StructureService {
     tx: Parameters<Parameters<PrismaService['tenant']>[0]>[0],
     sessionId: string | undefined,
     onlyId?: string,
+    scope?: readonly string[],
   ): Promise<ClassLevel[]> {
     const scopeId =
       sessionId ??
@@ -614,7 +568,11 @@ export class StructureService {
         ?.id;
 
     const rows = await tx.classLevel.findMany({
-      ...(onlyId === undefined ? {} : { where: { id: onlyId } }),
+      ...(onlyId !== undefined
+        ? { where: { id: onlyId } }
+        : scope === undefined
+          ? {}
+          : { where: { id: { in: [...scope] } } }),
       orderBy: [{ numericOrder: 'asc' }, { name: 'asc' }],
       select: {
         id: true,
@@ -636,11 +594,50 @@ export class StructureService {
             capacity: true,
             sessionId: true,
             session: { select: { name: true } },
-            _count: { select: { enrollments: true } },
+            // Enrolled **now**. A child who left stays in the table as history
+            // and must not be counted in a section's head-count.
+            _count: { select: { enrollments: { where: { status: 'ENROLLED' } } } },
           },
         },
       },
     });
+
+    // The head-count a class list shows: everybody enrolled in the session on
+    // screen, whether or not they have been put in a section yet. Summing the
+    // sections instead reads 0 for a class whose children have no section —
+    // which is exactly the Class 9 and Nursery that looked empty.
+    const enrolled =
+      scopeId === undefined
+        ? []
+        : await tx.enrollment.groupBy({
+            by: ['classLevelId'],
+            where: {
+              status: 'ENROLLED',
+              sessionId: scopeId,
+              ...(onlyId === undefined ? {} : { classLevelId: onlyId }),
+            },
+            _count: { _all: true },
+          });
+    const enrolledBy = new Map(enrolled.map((entry) => [entry.classLevelId, entry._count._all]));
+
+    // Who takes each class, from the same assignments the staff form writes, so
+    // a teacher appears here the moment they are assigned there — no second
+    // place to keep in step. Active staff only: somebody who has left is not
+    // anybody's class teacher.
+    const assignments = await tx.staffClassAssignment.findMany({
+      where: {
+        staff: { deletedAt: null, status: 'ACTIVE' },
+        ...(onlyId === undefined ? {} : { classLevelId: onlyId }),
+      },
+      orderBy: { staff: { name: 'asc' } },
+      select: { classLevelId: true, staff: { select: { id: true, name: true } } },
+    });
+    const teachersBy = new Map<string, { id: string; name: string }[]>();
+    for (const assignment of assignments) {
+      const list = teachersBy.get(assignment.classLevelId) ?? [];
+      list.push({ id: assignment.staff.id, name: assignment.staff.name });
+      teachersBy.set(assignment.classLevelId, list);
+    }
 
     return rows.map((row) => ({
       id: row.id,
@@ -648,6 +645,8 @@ export class StructureService {
       numericOrder: row.numericOrder,
       isActive: row.isActive,
       studentCount: row._count.enrollments,
+      sessionStudentCount: enrolledBy.get(row.id) ?? 0,
+      teachers: teachersBy.get(row.id) ?? [],
       sections: (row.sections ?? []).map((section) => ({
         id: section.id,
         name: section.name,

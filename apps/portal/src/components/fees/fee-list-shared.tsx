@@ -11,8 +11,11 @@ export const FEE_LIST_TABLE_CELL = {
 } as const;
 
 /** Class / status pills in list tables (matches Fee Vouchers). */
-export const LIST_TABLE_BADGE_CLASS =
-  'rounded-md px-2.5 py-1 text-xs font-medium [&_svg]:size-4';
+/**
+ * Kept so existing call sites compile. It is now empty on purpose: the design
+ * lives in `StatusBadge` itself, and an override here is how badges drifted.
+ */
+export const LIST_TABLE_BADGE_CLASS = '';
 
 /** Checkbox column — same padding in header and body so controls line up. */
 export const FEE_LIST_SELECT_COLUMN = {

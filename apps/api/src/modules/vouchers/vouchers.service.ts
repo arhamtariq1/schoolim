@@ -1340,20 +1340,32 @@ function buildWhere(query: VoucherListQuery): Record<string, unknown> {
   };
 }
 
-/** Allow-listed, never interpolated from client input. */
-function orderFor(sort: string, order: 'asc' | 'desc'): Record<string, unknown> {
-  switch (sort) {
-    case 'dueDate':
-      return { dueDate: order };
-    case 'voucherNo':
-      return { voucherNo: order };
-    case 'amount':
-      return { netPayable: order };
-    case 'studentName':
-      return { student: { firstName: order } };
-    default:
-      return { issueDate: order };
-  }
+/**
+ * Allow-listed, never interpolated from client input.
+ *
+ * Always ends on the voucher's own id. Sorting by a column many rows share —
+ * status, an issue date — leaves the order between them up to the database, and
+ * with paging that means a row can appear on two pages and another on none.
+ */
+function orderFor(sort: string, order: 'asc' | 'desc'): Record<string, unknown>[] {
+  const primary: Record<string, unknown>[] = (() => {
+    switch (sort) {
+      case 'dueDate':
+        return [{ dueDate: order }];
+      case 'voucherNo':
+        return [{ voucherNo: order }];
+      case 'amount':
+        return [{ netPayable: order }];
+      case 'status':
+        return [{ status: order }];
+      case 'studentName':
+        return [{ student: { firstName: order } }, { student: { lastName: order } }];
+      default:
+        return [{ issueDate: order }];
+    }
+  })();
+
+  return [...primary, { id: 'asc' }];
 }
 
 /**

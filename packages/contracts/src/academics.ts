@@ -135,6 +135,14 @@ export const classLevelSchema = z.object({
   sections: z.array(sectionSchema),
   /** Across every session — the number that makes deletion unsafe. */
   studentCount: z.int().min(0),
+  /**
+   * Students enrolled **now**, in the session being shown — whether or not they
+   * have been put in a section yet. The number a class list should display: the
+   * per-section counts miss everybody not yet in a section.
+   */
+  sessionStudentCount: z.int().min(0),
+  /** Teachers assigned to this class (staff form → Class). Active staff only. */
+  teachers: z.array(z.object({ id: idSchema, name: z.string() })),
 });
 
 export type ClassLevel = z.infer<typeof classLevelSchema>;
@@ -290,4 +298,21 @@ export function normalizeHoliday(row: Holiday): Holiday {
     ...row,
     colorKey: colorKey.success ? colorKey.data : 'rose',
   };
+}
+
+/**
+ * A teacher on a class's page — enough to recognise them and reach them.
+ *
+ * Its own shape, fetched by the class page, and **not** folded into
+ * `ClassLevel`: a photograph can be hundreds of kilobytes, and the Classes list
+ * carries every class at once.
+ */
+export interface ClassTeacher {
+  id: string;
+  name: string;
+  employeeNo: string;
+  designation: string | null;
+  email: string | null;
+  phone: string | null;
+  photoUrl: string | null;
 }

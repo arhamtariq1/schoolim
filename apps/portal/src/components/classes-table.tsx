@@ -1,12 +1,18 @@
 'use client';
 
-import { SCHOOL_LEVEL_IDS, SCHOOL_LEVEL_LABELS, type ClassLevel, type SchoolLevelId } from '@ilm/contracts';
+import {
+  SCHOOL_LEVEL_IDS,
+  SCHOOL_LEVEL_LABELS,
+  type ClassLevel,
+  type SchoolLevelId,
+} from '@ilm/contracts';
 import {
   Button,
   CardTable,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   SimpleSelect,
   StatusBadge,
@@ -23,8 +29,10 @@ import {
   SectionIcon,
   SessionIcon,
   SortIcon,
+  ViewIcon,
   StudentsIcon,
 } from '@ilm/ui/icons';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 import { ListDataTable } from '@/components/list-data-table';
@@ -35,6 +43,7 @@ import { WorkspacePageHeader } from '@/components/workspace-page-header';
 import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
 import { pageIntro } from '@/lib/page-copy';
 import { classDisplayMeta, compareClassesByProgression } from '@/lib/class-level-display';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
 export type ClassSortKey = 'name' | 'level' | 'sections' | 'students';
 export type ClassSortDir = 'asc' | 'desc';
@@ -82,8 +91,7 @@ export function ClassesTable(props: ClassesTableProps) {
   const [sortKey, setSortKey] = useState<ClassSortKey>('name');
   const [sortDir, setSortDir] = useState<ClassSortDir>('asc');
 
-  const isFiltered =
-    searchQuery.trim() !== '' || levelFilter !== '' || sectionsFilter !== '';
+  const isFiltered = searchQuery.trim() !== '' || levelFilter !== '' || sectionsFilter !== '';
 
   const rows = useMemo(() => {
     let list = [...classes];
@@ -161,6 +169,9 @@ export function ClassesTable(props: ClassesTableProps) {
       label: SCHOOL_LEVEL_LABELS[id],
     }));
   }, [enabledSchoolLevels, classes]);
+
+  const router = useRouter();
+  const tenantHref = useTenantHref();
 
   function toggleSort(nextKey: ClassSortKey): void {
     if (sortKey === nextKey) {
@@ -250,10 +261,7 @@ export function ClassesTable(props: ClassesTableProps) {
         align: 'end',
         width: 'w-[12%]',
         render: (entry) => (
-          <TwoLineCell
-            primary={String(entry.sections.length)}
-            secondary={sectionSummary(entry)}
-          />
+          <TwoLineCell primary={String(entry.sections.length)} secondary={sectionSummary(entry)} />
         ),
       },
       {
@@ -274,43 +282,57 @@ export function ClassesTable(props: ClassesTableProps) {
         icon: AccountIcon,
         width: 'w-[18%]',
         hideOnMobile: true,
-        render: () => <span className="text-sm text-muted-foreground">—</span>,
+        render: (entry) =>
+          entry.teachers.length === 0 ? (
+            <span className="text-sm text-muted-foreground">—</span>
+          ) : (
+            <TwoLineCell
+              primary={entry.teachers[0]?.name ?? ''}
+              secondary={
+                entry.teachers.length === 1
+                  ? 'Teacher'
+                  : `+ ${String(entry.teachers.length - 1)} more: ${entry.teachers
+                      .slice(1)
+                      .map((teacher) => teacher.name)
+                      .join(', ')}`
+              }
+            />
+          ),
       },
       {
         key: 'actions',
         label: 'Actions',
         align: 'end',
         width: 'w-[12%]',
-        render: (entry) =>
-          canConfigure ? (
-            <ClassRowActions
-              entry={entry}
-              onAddSection={() => {
-                onAddSection(entry);
-              }}
-              onEditClass={() => {
-                onEditClass(entry);
-              }}
-              onEditSection={(sectionId) => {
-                onEditSection(entry, sectionId);
-              }}
-              onDeleteClass={() => {
-                onDeleteClass(entry);
-              }}
-              onDeleteSection={(section) => {
-                onDeleteSection(entry, section);
-              }}
-              canRenumber={canRenumber}
-              onRenumberSection={(section) => {
-                onRenumberSection(entry, section);
-              }}
-              renumberingSectionId={renumberingSectionId}
-            />
-          ) : (
-            <div className="flex justify-end">
-              <span className="text-muted-foreground">—</span>
-            </div>
-          ),
+        render: (entry) => (
+          <ClassRowActions
+            entry={entry}
+            canConfigure={canConfigure}
+            onViewClass={() => {
+              router.push(tenantHref(`/classes/${entry.id}`));
+            }}
+            onAddSection={() => {
+              onAddSection(entry);
+            }}
+            onEditClass={() => {
+              onEditClass(entry);
+            }}
+            onEditSection={(sectionId) => {
+              onEditSection(entry, sectionId);
+            }}
+            onDeleteClass={() => {
+              onDeleteClass(entry);
+            }}
+            onDeleteSection={(section) => {
+              onDeleteSection(entry, section);
+            }}
+            canRenumber={canRenumber}
+            onRenumberSection={(section) => {
+              onRenumberSection(entry, section);
+            }}
+            renumberingSectionId={renumberingSectionId}
+          />
+        ),
       },
     ];
   }, [
@@ -402,6 +424,9 @@ export function ClassesTable(props: ClassesTableProps) {
           rows={rows}
           columns={columns}
           rowKey={(entry) => entry.id}
+          onRowClick={(entry) => {
+            router.push(tenantHref(`/classes/${entry.id}`));
+          }}
           isFiltered={isFiltered}
           onClearFilters={clearFilters}
           sort={{
@@ -425,8 +450,12 @@ export function ClassesTable(props: ClassesTableProps) {
   );
 }
 
+/**
+ * Everybody enrolled in this session — from the API, not summed from sections.
+ * Summing sections read 0 for a class whose children had not been given one yet.
+ */
 function sessionStudents(entry: ClassLevel): number {
-  return entry.sections.reduce((sum, section) => sum + section.studentCount, 0);
+  return entry.sessionStudentCount;
 }
 
 function sectionSummary(entry: ClassLevel): string {
@@ -457,6 +486,8 @@ function ClassMobileRow({ entry }: { entry: ClassLevel }) {
 
 function ClassRowActions({
   entry,
+  canConfigure,
+  onViewClass,
   onAddSection,
   onEditClass,
   onEditSection,
@@ -467,6 +498,8 @@ function ClassRowActions({
   renumberingSectionId,
 }: {
   entry: ClassLevel;
+  canConfigure: boolean;
+  onViewClass: () => void;
   onAddSection: () => void;
   onEditClass: () => void;
   onEditSection: (sectionId: string) => void;
@@ -493,67 +526,80 @@ function ClassRowActions({
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem
             onSelect={() => {
-              onAddSection();
+              onViewClass();
             }}
           >
-            <CreateIcon className="size-4" aria-hidden="true" />
-            Add section
+            <ViewIcon className="size-4" aria-hidden="true" />
+            View class
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => {
-              onEditClass();
-            }}
-          >
-            <EditIcon className="size-4" aria-hidden="true" />
-            Edit class
-          </DropdownMenuItem>
-          {entry.sections.map((section) => (
-            <DropdownMenuItem
-              key={section.id}
-              onSelect={() => {
-                onEditSection(section.id);
-              }}
-            >
-              <EditIcon className="size-4" aria-hidden="true" />
-              Edit section {section.name}
-            </DropdownMenuItem>
-          ))}
-          {entry.sections.map((section) =>
-            !canRenumber || section.studentCount === 0 ? null : (
+          {canConfigure ? <DropdownMenuSeparator /> : null}
+          {canConfigure ? (
+            <>
               <DropdownMenuItem
-                key={`renumber-${section.id}`}
-                disabled={renumberingSectionId !== undefined}
                 onSelect={() => {
-                  onRenumberSection(section);
+                  onAddSection();
                 }}
               >
-                <SortIcon className="size-4" aria-hidden="true" />
-                Renumber rolls in {section.name}
+                <CreateIcon className="size-4" aria-hidden="true" />
+                Add section
               </DropdownMenuItem>
-            ),
-          )}
-          {entry.sections.map((section) =>
-            section.studentCount === 0 ? (
               <DropdownMenuItem
-                key={`delete-${section.id}`}
-                className="text-danger focus:text-danger"
                 onSelect={() => {
-                  onDeleteSection(section);
+                  onEditClass();
                 }}
               >
-                Delete section {section.name}
+                <EditIcon className="size-4" aria-hidden="true" />
+                Edit class
               </DropdownMenuItem>
-            ) : null,
-          )}
-          {entry.studentCount === 0 ? (
-            <DropdownMenuItem
-              className="text-danger focus:text-danger"
-              onSelect={() => {
-                onDeleteClass();
-              }}
-            >
-              Delete class
-            </DropdownMenuItem>
+              {entry.sections.map((section) => (
+                <DropdownMenuItem
+                  key={section.id}
+                  onSelect={() => {
+                    onEditSection(section.id);
+                  }}
+                >
+                  <EditIcon className="size-4" aria-hidden="true" />
+                  Edit section {section.name}
+                </DropdownMenuItem>
+              ))}
+              {entry.sections.map((section) =>
+                !canRenumber || section.studentCount === 0 ? null : (
+                  <DropdownMenuItem
+                    key={`renumber-${section.id}`}
+                    disabled={renumberingSectionId !== undefined}
+                    onSelect={() => {
+                      onRenumberSection(section);
+                    }}
+                  >
+                    <SortIcon className="size-4" aria-hidden="true" />
+                    Renumber rolls in {section.name}
+                  </DropdownMenuItem>
+                ),
+              )}
+              {entry.sections.map((section) =>
+                section.studentCount === 0 ? (
+                  <DropdownMenuItem
+                    key={`delete-${section.id}`}
+                    className="text-danger focus:text-danger"
+                    onSelect={() => {
+                      onDeleteSection(section);
+                    }}
+                  >
+                    Delete section {section.name}
+                  </DropdownMenuItem>
+                ) : null,
+              )}
+              {entry.studentCount === 0 ? (
+                <DropdownMenuItem
+                  className="text-danger focus:text-danger"
+                  onSelect={() => {
+                    onDeleteClass();
+                  }}
+                >
+                  Delete class
+                </DropdownMenuItem>
+              ) : null}
+            </>
           ) : null}
         </DropdownMenuContent>
       </DropdownMenu>

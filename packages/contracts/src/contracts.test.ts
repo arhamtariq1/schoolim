@@ -19,6 +19,7 @@ import {
   MAX_PAGE_LIMIT,
   offsetPaginationSchema,
 } from './pagination';
+import { nationalIdSchema } from './national-id';
 import { isPermission, PERMISSIONS, type Permission } from './permissions';
 import {
   ASSIGNABLE_STAFF_ROLES,
@@ -102,8 +103,24 @@ describe('role matrix — segregation of duties', () => {
   });
 
   it('gives the owner every permission', () => {
-    for (const permission of PERMISSIONS) {
+    // `parent.child.read` belongs to guardians alone; an owner reads children
+    // through the staff screens, and holding it would put the parent portal in
+    // their navigation.
+    //
+    // `attendance.own.read` is likewise withheld: the owner tracks the staff's
+    // attendance, not their own, so My attendance stays out of their menu.
+    const withheld: string[] = ['parent.child.read', 'attendance.own.read'];
+    for (const permission of PERMISSIONS.filter((entry) => !withheld.includes(entry))) {
       expect(hasPermission(['OWNER'], permission)).toBe(true);
+    }
+  });
+
+  it('keeps My attendance for staff who have their own record, not for the owner or admin', () => {
+    for (const role of ['TEACHER', 'PRINCIPAL', 'RECEPTION'] as const) {
+      expect(hasPermission([role], 'attendance.own.read')).toBe(true);
+    }
+    for (const role of ['OWNER', 'ADMIN', 'PARENT'] as const) {
+      expect(hasPermission([role], 'attendance.own.read')).toBe(false);
     }
   });
 
@@ -391,5 +408,20 @@ describe('bulk staff removal', () => {
     const many = Array.from({ length: MAX_BULK_STAFF + 1 }, () => id);
     expect(bulkDeleteStaffSchema.safeParse({ ids: many, reason: 'Left' }).success).toBe(false);
     expect(bulkDeleteStaffSchema.safeParse({ ids: ['nope'], reason: 'Left' }).success).toBe(false);
+  });
+});
+
+describe('B-Form and national id numbers', () => {
+  const bForm = nationalIdSchema('B-Form number');
+
+  it('accepts 13 digits and stores them with hyphens', () => {
+    expect(bForm.parse('4343434343443')).toBe('43434-3434344-3');
+    expect(bForm.parse('43434-3434344-3')).toBe('43434-3434344-3');
+  });
+
+  it('rejects anything that is not 13 digits, naming the field', () => {
+    const result = bForm.safeParse('43434-343434-3');
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain('B-Form number');
   });
 });

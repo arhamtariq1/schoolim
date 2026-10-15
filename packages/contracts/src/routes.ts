@@ -84,6 +84,12 @@ export const ROUTES = {
     profile: (id: string) => `${API_PREFIX}/students/${id}/profile`,
     /** Confirmed fee receipts for the Fees tab payment history table. */
     feePayments: (id: string) => `${API_PREFIX}/students/${id}/fee-payments`,
+    /**
+     * The classes this caller may filter students by: every active class for
+     * somebody with the unscoped grant, only their assigned ones for a teacher.
+     * Its own route because teachers hold no `academics.structure.read`.
+     */
+    classOptions: `${API_PREFIX}/students/class-options`,
     guardians: (id: string) => `${API_PREFIX}/students/${id}/guardians`,
     /** Search existing guardians, so a sibling links rather than duplicates. */
     guardianSearch: `${API_PREFIX}/guardians`,
@@ -147,6 +153,10 @@ export const ROUTES = {
     appearance: `${API_PREFIX}/schools/appearance`,
     /** How the fee challan is laid out, and which payment channels it prints. */
     voucherSettings: `${API_PREFIX}/schools/voucher-settings`,
+    /** Where GR (and so roll) numbering starts. Admin-only. */
+    grNumber: `${API_PREFIX}/schools/gr-number`,
+    /** Where fee voucher numbering starts. Admin-only. */
+    voucherNumber: `${API_PREFIX}/schools/voucher-number`,
   },
 
   /**
@@ -231,6 +241,8 @@ export const ROUTES = {
     studentReport: (classLevelId: string) =>
       `${API_PREFIX}/attendance/reports/classes/${classLevelId}`,
     staffReport: `${API_PREFIX}/attendance/reports/staff`,
+    /** The signed-in member of staff's own attendance — no id, so nobody else's. */
+    myReport: `${API_PREFIX}/attendance/me`,
   },
   academics: {
     /**
@@ -257,6 +269,8 @@ export const ROUTES = {
     promotionPreview: `${API_PREFIX}/academics/promotions/preview`,
     promotions: `${API_PREFIX}/academics/promotions`,
     classes: `${API_PREFIX}/academics/classes`,
+    /** The teachers assigned to one class, with their photographs. */
+    classTeachers: (classLevelId: string) => `${API_PREFIX}/academics/classes/${classLevelId}/teachers`,
     class: (id: string) => `${API_PREFIX}/academics/classes/${id}`,
     sections: `${API_PREFIX}/academics/sections`,
     section: (id: string) => `${API_PREFIX}/academics/sections/${id}`,
@@ -288,6 +302,37 @@ export const ROUTES = {
     bulkDelete: `${API_PREFIX}/staff/bulk-delete`,
     /** Send, or re-send, the invitation that lets them set their own password. */
     invite: (id: string) => `${API_PREFIX}/staff/${id}/invite`,
+    /** Month-by-month salary, paid and due. */
+    salary: (id: string) => `${API_PREFIX}/staff/${id}/salary`,
+    /** Record one month's payment. Append-only. */
+    salaryPayments: (id: string) => `${API_PREFIX}/staff/${id}/salary-payments`,
+  },
+  marks: {
+    subjects: `${API_PREFIX}/marks/subjects`,
+    subject: (id: string) => `${API_PREFIX}/marks/subjects/${id}`,
+    assessmentTypes: `${API_PREFIX}/marks/assessment-types`,
+    assessmentType: (id: string) => `${API_PREFIX}/marks/assessment-types/${id}`,
+    assessments: `${API_PREFIX}/marks/assessments`,
+    assessment: (id: string) => `${API_PREFIX}/marks/assessments/${id}`,
+    /** The class list a new assessment's entry grid starts from. */
+    roster: `${API_PREFIX}/marks/roster`,
+    student: (studentId: string) => `${API_PREFIX}/marks/students/${studentId}`,
+    /** Subjects and assessment types as used in one class. */
+    classSummary: (classLevelId: string) => `${API_PREFIX}/marks/classes/${classLevelId}/summary`,
+    /** Add (POST) a subject to a class; remove (DELETE) one. */
+    classSubjects: (classLevelId: string) => `${API_PREFIX}/marks/classes/${classLevelId}/subjects`,
+    classSubject: (classLevelId: string, subjectId: string) =>
+      `${API_PREFIX}/marks/classes/${classLevelId}/subjects/${subjectId}`,
+    classAssessmentTypes: (classLevelId: string) =>
+      `${API_PREFIX}/marks/classes/${classLevelId}/assessment-types`,
+    classAssessmentType: (classLevelId: string, typeId: string) =>
+      `${API_PREFIX}/marks/classes/${classLevelId}/assessment-types/${typeId}`,
+  },
+  parent: {
+    children: `${API_PREFIX}/parent/children`,
+    child: (id: string) => `${API_PREFIX}/parent/children/${id}`,
+    attendance: (id: string) => `${API_PREFIX}/parent/children/${id}/attendance`,
+    marks: (id: string) => `${API_PREFIX}/parent/children/${id}/marks`,
   },
   health: `${API_PREFIX}/health`,
 

@@ -47,7 +47,7 @@ const PREVIEW_SHEET_MM: Record<CopyCount, { width: number; height: number }> = {
 };
 
 /**
- * Settings › Fee challan.
+ * Settings › Voucher Settings.
  *
  * ## Why the preview is the real component
  *

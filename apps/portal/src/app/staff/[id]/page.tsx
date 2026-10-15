@@ -1,12 +1,13 @@
 import { ROUTES, type StaffProfile } from '@ilm/contracts';
 import { EmptyState } from '@ilm/ui';
+import { systemClock } from '@ilm/utils';
 import { notFound } from 'next/navigation';
 
 import { StaffProfileView } from '@/components/staff-profile-view';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
-/** One staff member — contact, employment, and documents on file. */
+/** One staff member — overview, attendance and salary history. */
 export default async function StaffProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   const { id } = await params;
@@ -15,18 +16,41 @@ export default async function StaffProfilePage({ params }: { params: Promise<{ i
     return <SignedOut />;
   }
 
-  const result = await apiFetch<{ data: StaffProfile }>(ROUTES.staff.detail(id));
+  const [result, classes] = await Promise.all([
+    apiFetch<{ data: StaffProfile }>(ROUTES.staff.detail(id)),
+    apiFetch<{ data: { id: string; name: string }[] }>(ROUTES.students.classOptions),
+  ]);
 
   if (!result.ok && result.status === 404) {
     notFound();
   }
+  if (!result.ok) {
+    return <EmptyState title="That did not load" description={result.message} />;
+  }
 
-  const canManage = session.permissions.includes('staff.record.update');
+  const has = (permission: string): boolean => session.permissions.includes(permission);
+  const profile = result.data.data;
 
-  return result.ok ? (
-    <StaffProfileView profile={result.data.data} canManage={canManage} />
-  ) : (
-    <EmptyState title="That did not load" description={result.message} />
+  // Names for the classes a teacher takes, from the same list the staff form
+  // offers — so what is shown here is what was picked there.
+  const nameOf = new Map((classes.ok ? classes.data.data : []).map((entry) => [entry.id, entry.name]));
+  const classNames = profile.classLevelIds.flatMap((classId) => {
+    const name = nameOf.get(classId);
+    return name === undefined ? [] : [name];
+  });
+
+  return (
+    <StaffProfileView
+      profile={profile}
+      classNames={classNames}
+      can={{
+        edit: has('staff.record.update'),
+        attendance: has('attendance.staff.read'),
+        salary: has('staff.salary.read'),
+        pay: has('staff.salary.pay'),
+      }}
+      today={systemClock.now().toISOString().slice(0, 10)}
+    />
   );
 }
 

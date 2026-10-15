@@ -1,11 +1,13 @@
 import {
   DEFAULT_VOUCHER_SETTINGS,
   ROUTES,
+  type VoucherNumberSettings,
   type SchoolLogoInfo,
   type SchoolSettings,
   type VoucherSettings,
 } from '@ilm/contracts';
 
+import { NumberStartForm } from '@/components/number-start-form';
 import { SchoolLogoCard } from '@/components/school-logo-card';
 import { VoucherSettingsForm } from '@/components/voucher-settings-form';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
@@ -13,7 +15,7 @@ import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
 /**
- * Settings › Fee challan.
+ * Settings › Voucher Settings.
  *
  * Three independent reads, together: the challan settings, the school's own
  * details that go on the letterhead, and whether there is a logo to print.
@@ -25,12 +27,14 @@ import { getSession } from '@/lib/session';
  * already printing, so the form and its preview still show the truth.
  */
 export default async function VoucherSettingsPage() {
-  const [session, voucherResult, schoolResult, logoResult, bankLogoResult] = await Promise.all([
+  const [session, voucherResult, schoolResult, logoResult, bankLogoResult, numberResult] =
+    await Promise.all([
     getSession(),
     apiFetch<{ data: VoucherSettings }>(ROUTES.school.voucherSettings),
     apiFetch<{ data: SchoolSettings }>(ROUTES.school.settings),
     apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info),
     apiFetch<{ data: SchoolLogoInfo }>(ROUTES.bankLogo.info),
+    apiFetch<{ data: VoucherNumberSettings }>(ROUTES.school.voucherNumber),
   ]);
 
   const permissions = session?.permissions ?? [];
@@ -49,9 +53,30 @@ export default async function VoucherSettingsPage() {
   return (
     <div className="w-full space-y-8">
       <WorkspacePageHeader
-        title="Fee challan"
-        description="What every printed challan says, and how a parent pays it. Changes apply to challans printed from now on — one already in a parent’s hand is unaffected."
+        title="Voucher Settings"
+        description="Where voucher numbering starts, what every printed voucher says, and how a parent pays it. Layout changes apply to vouchers printed from now on — one already in a parent’s hand is unaffected."
       />
+
+      {canConfigure ? (
+        <NumberStartForm
+          className="max-w-2xl"
+          title="Starting voucher number"
+          noun="voucher numbers"
+          route={ROUTES.school.voucherNumber}
+          example="FV-000001"
+          kind="voucher"
+          settings={
+            numberResult.ok
+              ? {
+                  configured: numberResult.data.data.configured,
+                  next: numberResult.data.data.nextVoucherNo,
+                  highestIssued: numberResult.data.data.highestIssued,
+                }
+              : undefined
+          }
+          error={numberResult.ok ? undefined : numberResult.message}
+        />
+      ) : null}
 
       <VoucherSettingsForm
         settings={settings}

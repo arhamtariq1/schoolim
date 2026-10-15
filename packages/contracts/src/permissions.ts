@@ -22,6 +22,8 @@ export const PERMISSIONS = [
   'students.guardian.read',
   'students.guardian.create',
   'students.guardian.update',
+  /** A guardian reading their own children. Held by PARENT alone — staff roles use the screens above. */
+  'parent.child.read',
   'admissions.application.read',
   'admissions.application.create',
   'admissions.application.update',
@@ -61,17 +63,33 @@ export const PERMISSIONS = [
   'attendance.record.create',
   'attendance.record.unlock',
   'attendance.report.read',
+  /**
+   * The staff register and its report. Separate from `attendance.record.*`
+   * because a teacher holds those **scoped to their classes**, and a scoped
+   * grant has no meaning for the staff register: it is not a class's.
+   */
+  'attendance.staff.read',
+  'attendance.staff.create',
+  /** A member of staff reading their own attendance. Never anybody else's. */
+  'attendance.own.read',
 
   // --- Staff ----------------------------------------------------------------
   'staff.record.read',
   'staff.record.update',
   'staff.salary.read',
+  /** Record that salary was paid. Money moving, so not the principal (docs/08 s4). */
+  'staff.salary.pay',
 
   // --- Exams ----------------------------------------------------------------
   'exams.exam.configure',
   'exams.mark.create',
   'exams.result.read',
   'exams.result.publish',
+  /**
+   * Subjects and assessment types: add, rename, delete. School-wide by nature —
+   * the list is shared — so it is held **unscoped**, even by a teacher.
+   */
+  'exams.setup.manage',
 
   // --- Workflow and communication -------------------------------------------
   'workflow.request.create',

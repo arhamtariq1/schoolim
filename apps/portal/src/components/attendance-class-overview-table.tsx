@@ -147,7 +147,6 @@ export function AttendanceClassOverviewTable({
         label: '#',
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[4%]',
-        align: 'end',
         headerCell: feeListTableHeader('#'),
         render: (row) => (
           <span className="font-mono text-sm text-muted-foreground tabular-nums">{row.index}</span>
@@ -157,7 +156,7 @@ export function AttendanceClassOverviewTable({
         key: 'class',
         label: 'Class',
         ...FEE_LIST_TABLE_CELL,
-        width: 'w-[18%]',
+        width: 'w-[22%]',
         headerCell: feeListTableHeader('Class', ClassIcon),
         render: (row) => {
           const meta = classDisplayMeta(row.className, row.numericOrder);
@@ -177,7 +176,7 @@ export function AttendanceClassOverviewTable({
         key: 'level',
         label: 'Level',
         ...FEE_LIST_TABLE_CELL,
-        width: 'w-[12%]',
+        width: 'w-[13%]',
         hideOnMobile: true,
         headerCell: feeListTableHeader('Level', SchoolIcon),
         render: (row) => {
@@ -189,8 +188,7 @@ export function AttendanceClassOverviewTable({
         key: 'strength',
         label: 'Total students',
         ...FEE_LIST_TABLE_CELL,
-        align: 'end',
-        width: 'w-[11%]',
+        width: 'w-[12%]',
         headerCell: feeListTableHeader('Total students', StudentsIcon),
         render: (row) => (
           <span className="font-mono tabular-nums text-foreground">{row.strength}</span>
@@ -200,8 +198,7 @@ export function AttendanceClassOverviewTable({
         key: 'present',
         label: 'Present',
         ...FEE_LIST_TABLE_CELL,
-        align: 'end',
-        width: 'w-[9%]',
+        width: 'w-[10%]',
         hideOnMobile: true,
         headerCell: feeListTableHeader('Present', SuccessIcon),
         render: (row) => countCell(row.markedAt !== null ? row.present : null),
@@ -210,8 +207,7 @@ export function AttendanceClassOverviewTable({
         key: 'absent',
         label: 'Absent',
         ...FEE_LIST_TABLE_CELL,
-        align: 'end',
-        width: 'w-[9%]',
+        width: 'w-[10%]',
         hideOnMobile: true,
         headerCell: feeListTableHeader('Absent', WarningIcon),
         render: (row) => countCell(row.markedAt !== null ? row.absent : null),
@@ -220,8 +216,7 @@ export function AttendanceClassOverviewTable({
         key: 'notMarked',
         label: 'Not marked',
         ...FEE_LIST_TABLE_CELL,
-        align: 'end',
-        width: 'w-[10%]',
+        width: 'w-[11%]',
         hideOnMobile: true,
         headerCell: feeListTableHeader('Not marked', WarningIcon),
         render: (row) => {
@@ -239,7 +234,7 @@ export function AttendanceClassOverviewTable({
         key: 'status',
         label: 'Status',
         ...FEE_LIST_TABLE_CELL,
-        width: 'w-[11%]',
+        width: 'w-[12%]',
         headerCell: feeListTableHeader('Status', SuccessIcon),
         render: (row) => {
           if (!working) {
@@ -258,7 +253,6 @@ export function AttendanceClassOverviewTable({
           }
           return row.markedAt !== null ? (
             <StatusBadge tone="success" size="sm">
-              <SuccessIcon className="size-3.5" aria-hidden="true" />
               Marked
             </StatusBadge>
           ) : (
@@ -270,56 +264,54 @@ export function AttendanceClassOverviewTable({
       },
       {
         key: 'action',
-        label: 'Action',
+        label: 'Actions',
         ...FEE_LIST_TABLE_CELL,
-        align: 'end',
-        width: 'w-[16%]',
-        headerCell: feeListTableHeader('Action'),
+        width: 'w-[6%]',
+        headerCell: feeListTableHeader('Actions'),
         render: (row) => {
           const marked = row.markedAt !== null;
           const href = tenantHref(`${hrefPrefix}/${row.classLevelId}${hrefSuffix}`);
           const disabled = !working || row.strength === 0;
 
+          // Nothing to show when there is nothing to do: no buttons sitting in every
+          // row, just the menu, and not even that when it would be empty.
+          if (disabled && reportHrefPrefix === undefined) {
+            return <span className="text-xs text-muted-foreground">—</span>;
+          }
+
           return (
-            <div className="flex items-center justify-end gap-1" data-stop-row-click>
-              {disabled ? (
-                <span className="text-xs text-muted-foreground">—</span>
-              ) : (
-                <Button asChild tone={marked ? 'outline' : 'primary'} size="sm">
-                  <Link href={href}>{marked ? reviewLabel : actionLabel}</Link>
-                </Button>
-              )}
-              {reportHrefPrefix === undefined ? null : (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      tone="ghost"
-                      size="icon"
-                      className="size-8 text-muted-foreground hover:text-foreground"
-                      aria-label={`More actions for ${row.className}`}
-                    >
-                      <MoreIcon className="size-4" aria-hidden="true" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44">
+            <div className="flex items-center justify-start" data-stop-row-click>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    tone="ghost"
+                    size="icon"
+                    className="size-8 text-muted-foreground hover:text-foreground"
+                    aria-label={`Actions for ${row.className}`}
+                  >
+                    <MoreIcon className="size-4" aria-hidden="true" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-44">
+                  {disabled ? null : (
+                    <DropdownMenuItem asChild>
+                      <Link href={href}>
+                        <CreateIcon className="size-4" aria-hidden="true" />
+                        {marked ? reviewLabel : actionLabel}
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {reportHrefPrefix === undefined ? null : (
                     <DropdownMenuItem asChild>
                       <Link href={tenantHref(`${reportHrefPrefix}/${row.classLevelId}`)}>
                         <ViewIcon className="size-4" aria-hidden="true" />
                         Monthly report
                       </Link>
                     </DropdownMenuItem>
-                    {!disabled ? (
-                      <DropdownMenuItem asChild>
-                        <Link href={href}>
-                          <CreateIcon className="size-4" aria-hidden="true" />
-                          {marked ? reviewLabel : actionLabel}
-                        </Link>
-                      </DropdownMenuItem>
-                    ) : null}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           );
         },

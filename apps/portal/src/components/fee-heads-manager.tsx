@@ -30,6 +30,7 @@ import {
   PopoverTrigger,
   SimpleSelect,
   StatusBadge,
+  type StatusTone,
   useToast,
   type CardTableColumn,
 } from '@ilm/ui';
@@ -74,17 +75,17 @@ const FREQUENCY_OPTIONS = FEE_FREQUENCIES.map((value) => ({
   label: FEE_FREQUENCY_TABLE_LABELS[value],
 }));
 
-/** Pill colours per fee type — semantic tokens only. */
-const TYPE_BADGE_CLASS: Readonly<Record<FeeHeadType, string>> = {
-  TUITION: 'bg-primary/10 text-primary',
-  ADMISSION: 'bg-danger/10 text-danger',
-  ANNUAL: 'bg-warning/15 text-warning',
-  EXAM: 'bg-success/10 text-success',
-  LAB: 'bg-muted text-muted-foreground',
-  STATIONERY: 'bg-muted text-muted-foreground',
-  SECURITY: 'bg-muted text-muted-foreground',
-  TRANSPORT: 'bg-muted text-muted-foreground',
-  CUSTOM: 'bg-muted text-muted-foreground',
+/** Tone per fee type, for the shared `StatusBadge` — no colour classes of our own. */
+const TYPE_TONE: Readonly<Record<FeeHeadType, StatusTone>> = {
+  TUITION: 'info',
+  ADMISSION: 'danger',
+  ANNUAL: 'warning',
+  EXAM: 'success',
+  LAB: 'neutral',
+  STATIONERY: 'neutral',
+  SECURITY: 'neutral',
+  TRANSPORT: 'neutral',
+  CUSTOM: 'neutral',
 };
 
 export interface FeeHeadsManagerProps {
@@ -305,14 +306,9 @@ export function FeeHeadsManager({
         width: 'w-[12%]',
         hideOnMobile: true,
         render: (row) => (
-          <span
-            className={cn(
-              'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
-              TYPE_BADGE_CLASS[row.type],
-            )}
-          >
+          <StatusBadge tone={TYPE_TONE[row.type]} size="sm" showIcon={false}>
             {FEE_HEAD_TYPE_LABELS[row.type]}
-          </span>
+          </StatusBadge>
         ),
       },
       {

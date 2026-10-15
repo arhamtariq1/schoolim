@@ -441,11 +441,11 @@ export function AcademicCalendarView({
                 <h2 className="text-sm font-semibold text-foreground">
                   Events on {formatLongDate(selectedDate)}
                 </h2>
-                <span className="inline-flex rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+                <StatusBadge tone="success" size="sm" showIcon={false}>
                   {selectedEvents.length === 1
                     ? '1 event'
                     : `${String(selectedEvents.length)} events`}
-                </span>
+                </StatusBadge>
               </div>
             </div>
             <div className="space-y-3 px-3 pb-4 sm:px-4">

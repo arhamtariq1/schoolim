@@ -38,6 +38,7 @@ import { type FastifyRequest } from 'fastify';
 import { RequirePermission } from '../../shared/rbac/rbac.guard';
 
 import { VoucherGenerationService } from './voucher-generation.service';
+import { VoucherNumberController, VoucherNumberService } from './voucher-number.service';
 import { VouchersService } from './vouchers.service';
 
 /**
@@ -208,7 +209,7 @@ export class VouchersController {
 }
 
 @Module({
-  controllers: [VouchersController],
-  providers: [VouchersService, VoucherGenerationService],
+  controllers: [VouchersController, VoucherNumberController],
+  providers: [VouchersService, VoucherGenerationService, VoucherNumberService],
 })
 export class VouchersModule {}

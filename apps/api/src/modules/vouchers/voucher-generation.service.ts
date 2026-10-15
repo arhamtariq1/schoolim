@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 
 import {
+  formatGrNo,
   type GenerateVouchers,
   type GenerationResult,
   type PreviewVouchers,
@@ -65,6 +66,17 @@ export class VoucherGenerationService {
   private readonly logger = new Logger(VoucherGenerationService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  private async assertNumberingConfigured(): Promise<void> {
+    const rows = await this.prisma.tenant((tx) =>
+      tx.$queryRawUnsafe<{ id: string }[]>(
+        `SELECT id::text FROM number_sequences WHERE kind = 'voucher' AND school_id = current_school_id()`,
+      ),
+    );
+    if (rows.length === 0) {
+      throw new BusinessRuleError('BUSINESS_RULE_VIOLATION', VOUCHER_NUMBER_NOT_SET);
+    }
+  }
 
   /**
    * What generation would do, without doing it.
@@ -189,6 +201,10 @@ export class VoucherGenerationService {
    * when somebody presses a slow button twice.
    */
   async generate(input: GenerateVouchers, actorId: string | undefined): Promise<GenerationResult> {
+    // Before the run is claimed, so a school that has not chosen where voucher
+    // numbering starts is told so without a failed job run left behind.
+    await this.assertNumberingConfigured();
+
     const existing = await this.claimRun(input, actorId);
     if (existing.replay !== undefined) {
       return { ...existing.replay, jobRunId: existing.jobRunId, replayed: true };
@@ -440,12 +456,12 @@ export class VoucherGenerationService {
 
     return this.prisma.tenant(
       async (tx) => {
-        const firstNumber = await allocateVoucherNumbers(tx, billable.length);
+        const { first: firstNumber, prefix, pad } = await allocateVoucherNumbers(tx, billable.length);
 
         const drafts = billable.map((plan, index) => ({
           id: uuidV7(),
           plan,
-          voucherNo: `FV-${String(firstNumber + index).padStart(6, '0')}`,
+          voucherNo: formatGrNo(prefix, firstNumber + index, pad),
         }));
 
         // 1. The vouchers, with the amounts the plan expects.
@@ -734,25 +750,32 @@ function amountsFor(
  * gapless: the sequence moves by `count` under the row lock the upsert takes,
  * so two concurrent runs cannot be handed overlapping ranges.
  */
-async function allocateVoucherNumbers(tx: TransactionClient, count: number): Promise<number> {
-  const rows = await tx.$queryRawUnsafe<{ first: number }[]>(
-    `INSERT INTO number_sequences (id, school_id, kind, next_value, updated_at)
-     VALUES (gen_random_uuid(), current_school_id(), 'voucher', $1::int + 1, now())
-     ON CONFLICT (school_id, kind)
-     DO UPDATE SET next_value = number_sequences.next_value + $1::int, updated_at = now()
-     RETURNING next_value - $1::int AS first`,
+async function allocateVoucherNumbers(
+  tx: TransactionClient,
+  count: number,
+): Promise<{ first: number; prefix: string; pad: number }> {
+  // An UPDATE, not an upsert: an upsert would create the counter at 1 on the
+  // first run, which is exactly the default voucher numbering must not have.
+  const rows = await tx.$queryRawUnsafe<{ first: number; prefix: string; pad: number }[]>(
+    `UPDATE number_sequences
+        SET next_value = next_value + $1::int, updated_at = now()
+      WHERE kind = 'voucher' AND school_id = current_school_id()
+      RETURNING next_value - $1::int AS first, prefix, pad`,
     count,
   );
 
-  const first = rows[0]?.first;
-  if (first === undefined) {
+  const row = rows[0];
+  if (row === undefined) {
     throw new BusinessRuleError(
-      'INTERNAL_ERROR',
-      'Could not allocate voucher numbers. Nothing was saved.',
+      'BUSINESS_RULE_VIOLATION',
+      VOUCHER_NUMBER_NOT_SET,
     );
   }
-  return first;
+  return row;
 }
+
+const VOUCHER_NUMBER_NOT_SET =
+  'Set the starting voucher number under Settings › Voucher Settings before generating fees.';
 
 /**
  * A time-ordered UUID, matching the `uuid(7)` the columns default to.

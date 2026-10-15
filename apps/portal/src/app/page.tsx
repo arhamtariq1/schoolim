@@ -1,7 +1,11 @@
+import { ROUTES, type ClassOverview } from '@ilm/contracts';
+import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { DashboardLoading } from '@/components/dashboard/dashboard-loading';
 import { HomeDashboard } from '@/components/dashboard/home-dashboard';
+import { TeacherDashboard, type TeacherClassCard } from '@/components/dashboard/teacher-dashboard';
+import { apiFetch } from '@/lib/api';
 import { loadDashboardDemoSnapshot } from '@/lib/dashboard-demo-data';
 import { requireSchoolSession } from '@/lib/require-session';
 import { tenantSlugFromHeaders } from '@/lib/tenant-from-request';
@@ -12,8 +16,37 @@ async function HomeDashboardContent({
   verifyOutcome: string | undefined;
 }) {
   const session = await requireSchoolSession();
-  const snapshot = loadDashboardDemoSnapshot(session);
+
+  // A guardian's home is the parent portal, not the school dashboard.
+  if (session.roles.length > 0 && session.roles.every((role) => role === 'PARENT')) {
+    redirect('/parent');
+  }
+
   const tenantSlug = await tenantSlugFromHeaders();
+
+  // A teacher's home is their own: classes, attendance, salary — and no
+  // school-wide money, which the general dashboard is full of.
+  const STAFF_OVERVIEW_ROLES = ['OWNER', 'PRINCIPAL', 'ADMIN', 'ACCOUNTANT', 'RECEPTION', 'COORDINATOR'];
+  if (
+    session.roles.includes('TEACHER') &&
+    !session.roles.some((role) => STAFF_OVERVIEW_ROLES.includes(role))
+  ) {
+    // Only this teacher's classes: the overview endpoint is narrowed by the API
+    // to their assignments, so nothing here filters and nothing could leak.
+    const overview = await apiFetch<{ data: ClassOverview }>(ROUTES.attendance.classes);
+    const classes: TeacherClassCard[] = overview.ok
+      ? overview.data.data.classes.map((entry) => ({
+          classLevelId: entry.classLevelId,
+          name: entry.className,
+          students: entry.strength,
+          presentToday: entry.present,
+          markedToday: entry.markedAt !== null,
+        }))
+      : [];
+    return <TeacherDashboard session={session} tenantSlug={tenantSlug} classes={classes} />;
+  }
+
+  const snapshot = loadDashboardDemoSnapshot(session);
 
   const verifyBanner =
     verifyOutcome === undefined ? null : (

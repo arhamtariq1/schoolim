@@ -1,9 +1,11 @@
 import { z } from 'zod';
 
 import { feeTotalsSchema, studentFeeLineSchema, studentFeeSchema } from './fees';
+import { nationalIdSchema } from './national-id';
 import { listQuery } from './pagination';
 import {
   calendarDateSchema,
+  emailSchema,
   idSchema,
   minorUnitsSchema,
   nonEmptyString,
@@ -150,7 +152,9 @@ export const createStudentSchema = z
     lastName: textSchema(80),
     gender: genderSchema.optional(),
     dateOfBirth: calendarDateSchema.optional(),
-    bFormNo: z.string().trim().max(20).optional(),
+    bFormNo: nationalIdSchema('B-Form number').optional(),
+    /** Optional passport-style photo, as a data URL under ~512 KB. */
+    photoUrl: z.string().trim().max(800_000).optional().nullable(),
     religion: z.string().trim().max(40).optional(),
     bloodGroup: z.string().trim().max(8).optional(),
     nationality: z.string().trim().max(40).optional(),
@@ -203,8 +207,8 @@ export const createStudentSchema = z
         .min(1, 'This is required.')
         .regex(/^\+[1-9]\d{7,14}$/, 'Enter a phone number, for example 03001234567.'),
       address: textSchema(300),
-      email: z.email().optional(),
-      cnic: z.string().trim().max(20).optional(),
+      email: emailSchema.optional(),
+      cnic: nationalIdSchema('CNIC').optional(),
       occupation: z.string().trim().max(80).optional(),
     }).strict(),
 

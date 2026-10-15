@@ -25,6 +25,7 @@ import {
   Field,
   FieldIconWrap,
   Input,
+  MultiSelect,
   SimpleSelect,
   Textarea,
   useToast,
@@ -85,6 +86,12 @@ export function StaffDialog({
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [cvUrl, setCvUrl] = useState<string | null>(null);
   const [cvName, setCvName] = useState<string | null>(null);
+  const [classLevelIds, setClassLevelIds] = useState<string[]>([]);
+  // `undefined` while loading, so the field can say so instead of showing an
+  // empty list that reads as "this school has no classes".
+  const [classOptions, setClassOptions] = useState<{ value: string; label: string }[] | undefined>(
+    undefined,
+  );
   const cvInputRef = useRef<HTMLInputElement>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | undefined>(undefined);
@@ -92,6 +99,23 @@ export function StaffDialog({
   const [loadingProfile, setLoadingProfile] = useState(editing !== undefined);
 
   const canSignIn = staffRoleCanSignIn(role);
+  const isTeacher = role === 'TEACHER';
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchJson<{ data: { id: string; name: string }[] }>(ROUTES.students.classOptions).then(
+      (result) => {
+        if (!cancelled) {
+          setClassOptions(
+            result.ok ? result.data.data.map((entry) => ({ value: entry.id, label: entry.name })) : [],
+          );
+        }
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (editing === undefined) {
@@ -105,6 +129,7 @@ export function StaffDialog({
       setAddress(profile.address ?? '');
       setPhotoUrl(profile.photoUrl);
       setCvUrl(profile.cvUrl);
+      setClassLevelIds(profile.classLevelIds ?? []);
       setLoadingProfile(false);
       return;
     }
@@ -119,6 +144,7 @@ export function StaffDialog({
         setAddress(result.data.data.address ?? '');
         setPhotoUrl(result.data.data.photoUrl);
         setCvUrl(result.data.data.cvUrl);
+        setClassLevelIds(result.data.data.classLevelIds ?? []);
       }
       setLoadingProfile(false);
     });
@@ -153,6 +179,9 @@ export function StaffDialog({
       ...(address.trim() === '' ? { address: null } : { address: address.trim() }),
       photoUrl,
       cvUrl,
+      // Only a teacher has classes. Sent as an empty list when editing a person
+      // who has just stopped being one, so the server clears what they had.
+      ...(isTeacher ? { classLevelIds } : editing === undefined ? {} : { classLevelIds: [] }),
     };
 
     if (editing === undefined) {
@@ -323,6 +352,31 @@ export function StaffDialog({
                       />
                     </FieldIconWrap>
                   </Field>
+
+                  {isTeacher ? (
+                    <Field
+                      label="Class"
+                      error={fieldErrors['classLevelIds']}
+                      hint="The teacher will see, and take attendance for, only these classes."
+                      className="sm:col-span-2"
+                    >
+                        <MultiSelect
+                          value={classLevelIds}
+                          onValueChange={setClassLevelIds}
+                          options={classOptions ?? []}
+                          disabled={isPending || classOptions === undefined}
+                          placeholder={
+                            classOptions === undefined
+                              ? 'Loading classes…'
+                              : classOptions.length === 0
+                                ? 'No classes yet — add them under Academics'
+                                : 'Select one or more classes'
+                          }
+                          searchPlaceholder="Search classes…"
+                          emptyMessage="No class matches."
+                        />
+                    </Field>
+                  ) : null}
 
                   <Field
                     label="Address"

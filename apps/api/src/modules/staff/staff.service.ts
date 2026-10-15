@@ -11,8 +11,10 @@ import {
 import { fromDecimalString, minorUnits, toDecimalString } from '@ilm/utils';
 import { Inject, Injectable } from '@nestjs/common';
 
+import { type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/errors/domain-error';
+import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
 
 import { StaffInviteService } from './staff-invite.service';
@@ -65,6 +67,7 @@ const PROFILE_SELECTION = {
   address: true,
   photoUrl: true,
   cvUrl: true,
+  classAssignments: { select: { classLevelId: true } },
 } as const;
 
 @Injectable()
@@ -72,6 +75,7 @@ export class StaffService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly invites: StaffInviteService,
+    private readonly context: TenantContextService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -179,6 +183,11 @@ export class StaffService {
           select: LIST_SELECTION,
         });
 
+        // The classes in the same transaction as the teacher: a teacher saved
+        // without them is one who signs in to an empty portal, and the form
+        // said they were assigned.
+        await this.replaceClassAssignments(tx, created.id, input.classLevelIds);
+
         // Only for the roles that use the portal, and only with somewhere to
         // send it. The contract already refuses a portal role with no email, so
         // the second half of this condition is for a caller that is not our
@@ -252,6 +261,24 @@ export class StaffService {
         const nextRole = input.role ?? existing.role;
         const nextEmail = input.email ?? existing.email ?? undefined;
         const userId = existing.userId;
+
+        // Judged against the role they will end up with, because a PATCH
+        // carrying only classes says nothing about the role. Somebody who stops
+        // being a teacher loses the classes with it: a grant that outlives the
+        // role it was for is access nobody remembers giving.
+        if (nextRole !== 'TEACHER' && (input.classLevelIds?.length ?? 0) > 0) {
+          throw new BusinessRuleError(
+            'BUSINESS_RULE_VIOLATION',
+            'Only teachers are assigned classes. Change the role to Teacher first.',
+          );
+        }
+        if (nextRole === 'TEACHER') {
+          if (input.classLevelIds !== undefined) {
+            await this.replaceClassAssignments(tx, id, input.classLevelIds);
+          }
+        } else if (existing.role === 'TEACHER') {
+          await this.replaceClassAssignments(tx, id, []);
+        }
 
         // A role change can take somebody's portal access away, and leaving a
         // live account behind for a janitor is the whole reason the roles are
@@ -397,6 +424,9 @@ export class StaffService {
         });
       }
 
+      // Their access ends with their employment, class grants included.
+      await this.replaceClassAssignments(tx, id, []);
+
       await tx.staff.update({
         where: { id },
         data: { deletedAt: now, status: 'LEFT', leftOn: now, designation: reason.slice(0, 80) },
@@ -441,6 +471,10 @@ export class StaffService {
       }
 
       if (foundIds.size > 0) {
+        for (const staffId of foundIds) {
+          await this.replaceClassAssignments(tx, staffId, []);
+        }
+
         await tx.staff.updateMany({
           where: { id: { in: [...foundIds] } },
           data: { deletedAt: now, status: 'LEFT', leftOn: now, designation: reason.slice(0, 80) },
@@ -448,6 +482,81 @@ export class StaffService {
       }
 
       return { deleted: foundIds.size, skipped: unique.filter((id) => !foundIds.has(id)) };
+    });
+  }
+
+  /**
+   * Make a teacher's classes exactly `requested`, and say so in the audit log.
+   *
+   * Replace rather than add/remove: the form submits the whole set it is
+   * showing, so the stored set must equal it. Reading what is there first and
+   * writing only the difference keeps the rows (and their `created_at`) of
+   * classes that did not change, and means pressing Save twice writes nothing
+   * the second time — and no second audit entry for a change that did not
+   * happen.
+   *
+   * Every id is checked against the school's own classes first. The foreign
+   * key alone would accept another school's class id (foreign keys are checked
+   * outside row-level security), which would be a cross-tenant write through
+   * the one door nobody thinks of as one.
+   */
+  private async replaceClassAssignments(
+    tx: TransactionClient,
+    staffId: string,
+    requested: readonly string[],
+  ): Promise<void> {
+    const wanted = [...new Set(requested)];
+
+    if (wanted.length > 0) {
+      const known = await tx.classLevel.findMany({
+        where: { id: { in: wanted } },
+        select: { id: true },
+      });
+      if (known.length !== wanted.length) {
+        throw new BusinessRuleError(
+          'BUSINESS_RULE_VIOLATION',
+          'One of the chosen classes no longer exists at this school. Reload the list and choose again.',
+        );
+      }
+    }
+
+    const current = (
+      await tx.staffClassAssignment.findMany({
+        where: { staffId },
+        select: { classLevelId: true },
+      })
+    ).map((row) => row.classLevelId);
+
+    const added = wanted.filter((id) => !current.includes(id));
+    const removed = current.filter((id) => !wanted.includes(id));
+
+    if (added.length === 0 && removed.length === 0) {
+      return;
+    }
+
+    if (removed.length > 0) {
+      await tx.staffClassAssignment.deleteMany({
+        where: { staffId, classLevelId: { in: removed } },
+      });
+    }
+    if (added.length > 0) {
+      await tx.staffClassAssignment.createMany({
+        data: added.map((classLevelId) => ({ staffId, classLevelId })) as never,
+      });
+    }
+
+    await tx.auditLog.create({
+      data: {
+        schoolId: this.context.schoolId,
+        action: 'staff.classes.assign',
+        entityType: 'Staff',
+        entityId: staffId,
+        actorType: 'USER',
+        actorUserId: this.context.userId ?? null,
+        before: { classLevelIds: current },
+        after: { classLevelIds: wanted },
+        at: this.clock.now(),
+      },
     });
   }
 
@@ -512,6 +621,7 @@ function toProfile(row: {
   address: string | null;
   photoUrl: string | null;
   cvUrl: string | null;
+  classAssignments: { classLevelId: string }[];
 }): StaffProfile {
   return {
     ...toListItem(row),
@@ -520,6 +630,7 @@ function toProfile(row: {
     address: row.address,
     photoUrl: row.photoUrl,
     cvUrl: row.cvUrl,
+    classLevelIds: row.classAssignments.map((entry) => entry.classLevelId),
   };
 }
 

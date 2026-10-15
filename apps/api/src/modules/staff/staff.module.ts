@@ -2,6 +2,7 @@ import {
   bulkDeleteStaffSchema,
   createStaffSchema,
   deleteStaffSchema,
+  recordSalaryPaymentSchema,
   ROUTES,
   staffListQuerySchema,
   updateStaffSchema,
@@ -9,6 +10,7 @@ import {
   type StaffInviteResult,
   type StaffListItem,
   type StaffProfile,
+  type StaffSalaryHistory,
 } from '@ilm/contracts';
 import {
   Body,
@@ -29,6 +31,7 @@ import { RequirePermission } from '../../shared/rbac/rbac.guard';
 import { CLOCK, clockProvider, type Clock } from '../../shared/time/clock.provider';
 
 import { StaffInviteService } from './staff-invite.service';
+import { StaffSalaryService } from './staff-salary.service';
 import { StaffService } from './staff.service';
 
 /**
@@ -46,6 +49,7 @@ export class StaffController {
   constructor(
     private readonly staff: StaffService,
     private readonly invites: StaffInviteService,
+    private readonly salary: StaffSalaryService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -115,6 +119,29 @@ export class StaffController {
     return { data: await this.invites.invite(id, this.clock.now()) };
   }
 
+  /**
+   * What somebody was paid, month by month.
+   *
+   * Its own permission rather than riding on the staff row: `staff.salary.read`
+   * is held by the owner, the principal and the accountant, and not by a role
+   * that may merely open the staff list.
+   */
+  @Get('/api/v1/staff/:id/salary')
+  @RequirePermission('staff.salary.read')
+  async salaryHistory(@Param('id') id: string): Promise<{ data: StaffSalaryHistory }> {
+    return { data: await this.salary.history(id) };
+  }
+
+  /** Record one month's payment. Append-only: there is no edit and no delete. */
+  @Post('/api/v1/staff/:id/salary-payments')
+  @RequirePermission('staff.salary.pay')
+  async recordSalary(
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<{ data: StaffSalaryHistory }> {
+    return { data: await this.salary.record(id, recordSalaryPaymentSchema.parse(body)) };
+  }
+
   @Delete('/api/v1/staff/:id')
   @RequirePermission('staff.record.update')
   async remove(@Param('id') id: string, @Body() body: unknown): Promise<{ data: { ok: true } }> {
@@ -126,7 +153,7 @@ export class StaffController {
 
 @Module({
   controllers: [StaffController],
-  providers: [clockProvider, StaffService, StaffInviteService],
+  providers: [clockProvider, StaffService, StaffInviteService, StaffSalaryService],
   exports: [StaffInviteService],
 })
 export class StaffModule {}

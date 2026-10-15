@@ -35,7 +35,7 @@ export function DashboardVouchersCard({ summary, detailsHref }: DashboardVoucher
           <p className="text-lg font-semibold tracking-tight text-foreground">
             {formatMoney(minorUnits(summary.totalAmountMinor), { withSymbol: true })}
           </p>
-          <StatusBadge tone="neutral" className="mt-1 bg-primary/10 text-primary">
+          <StatusBadge tone="info" className="mt-1">
             {summary.paidPercent.toFixed(2)}% paid
           </StatusBadge>
         </div>

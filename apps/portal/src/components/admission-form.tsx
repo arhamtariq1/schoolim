@@ -11,6 +11,7 @@ import {
   type SessionStatus,
 } from '@ilm/contracts';
 import {
+  AvatarUpload,
   Button,
   DatePicker,
   Dialog,
@@ -35,6 +36,7 @@ import {
   ClassIcon,
   CloseIcon,
   DesignationIcon,
+  EmailIcon,
   FeesIcon,
   ICON_SIZE,
   LocationIcon,
@@ -144,6 +146,9 @@ export interface AdmissionFormProps {
   readonly classes: readonly ClassLevelWithSections[];
   readonly catalogue: readonly FeeHead[];
   readonly canSetFees: boolean;
+  /** False until an administrator has set the starting GR number. */
+  readonly grConfigured: boolean;
+  readonly canConfigureGr: boolean;
 }
 
 export function AdmissionForm({
@@ -153,6 +158,8 @@ export function AdmissionForm({
   classes,
   catalogue,
   canSetFees,
+  grConfigured,
+  canConfigureGr,
 }: AdmissionFormProps) {
   const router = useRouter();
   const tenantHref = useTenantHref();
@@ -165,10 +172,8 @@ export function AdmissionForm({
   const [admittedOn, setAdmittedOn] = useState<string>(today);
 
   const [bFormNo, setBFormNo] = useState('');
-  const [studentIdCard, setStudentIdCard] = useState('');
   const [religion, setReligion] = useState('');
   const [nationality, setNationality] = useState('');
-  const [studentAddress, setStudentAddress] = useState('');
 
   // Defaults to the current session, which is the answer on almost every
   // admission. A school filling next year's classes in March picks that year
@@ -185,6 +190,8 @@ export function AdmissionForm({
   const [guardianName, setGuardianName] = useState('');
   const [guardianRelation, setGuardianRelation] = useState('FATHER');
   const [guardianPhone, setGuardianPhone] = useState('');
+  const [guardianEmail, setGuardianEmail] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [guardianCnic, setGuardianCnic] = useState('');
   const [guardianOccupation, setGuardianOccupation] = useState('');
   const [guardianAddress, setGuardianAddress] = useState('');
@@ -202,17 +209,31 @@ export function AdmissionForm({
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [isPending, setIsPending] = useState(false);
 
+  // A fee head can be limited to some classes (Lab Fee: Class 9 and 10). Until a
+  // class is picked only the heads that apply to everybody show; picking one
+  // brings in its own. Edits live in `fees` for every head, so choosing a class,
+  // changing your mind and choosing another never loses an amount somebody typed.
+  const applicableFees = useMemo(() => {
+    const restrictions = new Map(
+      catalogue.map((head) => [head.id, head.classLevels.map((level) => level.id)] as const),
+    );
+    return fees.filter((row) => {
+      const allowed = restrictions.get(row.feeHeadId) ?? [];
+      return allowed.length === 0 || (classLevelId !== '' && allowed.includes(classLevelId));
+    });
+  }, [catalogue, fees, classLevelId]);
+
   const sections = sessionClasses.find((entry) => entry.id === classLevelId)?.sections ?? [];
 
   const totals = useMemo(() => {
     let gross = 0;
     let payable = 0;
-    for (const row of fees) {
+    for (const row of applicableFees) {
       gross += row.amountMinor;
       payable += row.discountedAmountMinor ?? row.amountMinor;
     }
     return { gross, payable, discount: gross - payable };
-  }, [fees]);
+  }, [applicableFees]);
 
   /**
    * Switch the year being admitted into, and reload that year's sections.
@@ -234,10 +255,8 @@ export function AdmissionForm({
     setDateOfBirth('');
     setAdmittedOn(today);
     setBFormNo('');
-    setStudentIdCard('');
     setReligion('');
     setNationality('');
-    setStudentAddress('');
     setEnrolSessionId(sessionId ?? '');
     setSessionClasses(classes);
     setClassLevelId('');
@@ -245,6 +264,8 @@ export function AdmissionForm({
     setGuardianName('');
     setGuardianRelation('FATHER');
     setGuardianPhone('');
+    setGuardianEmail('');
+    setPhotoUrl(null);
     setGuardianCnic('');
     setGuardianOccupation('');
     setGuardianAddress('');
@@ -305,12 +326,11 @@ export function AdmissionForm({
       ...(dateOfBirth === '' ? {} : { dateOfBirth }),
       ...(admittedOn === '' ? {} : { admittedOn }),
       ...(bFormNo.trim() === '' ? {} : { bFormNo }),
+      ...(photoUrl === null ? {} : { photoUrl }),
       ...(religion.trim() === '' ? {} : { religion }),
       ...(nationality.trim() === '' ? {} : { nationality }),
-      ...(studentAddress.trim() === '' ? {} : { address: studentAddress.trim() }),
-      ...(studentIdCard.trim() === ''
-        ? {}
-        : { custom: { studentIdCard: studentIdCard.trim() } }),
+      // One address, collected under Guardian Contact, is the child's too.
+      ...(guardianAddress.trim() === '' ? {} : { address: guardianAddress.trim() }),
       enrollment: {
         sessionId: enrolSessionId,
         classLevelId,
@@ -320,8 +340,8 @@ export function AdmissionForm({
         name: guardianName,
         relation: guardianRelation,
         phone: toE164(guardianPhone),
-        address:
-          guardianAddress.trim() === '' ? studentAddress.trim() : guardianAddress.trim(),
+        ...(guardianEmail.trim() === '' ? {} : { email: guardianEmail.trim() }),
+        address: guardianAddress.trim(),
         ...(guardianCnic.trim() === '' ? {} : { cnic: guardianCnic }),
         ...(guardianOccupation.trim() === '' ? {} : { occupation: guardianOccupation }),
       },
@@ -329,7 +349,7 @@ export function AdmissionForm({
       // the catalogue, and if a head were turned off between this page loading
       // and Save being pressed, the child would silently be admitted on a
       // different structure from the one on screen.
-      fees: fees.map((row) => ({
+      fees: applicableFees.map((row) => ({
         feeHeadId: row.feeHeadId,
         amountMinor: row.amountMinor,
         ...(row.discountedAmountMinor === undefined
@@ -341,18 +361,38 @@ export function AdmissionForm({
       })),
     });
 
-    if (!parsed.success) {
+    // The guardian's email is where their portal invitation goes, so the form
+    // asks for it even though the API tolerates records that predate the field.
+    const emailMissing = guardianEmail.trim() === '';
+
+    if (!parsed.success || emailMissing) {
       const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        next[issue.path.join('.')] = issue.message;
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          next[issue.path.join('.')] = issue.message;
+        }
+      }
+      if (emailMissing) {
+        next['guardian.email'] = 'Enter an email — the parent portal invitation is sent here.';
       }
       setFieldErrors(next);
       setFormError('Check the highlighted fields.');
+      const count = Object.keys(next).length;
+      toast.error(
+        count === 1
+          ? (Object.values(next)[0] ?? 'Check the highlighted field.')
+          : `${String(count)} fields need attention. Check the highlighted fields.`,
+      );
       return;
     }
 
     setIsPending(true);
-    const result = await mutate<{ id: string; grNo: string; studentCode: string }>(
+    const result = await mutate<{
+      id: string;
+      grNo: string;
+      studentCode: string;
+      parentInvite?: { sent: boolean; email: string };
+    }>(
       ROUTES.students.create,
       'POST',
       parsed.data,
@@ -362,10 +402,20 @@ export function AdmissionForm({
     if (!result.ok) {
       setFormError(result.message);
       setFieldErrors(result.fieldErrors);
+      toast.error(result.message);
       return;
     }
 
     toast.success(`${firstName} ${lastName} admitted · GR ${result.data.grNo}.`);
+    if (result.data.parentInvite !== undefined) {
+      if (result.data.parentInvite.sent) {
+        toast.success(`Parent portal invitation sent to ${result.data.parentInvite.email}.`);
+      } else {
+        toast.warning(
+          `${result.data.parentInvite.email} was linked, but the invitation email did not send.`,
+        );
+      }
+    }
     router.push(tenantHref(`/students/${result.data.id}`));
     router.refresh();
   }
@@ -379,6 +429,25 @@ export function AdmissionForm({
         noValidate
         className="space-y-8"
       >
+        {grConfigured ? null : (
+          <div
+            role="alert"
+            className="rounded-md border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground"
+          >
+            GR numbering has not been set up, so students cannot be admitted yet.{' '}
+            {canConfigureGr ? (
+              <a
+                href={tenantHref('/settings/gr-number')}
+                className="font-medium text-primary underline-offset-2 hover:underline"
+              >
+                Set the starting GR number
+              </a>
+            ) : (
+              'Ask the school administrator to set the starting GR number in Settings.'
+            )}
+          </div>
+        )}
+
         {formError === undefined ? null : (
           <div
             role="alert"
@@ -394,6 +463,12 @@ export function AdmissionForm({
           title="Student Information"
           description="Provide the basic details of the student."
         >
+          <AvatarUpload
+            value={photoUrl}
+            onChange={setPhotoUrl}
+            disabled={isPending}
+            className="mb-5"
+          />
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             <Field label="First name" error={fieldErrors['firstName']} required>
               <FieldIconWrap icon={AccountIcon}>
@@ -438,23 +513,11 @@ export function AdmissionForm({
                 <Input
                   inputMode="numeric"
                   autoComplete="off"
-                  placeholder="Enter B-Form number"
+                  placeholder="35202-1234567-1"
+                  maxLength={15}
                   value={bFormNo}
                   onChange={(event) => {
                     setBFormNo(formatCnic(event.target.value));
-                  }}
-                />
-              </FieldIconWrap>
-            </Field>
-            <Field label="CNIC / ID Card" error={fieldErrors['custom.studentIdCard']}>
-              <FieldIconWrap icon={DesignationIcon}>
-                <Input
-                  inputMode="numeric"
-                  autoComplete="off"
-                  placeholder="Enter CNIC / ID number"
-                  value={studentIdCard}
-                  onChange={(event) => {
-                    setStudentIdCard(formatCnic(event.target.value));
                   }}
                 />
               </FieldIconWrap>
@@ -480,23 +543,6 @@ export function AdmissionForm({
                   placeholder="Select nationality"
                   ariaLabel="Nationality"
                   emptyOption={{ value: '', label: 'Select nationality' }}
-                />
-              </FieldIconWrap>
-            </Field>
-            <Field
-              label="Address"
-              error={fieldErrors['address']}
-              className="md:col-span-2 xl:col-span-3"
-            >
-              <FieldIconWrap icon={LocationIcon} alignTop>
-                <Textarea
-                  rows={2}
-                  autoComplete="street-address"
-                  placeholder="Enter address"
-                  value={studentAddress}
-                  onChange={(event) => {
-                    setStudentAddress(event.target.value);
-                  }}
                 />
               </FieldIconWrap>
             </Field>
@@ -619,13 +665,27 @@ export function AdmissionForm({
                 />
               </FieldIconWrap>
             </Field>
-            <Field label="CNIC" error={fieldErrors['guardian.cnic']} hint="Optional.">
+            <Field label="Email" error={fieldErrors['guardian.email']} required>
+              <FieldIconWrap icon={EmailIcon}>
+                <Input
+                  type="email"
+                  autoComplete="email"
+                  placeholder="Enter guardian email"
+                  value={guardianEmail}
+                  onChange={(event) => {
+                    setGuardianEmail(event.target.value);
+                  }}
+                />
+              </FieldIconWrap>
+            </Field>
+            <Field label="CNIC" error={fieldErrors['guardian.cnic']}>
               <FieldIconWrap icon={DesignationIcon}>
                 <Input
                   type="text"
                   inputMode="numeric"
                   autoComplete="off"
                   placeholder="35202-1234567-1"
+                  maxLength={15}
                   value={guardianCnic}
                   onChange={(event) => {
                     setGuardianCnic(formatCnic(event.target.value));
@@ -646,16 +706,16 @@ export function AdmissionForm({
               </FieldIconWrap>
             </Field>
             <Field
-              label="Home address"
+              label="Address"
               error={fieldErrors['guardian.address']}
-              hint="Uses the student address above if left blank."
+              required
               className="md:col-span-2 xl:col-span-3"
             >
               <FieldIconWrap icon={LocationIcon} alignTop>
                 <Textarea
                   rows={2}
                   autoComplete="street-address"
-                  placeholder="Enter home address"
+                  placeholder="Enter address"
                   value={guardianAddress}
                   onChange={(event) => {
                     setGuardianAddress(event.target.value);
@@ -693,7 +753,7 @@ export function AdmissionForm({
             </div>
           ) : (
             <FeeGrid
-              rows={fees}
+              rows={applicableFees}
               canDiscount={canSetFees}
               onAmountChange={(feeHeadId, amountMinor) => {
                 setFees((current) =>
@@ -726,7 +786,7 @@ export function AdmissionForm({
             <UndoIcon className={ICON_SIZE.inline} aria-hidden />
             Reset
           </Button>
-          <Button type="submit" isPending={isPending} size="touch">
+          <Button type="submit" isPending={isPending} disabled={!grConfigured} size="touch">
             <SaveIcon className={ICON_SIZE.inline} aria-hidden />
             {isPending ? 'Saving…' : 'Save Admission'}
           </Button>

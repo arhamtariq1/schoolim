@@ -27,9 +27,9 @@ const LEVEL_ICON_TONE: Record<SchoolLevelId, string> = {
   primary: 'bg-info/10 text-info',
   middle: 'bg-primary/10 text-primary',
   secondary: 'bg-success/10 text-success',
-  'higher-secondary': 'bg-muted text-muted-foreground',
+  'higher-secondary': 'bg-primary/10 text-primary',
   'o-level': 'bg-warning/10 text-warning',
-  'a-level': 'bg-muted text-muted-foreground',
+  'a-level': 'bg-primary/10 text-primary',
 };
 
 const NAME_TO_LEVEL = new Map<string, SchoolLevelId>();

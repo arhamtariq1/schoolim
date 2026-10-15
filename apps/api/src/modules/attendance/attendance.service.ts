@@ -15,6 +15,7 @@ import { Injectable } from '@nestjs/common';
 import { type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
+import { classInScope, ClassScopeService } from '../../shared/rbac/class-scope.service';
 
 import {
   attendanceBasisPoints,
@@ -55,7 +56,10 @@ import {
  */
 @Injectable()
 export class AttendanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly classScope: ClassScopeService,
+  ) {}
 
   // --- Reading --------------------------------------------------------------
 
@@ -66,8 +70,13 @@ export class AttendanceService {
       const date = query.date ?? context.today;
       const day = describeDay(date, context.calendar);
 
+      // A teacher is handed the cards for their own classes and no others, so
+      // the screen they land on is already the right one — not a school-wide
+      // grid with most of it refusing to open.
+      const scope = await this.classScope.classLevelIds(tx, 'attendance.record.read');
+
       const classes = await tx.classLevel.findMany({
-        where: { isActive: true },
+        where: { isActive: true, ...(scope === undefined ? {} : { id: { in: [...scope] } }) },
         orderBy: { numericOrder: 'asc' },
         select: { id: true, name: true, numericOrder: true },
       });
@@ -128,6 +137,8 @@ export class AttendanceService {
   /** One class on one day: who is in it, and what is already recorded. */
   async roster(classLevelId: string, query: RosterQuery, canUnlock: boolean): Promise<Roster> {
     return this.prisma.tenant(async (tx) => {
+      await this.assertClassVisible(tx, classLevelId, 'attendance.record.read');
+
       const context = await this.loadContext(tx, query.sessionId);
       const day = describeDay(query.date, context.calendar);
 
@@ -227,6 +238,11 @@ export class AttendanceService {
     canUnlock: boolean,
   ): Promise<MarkResult> {
     return this.prisma.tenant(async (tx) => {
+      // First, before the calendar and before anything is read about the class:
+      // a teacher marking a class that is not theirs learns nothing about it,
+      // not even that today is a holiday.
+      await this.assertClassVisible(tx, input.classLevelId, 'attendance.record.create');
+
       const context = await this.loadContext(tx, undefined);
       const day = describeDay(input.date, context.calendar);
 
@@ -283,6 +299,8 @@ export class AttendanceService {
 
   async monthlyReport(classLevelId: string, query: MonthlyReportQuery): Promise<MonthlyReport> {
     return this.prisma.tenant(async (tx) => {
+      await this.assertClassVisible(tx, classLevelId, 'attendance.report.read');
+
       const context = await this.loadContext(tx, query.sessionId);
       const days = describeMonth(query.month, context.calendar);
       const dates = daysInMonth(query.month);
@@ -404,6 +422,27 @@ export class AttendanceService {
   }
 
   // --- Shared ---------------------------------------------------------------
+
+  /**
+   * Refuse a class the caller's grant does not cover.
+   *
+   * **Not found, not forbidden**, the same answer a class that does not exist
+   * gets (docs/16 §7): a 403 would confirm to a teacher that Grade 9 exists and
+   * is somebody else's, which is more than they were told they could know. It
+   * is also checked against the grant of the *action* — a teacher may be able to
+   * read a register they cannot mark — which is why the permission is a
+   * parameter rather than assumed.
+   */
+  private async assertClassVisible(
+    tx: TransactionClient,
+    classLevelId: string,
+    permission: 'attendance.record.read' | 'attendance.record.create' | 'attendance.report.read',
+  ): Promise<void> {
+    const scope = await this.classScope.classLevelIds(tx, permission);
+    if (!classInScope(scope, classLevelId)) {
+      throw new NotFoundError('class');
+    }
+  }
 
   /** The school's week, its holidays, and what day it is where the school is. */
   private async loadContext(

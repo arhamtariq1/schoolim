@@ -1,11 +1,13 @@
 import { createHash, randomBytes } from 'node:crypto';
 
 import {
+  SCHOOL_ROLE_LABELS,
   STAFF_ROLE_LABELS,
   STAFF_ROLE_TO_SCHOOL_ROLE,
   staffRoleCanSignIn,
   type AcceptInviteResult,
   type InviteCheckResult,
+  type SchoolRole,
   type StaffInviteResult,
   type StaffRole,
 } from '@ilm/contracts';
@@ -61,7 +63,7 @@ import { TenantContextService } from '../../shared/tenancy/tenant-context.servic
  * exception. Short enough that an invitation left unaccepted does not stay
  * live for a term.
  */
-const INVITE_TTL_HOURS = 72;
+export const INVITE_TTL_HOURS = 72;
 
 /** What `issue` produces and `deliver` needs. The token exists only in here. */
 export interface IssuedInvitation {
@@ -450,7 +452,12 @@ function labelForSchoolRole(schoolRole: string): string {
       return STAFF_ROLE_LABELS[staffRole as StaffRole];
     }
   }
-  return schoolRole;
+  // Not a staff role at all — a parent, for instance.
+  return SCHOOL_ROLE_LABELS[schoolRole as SchoolRole] ?? schoolRole;
+}
+
+export function hashInviteToken(token: string): string {
+  return hash(token);
 }
 
 function hash(token: string): string {

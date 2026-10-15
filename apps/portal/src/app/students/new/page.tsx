@@ -4,6 +4,7 @@ import {
   type AcademicSession,
   type ClassLevelWithSections,
   type FeeHead,
+  type GrNumberSettings,
 } from '@ilm/contracts';
 import { DEFAULT_TIMEZONE, systemClock, today } from '@ilm/utils';
 import type { Metadata } from 'next';
@@ -31,13 +32,14 @@ import { getSession } from '@/lib/session';
 export const metadata: Metadata = { title: 'New admission' };
 
 export default async function NewStudentPage() {
-  const [session, academics, sessions, fees] = await Promise.all([
+  const [session, academics, sessions, fees, grNumber] = await Promise.all([
     getSession(),
     apiFetch<{ data: { session: { id: string } | null; classes: ClassLevelWithSections[] } }>(
       ROUTES.academics.setup,
     ),
     apiFetch<{ data: AcademicSession[] }>(ROUTES.academics.sessions),
     apiFetch<{ data: FeeHead[] }>(ROUTES.fees.heads),
+    apiFetch<{ data: GrNumberSettings }>(ROUTES.school.grNumber),
   ]);
 
   const setup = academics.ok ? academics.data.data : { session: null, classes: [] };
@@ -68,6 +70,10 @@ export default async function NewStudentPage() {
         classes={setup.classes}
         catalogue={catalogue}
         canSetFees={session?.permissions.includes('fees.discount.create') ?? false}
+        // A failed read is not "not configured": the server refuses the admission
+        // itself, so the form only blocks on a definite answer.
+        grConfigured={!grNumber.ok || grNumber.data.data.configured}
+        canConfigureGr={session?.permissions.includes('settings.school.configure') ?? false}
       />
     </div>
   );

@@ -10,7 +10,10 @@ import {
   reasonSchema,
   textSchema,
 } from './primitives';
+import { formatCnic, nationalIdSchema } from './national-id';
 import { genderSchema } from './students';
+
+export { formatCnic };
 
 /**
  * Staff — the people a school employs. docs/07 §4.
@@ -116,26 +119,11 @@ export const staffProfileSchema = staffListItemSchema.extend({
   address: z.string().nullable(),
   photoUrl: z.string().nullable(),
   cvUrl: z.string().nullable(),
+  /** The classes a teacher takes. Always empty for any other role. */
+  classLevelIds: z.array(idSchema),
 });
 
 export type StaffProfile = z.infer<typeof staffProfileSchema>;
-
-/**
- * Format typed digits as a Pakistani CNIC, `XXXXX-XXXXXXX-X`.
- *
- * Non-digits are dropped and anything past 13 digits is ignored, so it can run
- * on every keystroke and on a pasted value alike.
- */
-export function formatCnic(input: string): string {
-  const digits = input.replace(/\D/g, '').slice(0, 13);
-  if (digits.length <= 5) {
-    return digits;
-  }
-  if (digits.length <= 12) {
-    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
-  }
-  return `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`;
-}
 
 /** A Pakistani mobile: +92 then 10 digits starting with 3, i.e. 03XXXXXXXXX written locally. */
 const staffPhoneSchema = phoneSchema.regex(
@@ -143,15 +131,7 @@ const staffPhoneSchema = phoneSchema.regex(
   'Enter an 11-digit mobile number, like 03001234567.',
 );
 
-/** Exactly 13 digits; hyphens are normalised, so `3520212345671` is accepted and stored formatted. */
-const staffCnicSchema = z
-  .string()
-  .trim()
-  .min(1, 'Enter a CNIC number.')
-  .transform(formatCnic)
-  .refine((value) => /^\d{5}-\d{7}-\d$/.test(value), {
-    message: 'CNIC must be 13 digits, like 35202-1234567-1.',
-  });
+const staffCnicSchema = nationalIdSchema('CNIC');
 
 /**
  * Roles a school can add through the staff form.
@@ -170,6 +150,17 @@ const optionalStaffPhotoSchema = z.string().trim().max(800_000).optional().nulla
 const optionalStaffCvSchema = z.string().trim().max(3_000_000).optional().nullable();
 
 const optionalAddressSchema = z.string().trim().max(500).optional().nullable();
+
+/**
+ * The classes a teacher takes — what scopes their student list and registers.
+ *
+ * Optional, and empty is valid: a teacher can be hired before the timetable is
+ * settled. The safe reading of empty is "sees no class", never "sees all".
+ * The cap is generous (a school has a dozen classes) and exists so one request
+ * cannot carry an unbounded list.
+ */
+export const MAX_TEACHER_CLASSES = 60;
+const classLevelIdsSchema = z.array(idSchema).max(MAX_TEACHER_CLASSES);
 
 export const staffListQuerySchema = listQuery(
   ['name', 'employeeNo', 'role', 'createdAt'] as const,
@@ -231,11 +222,16 @@ export const createStaffSchema = z
     address: optionalAddressSchema,
     photoUrl: optionalStaffPhotoSchema,
     cvUrl: optionalStaffCvSchema,
+    classLevelIds: classLevelIdsSchema.default([]),
   })
   .strict()
   .refine((value) => !staffRoleCanSignIn(value.role) || value.email !== undefined, {
     message: 'This role uses the portal, so an email address is needed to invite them.',
     path: ['email'],
+  })
+  .refine((value) => value.role === 'TEACHER' || value.classLevelIds.length === 0, {
+    message: 'Only teachers are assigned classes.',
+    path: ['classLevelIds'],
   });
 
 export type CreateStaff = z.infer<typeof createStaffSchema>;
@@ -268,10 +264,57 @@ export const updateStaffSchema = z
     address: optionalAddressSchema,
     photoUrl: optionalStaffPhotoSchema,
     cvUrl: optionalStaffCvSchema,
+    /**
+     * Replaces the whole set when present, and is left alone when absent — so a
+     * PATCH carrying only a salary cannot strip a teacher of their classes. The
+     * service checks the role it will end up with, for the same reason the
+     * email rule is checked there.
+     */
+    classLevelIds: classLevelIdsSchema.optional(),
   })
   .strict();
 
 export type UpdateStaff = z.infer<typeof updateStaffSchema>;
+
+/**
+ * Salary history — what a member of staff was paid, month by month.
+ *
+ * ## Append-only
+ *
+ * A payment is recorded once per person per month and never edited or deleted;
+ * the database allows INSERT and nothing else on the table (docs/12 R4). A
+ * month with no payment is shown as `DUE` at the basic salary, which is what is
+ * owed, not what was paid.
+ */
+const salaryMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Choose a month.');
+
+export const recordSalaryPaymentSchema = z
+  .object({
+    month: salaryMonthSchema,
+    paidOn: calendarDateSchema,
+    /** Defaults to the basic salary. Integer paisa. */
+    amountMinor: positiveMinorUnitsSchema
+      .refine((value) => value > 0, 'Enter an amount above zero.')
+      .optional(),
+  })
+  .strict();
+
+export type RecordSalaryPayment = z.infer<typeof recordSalaryPaymentSchema>;
+
+export interface StaffSalaryRow {
+  /** `YYYY-MM`. */
+  month: string;
+  /** Paid amount, or the basic salary still owed for a `DUE` month. Integer paisa. */
+  amountMinor: number;
+  status: 'PAID' | 'DUE';
+  paidOn: string | null;
+}
+
+export interface StaffSalaryHistory {
+  basicSalaryMinor: number;
+  /** Newest month first. */
+  rows: StaffSalaryRow[];
+}
 
 /**
  * Removing somebody.

@@ -80,6 +80,7 @@ const WORKSPACE: RoleGrants = { 'dashboard.workspace.read': ALL };
 
 const OWNER: RoleGrants = {
   ...WORKSPACE,
+  'exams.setup.manage': ALL,
   'students.student.read': ALL,
   'students.student.create': ALL,
   'students.student.update': ALL,
@@ -118,9 +119,12 @@ const OWNER: RoleGrants = {
   'attendance.record.create': ALL,
   'attendance.record.unlock': ALL,
   'attendance.report.read': ALL,
+  'attendance.staff.read': ALL,
+  'attendance.staff.create': ALL,
   'staff.record.read': ALL,
   'staff.record.update': ALL,
   'staff.salary.read': ALL,
+  'staff.salary.pay': ALL,
   'exams.exam.configure': ALL,
   'exams.mark.create': ALL,
   'exams.result.read': ALL,
@@ -141,6 +145,8 @@ const OWNER: RoleGrants = {
  */
 const PRINCIPAL: RoleGrants = {
   ...WORKSPACE,
+  'exams.setup.manage': ALL,
+  'attendance.own.read': ALL,
   'students.student.read': ALL,
   'students.student.create': ALL,
   'students.student.update': ALL,
@@ -177,6 +183,7 @@ const PRINCIPAL: RoleGrants = {
   'attendance.record.read': ALL,
   'attendance.record.unlock': ALL,
   'attendance.report.read': ALL,
+  'attendance.staff.read': ALL,
   'staff.record.read': ALL,
   'staff.record.update': ALL,
   'staff.salary.read': ALL,
@@ -195,6 +202,7 @@ const PRINCIPAL: RoleGrants = {
 /** The power user who runs the system day to day, but approves nothing. */
 const ADMIN: RoleGrants = {
   ...WORKSPACE,
+  'exams.setup.manage': ALL,
   'students.student.read': ALL,
   'students.student.create': ALL,
   'students.student.update': ALL,
@@ -225,6 +233,8 @@ const ADMIN: RoleGrants = {
   'attendance.record.create': ALL,
   'attendance.record.unlock': ALL,
   'attendance.report.read': ALL,
+  'attendance.staff.read': ALL,
+  'attendance.staff.create': ALL,
   'staff.record.read': ALL,
   'staff.record.update': ALL,
   'exams.exam.configure': ALL,
@@ -264,6 +274,7 @@ const ACCOUNTANT: RoleGrants = {
   'finance.expense.create': ALL,
   'finance.report.read': ALL,
   'staff.salary.read': ALL,
+  'staff.salary.pay': ALL,
   'workflow.request.create': ALL,
   'workflow.request.approve': SCOPED,
   'comms.message.create': ALL,
@@ -272,6 +283,8 @@ const ACCOUNTANT: RoleGrants = {
 /** Takes a payment at the counter, but cannot cancel a voucher or reverse one. */
 const RECEPTION: RoleGrants = {
   ...WORKSPACE,
+  'exams.setup.manage': ALL,
+  'attendance.own.read': ALL,
   'students.student.read': ALL,
   'students.student.create': ALL,
   'students.student.update': ALL,
@@ -290,15 +303,26 @@ const RECEPTION: RoleGrants = {
   'attendance.record.read': ALL,
   'attendance.record.create': ALL,
   'attendance.report.read': ALL,
+  'attendance.staff.read': ALL,
+  'attendance.staff.create': ALL,
   'exams.result.read': ALL,
   'workflow.request.create': ALL,
   'comms.message.create': ALL,
 };
 
-/** Everything a teacher touches is scoped to the sections assigned to them. */
+/**
+ * Everything a teacher touches is scoped to the classes assigned to them
+ * (`staff_class_assignments`, ADR-0014) — and a teacher with none assigned
+ * reaches nothing. They hold no `attendance.staff.*`: the staff register is
+ * not any class's.
+ */
 const TEACHER: RoleGrants = {
   ...WORKSPACE,
+  'attendance.own.read': ALL,
   'students.student.read': SCOPED,
+  // Read-only, and only the classes assigned to them (ADR-0014): the Classes
+  // page lists their own and nobody else's. Configuring stays with the office.
+  'academics.structure.read': SCOPED,
   'students.guardian.read': SCOPED,
   'academics.timetable.read': SCOPED,
   'attendance.record.read': SCOPED,
@@ -330,15 +354,18 @@ const STUDENT: RoleGrants = {
   'workflow.request.create': ALL,
 };
 
-/** Sees only their own children, across classes. */
+/**
+ * Sees only their own children, through the parent portal.
+ *
+ * Deliberately **not** the staff permissions with a `SCOPED` grant. A scoped
+ * grant protects only the services that narrow their queries, and most do not:
+ * a student detail or an attendance report would have shown a parent any
+ * child's record. `parent.child.read` is served by endpoints that begin at the
+ * guardian's own account, so there is nothing broader for a parent to reach.
+ * It also keeps staff-facing screens (and their navigation) closed to parents.
+ */
 const PARENT: RoleGrants = {
-  ...WORKSPACE,
-  'students.student.read': SCOPED,
-  'students.guardian.read': SCOPED,
-  'academics.timetable.read': SCOPED,
-  'fees.voucher.read': SCOPED,
-  'attendance.report.read': SCOPED,
-  'exams.result.read': SCOPED,
+  'parent.child.read': ALL,
   'workflow.request.create': ALL,
 };
 

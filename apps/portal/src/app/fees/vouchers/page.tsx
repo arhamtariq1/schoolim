@@ -53,7 +53,7 @@ export default async function VouchersPage({
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
   const sort = parseSortField(
     params['sort'],
-    ['issueDate', 'dueDate', 'voucherNo', 'amount', 'studentName'] as const,
+    ['issueDate', 'dueDate', 'voucherNo', 'amount', 'studentName', 'status'] as const,
     'issueDate',
   );
   const order = parseSortOrder(params['order']);

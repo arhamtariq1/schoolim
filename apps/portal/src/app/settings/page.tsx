@@ -21,9 +21,9 @@ const SECTIONS = [
   },
   {
     href: '/settings/voucher',
-    label: 'Fee challan',
+    label: 'Voucher Settings',
     description:
-      'How the printed challan is laid out, and the Kuickpay or 1LINK ID a parent pays with.',
+      'Where voucher numbering starts, how the printed voucher is laid out, and the Kuickpay or 1LINK ID a parent pays with.',
     icon: PrintIcon,
     permission: 'fees.voucher.read',
   },

@@ -80,6 +80,7 @@ import {
   FEE_LIST_TABLE_CELL,
   classBadgeTone,
   feeListSelectCheckboxWrap,
+  feeListSortableTableHeader,
   feeListTableHeader,
   splitStudentDisplayName,
   useDebouncedSearchFilter,
@@ -115,8 +116,8 @@ import { useTenantHref } from '@/lib/use-tenant-href';
 /** Matches app header search (`md:max-w-xl` in app-shell). */
 const VOUCHER_TABLE_SEARCH_CLASS = 'relative w-full min-w-0 md:max-w-xl';
 
-const VOUCHER_TABLE_BADGE_CLASS =
-  'rounded-md px-2.5 py-1 text-xs font-medium [&_svg]:size-4';
+/** Empty on purpose — the badge design lives in `StatusBadge`. */
+const VOUCHER_TABLE_BADGE_CLASS = '';
 
 /**
  * Fees › Vouchers.
@@ -152,7 +153,7 @@ export interface VouchersViewProps {
     from: string;
     to: string;
   };
-  sort: 'issueDate' | 'dueDate' | 'voucherNo' | 'amount' | 'studentName';
+  sort: 'issueDate' | 'dueDate' | 'voucherNo' | 'amount' | 'studentName' | 'status';
   order: 'asc' | 'desc';
   school: {
     name: string;
@@ -369,6 +370,8 @@ export function VouchersView({
     router.refresh();
   }
 
+  const sortState = useMemo(() => ({ key: sort, direction: order }), [sort, order]);
+
   const columns = useMemo((): CardTableColumn<VoucherSummary>[] => {
     return [
       {
@@ -403,7 +406,7 @@ export function VouchersView({
         ...FEE_LIST_TABLE_CELL,
         colStyle: { width: '7.5rem' },
         sortable: true,
-        headerCell: feeListTableHeader('Voucher #', FeesIcon),
+        headerCell: feeListSortableTableHeader('Voucher #', 'voucherNo', sortState, toggleSort, FeesIcon),
         render: (row) => (
           <span className="text-sm font-medium leading-none tabular-nums text-foreground">
             {row.voucherNo}
@@ -416,7 +419,7 @@ export function VouchersView({
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[20%]',
         sortable: true,
-        headerCell: feeListTableHeader('Student', StudentsIcon),
+        headerCell: feeListSortableTableHeader('Student', 'studentName', sortState, toggleSort, StudentsIcon),
         render: (row) => {
           const { firstName, lastName } = splitStudentDisplayName(row.studentName);
           return (
@@ -465,7 +468,7 @@ export function VouchersView({
         width: 'w-[11%]',
         hideOnMobile: true,
         sortable: true,
-        headerCell: feeListTableHeader('Issued', CalendarIcon),
+        headerCell: feeListSortableTableHeader('Issued', 'issueDate', sortState, toggleSort, CalendarIcon),
         render: (row) => (
           <span className="inline-flex items-center gap-2 text-sm leading-none text-foreground">
             <CalendarIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -480,7 +483,7 @@ export function VouchersView({
         width: 'w-[11%]',
         hideOnMobile: true,
         sortable: true,
-        headerCell: feeListTableHeader('Due', CalendarIcon),
+        headerCell: feeListSortableTableHeader('Due', 'dueDate', sortState, toggleSort, CalendarIcon),
         render: (row) => (
           <span className="inline-flex items-center gap-2 text-sm leading-none text-foreground">
             <CalendarIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -501,13 +504,9 @@ export function VouchersView({
           ) : (
             <span className="inline-flex flex-wrap gap-1">
               {row.billMonths.map((month) => (
-                <span
-                  key={month}
-                  className="inline-flex items-center gap-1 rounded-md bg-muted/80 px-2 py-0.5 text-xs font-medium text-foreground"
-                >
-                  <CalendarIcon className="size-3 shrink-0 opacity-80" aria-hidden />
+                <StatusBadge key={month} tone="neutral" size="sm" icon={CalendarIcon}>
                   {formatMonth(month)}
-                </span>
+                </StatusBadge>
               ))}
             </span>
           ),
@@ -518,7 +517,7 @@ export function VouchersView({
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[11%]',
         sortable: true,
-        headerCell: feeListTableHeader('Amount', FeesIcon),
+        headerCell: feeListSortableTableHeader('Amount', 'amount', sortState, toggleSort, FeesIcon),
         render: (row) => <Money valueMinor={row.totalPayableMinor} withSymbol />,
       },
       {
@@ -526,7 +525,8 @@ export function VouchersView({
         label: 'Status',
         ...FEE_LIST_TABLE_CELL,
         width: 'w-[11%]',
-        headerCell: feeListTableHeader('Status'),
+        sortable: true,
+        headerCell: feeListSortableTableHeader('Status', 'status', sortState, toggleSort),
         render: (row) => (
           <StatusBadge
             tone={toneFor(row.status)}
@@ -578,6 +578,7 @@ export function VouchersView({
     isLoadingPreview,
     selected,
     someOnPageSelected,
+    sortState,
   ]);
 
   return (
@@ -891,7 +892,7 @@ export function VouchersView({
       >
         <DialogContent className="max-w-5xl">
           <DialogHeader>
-            <DialogTitle>Fee challan</DialogTitle>
+            <DialogTitle>Fee voucher</DialogTitle>
             <DialogDescription>
               {/* The three copies are named by the school, so this no longer
                   says "school, bank and parent" — that was true of the old

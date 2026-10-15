@@ -245,7 +245,9 @@ export function StudentProfileView({ student, heads, feePayments, can }: Student
           {(
             [
               ['overview', 'Overview'],
-              ['fees', 'Fees'],
+              // Money is hidden, not disabled, for roles that cannot read
+              // vouchers — a teacher sees no Fees tab at all.
+              ...(can.feePayments ? ([['fees', 'Fees']] as const) : []),
               ['attendance', 'Attendance'],
             ] as const
           ).map(([value, label]) => (
@@ -390,18 +392,22 @@ function OverviewPanel({
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)]">
       <div className="space-y-6">
-        <FeeSummarySection
-          totals={student.feeTotals}
-          sessionOptions={sessionOptions}
-          sessionFilter={sessionFilter}
-          onSessionFilterChange={onSessionFilterChange}
-        />
-        <FeeDetailsSection
-          fees={student.fees}
-          totals={student.feeTotals}
-          canEdit={can.fees}
-          onEdit={onEditFees}
-        />
+        {can.feePayments ? (
+          <>
+            <FeeSummarySection
+              totals={student.feeTotals}
+              sessionOptions={sessionOptions}
+              sessionFilter={sessionFilter}
+              onSessionFilterChange={onSessionFilterChange}
+            />
+            <FeeDetailsSection
+              fees={student.fees}
+              totals={student.feeTotals}
+              canEdit={can.fees}
+              onEdit={onEditFees}
+            />
+          </>
+        ) : null}
         <GuardiansSection
           guardians={student.guardians}
           canManage={can.guardians}

@@ -375,6 +375,8 @@ export type StaffWhereInput = {
   school?: Prisma.XOR<Prisma.SchoolScalarRelationFilter, Prisma.SchoolWhereInput>
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordListRelationFilter
+  classAssignments?: Prisma.StaffClassAssignmentListRelationFilter
+  salaryPayments?: Prisma.StaffSalaryPaymentListRelationFilter
 }
 
 export type StaffOrderByWithRelationInput = {
@@ -404,6 +406,8 @@ export type StaffOrderByWithRelationInput = {
   school?: Prisma.SchoolOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordOrderByRelationAggregateInput
+  classAssignments?: Prisma.StaffClassAssignmentOrderByRelationAggregateInput
+  salaryPayments?: Prisma.StaffSalaryPaymentOrderByRelationAggregateInput
 }
 
 export type StaffWhereUniqueInput = Prisma.AtLeast<{
@@ -437,6 +441,8 @@ export type StaffWhereUniqueInput = Prisma.AtLeast<{
   school?: Prisma.XOR<Prisma.SchoolScalarRelationFilter, Prisma.SchoolWhereInput>
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordListRelationFilter
+  classAssignments?: Prisma.StaffClassAssignmentListRelationFilter
+  salaryPayments?: Prisma.StaffSalaryPaymentListRelationFilter
 }, "id" | "userId" | "schoolId_employeeNo">
 
 export type StaffOrderByWithAggregationInput = {
@@ -524,6 +530,8 @@ export type StaffCreateInput = {
   school: Prisma.SchoolCreateNestedOneWithoutStaffInput
   user?: Prisma.UserCreateNestedOneWithoutStaffRecordInput
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordCreateNestedManyWithoutStaffInput
+  classAssignments?: Prisma.StaffClassAssignmentCreateNestedManyWithoutStaffInput
+  salaryPayments?: Prisma.StaffSalaryPaymentCreateNestedManyWithoutStaffInput
 }
 
 export type StaffUncheckedCreateInput = {
@@ -551,6 +559,8 @@ export type StaffUncheckedCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordUncheckedCreateNestedManyWithoutStaffInput
+  classAssignments?: Prisma.StaffClassAssignmentUncheckedCreateNestedManyWithoutStaffInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUncheckedCreateNestedManyWithoutStaffInput
 }
 
 export type StaffUpdateInput = {
@@ -578,6 +588,8 @@ export type StaffUpdateInput = {
   school?: Prisma.SchoolUpdateOneRequiredWithoutStaffNestedInput
   user?: Prisma.UserUpdateOneWithoutStaffRecordNestedInput
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordUpdateManyWithoutStaffNestedInput
+  classAssignments?: Prisma.StaffClassAssignmentUpdateManyWithoutStaffNestedInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUpdateManyWithoutStaffNestedInput
 }
 
 export type StaffUncheckedUpdateInput = {
@@ -605,6 +617,8 @@ export type StaffUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordUncheckedUpdateManyWithoutStaffNestedInput
+  classAssignments?: Prisma.StaffClassAssignmentUncheckedUpdateManyWithoutStaffNestedInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUncheckedUpdateManyWithoutStaffNestedInput
 }
 
 export type StaffCreateManyInput = {
@@ -880,6 +894,20 @@ export type EnumStaffStatusFieldUpdateOperationsInput = {
   set?: $Enums.StaffStatus
 }
 
+export type StaffCreateNestedOneWithoutClassAssignmentsInput = {
+  create?: Prisma.XOR<Prisma.StaffCreateWithoutClassAssignmentsInput, Prisma.StaffUncheckedCreateWithoutClassAssignmentsInput>
+  connectOrCreate?: Prisma.StaffCreateOrConnectWithoutClassAssignmentsInput
+  connect?: Prisma.StaffWhereUniqueInput
+}
+
+export type StaffUpdateOneRequiredWithoutClassAssignmentsNestedInput = {
+  create?: Prisma.XOR<Prisma.StaffCreateWithoutClassAssignmentsInput, Prisma.StaffUncheckedCreateWithoutClassAssignmentsInput>
+  connectOrCreate?: Prisma.StaffCreateOrConnectWithoutClassAssignmentsInput
+  upsert?: Prisma.StaffUpsertWithoutClassAssignmentsInput
+  connect?: Prisma.StaffWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.StaffUpdateToOneWithWhereWithoutClassAssignmentsInput, Prisma.StaffUpdateWithoutClassAssignmentsInput>, Prisma.StaffUncheckedUpdateWithoutClassAssignmentsInput>
+}
+
 export type StaffCreateNestedOneWithoutStaffAttendanceRecordsInput = {
   create?: Prisma.XOR<Prisma.StaffCreateWithoutStaffAttendanceRecordsInput, Prisma.StaffUncheckedCreateWithoutStaffAttendanceRecordsInput>
   connectOrCreate?: Prisma.StaffCreateOrConnectWithoutStaffAttendanceRecordsInput
@@ -892,6 +920,20 @@ export type StaffUpdateOneRequiredWithoutStaffAttendanceRecordsNestedInput = {
   upsert?: Prisma.StaffUpsertWithoutStaffAttendanceRecordsInput
   connect?: Prisma.StaffWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.StaffUpdateToOneWithWhereWithoutStaffAttendanceRecordsInput, Prisma.StaffUpdateWithoutStaffAttendanceRecordsInput>, Prisma.StaffUncheckedUpdateWithoutStaffAttendanceRecordsInput>
+}
+
+export type StaffCreateNestedOneWithoutSalaryPaymentsInput = {
+  create?: Prisma.XOR<Prisma.StaffCreateWithoutSalaryPaymentsInput, Prisma.StaffUncheckedCreateWithoutSalaryPaymentsInput>
+  connectOrCreate?: Prisma.StaffCreateOrConnectWithoutSalaryPaymentsInput
+  connect?: Prisma.StaffWhereUniqueInput
+}
+
+export type StaffUpdateOneRequiredWithoutSalaryPaymentsNestedInput = {
+  create?: Prisma.XOR<Prisma.StaffCreateWithoutSalaryPaymentsInput, Prisma.StaffUncheckedCreateWithoutSalaryPaymentsInput>
+  connectOrCreate?: Prisma.StaffCreateOrConnectWithoutSalaryPaymentsInput
+  upsert?: Prisma.StaffUpsertWithoutSalaryPaymentsInput
+  connect?: Prisma.StaffWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.StaffUpdateToOneWithWhereWithoutSalaryPaymentsInput, Prisma.StaffUpdateWithoutSalaryPaymentsInput>, Prisma.StaffUncheckedUpdateWithoutSalaryPaymentsInput>
 }
 
 export type StaffCreateWithoutSchoolInput = {
@@ -918,6 +960,8 @@ export type StaffCreateWithoutSchoolInput = {
   deletedAt?: Date | string | null
   user?: Prisma.UserCreateNestedOneWithoutStaffRecordInput
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordCreateNestedManyWithoutStaffInput
+  classAssignments?: Prisma.StaffClassAssignmentCreateNestedManyWithoutStaffInput
+  salaryPayments?: Prisma.StaffSalaryPaymentCreateNestedManyWithoutStaffInput
 }
 
 export type StaffUncheckedCreateWithoutSchoolInput = {
@@ -944,6 +988,8 @@ export type StaffUncheckedCreateWithoutSchoolInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordUncheckedCreateNestedManyWithoutStaffInput
+  classAssignments?: Prisma.StaffClassAssignmentUncheckedCreateNestedManyWithoutStaffInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUncheckedCreateNestedManyWithoutStaffInput
 }
 
 export type StaffCreateOrConnectWithoutSchoolInput = {
@@ -1025,6 +1071,8 @@ export type StaffCreateWithoutUserInput = {
   deletedAt?: Date | string | null
   school: Prisma.SchoolCreateNestedOneWithoutStaffInput
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordCreateNestedManyWithoutStaffInput
+  classAssignments?: Prisma.StaffClassAssignmentCreateNestedManyWithoutStaffInput
+  salaryPayments?: Prisma.StaffSalaryPaymentCreateNestedManyWithoutStaffInput
 }
 
 export type StaffUncheckedCreateWithoutUserInput = {
@@ -1051,6 +1099,8 @@ export type StaffUncheckedCreateWithoutUserInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordUncheckedCreateNestedManyWithoutStaffInput
+  classAssignments?: Prisma.StaffClassAssignmentUncheckedCreateNestedManyWithoutStaffInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUncheckedCreateNestedManyWithoutStaffInput
 }
 
 export type StaffCreateOrConnectWithoutUserInput = {
@@ -1093,6 +1143,8 @@ export type StaffUpdateWithoutUserInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   school?: Prisma.SchoolUpdateOneRequiredWithoutStaffNestedInput
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordUpdateManyWithoutStaffNestedInput
+  classAssignments?: Prisma.StaffClassAssignmentUpdateManyWithoutStaffNestedInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUpdateManyWithoutStaffNestedInput
 }
 
 export type StaffUncheckedUpdateWithoutUserInput = {
@@ -1119,6 +1171,136 @@ export type StaffUncheckedUpdateWithoutUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordUncheckedUpdateManyWithoutStaffNestedInput
+  classAssignments?: Prisma.StaffClassAssignmentUncheckedUpdateManyWithoutStaffNestedInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUncheckedUpdateManyWithoutStaffNestedInput
+}
+
+export type StaffCreateWithoutClassAssignmentsInput = {
+  id?: string
+  employeeNo: string
+  name: string
+  email?: string | null
+  phone?: string | null
+  gender?: $Enums.Gender | null
+  role: $Enums.StaffRole
+  casualLeaves?: number
+  sickLeaves?: number
+  basicSalary?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: $Enums.StaffStatus
+  joinedOn?: Date | string | null
+  leftOn?: Date | string | null
+  cnic?: string | null
+  designation?: string | null
+  address?: string | null
+  photoUrl?: string | null
+  cvUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  school: Prisma.SchoolCreateNestedOneWithoutStaffInput
+  user?: Prisma.UserCreateNestedOneWithoutStaffRecordInput
+  staffAttendanceRecords?: Prisma.StaffAttendanceRecordCreateNestedManyWithoutStaffInput
+  salaryPayments?: Prisma.StaffSalaryPaymentCreateNestedManyWithoutStaffInput
+}
+
+export type StaffUncheckedCreateWithoutClassAssignmentsInput = {
+  id?: string
+  schoolId: string
+  employeeNo: string
+  userId?: string | null
+  name: string
+  email?: string | null
+  phone?: string | null
+  gender?: $Enums.Gender | null
+  role: $Enums.StaffRole
+  casualLeaves?: number
+  sickLeaves?: number
+  basicSalary?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: $Enums.StaffStatus
+  joinedOn?: Date | string | null
+  leftOn?: Date | string | null
+  cnic?: string | null
+  designation?: string | null
+  address?: string | null
+  photoUrl?: string | null
+  cvUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  staffAttendanceRecords?: Prisma.StaffAttendanceRecordUncheckedCreateNestedManyWithoutStaffInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUncheckedCreateNestedManyWithoutStaffInput
+}
+
+export type StaffCreateOrConnectWithoutClassAssignmentsInput = {
+  where: Prisma.StaffWhereUniqueInput
+  create: Prisma.XOR<Prisma.StaffCreateWithoutClassAssignmentsInput, Prisma.StaffUncheckedCreateWithoutClassAssignmentsInput>
+}
+
+export type StaffUpsertWithoutClassAssignmentsInput = {
+  update: Prisma.XOR<Prisma.StaffUpdateWithoutClassAssignmentsInput, Prisma.StaffUncheckedUpdateWithoutClassAssignmentsInput>
+  create: Prisma.XOR<Prisma.StaffCreateWithoutClassAssignmentsInput, Prisma.StaffUncheckedCreateWithoutClassAssignmentsInput>
+  where?: Prisma.StaffWhereInput
+}
+
+export type StaffUpdateToOneWithWhereWithoutClassAssignmentsInput = {
+  where?: Prisma.StaffWhereInput
+  data: Prisma.XOR<Prisma.StaffUpdateWithoutClassAssignmentsInput, Prisma.StaffUncheckedUpdateWithoutClassAssignmentsInput>
+}
+
+export type StaffUpdateWithoutClassAssignmentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  employeeNo?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gender?: Prisma.NullableEnumGenderFieldUpdateOperationsInput | $Enums.Gender | null
+  role?: Prisma.EnumStaffRoleFieldUpdateOperationsInput | $Enums.StaffRole
+  casualLeaves?: Prisma.IntFieldUpdateOperationsInput | number
+  sickLeaves?: Prisma.IntFieldUpdateOperationsInput | number
+  basicSalary?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: Prisma.EnumStaffStatusFieldUpdateOperationsInput | $Enums.StaffStatus
+  joinedOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  school?: Prisma.SchoolUpdateOneRequiredWithoutStaffNestedInput
+  user?: Prisma.UserUpdateOneWithoutStaffRecordNestedInput
+  staffAttendanceRecords?: Prisma.StaffAttendanceRecordUpdateManyWithoutStaffNestedInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUpdateManyWithoutStaffNestedInput
+}
+
+export type StaffUncheckedUpdateWithoutClassAssignmentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  employeeNo?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gender?: Prisma.NullableEnumGenderFieldUpdateOperationsInput | $Enums.Gender | null
+  role?: Prisma.EnumStaffRoleFieldUpdateOperationsInput | $Enums.StaffRole
+  casualLeaves?: Prisma.IntFieldUpdateOperationsInput | number
+  sickLeaves?: Prisma.IntFieldUpdateOperationsInput | number
+  basicSalary?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: Prisma.EnumStaffStatusFieldUpdateOperationsInput | $Enums.StaffStatus
+  joinedOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  staffAttendanceRecords?: Prisma.StaffAttendanceRecordUncheckedUpdateManyWithoutStaffNestedInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUncheckedUpdateManyWithoutStaffNestedInput
 }
 
 export type StaffCreateWithoutStaffAttendanceRecordsInput = {
@@ -1145,6 +1327,8 @@ export type StaffCreateWithoutStaffAttendanceRecordsInput = {
   deletedAt?: Date | string | null
   school: Prisma.SchoolCreateNestedOneWithoutStaffInput
   user?: Prisma.UserCreateNestedOneWithoutStaffRecordInput
+  classAssignments?: Prisma.StaffClassAssignmentCreateNestedManyWithoutStaffInput
+  salaryPayments?: Prisma.StaffSalaryPaymentCreateNestedManyWithoutStaffInput
 }
 
 export type StaffUncheckedCreateWithoutStaffAttendanceRecordsInput = {
@@ -1171,6 +1355,8 @@ export type StaffUncheckedCreateWithoutStaffAttendanceRecordsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  classAssignments?: Prisma.StaffClassAssignmentUncheckedCreateNestedManyWithoutStaffInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUncheckedCreateNestedManyWithoutStaffInput
 }
 
 export type StaffCreateOrConnectWithoutStaffAttendanceRecordsInput = {
@@ -1213,6 +1399,8 @@ export type StaffUpdateWithoutStaffAttendanceRecordsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   school?: Prisma.SchoolUpdateOneRequiredWithoutStaffNestedInput
   user?: Prisma.UserUpdateOneWithoutStaffRecordNestedInput
+  classAssignments?: Prisma.StaffClassAssignmentUpdateManyWithoutStaffNestedInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUpdateManyWithoutStaffNestedInput
 }
 
 export type StaffUncheckedUpdateWithoutStaffAttendanceRecordsInput = {
@@ -1239,6 +1427,136 @@ export type StaffUncheckedUpdateWithoutStaffAttendanceRecordsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  classAssignments?: Prisma.StaffClassAssignmentUncheckedUpdateManyWithoutStaffNestedInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUncheckedUpdateManyWithoutStaffNestedInput
+}
+
+export type StaffCreateWithoutSalaryPaymentsInput = {
+  id?: string
+  employeeNo: string
+  name: string
+  email?: string | null
+  phone?: string | null
+  gender?: $Enums.Gender | null
+  role: $Enums.StaffRole
+  casualLeaves?: number
+  sickLeaves?: number
+  basicSalary?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: $Enums.StaffStatus
+  joinedOn?: Date | string | null
+  leftOn?: Date | string | null
+  cnic?: string | null
+  designation?: string | null
+  address?: string | null
+  photoUrl?: string | null
+  cvUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  school: Prisma.SchoolCreateNestedOneWithoutStaffInput
+  user?: Prisma.UserCreateNestedOneWithoutStaffRecordInput
+  staffAttendanceRecords?: Prisma.StaffAttendanceRecordCreateNestedManyWithoutStaffInput
+  classAssignments?: Prisma.StaffClassAssignmentCreateNestedManyWithoutStaffInput
+}
+
+export type StaffUncheckedCreateWithoutSalaryPaymentsInput = {
+  id?: string
+  schoolId: string
+  employeeNo: string
+  userId?: string | null
+  name: string
+  email?: string | null
+  phone?: string | null
+  gender?: $Enums.Gender | null
+  role: $Enums.StaffRole
+  casualLeaves?: number
+  sickLeaves?: number
+  basicSalary?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: $Enums.StaffStatus
+  joinedOn?: Date | string | null
+  leftOn?: Date | string | null
+  cnic?: string | null
+  designation?: string | null
+  address?: string | null
+  photoUrl?: string | null
+  cvUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  staffAttendanceRecords?: Prisma.StaffAttendanceRecordUncheckedCreateNestedManyWithoutStaffInput
+  classAssignments?: Prisma.StaffClassAssignmentUncheckedCreateNestedManyWithoutStaffInput
+}
+
+export type StaffCreateOrConnectWithoutSalaryPaymentsInput = {
+  where: Prisma.StaffWhereUniqueInput
+  create: Prisma.XOR<Prisma.StaffCreateWithoutSalaryPaymentsInput, Prisma.StaffUncheckedCreateWithoutSalaryPaymentsInput>
+}
+
+export type StaffUpsertWithoutSalaryPaymentsInput = {
+  update: Prisma.XOR<Prisma.StaffUpdateWithoutSalaryPaymentsInput, Prisma.StaffUncheckedUpdateWithoutSalaryPaymentsInput>
+  create: Prisma.XOR<Prisma.StaffCreateWithoutSalaryPaymentsInput, Prisma.StaffUncheckedCreateWithoutSalaryPaymentsInput>
+  where?: Prisma.StaffWhereInput
+}
+
+export type StaffUpdateToOneWithWhereWithoutSalaryPaymentsInput = {
+  where?: Prisma.StaffWhereInput
+  data: Prisma.XOR<Prisma.StaffUpdateWithoutSalaryPaymentsInput, Prisma.StaffUncheckedUpdateWithoutSalaryPaymentsInput>
+}
+
+export type StaffUpdateWithoutSalaryPaymentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  employeeNo?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gender?: Prisma.NullableEnumGenderFieldUpdateOperationsInput | $Enums.Gender | null
+  role?: Prisma.EnumStaffRoleFieldUpdateOperationsInput | $Enums.StaffRole
+  casualLeaves?: Prisma.IntFieldUpdateOperationsInput | number
+  sickLeaves?: Prisma.IntFieldUpdateOperationsInput | number
+  basicSalary?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: Prisma.EnumStaffStatusFieldUpdateOperationsInput | $Enums.StaffStatus
+  joinedOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  school?: Prisma.SchoolUpdateOneRequiredWithoutStaffNestedInput
+  user?: Prisma.UserUpdateOneWithoutStaffRecordNestedInput
+  staffAttendanceRecords?: Prisma.StaffAttendanceRecordUpdateManyWithoutStaffNestedInput
+  classAssignments?: Prisma.StaffClassAssignmentUpdateManyWithoutStaffNestedInput
+}
+
+export type StaffUncheckedUpdateWithoutSalaryPaymentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  employeeNo?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gender?: Prisma.NullableEnumGenderFieldUpdateOperationsInput | $Enums.Gender | null
+  role?: Prisma.EnumStaffRoleFieldUpdateOperationsInput | $Enums.StaffRole
+  casualLeaves?: Prisma.IntFieldUpdateOperationsInput | number
+  sickLeaves?: Prisma.IntFieldUpdateOperationsInput | number
+  basicSalary?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: Prisma.EnumStaffStatusFieldUpdateOperationsInput | $Enums.StaffStatus
+  joinedOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  leftOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cnic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cvUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  staffAttendanceRecords?: Prisma.StaffAttendanceRecordUncheckedUpdateManyWithoutStaffNestedInput
+  classAssignments?: Prisma.StaffClassAssignmentUncheckedUpdateManyWithoutStaffNestedInput
 }
 
 export type StaffCreateManySchoolInput = {
@@ -1290,6 +1608,8 @@ export type StaffUpdateWithoutSchoolInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   user?: Prisma.UserUpdateOneWithoutStaffRecordNestedInput
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordUpdateManyWithoutStaffNestedInput
+  classAssignments?: Prisma.StaffClassAssignmentUpdateManyWithoutStaffNestedInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUpdateManyWithoutStaffNestedInput
 }
 
 export type StaffUncheckedUpdateWithoutSchoolInput = {
@@ -1316,6 +1636,8 @@ export type StaffUncheckedUpdateWithoutSchoolInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   staffAttendanceRecords?: Prisma.StaffAttendanceRecordUncheckedUpdateManyWithoutStaffNestedInput
+  classAssignments?: Prisma.StaffClassAssignmentUncheckedUpdateManyWithoutStaffNestedInput
+  salaryPayments?: Prisma.StaffSalaryPaymentUncheckedUpdateManyWithoutStaffNestedInput
 }
 
 export type StaffUncheckedUpdateManyWithoutSchoolInput = {
@@ -1350,10 +1672,14 @@ export type StaffUncheckedUpdateManyWithoutSchoolInput = {
 
 export type StaffCountOutputType = {
   staffAttendanceRecords: number
+  classAssignments: number
+  salaryPayments: number
 }
 
 export type StaffCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   staffAttendanceRecords?: boolean | StaffCountOutputTypeCountStaffAttendanceRecordsArgs
+  classAssignments?: boolean | StaffCountOutputTypeCountClassAssignmentsArgs
+  salaryPayments?: boolean | StaffCountOutputTypeCountSalaryPaymentsArgs
 }
 
 /**
@@ -1371,6 +1697,20 @@ export type StaffCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extens
  */
 export type StaffCountOutputTypeCountStaffAttendanceRecordsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.StaffAttendanceRecordWhereInput
+}
+
+/**
+ * StaffCountOutputType without action
+ */
+export type StaffCountOutputTypeCountClassAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.StaffClassAssignmentWhereInput
+}
+
+/**
+ * StaffCountOutputType without action
+ */
+export type StaffCountOutputTypeCountSalaryPaymentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.StaffSalaryPaymentWhereInput
 }
 
 
@@ -1401,6 +1741,8 @@ export type StaffSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   user?: boolean | Prisma.Staff$userArgs<ExtArgs>
   staffAttendanceRecords?: boolean | Prisma.Staff$staffAttendanceRecordsArgs<ExtArgs>
+  classAssignments?: boolean | Prisma.Staff$classAssignmentsArgs<ExtArgs>
+  salaryPayments?: boolean | Prisma.Staff$salaryPaymentsArgs<ExtArgs>
   _count?: boolean | Prisma.StaffCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["staff"]>
 
@@ -1491,6 +1833,8 @@ export type StaffInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   user?: boolean | Prisma.Staff$userArgs<ExtArgs>
   staffAttendanceRecords?: boolean | Prisma.Staff$staffAttendanceRecordsArgs<ExtArgs>
+  classAssignments?: boolean | Prisma.Staff$classAssignmentsArgs<ExtArgs>
+  salaryPayments?: boolean | Prisma.Staff$salaryPaymentsArgs<ExtArgs>
   _count?: boolean | Prisma.StaffCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type StaffIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1508,6 +1852,8 @@ export type $StaffPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     school: Prisma.$SchoolPayload<ExtArgs>
     user: Prisma.$UserPayload<ExtArgs> | null
     staffAttendanceRecords: Prisma.$StaffAttendanceRecordPayload<ExtArgs>[]
+    classAssignments: Prisma.$StaffClassAssignmentPayload<ExtArgs>[]
+    salaryPayments: Prisma.$StaffSalaryPaymentPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1946,6 +2292,8 @@ export interface Prisma__StaffClient<T, Null = never, ExtArgs extends runtime.Ty
   school<T extends Prisma.SchoolDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SchoolDefaultArgs<ExtArgs>>): Prisma.Prisma__SchoolClient<runtime.Types.Result.GetResult<Prisma.$SchoolPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.Staff$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Staff$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   staffAttendanceRecords<T extends Prisma.Staff$staffAttendanceRecordsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Staff$staffAttendanceRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StaffAttendanceRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  classAssignments<T extends Prisma.Staff$classAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Staff$classAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StaffClassAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  salaryPayments<T extends Prisma.Staff$salaryPaymentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Staff$salaryPaymentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StaffSalaryPaymentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2439,6 +2787,54 @@ export type Staff$staffAttendanceRecordsArgs<ExtArgs extends runtime.Types.Exten
   take?: number
   skip?: number
   distinct?: Prisma.StaffAttendanceRecordScalarFieldEnum | Prisma.StaffAttendanceRecordScalarFieldEnum[]
+}
+
+/**
+ * Staff.classAssignments
+ */
+export type Staff$classAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the StaffClassAssignment
+   */
+  select?: Prisma.StaffClassAssignmentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the StaffClassAssignment
+   */
+  omit?: Prisma.StaffClassAssignmentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StaffClassAssignmentInclude<ExtArgs> | null
+  where?: Prisma.StaffClassAssignmentWhereInput
+  orderBy?: Prisma.StaffClassAssignmentOrderByWithRelationInput | Prisma.StaffClassAssignmentOrderByWithRelationInput[]
+  cursor?: Prisma.StaffClassAssignmentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.StaffClassAssignmentScalarFieldEnum | Prisma.StaffClassAssignmentScalarFieldEnum[]
+}
+
+/**
+ * Staff.salaryPayments
+ */
+export type Staff$salaryPaymentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the StaffSalaryPayment
+   */
+  select?: Prisma.StaffSalaryPaymentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the StaffSalaryPayment
+   */
+  omit?: Prisma.StaffSalaryPaymentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StaffSalaryPaymentInclude<ExtArgs> | null
+  where?: Prisma.StaffSalaryPaymentWhereInput
+  orderBy?: Prisma.StaffSalaryPaymentOrderByWithRelationInput | Prisma.StaffSalaryPaymentOrderByWithRelationInput[]
+  cursor?: Prisma.StaffSalaryPaymentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.StaffSalaryPaymentScalarFieldEnum | Prisma.StaffSalaryPaymentScalarFieldEnum[]
 }
 
 /**

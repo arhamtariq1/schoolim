@@ -313,7 +313,7 @@ export type GenerationResult = z.infer<typeof generationResultSchema>;
 // --- The list ---------------------------------------------------------------
 
 export const voucherListQuerySchema = listQuery(
-  ['issueDate', 'dueDate', 'voucherNo', 'amount', 'studentName'] as const,
+  ['issueDate', 'dueDate', 'voucherNo', 'amount', 'studentName', 'status'] as const,
   {
     sessionId: idSchema.optional(),
     classLevelId: idSchema.optional(),

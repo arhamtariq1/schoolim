@@ -206,6 +206,24 @@ export type Enrollment = Prisma.EnrollmentModel
  */
 export type Staff = Prisma.StaffModel
 /**
+ * Model StaffClassAssignment
+ * Which classes a teacher takes — the data a `TEACHER`'s scoped grants compile
+ * into (docs/08 §5, ADR-0014).
+ * 
+ * A class is a `ClassLevel`, not a `Section`: sections are created per session,
+ * so an assignment to one would silently lapse at every rollover and leave a
+ * teacher with an empty portal on the first morning of the year. Attendance and
+ * the roster already address a class by its level.
+ * 
+ * Zero rows means **no access**, never "all classes" — the opposite default to
+ * `FeeHeadClassLevel`, because here a missing row has to fail closed.
+ * 
+ * Erasure: these are access grants, not history. They are deleted when the
+ * member of staff is removed or stops being a teacher, and cascade with the
+ * staff row or the class.
+ */
+export type StaffClassAssignment = Prisma.StaffClassAssignmentModel
+/**
  * Model ExpenseCategory
  * The old "Expense Type" screen, which this replaces.
  * 
@@ -366,3 +384,67 @@ export type SchoolLogo = Prisma.SchoolLogoModel
  * defaults, which is what every school starts with and most keep.
  */
 export type SchoolVoucherSettings = Prisma.SchoolVoucherSettingsModel
+/**
+ * Model Subject
+ * A subject a school teaches. School-configured rather than an enum: every
+ * school's list differs, and a hard-coded one is school-specific code (R1).
+ * 
+ * Erasure: not personal data; deleted with the school.
+ */
+export type Subject = Prisma.SubjectModel
+/**
+ * Model AssessmentType
+ * A kind of test a school gives: "Class test", "Monthly test", "Midterm"...
+ * 
+ * School-configured rather than an enum, for the same reason as `Subject`:
+ * schools name their assessments differently, and a fixed list is
+ * school-specific code (R1). Four generic ones are seeded on first use.
+ * 
+ * Erasure: not personal data; deleted with the school.
+ */
+export type AssessmentType = Prisma.AssessmentTypeModel
+/**
+ * Model Assessment
+ * One test or exam for one class, subject and day.
+ * 
+ * The unique key is the duplicate guard: a second "Grade 5 / Maths / Monthly
+ * test / 12 Aug" is the same test entered twice, and two of them would give a
+ * child two results for one paper. The database refuses it, so a double-click
+ * or two teachers cannot create it.
+ * 
+ * Erasure: an academic record, kept for life of the school relationship + 10
+ * years (docs/17 s4). Marks are anonymised with the student, not deleted.
+ */
+export type Assessment = Prisma.AssessmentModel
+/**
+ * Model MarkEntry
+ * One child's result in one assessment. `obtained` null means absent.
+ * 
+ * Erasure: anonymised with the student (docs/17 s4); cascades with the
+ * assessment.
+ */
+export type MarkEntry = Prisma.MarkEntryModel
+/**
+ * Model StaffSalaryPayment
+ * Salary paid to a member of staff, one row per month.
+ * 
+ * Append-only (R4), enforced by the database: the app role holds INSERT and
+ * SELECT on this table and nothing else.
+ * 
+ * Erasure: a payroll record, kept with the financial records (docs/17 s4:
+ * 10 years) and never deleted.
+ */
+export type StaffSalaryPayment = Prisma.StaffSalaryPaymentModel
+/**
+ * Model ClassSubject
+ * Which subjects a class has. Subjects stay the school's own list; this says
+ * which of them a class uses, and marks for the class may only use these.
+ * 
+ * Erasure: configuration, not personal data. Cascades with the class or subject.
+ */
+export type ClassSubject = Prisma.ClassSubjectModel
+/**
+ * Model ClassAssessmentType
+ * Which assessment types a class has. Same shape and reasoning as `ClassSubject`.
+ */
+export type ClassAssessmentType = Prisma.ClassAssessmentTypeModel

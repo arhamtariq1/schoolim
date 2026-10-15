@@ -31,6 +31,14 @@ import { StaffAttendanceService } from './staff-attendance.service';
  * `/attendance/classes/:id`, and `/attendance/mark` before anything that could
  * capture it. Fastify matches in registration order.
  *
+ * ## The staff register is not a class's
+ *
+ * The student routes are scoped to a teacher's classes inside the service. The
+ * three `/attendance/staff` routes are **not** — they use `attendance.staff.*`,
+ * which a teacher does not hold at all. They used to share `attendance.record.*`
+ * with the student routes, and a teacher's scoped grant of those admitted them
+ * to mark the whole staff's attendance, their own included.
+ *
  * ## Where the unlock permission is read
  *
  * `attendance.record.unlock` is not a guard on these routes — it changes what
@@ -67,14 +75,21 @@ export class AttendanceController {
     return { data: await this.attendance.classOverview(classOverviewQuerySchema.parse(rawQuery)) };
   }
 
+  /** Own record only: no id in the URL, so there is nobody else to ask for. */
+  @Get(ROUTES.attendance.myReport)
+  @RequirePermission('attendance.own.read')
+  async myReport(@Query() rawQuery: unknown): Promise<{ data: MonthlyReport }> {
+    return { data: await this.staff.myReport(monthlyReportQuerySchema.parse(rawQuery)) };
+  }
+
   @Get(ROUTES.attendance.staffRoster)
-  @RequirePermission('attendance.record.read')
+  @RequirePermission('attendance.staff.read')
   async staffRoster(@Query('date') date: string | undefined): Promise<{ data: StaffRoster }> {
     return { data: await this.staff.roster(date, this.canUnlock()) };
   }
 
   @Post(ROUTES.attendance.markStaff)
-  @RequirePermission('attendance.record.create')
+  @RequirePermission('attendance.staff.create')
   async markStaff(
     @Body() body: unknown,
     @Req() request: FastifyRequest,
@@ -84,9 +99,10 @@ export class AttendanceController {
   }
 
   @Get(ROUTES.attendance.staffReport)
-  @RequirePermission('attendance.report.read')
+  @RequirePermission('attendance.staff.read')
   async staffReport(@Query() rawQuery: unknown): Promise<{ data: MonthlyReport }> {
-    return { data: await this.staff.monthlyReport(monthlyReportQuerySchema.parse(rawQuery)) };
+    const query = monthlyReportQuerySchema.parse(rawQuery);
+    return { data: await this.staff.monthlyReport(query, query.staffId) };
   }
 
   @Get('/api/v1/attendance/reports/classes/:classLevelId')

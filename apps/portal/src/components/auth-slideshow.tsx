@@ -169,7 +169,7 @@ function ChallanScene() {
   return (
     <div className="space-y-4">
       <Panel>
-        <p className="text-[0.6875rem] font-medium text-white/60">Fee challan</p>
+        <p className="text-[0.6875rem] font-medium text-white/60">Fee voucher</p>
         <p className="mt-1 font-mono text-xs text-white/90">FV-001284</p>
         <dl className="mt-3 space-y-1.5 text-[0.6875rem]">
           <div className="flex justify-between gap-2 text-white/70">

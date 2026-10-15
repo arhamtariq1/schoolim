@@ -13,6 +13,7 @@ import {
   HolidayIcon,
   OverdueIcon,
   PrintIcon,
+  DesignationIcon,
   RequestsIcon,
   SchoolIcon,
   SessionIcon,
@@ -59,4 +60,5 @@ export const NAV_ICONS: Record<string, ComponentType<{ className?: string }>> = 
   SettingsIcon,
   SchoolIcon,
   PrintIcon,
+  DesignationIcon,
 };

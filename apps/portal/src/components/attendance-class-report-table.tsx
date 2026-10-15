@@ -197,7 +197,6 @@ export function AttendanceClassReportTable({
           }
           return row.markedAt !== null ? (
             <StatusBadge tone="success" size="sm">
-              <SuccessIcon className="size-3.5" aria-hidden="true" />
               Marked
             </StatusBadge>
           ) : (
