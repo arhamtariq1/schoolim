@@ -40,6 +40,23 @@ export const SCHOOL_ROLES = [
 
 export type SchoolRole = (typeof SCHOOL_ROLES)[number];
 
+/**
+ * What a role is called on screen. The owner is the school's Admin, so OWNER
+ * reads "Admin"; RECEPTION is the front-office role the staff form calls
+ * "Office Staff".
+ */
+export const SCHOOL_ROLE_LABELS: Readonly<Record<SchoolRole, string>> = {
+  OWNER: 'Admin',
+  PRINCIPAL: 'Principal',
+  ADMIN: 'Admin',
+  ACCOUNTANT: 'Accountant',
+  RECEPTION: 'Office Staff',
+  TEACHER: 'Teacher',
+  COORDINATOR: 'Coordinator',
+  STUDENT: 'Student',
+  PARENT: 'Parent',
+};
+
 export const PLATFORM_ROLES = ['SUPER_ADMIN', 'SUPPORT', 'BILLING'] as const;
 export type PlatformRole = (typeof PLATFORM_ROLES)[number];
 

@@ -902,12 +902,13 @@ model Enrollment {
 /// two would either invent portal accounts for people who never sign in, or
 /// leave half the payroll unrecorded.
 enum StaffRole {
-  HEAD
+  PRINCIPAL
   ADMIN
   OFFICE_STAFF
   TEACHER
   SECURITY_GUARD
-  JANITOR
+  PEON
+  OTHERS
 
   @@map("staff_role")
 }

@@ -2,15 +2,17 @@
 
 import {
   ROUTES,
+  ASSIGNABLE_STAFF_ROLES,
   STAFF_ROLE_LABELS,
-  STAFF_ROLES,
   staffRoleCanSignIn,
+  type BulkDeleteStaffResult,
   type StaffInviteResult,
   type StaffListItem,
 } from '@ilm/contracts';
 import {
   Button,
   ConfirmDialog,
+  DateDisplay,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -24,6 +26,7 @@ import {
 } from '@ilm/ui';
 import {
   AccountIcon,
+  CalendarIcon,
   CreateIcon,
   DesignationIcon,
   DeleteIcon,
@@ -55,7 +58,17 @@ import { pageIntro } from '@/lib/page-copy';
 import { mutate } from '@/lib/mutate';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
-const ROLE_OPTIONS = STAFF_ROLES.map((value) => ({ value, label: STAFF_ROLE_LABELS[value] }));
+// The school owner (Admin) is not on the staff list, so is not a filter either.
+const ROLE_OPTIONS = ASSIGNABLE_STAFF_ROLES.map((value) => ({
+  value,
+  label: STAFF_ROLE_LABELS[value],
+}));
+
+const GENDER_OPTIONS = [
+  { value: 'MALE', label: 'Male' },
+  { value: 'FEMALE', label: 'Female' },
+  { value: 'OTHER', label: 'Other' },
+];
 
 export interface StaffTableProps {
   rows: StaffListItem[];
@@ -65,6 +78,7 @@ export interface StaffTableProps {
   error?: string | undefined;
   search: string;
   role: string;
+  gender: string;
   sort: 'name' | 'employeeNo' | 'role' | 'createdAt';
   order: 'asc' | 'desc';
   canManage: boolean;
@@ -78,6 +92,7 @@ export function StaffTable({
   error,
   search,
   role,
+  gender,
   sort,
   order,
   canManage,
@@ -92,6 +107,8 @@ export function StaffTable({
   const [editing, setEditing] = useState<StaffListItem | undefined>(undefined);
   const [deleting, setDeleting] = useState<StaffListItem | undefined>(undefined);
   const [inviting, setInviting] = useState<string | undefined>(undefined);
+  const [pendingBulkDelete, setPendingBulkDelete] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const {
     selected,
@@ -151,7 +168,30 @@ export function StaffTable({
   }
 
   function clearFilters(): void {
-    apply({ q: '', role: '' });
+    apply({ q: '', role: '', gender: '' });
+  }
+
+  async function confirmBulkDelete() {
+    setIsBulkDeleting(true);
+    const result = await mutate<BulkDeleteStaffResult>(ROUTES.staff.bulkDelete, 'POST', {
+      ids: [...selected],
+      reason: 'Removed from the staff list',
+    });
+    setIsBulkDeleting(false);
+    setPendingBulkDelete(false);
+
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+
+    const { deleted, skipped } = result.data;
+    toast.success(deleted === 1 ? '1 staff member removed.' : `${String(deleted)} staff members removed.`);
+    if (skipped.length > 0) {
+      toast.warning(`${String(skipped.length)} were already removed.`);
+    }
+    clearSelection();
+    router.refresh();
   }
 
   async function confirmDelete() {
@@ -178,7 +218,7 @@ export function StaffTable({
     router.refresh();
   }
 
-  const isFiltered = search !== '' || role !== '';
+  const isFiltered = search !== '' || role !== '' || gender !== '';
 
   const columns = useMemo((): CardTableColumn<StaffListItem>[] => {
     return [
@@ -196,17 +236,12 @@ export function StaffTable({
         key: 'name',
         label: 'Name',
         icon: AccountIcon,
-        width: 'w-[24%]',
+        width: 'w-[22%]',
         sortable: true,
         render: (row) => (
           <TwoLineCell
             primary={row.name}
-            secondary={
-              row.email === null || row.email === ''
-                ? row.employeeNo
-                : `${row.email} · ${row.employeeNo}`
-            }
-            secondaryMono
+            secondary={row.email === null || row.email === '' ? '—' : row.email}
           />
         ),
       },
@@ -214,75 +249,76 @@ export function StaffTable({
         key: 'role',
         label: 'Role',
         icon: StudentsIcon,
-        width: 'w-[14%]',
+        width: 'w-[12%]',
         sortable: true,
-        render: (row) => (
-          <TwoLineCell primary={STAFF_ROLE_LABELS[row.role]} secondary="Job title" />
-        ),
+        render: (row) => <StatusBadge tone="info">{STAFF_ROLE_LABELS[row.role]}</StatusBadge>,
       },
       {
         key: 'status',
         label: 'Status',
         icon: AccountIcon,
-        width: 'w-[14%]',
+        width: 'w-[13%]',
         render: (row) => <StaffStatusCell row={row} />,
       },
       {
         key: 'gender',
         label: 'Gender',
         icon: AccountIcon,
-        width: 'w-[10%]',
+        width: 'w-[9%]',
         hideOnMobile: true,
         render: (row) =>
           row.gender === null ? (
             <span className="text-sm text-muted-foreground">—</span>
           ) : (
-            <TwoLineCell
-              primary={row.gender.charAt(0) + row.gender.slice(1).toLowerCase()}
-              secondary="On record"
-            />
+            <StatusBadge tone="warning">
+              {row.gender.charAt(0) + row.gender.slice(1).toLowerCase()}
+            </StatusBadge>
           ),
       },
       {
         key: 'casual',
         label: 'Casual',
         icon: AccountIcon,
-        align: 'end',
         width: 'w-[8%]',
         hideOnMobile: true,
-        render: (row) => (
-          <TwoLineCell primary={String(row.casualLeaves)} secondary="Days / year" secondaryMono />
-        ),
+        render: (row) => <span className="text-sm tabular-nums">{row.casualLeaves}</span>,
       },
       {
         key: 'sick',
         label: 'Sick',
         icon: AccountIcon,
-        align: 'end',
         width: 'w-[8%]',
         hideOnMobile: true,
-        render: (row) => (
-          <TwoLineCell primary={String(row.sickLeaves)} secondary="Days / year" secondaryMono />
-        ),
+        render: (row) => <span className="text-sm tabular-nums">{row.sickLeaves}</span>,
       },
       {
         key: 'salary',
         label: 'Salary',
         icon: FeesIcon,
-        align: 'end',
-        width: 'w-[12%]',
+        width: 'w-[11%]',
         render: (row) => (
-          <TwoLineCell
-            primary={<Money valueMinor={minorUnits(row.basicSalaryMinor)} dashOnZero />}
-            secondary="Basic / month"
-          />
+          <span className="text-sm">
+            <Money valueMinor={minorUnits(row.basicSalaryMinor)} dashOnZero />
+          </span>
+        ),
+      },
+      {
+        key: 'createdAt',
+        label: 'Created at',
+        icon: CalendarIcon,
+        width: 'w-[10%]',
+        hideOnMobile: true,
+        sortable: true,
+        render: (row) => (
+          <span className="text-sm text-foreground">
+            <DateDisplay value={row.createdAt} />
+          </span>
         ),
       },
       {
         key: 'actions',
         label: 'Actions',
-        align: 'end',
-        width: 'w-[10%]',
+        width: 'w-[7%]',
         render: (row) => (
           <StaffRowActions
             row={row}
@@ -332,7 +368,7 @@ export function StaffTable({
           <ListPageToolbar
             searchQuery={searchQuery}
             onSearchQueryChange={onSearchQueryChange}
-            searchPlaceholder="Name, email or ID"
+            searchPlaceholder="Name or email"
             searchAriaLabel="Search staff"
             filters={
               <>
@@ -346,6 +382,17 @@ export function StaffTable({
                   options={ROLE_OPTIONS}
                   ariaLabel="Filter by role"
                   emptyOption={{ value: '', label: 'Any role' }}
+                />
+                <SimpleSelect
+                  className="w-full min-w-32 sm:w-36"
+                  value={gender}
+                  triggerIcon={StudentsIcon}
+                  onValueChange={(next) => {
+                    apply({ gender: next });
+                  }}
+                  options={GENDER_OPTIONS}
+                  ariaLabel="Filter by gender"
+                  emptyOption={{ value: '', label: 'Any gender' }}
                 />
                 {canManage ? (
                   <Button
@@ -411,14 +458,35 @@ export function StaffTable({
             <div className="px-4 py-3">
               <TwoLineCell
                 primary={row.name}
-                secondary={`${STAFF_ROLE_LABELS[row.role]} · ${row.employeeNo}`}
+                secondary={STAFF_ROLE_LABELS[row.role]}
               />
             </div>
           )}
         />
       </ListTableScreen>
 
-      <TableSelectionBar count={selected.size} noun="staff member" onClear={clearSelection} />
+      {canManage ? (
+        <TableSelectionBar
+          count={selected.size}
+          noun="staff member"
+          onClear={clearSelection}
+          actions={
+            <Button
+              tone="danger"
+              size="sm"
+              disabled={isBulkDeleting}
+              onClick={() => {
+                setPendingBulkDelete(true);
+              }}
+            >
+              <DeleteIcon className={ICON_SIZE.inline} aria-hidden />
+              Delete selected
+            </Button>
+          }
+        />
+      ) : (
+        <TableSelectionBar count={selected.size} noun="staff member" onClear={clearSelection} />
+      )}
 
       {dialogOpen ? (
         <StaffDialog
@@ -430,6 +498,26 @@ export function StaffTable({
           }}
         />
       ) : null}
+
+      <ConfirmDialog
+        open={pendingBulkDelete}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingBulkDelete(false);
+          }
+        }}
+        title={
+          selected.size === 1
+            ? 'Remove 1 staff member?'
+            : `Remove ${String(selected.size)} staff members?`
+        }
+        description="Their employment records are kept for payroll history, but any portal access they have ends immediately."
+        confirmLabel="Remove"
+        tone="danger"
+        onConfirm={() => {
+          void confirmBulkDelete();
+        }}
+      />
 
       <ConfirmDialog
         open={deleting !== undefined}
@@ -454,51 +542,15 @@ export function StaffTable({
 
 function StaffStatusCell({ row }: { row: StaffListItem }) {
   if (row.invitePending) {
-    return (
-      <TwoLineCell
-        primary={
-          <StatusBadge tone="warning" size="sm">
-            Invited
-          </StatusBadge>
-        }
-        secondary="Awaiting password"
-      />
-    );
+    return <StatusBadge tone="warning">Invited</StatusBadge>;
   }
   if (row.hasLogin) {
-    return (
-      <TwoLineCell
-        primary={
-          <StatusBadge tone="success" size="sm">
-            Active login
-          </StatusBadge>
-        }
-        secondary="Portal access"
-      />
-    );
+    return <StatusBadge tone="success">Active</StatusBadge>;
   }
   if (staffRoleCanSignIn(row.role)) {
-    return (
-      <TwoLineCell
-        primary={
-          <StatusBadge tone="neutral" size="sm">
-            No login
-          </StatusBadge>
-        }
-        secondary="Send invite"
-      />
-    );
+    return <StatusBadge tone="neutral">No login</StatusBadge>;
   }
-  return (
-    <TwoLineCell
-      primary={
-        <StatusBadge tone="neutral" size="sm">
-          Payroll only
-        </StatusBadge>
-      }
-      secondary="No portal role"
-    />
-  );
+  return <StatusBadge tone="neutral">Payroll only</StatusBadge>;
 }
 
 function StaffRowActions({
@@ -520,11 +572,17 @@ function StaffRowActions({
 }) {
   const tenantHref = useTenantHref();
   const profileHref = tenantHref(`/staff/${row.id}` as Route);
+  // Only while there is something to send: no account yet, or one still waiting
+  // on its password. Once they have signed in the invitation has done its job.
   const canInvite =
-    canManage && staffRoleCanSignIn(row.role) && row.email !== null && row.email !== '';
+    canManage &&
+    staffRoleCanSignIn(row.role) &&
+    row.email !== null &&
+    row.email !== '' &&
+    (row.invitePending || !row.hasLogin);
 
   return (
-    <div className="flex justify-end" data-stop-row-click>
+    <div className="flex justify-start" data-stop-row-click>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -553,7 +611,7 @@ function StaffRowActions({
               }}
             >
               <SendIcon className="size-4" aria-hidden="true" />
-              {inviting ? 'Sending…' : row.hasLogin ? 'Re-send invite' : 'Send invite'}
+              {inviting ? 'Sending…' : row.invitePending ? 'Re-send invite' : 'Send invite'}
             </DropdownMenuItem>
           ) : null}
           {canManage ? (

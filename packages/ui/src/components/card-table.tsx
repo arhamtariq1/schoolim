@@ -242,7 +242,7 @@ function CardTableBody<TRow>({
                     className={cn(
                       'align-middle',
                       column.headerClassName ?? 'px-4 py-3',
-                      column.align === 'end' ? 'text-end' : undefined,
+                      column.align === 'end' ? 'text-end' : 'text-start',
                     )}
                   >
                     {column.headerCell}
@@ -365,7 +365,7 @@ function CardTableHeaderCell({
       scope="col"
       className={cn(
         'px-4 py-3 align-middle whitespace-nowrap text-muted-foreground',
-        align === 'end' ? 'text-end' : undefined,
+        align === 'end' ? 'text-end' : 'text-start',
       )}
     >
       <div

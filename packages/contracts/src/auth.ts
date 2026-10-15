@@ -48,6 +48,8 @@ export const sessionUserSchema = z.object({
   /** Every permission the held roles grant, so the UI can build navigation. */
   permissions: z.array(z.string()),
   mustChangePassword: z.boolean(),
+  /** Profile photo (data URL or https URL) for the header. Sent by the session read only. */
+  avatarUrl: z.string().nullable().optional(),
   /**
    * Has this person proved they can read mail at `email`? ADR-0012.
    *

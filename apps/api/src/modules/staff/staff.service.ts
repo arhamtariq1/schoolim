@@ -52,6 +52,7 @@ const LIST_SELECTION = {
   basicSalary: true,
   userId: true,
   joinedOn: true,
+  createdAt: true,
   // The account's own state, for `invitePending`. An invited account exists
   // and cannot be used; the list has to be able to say so.
   user: { select: { status: true } },
@@ -80,6 +81,7 @@ export class StaffService {
         deletedAt: null,
         ...(query.status === undefined ? {} : { status: query.status }),
         ...(query.role === undefined ? {} : { role: query.role }),
+        ...(query.gender === undefined ? {} : { gender: query.gender }),
         ...(query.q === undefined || query.q === ''
           ? {}
           : {
@@ -119,6 +121,7 @@ export class StaffService {
           joinedOn: row.joinedOn === null ? null : row.joinedOn.toISOString().slice(0, 10),
           hasLogin: row.userId !== null,
           invitePending: row.user?.status === 'INVITED',
+          createdAt: row.createdAt.toISOString(),
         })),
       };
     });
@@ -235,6 +238,15 @@ export class StaffService {
         });
         if (existing === null) {
           throw new NotFoundError('staff member');
+        }
+
+        // The owner is the only Admin. Somebody already holding the role may
+        // keep it (editing their phone resends it), but nobody can be promoted.
+        if (input.role === 'ADMIN' && existing.role !== 'ADMIN') {
+          throw new BusinessRuleError(
+            'BUSINESS_RULE_VIOLATION',
+            'Admin is the school owner and is set when the school is registered.',
+          );
         }
 
         const nextRole = input.role ?? existing.role;
@@ -393,6 +405,53 @@ export class StaffService {
   }
 
   /**
+   * Remove several people at once: one transaction, the same effect as
+   * `remove` for each, and nothing half-done if it fails part way.
+   *
+   * Ids that are not (or no longer) on the list are reported back rather than
+   * failing the request, so pressing it twice, or removing somebody another
+   * administrator just removed, is harmless.
+   */
+  async removeMany(
+    ids: readonly string[],
+    reason: string,
+  ): Promise<{ deleted: number; skipped: string[] }> {
+    const unique = [...new Set(ids)];
+
+    return this.prisma.tenant(async (tx) => {
+      const found = await tx.staff.findMany({
+        where: { id: { in: unique }, deletedAt: null },
+        select: { id: true, userId: true },
+      });
+      const foundIds = new Set(found.map((row) => row.id));
+      const userIds = found.flatMap((row) => (row.userId === null ? [] : [row.userId]));
+      const now = this.clock.now();
+
+      if (userIds.length > 0) {
+        await tx.user.updateMany({
+          where: { id: { in: userIds } },
+          // Bumping the version invalidates tokens already issued, so access
+          // ends now rather than when the current one expires.
+          data: { status: 'DISABLED', tokenVersion: { increment: 1 } },
+        });
+        await tx.session.updateMany({
+          where: { userId: { in: userIds }, revokedAt: null },
+          data: { revokedAt: now, revokedReason: 'staff-removed' },
+        });
+      }
+
+      if (foundIds.size > 0) {
+        await tx.staff.updateMany({
+          where: { id: { in: [...foundIds] } },
+          data: { deletedAt: now, status: 'LEFT', leftOn: now, designation: reason.slice(0, 80) },
+        });
+      }
+
+      return { deleted: foundIds.size, skipped: unique.filter((id) => !foundIds.has(id)) };
+    });
+  }
+
+  /**
    * The next employee number, from a per-school counter under a row lock.
    *
    * The same mechanism as GR numbers, and for the same reason: `count(*) + 1`
@@ -446,6 +505,7 @@ function toProfile(row: {
   basicSalary: { toFixed: (digits: number) => string };
   joinedOn: Date | null;
   userId: string | null;
+  createdAt: Date;
   user?: { status: string } | null;
   cnic: string | null;
   designation: string | null;
@@ -477,6 +537,7 @@ function toListItem(row: {
   basicSalary: { toFixed: (digits: number) => string };
   joinedOn: Date | null;
   userId: string | null;
+  createdAt: Date;
   user?: { status: string } | null;
 }): StaffListItem {
   return {
@@ -494,6 +555,7 @@ function toListItem(row: {
     joinedOn: row.joinedOn === null ? null : row.joinedOn.toISOString().slice(0, 10),
     hasLogin: row.userId !== null,
     invitePending: row.user?.status === 'INVITED',
+    createdAt: row.createdAt.toISOString(),
   };
 }
 

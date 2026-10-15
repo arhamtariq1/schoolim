@@ -2,6 +2,7 @@
 
 import {
   completeOnboardingSchema,
+  OWNER_DESIGNATION,
   ROUTES,
   type CompleteOnboarding,
   type SchoolLevelId,
@@ -48,7 +49,6 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
   const initialCity = initial.school.city ?? '';
   const [personName, setPersonName] = useState(initial.name);
   const [personPhone, setPersonPhone] = useState(displayPhone(initial.phone ?? ''));
-  const [designation, setDesignation] = useState(initial.designation ?? '');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initial.avatarUrl);
 
   const [schoolName, setSchoolName] = useState(
@@ -245,7 +245,7 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
       person: {
         name: personName,
         phone: toE164(personPhone),
-        ...(designation.trim() === '' ? {} : { designation: designation.trim() }),
+        designation: OWNER_DESIGNATION,
         ...(avatarUrl === null || avatarUrl === '' ? {} : { avatarUrl }),
       },
       school: {
@@ -341,7 +341,7 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
             name={personName}
             email={initial.email}
             phone={toE164(personPhone) || initial.phone}
-            roleLabel={designation.trim() === '' ? 'Owner' : designation}
+            roleLabel={OWNER_DESIGNATION}
             avatarSrc={avatarUrl}
             onAvatarChange={setAvatarUrl}
             onAvatarError={(message) => {
@@ -360,11 +360,9 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
               setPersonPhone(phoneDigits(value));
               clearErrors('person.phone', 'phone');
             }}
-            designation={designation}
-            onDesignationChange={(value) => {
-              setDesignation(value);
-              clearErrors('person.designation', 'designation');
-            }}
+            designation={OWNER_DESIGNATION}
+            designationLocked
+            onDesignationChange={() => undefined}
             email={initial.email}
             fieldErrors={fieldErrors}
             disabled={isPending}

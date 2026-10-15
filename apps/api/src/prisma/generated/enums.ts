@@ -128,12 +128,13 @@ export type EnrollmentStatus = (typeof EnrollmentStatus)[keyof typeof Enrollment
 
 
 export const StaffRole = {
-  HEAD: 'HEAD',
+  PRINCIPAL: 'PRINCIPAL',
   ADMIN: 'ADMIN',
   OFFICE_STAFF: 'OFFICE_STAFF',
   TEACHER: 'TEACHER',
   SECURITY_GUARD: 'SECURITY_GUARD',
-  JANITOR: 'JANITOR'
+  PEON: 'PEON',
+  OTHERS: 'OTHERS'
 } as const
 
 export type StaffRole = (typeof StaffRole)[keyof typeof StaffRole]

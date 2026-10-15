@@ -1,3 +1,4 @@
+export * from './components/avatar-upload';
 export * from './components/button';
 export * from './components/calendar';
 export * from './components/card';

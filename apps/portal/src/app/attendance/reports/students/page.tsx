@@ -2,6 +2,9 @@ import { ROUTES, type ClassOverview } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
 import { AttendanceClassReportTable } from '@/components/attendance-class-report-table';
+import { NoAcademicSessionState } from '@/components/no-academic-session-state';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { isNoAcademicSessionError } from '@/lib/academic-session-error';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -21,6 +24,18 @@ export default async function StudentReportIndexPage() {
     getSession(),
     apiFetch<{ data: ClassOverview }>(ROUTES.attendance.classes),
   ]);
+
+  if (!result.ok && isNoAcademicSessionError(result.message)) {
+    return (
+      <div className="w-full space-y-6">
+        <WorkspacePageHeader
+          title="Student attendance report"
+          description="A month at a time, per class."
+        />
+        <NoAcademicSessionState />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

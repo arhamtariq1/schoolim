@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Hint,
+  StatusBadge,
   TooltipProvider,
   cn,
   useToast,
@@ -94,7 +95,7 @@ const CONTENT_PADDING = 'px-3 pt-3 pb-20 md:px-4 md:pt-4 md:pb-5';
 
 
 export interface AppShellProps {
-  user: { name: string; email?: string; roleLabel: string };
+  user: { name: string; email?: string; roleLabel: string; avatarUrl?: string | null };
   school: { name: string };
   permissions: readonly string[];
   /**
@@ -277,7 +278,7 @@ function AppHeader({
   onOpenMenu,
 }: {
   schoolName: string;
-  user: { name: string; email?: string; roleLabel: string };
+  user: { name: string; email?: string; roleLabel: string; avatarUrl?: string | null };
   permissions: readonly string[];
   settingsEnabled?: boolean;
   onOpenMenu: () => void;
@@ -315,11 +316,15 @@ function AppHeader({
       </div>
 
       <div className="ms-auto flex items-center gap-1 md:gap-2">
-        <ThemeToggle />
+        <StatusBadge tone="success" className="me-1 hidden shrink-0 md:inline-flex">
+          {user.roleLabel}
+        </StatusBadge>
 
         <HeaderNotificationsMenu />
 
         <HeaderSettingsMenu permissions={permissions} disabled={!settingsEnabled} />
+
+        <ThemeToggle />
 
         <span aria-hidden="true" className="mx-1 hidden h-8 w-px bg-border sm:block" />
 
@@ -511,10 +516,34 @@ function HeaderNotificationsMenu() {
   );
 }
 
+/** The signed-in person's photo, or their initials until they add one. */
+function HeaderAvatar({
+  user,
+  className,
+}: {
+  user: { name: string; avatarUrl?: string | null };
+  className?: string;
+}) {
+  const shown = user.avatarUrl !== undefined && user.avatarUrl !== null && user.avatarUrl !== '';
+  return (
+    <span
+      aria-hidden="true"
+      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-semibold text-primary ${className ?? ''}`}
+    >
+      {shown ? (
+        // eslint-disable-next-line @next/next/no-img-element -- may be a data URL
+        <img src={user.avatarUrl ?? ''} alt="" className="size-full object-cover" />
+      ) : (
+        initials(user.name)
+      )}
+    </span>
+  );
+}
+
 function ProfileMenu({
   user,
 }: {
-  user: { name: string; email?: string; roleLabel: string };
+  user: { name: string; email?: string; roleLabel: string; avatarUrl?: string | null };
 }) {
   const tenantHref = useTenantHref();
   const [askingSignOut, setAskingSignOut] = useState(false);
@@ -525,26 +554,25 @@ function ProfileMenu({
           <button
             type="button"
             aria-label="Account menu"
-            className="inline-flex max-w-[12rem] items-center gap-2 rounded-lg py-1 ps-0.5 pe-1 transition-colors hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:max-w-xs"
+            className="inline-flex items-center gap-2.5 rounded-lg py-1 ps-0.5 pe-2 transition-colors hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-              {initials(user.name)}
-            </span>
-            <span className="hidden min-w-0 text-start sm:block">
-              <span className="block truncate text-sm font-medium text-foreground">{user.name}</span>
-              <span className="block truncate text-xs text-muted-foreground">{user.roleLabel}</span>
+            <HeaderAvatar user={user} className="size-10" />
+            <span className="hidden min-w-0 text-start md:block">
+              <span className="block text-sm font-medium whitespace-nowrap text-foreground">
+                {user.name}
+              </span>
+              {user.email === undefined || user.email === '' ? null : (
+                <span className="block text-xs whitespace-nowrap text-muted-foreground">
+                  {user.email}
+                </span>
+              )}
             </span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={6} className="min-w-52 p-1">
           <DropdownMenuLabel className="px-2.5 py-2 font-normal">
             <span className="flex items-center gap-3">
-              <span
-                aria-hidden="true"
-                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
-              >
-                {initials(user.name)}
-              </span>
+              <HeaderAvatar user={user} className="size-9" />
               <span className="min-w-0 flex-1 text-start">
                 <span className="block truncate text-sm font-medium text-foreground">{user.name}</span>
                 {user.email === undefined || user.email === '' ? null : (

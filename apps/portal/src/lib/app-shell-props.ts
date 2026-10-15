@@ -1,4 +1,4 @@
-import type { SchoolLogoInfo, SessionUser } from '@ilm/contracts';
+import { SCHOOL_ROLE_LABELS, type SchoolLogoInfo, type SessionUser } from '@ilm/contracts';
 
 import type { AppShellProps } from '@/components/app-shell';
 
@@ -13,7 +13,8 @@ export function appShellPropsFromSession(
     user: {
       name: session.name,
       email: session.email,
-      roleLabel: session.roles.join(', '),
+      roleLabel: [...new Set(session.roles.map((role) => SCHOOL_ROLE_LABELS[role]))].join(', '),
+      avatarUrl: session.avatarUrl ?? null,
     },
     school: { name: session.school.name },
     permissions: session.permissions,

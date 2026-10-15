@@ -14,7 +14,6 @@ import {
 } from '@/lib/form-validation';
 
 import { AuthFormActions } from './auth-form-actions';
-import { AuthInlineLink, AuthSecondaryNav } from './auth-inline-link';
 import { PasswordRequirements } from './password-requirements';
 
 /**
@@ -155,19 +154,7 @@ export function AcceptInviteForm({
         />
       </Field>
 
-      <AuthFormActions
-        nav={
-          <AuthSecondaryNav
-            left={<AuthInlineLink href="/login">Sign in</AuthInlineLink>}
-            right={<AuthInlineLink href="/signup">Create account</AuthInlineLink>}
-          />
-        }
-        footer={
-          <p className="text-center text-sm text-muted-foreground">
-            Already have an account? <AuthInlineLink href="/login">Sign in</AuthInlineLink>
-          </p>
-        }
-      >
+      <AuthFormActions>
         <Button type="submit" isPending={isPending} className="w-full" size="touch">
           <ApproveIcon className={ICON_SIZE.inline} aria-hidden />
           {isPending ? 'Setting up…' : 'Set password and continue'}

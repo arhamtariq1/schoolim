@@ -2,8 +2,10 @@
 
 import {
   createStaffSchema,
+  formatCnic,
   ROUTES,
   STAFF_ROLE_LABELS,
+  ASSIGNABLE_STAFF_ROLES,
   STAFF_ROLES,
   staffRoleCanSignIn,
   type StaffListItem,
@@ -11,6 +13,7 @@ import {
   type StaffRole,
 } from '@ilm/contracts';
 import {
+  AvatarUpload,
   Button,
   Dialog,
   DialogBody,
@@ -20,17 +23,33 @@ import {
   DialogHeader,
   DialogTitle,
   Field,
+  FieldIconWrap,
   Input,
   SimpleSelect,
   Textarea,
   useToast,
 } from '@ilm/ui';
+import {
+  AccountIcon,
+  CloseIcon,
+  DesignationIcon,
+  EmailIcon,
+  FeesIcon,
+  FileIcon,
+  HolidayIcon,
+  ICON_SIZE,
+  LocationIcon,
+  PhoneIcon,
+  StudentsIcon,
+} from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { fetchJson, mutate } from '@/lib/mutate';
+import { displayPhone, toE164 } from '@/lib/phone-format';
 
-const ROLE_OPTIONS = STAFF_ROLES.map((value) => ({ value, label: STAFF_ROLE_LABELS[value] }));
+const roleOptions = (roles: readonly StaffRole[]) =>
+  roles.map((value) => ({ value, label: STAFF_ROLE_LABELS[value] }));
 
 const GENDER_OPTIONS = [
   { value: 'MALE', label: 'Male' },
@@ -53,7 +72,7 @@ export function StaffDialog({
 
   const [name, setName] = useState(editing?.name ?? '');
   const [email, setEmail] = useState(editing?.email ?? '');
-  const [phone, setPhone] = useState(editing?.phone ?? '');
+  const [phone, setPhone] = useState(displayPhone(editing?.phone ?? ''));
   const [gender, setGender] = useState<string>(editing?.gender ?? '');
   const [role, setRole] = useState<StaffRole>(editing?.role ?? 'TEACHER');
   const [casual, setCasual] = useState(String(editing?.casualLeaves ?? 0));
@@ -65,6 +84,8 @@ export function StaffDialog({
   const [address, setAddress] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [cvUrl, setCvUrl] = useState<string | null>(null);
+  const [cvName, setCvName] = useState<string | null>(null);
+  const cvInputRef = useRef<HTMLInputElement>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [isPending, setIsPending] = useState(false);
@@ -186,8 +207,7 @@ export function StaffDialog({
               {editing === undefined ? 'Add staff' : `Edit ${editing.name}`}
             </DialogTitle>
             <DialogDescription>
-              Roles that use the portal can be given a login. Security guards and janitors are on
-              the payroll without one.
+              Principal, Office Staff and Teacher are invited to the portal by email.
             </DialogDescription>
           </DialogHeader>
 
@@ -205,176 +225,214 @@ export function StaffDialog({
               <p className="text-sm text-muted-foreground">Loading profile…</p>
             ) : (
               <>
-                <Field label="Name" error={fieldErrors['name']} required>
-                  <Input
-                    value={name}
-                    autoFocus
-                    onChange={(event) => {
-                      setName(event.target.value);
-                    }}
-                  />
-                </Field>
+                <AvatarUpload
+                  value={photoUrl}
+                  onChange={setPhotoUrl}
+                  maxBytes={PHOTO_MAX_BYTES}
+                  error={fieldErrors['photoUrl']}
+                  disabled={isPending}
+                />
 
-                <Field label="CNIC" error={fieldErrors['cnic']} required hint="National ID card number.">
-                  <Input
-                    value={cnic}
-                    placeholder="35202-1234567-1"
-                    className="font-mono tabular-nums"
-                    onChange={(event) => {
-                      setCnic(event.target.value);
-                    }}
-                  />
-                </Field>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Field label="Name" error={fieldErrors['name']} required>
+                    <FieldIconWrap icon={AccountIcon}>
+                      <Input
+                        value={name}
+                        autoFocus
+                        autoComplete="name"
+                        placeholder="Enter full name"
+                        onChange={(event) => {
+                          setName(event.target.value);
+                        }}
+                      />
+                    </FieldIconWrap>
+                  </Field>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="CNIC" error={fieldErrors['cnic']} required>
+                    <FieldIconWrap icon={DesignationIcon}>
+                      <Input
+                        value={cnic}
+                        placeholder="35202-1234567-1"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        maxLength={15}
+                        onChange={(event) => {
+                          setCnic(formatCnic(event.target.value));
+                        }}
+                      />
+                    </FieldIconWrap>
+                  </Field>
+
                   <Field label="Role" error={fieldErrors['role']} required>
-                    <SimpleSelect
-                      value={role}
-                      onValueChange={(next) => {
-                        setRole(next as StaffRole);
-                      }}
-                      options={ROLE_OPTIONS}
-                      ariaLabel="Role"
-                    />
+                    <FieldIconWrap icon={DesignationIcon}>
+                      <SimpleSelect
+                        value={role}
+                        onValueChange={(next) => {
+                          setRole(next as StaffRole);
+                        }}
+                        // Admin only appears for the owner's own record.
+                        options={roleOptions(
+                          editing?.role === 'ADMIN' ? STAFF_ROLES : ASSIGNABLE_STAFF_ROLES,
+                        )}
+                        placeholder="Select role"
+                        ariaLabel="Role"
+                      />
+                    </FieldIconWrap>
                   </Field>
+
                   <Field label="Gender" error={fieldErrors['gender']}>
-                    <SimpleSelect
-                      value={gender}
-                      onValueChange={setGender}
-                      options={GENDER_OPTIONS}
-                      ariaLabel="Gender"
-                      emptyOption={{ value: '', label: 'Not recorded' }}
-                    />
+                    <FieldIconWrap icon={StudentsIcon}>
+                      <SimpleSelect
+                        value={gender}
+                        onValueChange={setGender}
+                        options={GENDER_OPTIONS}
+                        placeholder="Select gender"
+                        ariaLabel="Gender"
+                        emptyOption={{ value: '', label: 'Select gender' }}
+                      />
+                    </FieldIconWrap>
+                  </Field>
+
+                  <Field label="Email" error={fieldErrors['email']} required={canSignIn}>
+                    <FieldIconWrap icon={EmailIcon}>
+                      <Input
+                        type="email"
+                        autoComplete="email"
+                        placeholder="Enter email address"
+                        value={email}
+                        onChange={(event) => {
+                          setEmail(event.target.value);
+                        }}
+                      />
+                    </FieldIconWrap>
+                  </Field>
+
+                  <Field label="Phone" error={fieldErrors['phone']} required>
+                    <FieldIconWrap icon={PhoneIcon}>
+                      <Input
+                        type="tel"
+                        inputMode="numeric"
+                        autoComplete="tel-national"
+                        placeholder="03001234567"
+                        maxLength={11}
+                        value={phone}
+                        onChange={(event) => {
+                          setPhone(event.target.value.replace(/\D/g, '').slice(0, 11));
+                          setFieldErrors((current) => ({ ...current, phone: '' }));
+                        }}
+                      />
+                    </FieldIconWrap>
+                  </Field>
+
+                  <Field
+                    label="Address"
+                    error={fieldErrors['address']}
+                    className="sm:col-span-2"
+                  >
+                    <FieldIconWrap icon={LocationIcon} alignTop>
+                      <Textarea
+                        value={address}
+                        rows={2}
+                        autoComplete="street-address"
+                        placeholder="Enter address"
+                        onChange={(event) => {
+                          setAddress(event.target.value);
+                        }}
+                      />
+                    </FieldIconWrap>
                   </Field>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field
-                    label="Email"
-                    error={fieldErrors['email']}
-                    hint={
-                      canSignIn
-                        ? 'The invitation to set up their portal login is sent here.'
-                        : 'Optional — this role does not use the portal.'
-                    }
-                    required={canSignIn}
-                  >
-                    <Input
-                      type="email"
-                      value={email}
+                <Field label="CV" error={fieldErrors['cvUrl']}>
+                  <div className="flex flex-wrap items-center gap-3 rounded-md border border-border px-3 py-2">
+                    <FileIcon
+                      className={`${ICON_SIZE.inline} shrink-0 text-muted-foreground`}
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+                      {cvUrl === null || cvUrl === ''
+                        ? 'Attach CV (PDF, up to 2 MB)'
+                        : (cvName ?? 'CV attached')}
+                    </span>
+                    <Button
+                      type="button"
+                      tone="outline"
+                      size="sm"
+                      disabled={isPending}
+                      onClick={() => {
+                        cvInputRef.current?.click();
+                      }}
+                    >
+                      {cvUrl === null || cvUrl === '' ? 'Choose PDF' : 'Change'}
+                    </Button>
+                    {cvUrl === null || cvUrl === '' ? null : (
+                      <Button
+                        type="button"
+                        tone="ghost"
+                        size="sm"
+                        disabled={isPending}
+                        onClick={() => {
+                          setCvUrl(null);
+                          setCvName(null);
+                          setFieldErrors((current) => ({ ...current, cvUrl: '' }));
+                        }}
+                      >
+                        <CloseIcon className={ICON_SIZE.inline} aria-hidden="true" />
+                        Remove
+                      </Button>
+                    )}
+                    <input
+                      ref={cvInputRef}
+                      type="file"
+                      accept="application/pdf"
+                      className="sr-only"
+                      tabIndex={-1}
+                      aria-hidden="true"
                       onChange={(event) => {
-                        setEmail(event.target.value);
+                        const file = event.target.files?.[0];
+                        event.target.value = '';
+                        void pickPdf(file, setCvUrl, setCvName, setFieldErrors);
                       }}
                     />
-                  </Field>
-                  <Field
-                    label="Phone"
-                    error={fieldErrors['phone']}
-                    hint="Start with 0 and we will add +92."
-                    required
-                  >
-                    <Input
-                      type="tel"
-                      inputMode="tel"
-                      placeholder="0300 1234567"
-                      value={phone}
-                      onChange={(event) => {
-                        setPhone(event.target.value);
-                      }}
-                    />
-                  </Field>
-                </div>
-
-                <Field label="Address" error={fieldErrors['address']} hint="Optional.">
-                  <Textarea
-                    value={address}
-                    rows={2}
-                    onChange={(event) => {
-                      setAddress(event.target.value);
-                    }}
-                  />
+                  </div>
                 </Field>
 
-                {!canSignIn ? null : (
-                  <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                    {editing === undefined
-                      ? 'An invitation is emailed as soon as you save. They choose their own password — nobody here ever sees it.'
-                      : 'Re-send an invitation from the staff list if they have not set a password yet.'}
-                  </p>
-                )}
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <Field
-                      label="Photo"
-                      error={fieldErrors['photoUrl']}
-                      hint="Optional. PNG, JPEG or WebP, up to 512 KB."
-                    >
-                      <Input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        onChange={(event) => {
-                          void pickImage(
-                            event.target.files?.[0],
-                            setPhotoUrl,
-                            setFieldErrors,
-                            'photoUrl',
-                          );
-                          event.target.value = '';
-                        }}
-                      />
-                    </Field>
-                    {photoUrl === null || photoUrl === '' ? null : (
-                      <p className="text-xs text-muted-foreground">Photo attached.</p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Field label="CV" error={fieldErrors['cvUrl']} hint="Optional. PDF, up to 2 MB.">
-                      <Input
-                        type="file"
-                        accept="application/pdf"
-                        onChange={(event) => {
-                          void pickPdf(event.target.files?.[0], setCvUrl, setFieldErrors, 'cvUrl');
-                          event.target.value = '';
-                        }}
-                      />
-                    </Field>
-                    {cvUrl === null || cvUrl === '' ? null : (
-                      <p className="text-xs text-muted-foreground">CV attached.</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-5 sm:grid-cols-3">
                   <Field label="Casual leaves" error={fieldErrors['casualLeaves']}>
-                    <Input
-                      value={casual}
-                      inputMode="numeric"
-                      className="text-end font-mono tabular-nums"
-                      onChange={(event) => {
-                        setCasual(event.target.value);
-                      }}
-                    />
+                    <FieldIconWrap icon={HolidayIcon}>
+                      <Input
+                        value={casual}
+                        inputMode="numeric"
+                        placeholder="0"
+                        onChange={(event) => {
+                          setCasual(event.target.value);
+                        }}
+                      />
+                    </FieldIconWrap>
                   </Field>
                   <Field label="Sick leaves" error={fieldErrors['sickLeaves']}>
-                    <Input
-                      value={sick}
-                      inputMode="numeric"
-                      className="text-end font-mono tabular-nums"
-                      onChange={(event) => {
-                        setSick(event.target.value);
-                      }}
-                    />
+                    <FieldIconWrap icon={HolidayIcon}>
+                      <Input
+                        value={sick}
+                        inputMode="numeric"
+                        placeholder="0"
+                        onChange={(event) => {
+                          setSick(event.target.value);
+                        }}
+                      />
+                    </FieldIconWrap>
                   </Field>
                   <Field label="Salary (PKR)" error={fieldErrors['basicSalaryMinor']}>
-                    <Input
-                      value={salary}
-                      inputMode="decimal"
-                      className="text-end font-mono tabular-nums"
-                      onChange={(event) => {
-                        setSalary(event.target.value);
-                      }}
-                    />
+                    <FieldIconWrap icon={FeesIcon}>
+                      <Input
+                        value={salary}
+                        inputMode="decimal"
+                        placeholder="Enter monthly salary"
+                        onChange={(event) => {
+                          setSalary(event.target.value);
+                        }}
+                      />
+                    </FieldIconWrap>
                   </Field>
                 </div>
               </>
@@ -395,38 +453,31 @@ export function StaffDialog({
   );
 }
 
-async function pickImage(
-  file: File | undefined,
-  setUrl: (value: string | null) => void,
-  setFieldErrors: (value: Record<string, string>) => void,
-  key: string,
-): Promise<void> {
-  if (file === undefined) {
-    return;
-  }
-  if (file.size > PHOTO_MAX_BYTES) {
-    setFieldErrors({ [key]: 'That image is too large. Use one under 512 KB.' });
-    return;
-  }
-  const dataUrl = await readAsDataUrl(file);
-  setUrl(dataUrl);
-}
-
 async function pickPdf(
   file: File | undefined,
   setUrl: (value: string | null) => void,
-  setFieldErrors: (value: Record<string, string>) => void,
-  key: string,
+  setName: (value: string | null) => void,
+  setFieldErrors: (update: (current: Record<string, string>) => Record<string, string>) => void,
 ): Promise<void> {
   if (file === undefined) {
     return;
   }
-  if (file.size > CV_MAX_BYTES) {
-    setFieldErrors({ [key]: 'That file is too large. Use a PDF under 2 MB.' });
+  // The message is set and cleared in one place: a rejected file leaves the
+  // previous CV (if any) alone, and an accepted one removes the old complaint.
+  const setError = (message: string) => {
+    setFieldErrors((current) => ({ ...current, cvUrl: message }));
+  };
+  if (file.type !== 'application/pdf') {
+    setError('Choose a PDF file.');
     return;
   }
-  const dataUrl = await readAsDataUrl(file);
-  setUrl(dataUrl);
+  if (file.size > CV_MAX_BYTES) {
+    setError('That file is too large. Use a PDF under 2 MB.');
+    return;
+  }
+  setUrl(await readAsDataUrl(file));
+  setName(file.name);
+  setError('');
 }
 
 function readAsDataUrl(file: File): Promise<string> {
@@ -440,15 +491,4 @@ function readAsDataUrl(file: File): Promise<string> {
     };
     reader.readAsDataURL(file);
   });
-}
-
-function toE164(input: string): string {
-  const digits = input.replace(/[\s()-]/g, '');
-  if (digits.startsWith('+')) {
-    return digits;
-  }
-  if (digits.startsWith('0')) {
-    return `+92${digits.slice(1)}`;
-  }
-  return digits;
 }

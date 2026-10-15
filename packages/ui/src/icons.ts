@@ -103,6 +103,10 @@ export {
   Link2 as LinkIcon,
   /** Bank / school mark upload. */
   Image as ImageIcon,
+  /** Choose or change a profile photo. */
+  Camera as CameraIcon,
+  /** A document attached to a record, such as a CV. */
+  FileText as FileIcon,
 
   // --- Dates ----------------------------------------------------------------
   Calendar as CalendarIcon,

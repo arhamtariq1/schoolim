@@ -21,6 +21,13 @@ import {
 } from './pagination';
 import { isPermission, PERMISSIONS, type Permission } from './permissions';
 import {
+  ASSIGNABLE_STAFF_ROLES,
+  bulkDeleteStaffSchema,
+  createStaffSchema,
+  formatCnic,
+  MAX_BULK_STAFF,
+} from './staff';
+import {
   calendarDateSchema,
   emailSchema,
   minorUnitsSchema,
@@ -320,5 +327,69 @@ describe('contract coverage', () => {
     expect(count).toBeGreaterThan(0);
     const sample: Permission = 'fees.voucher.generate';
     expect(PERMISSIONS).toContain(sample);
+  });
+});
+
+describe('staff CNIC and roles', () => {
+  const base = { name: 'Aslam', phone: '+923001234567', role: 'PEON' } as const;
+
+  it('formats digits as XXXXX-XXXXXXX-X and ignores extras', () => {
+    expect(formatCnic('3520212345671')).toBe('35202-1234567-1');
+    expect(formatCnic('35202-1234567-1999')).toBe('35202-1234567-1');
+    expect(formatCnic('352')).toBe('352');
+    expect(formatCnic('abc3520212')).toBe('35202-12');
+  });
+
+  it('accepts exactly 13 digits and stores them formatted', () => {
+    const parsed = createStaffSchema.parse({ ...base, cnic: '3520212345671' });
+    expect(parsed.cnic).toBe('35202-1234567-1');
+  });
+
+  it('rejects a CNIC that is not 13 digits', () => {
+    expect(createStaffSchema.safeParse({ ...base, cnic: '35202-123456-1' }).success).toBe(false);
+    expect(createStaffSchema.safeParse({ ...base, cnic: '' }).success).toBe(false);
+  });
+
+  it('refuses to create a second Admin and offers no Admin in the form', () => {
+    const result = createStaffSchema.safeParse({
+      ...base,
+      role: 'ADMIN',
+      email: 'a@b.test',
+      cnic: '35202-1234567-1',
+    });
+    expect(result.success).toBe(false);
+    expect(ASSIGNABLE_STAFF_ROLES).not.toContain('ADMIN');
+  });
+});
+
+describe('staff phone', () => {
+  const base = { name: 'Aslam', role: 'PEON', cnic: '35202-1234567-1' } as const;
+
+  it('accepts an 11-digit Pakistani mobile in E.164', () => {
+    expect(createStaffSchema.safeParse({ ...base, phone: '+923001234567' }).success).toBe(true);
+  });
+
+  it('rejects numbers that are too short, too long or not mobiles', () => {
+    for (const phone of ['+92300123456', '+9230012345678', '+924001234567', '+14155550123']) {
+      expect(createStaffSchema.safeParse({ ...base, phone }).success).toBe(false);
+    }
+  });
+});
+
+describe('bulk staff removal', () => {
+  const id = '5f0c7a52-8b7e-4c3a-9a64-2d1b6f0e9c11';
+
+  it('needs at least one id and a reason', () => {
+    expect(bulkDeleteStaffSchema.safeParse({ ids: [], reason: 'Left' }).success).toBe(false);
+    expect(bulkDeleteStaffSchema.safeParse({ ids: [id] }).success).toBe(false);
+    expect(bulkDeleteStaffSchema.safeParse({ ids: [id], reason: 'Left the school' }).success).toBe(
+      true,
+    );
+  });
+
+  it('refuses more than the cap and ids that are not uuids', () => {
+    const many = Array.from({ length: MAX_BULK_STAFF + 1 }, () => id);
+    expect(bulkDeleteStaffSchema.safeParse({ ids: many, reason: 'Left' }).success).toBe(false);
+    expect(bulkDeleteStaffSchema.safeParse({ ids: ['nope'], reason: 'Left' }).success).toBe(false);
   });
 });

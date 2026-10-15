@@ -1,9 +1,11 @@
 import {
+  bulkDeleteStaffSchema,
   createStaffSchema,
   deleteStaffSchema,
   ROUTES,
   staffListQuerySchema,
   updateStaffSchema,
+  type BulkDeleteStaffResult,
   type StaffInviteResult,
   type StaffListItem,
   type StaffProfile,
@@ -72,6 +74,17 @@ export class StaffController {
   @RequirePermission('staff.record.update')
   async create(@Body() body: unknown): Promise<{ data: StaffListItem }> {
     return { data: await this.staff.create(createStaffSchema.parse(body)) };
+  }
+
+  /**
+   * Declared before the `:id` routes: `POST /staff/bulk-delete` must not be read
+   * as an operation on a staff member whose id is "bulk-delete".
+   */
+  @Post(ROUTES.staff.bulkDelete)
+  @RequirePermission('staff.record.update')
+  async bulkDelete(@Body() body: unknown): Promise<{ data: BulkDeleteStaffResult }> {
+    const input = bulkDeleteStaffSchema.parse(body);
+    return { data: await this.staff.removeMany(input.ids, input.reason) };
   }
 
   @Get('/api/v1/staff/:id')

@@ -17,6 +17,26 @@ export interface InputIconWrapProps {
  * Prefix icon inside text inputs, selects, and date pickers — one pattern for
  * admission forms, filters, and settings screens.
  */
+/**
+ * An `InputIconWrap` that can sit directly inside a `Field`.
+ *
+ * `Field` hands `id` and the aria props to its only child. With an icon wrapper
+ * in between they would land on the `<div>`, not the input, so they are
+ * forwarded on to the control here.
+ */
+export function FieldIconWrap({
+  icon,
+  alignTop = false,
+  children,
+  ...fieldControlProps
+}: InputIconWrapProps & Record<string, unknown>) {
+  return (
+    <InputIconWrap icon={icon} alignTop={alignTop}>
+      {cloneElement(children, fieldControlProps)}
+    </InputIconWrap>
+  );
+}
+
 export function InputIconWrap({ icon: Icon, alignTop = false, children }: InputIconWrapProps) {
   return (
     <div className="relative">

@@ -19,6 +19,7 @@ export default async function StaffPage({
   const params = await searchParams;
   const search = typeof params['q'] === 'string' ? params['q'] : '';
   const role = typeof params['role'] === 'string' ? params['role'] : '';
+  const gender = typeof params['gender'] === 'string' ? params['gender'] : '';
 
   const limit = clampInt(params['limit'], DEFAULT_LIST_PAGE_SIZE, 1, MAX_PAGE_LIMIT);
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
@@ -41,6 +42,9 @@ export default async function StaffPage({
   if (role !== '') {
     query.set('role', role);
   }
+  if (gender !== '') {
+    query.set('gender', gender);
+  }
 
   const [session, result] = await Promise.all([
     getSession(),
@@ -59,6 +63,7 @@ export default async function StaffPage({
         error={result.ok ? undefined : result.message}
         search={search}
         role={role}
+        gender={gender}
         sort={sort}
         order={order}
         canManage={session?.permissions.includes('staff.record.update') ?? false}

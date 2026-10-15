@@ -1,5 +1,6 @@
 import {
   completeOnboardingSchema,
+  OWNER_DESIGNATION,
   RESERVED_SLUGS,
   ROUTES,
   upsertUserProfileSchema,
@@ -329,7 +330,10 @@ export class ProfileService {
           data: {
             name: input.person.name,
             phone: input.person.phone,
-            designation: input.person.designation ?? null,
+            // Whoever completes onboarding is the school's owner, and the owner
+            // is the Admin. Set here rather than trusted from the form: the
+            // field is read-only on screen, which stops nobody calling the API.
+            designation: OWNER_DESIGNATION,
             ...(input.person.avatarUrl === undefined
               ? {}
               : { avatarUrl: input.person.avatarUrl }),

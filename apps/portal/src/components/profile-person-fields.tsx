@@ -26,6 +26,7 @@ export function ProfilePersonFields({
   autoFocusName = false,
   layout = 'grid',
   displayOnly = false,
+  designationLocked = false,
 }: {
   name: string;
   onNameChange: (value: string) => void;
@@ -39,6 +40,8 @@ export function ProfilePersonFields({
   autoFocusName?: boolean;
   layout?: 'grid' | 'reference';
   displayOnly?: boolean;
+  /** The role is fixed by the system (the school owner is the Admin): shown, not editable. */
+  designationLocked?: boolean;
 }) {
   if (layout === 'reference' && displayOnly) {
     return (
@@ -101,7 +104,7 @@ export function ProfilePersonFields({
         </Field>
 
         <Field
-          label="Designation (Optional)"
+          label={designationLocked ? 'Role' : 'Designation (Optional)'}
           error={fieldErrors['designation'] ?? fieldErrors['person.designation']}
           className="sm:col-span-2"
           leadingIcon={DesignationIcon}
@@ -111,6 +114,7 @@ export function ProfilePersonFields({
             autoComplete="organization-title"
             placeholder="e.g. Principal"
             value={designation}
+            readOnly={designationLocked}
             onChange={(event) => {
               onDesignationChange(event.target.value);
             }}
@@ -169,9 +173,13 @@ export function ProfilePersonFields({
 
       <div className="grid gap-4 lg:grid-cols-3 lg:gap-5">
         <Field
-          label="Designation"
+          label={designationLocked ? 'Role' : 'Designation'}
           error={fieldErrors['designation'] ?? fieldErrors['person.designation']}
-          hint="Optional. For example Principal or Accountant."
+          hint={
+            designationLocked
+              ? 'The person who registers a school is its Admin.'
+              : 'Optional. For example Principal or Accountant.'
+          }
           leadingIcon={DesignationIcon}
         >
           <Input
@@ -179,6 +187,7 @@ export function ProfilePersonFields({
             autoComplete="organization-title"
             placeholder="e.g. Principal"
             value={designation}
+            readOnly={designationLocked}
             onChange={(event) => {
               onDesignationChange(event.target.value);
             }}

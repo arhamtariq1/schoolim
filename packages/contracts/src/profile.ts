@@ -12,6 +12,9 @@ import { uploadSchoolLogoSchema } from './school-logo';
  * `onboardedAt` on the school, which unlocks the rest of the portal.
  */
 
+/** The role shown for, and stored against, whoever registers a school. */
+export const OWNER_DESIGNATION = 'Admin';
+
 export const userProfileSchema = z.object({
   name: z.string(),
   email: emailSchema,

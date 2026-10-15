@@ -284,6 +284,8 @@ export const ROUTES = {
     detail: (id: string) => `${API_PREFIX}/staff/${id}`,
     update: (id: string) => `${API_PREFIX}/staff/${id}`,
     remove: (id: string) => `${API_PREFIX}/staff/${id}`,
+    /** Remove several staff members in one request. */
+    bulkDelete: `${API_PREFIX}/staff/bulk-delete`,
     /** Send, or re-send, the invitation that lets them set their own password. */
     invite: (id: string) => `${API_PREFIX}/staff/${id}/invite`,
   },

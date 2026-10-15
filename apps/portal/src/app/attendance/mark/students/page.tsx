@@ -2,6 +2,9 @@ import { ROUTES, type ClassOverview } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
 import { AttendanceClassOverviewTable } from '@/components/attendance-class-overview-table';
+import { NoAcademicSessionState } from '@/components/no-academic-session-state';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { isNoAcademicSessionError } from '@/lib/academic-session-error';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -35,6 +38,18 @@ export default async function MarkStudentAttendancePage({
       `${ROUTES.attendance.classes}${date === '' ? '' : `?date=${date}`}`,
     ),
   ]);
+
+  if (!result.ok && isNoAcademicSessionError(result.message)) {
+    return (
+      <div className="w-full space-y-6">
+        <WorkspacePageHeader
+          title="Mark student attendance"
+          description="Pick a class. Everyone starts present, so you only tap the exceptions."
+        />
+        <NoAcademicSessionState />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

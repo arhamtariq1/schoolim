@@ -461,6 +461,16 @@ function SessionRowActions({
   );
 }
 
+/** `YYYY-MM-DD` the day after `value`, or undefined while it is blank/invalid. */
+function dayAfter(value: string): string | undefined {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (match === null) {
+    return undefined;
+  }
+  const next = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + 1));
+  return next.toISOString().slice(0, 10);
+}
+
 function SessionDialog({
   editing,
   onClose,
@@ -583,10 +593,20 @@ function SessionDialog({
                   onChange={setStartDate}
                 />
               </Field>
-              <Field label="Ends" error={fieldErrors['endDate']} required>
+              <Field
+                label="Ends"
+                error={
+                  fieldErrors['endDate'] ??
+                  (startDate !== '' && endDate !== '' && endDate <= startDate
+                    ? 'The session must end after it starts.'
+                    : undefined)
+                }
+                required
+              >
                 <DatePicker
                   value={endDate}
                   onChange={setEndDate}
+                  min={dayAfter(startDate)}
                 />
               </Field>
             </div>

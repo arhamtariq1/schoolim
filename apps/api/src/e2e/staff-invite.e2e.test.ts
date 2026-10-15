@@ -145,7 +145,7 @@ const TEACHER = {
 const JANITOR = {
   name: 'Rafiq',
   phone: '+923009876543',
-  role: 'JANITOR',
+  role: 'PEON',
   cnic: '35202-7654321-9',
 } as const;
 
@@ -247,7 +247,7 @@ describe('what the staff form now requires', () => {
   });
 
   it('refuses a janitor with no phone, same as everybody else', async () => {
-    expect((await addStaff({ name: 'Rafiq', role: 'JANITOR', cnic: JANITOR.cnic })).status).toBe(
+    expect((await addStaff({ name: 'Rafiq', role: 'PEON', cnic: JANITOR.cnic })).status).toBe(
       400,
     );
   });
@@ -551,9 +551,17 @@ describe('changing a role', () => {
     const { staffId, userId } = await activeTeacher();
     expect(await rolesOf(userId)).toEqual(['TEACHER']);
 
-    expect((await patch(staffId, { role: 'ADMIN' })).status).toBe(200);
+    expect((await patch(staffId, { role: 'OFFICE_STAFF' })).status).toBe(200);
 
-    expect(await rolesOf(userId)).toEqual(['ADMIN']);
+    expect(await rolesOf(userId)).toEqual(['RECEPTION']);
+  });
+
+  it('refuses to promote anybody to Admin — the owner is the only one', async () => {
+    const { staffId, userId } = await activeTeacher();
+
+    expect((await patch(staffId, { role: 'ADMIN' })).status).toBeGreaterThanOrEqual(400);
+
+    expect(await rolesOf(userId)).toEqual(['TEACHER']);
   });
 
   it('takes the old role’s permissions away when somebody is demoted', async () => {
@@ -561,7 +569,7 @@ describe('changing a role', () => {
     // their account is still a head as far as every permission check goes, and
     // the staff list says otherwise — so nobody looking at the screen can tell.
     const { staffId, userId } = await activeTeacher();
-    await patch(staffId, { role: 'HEAD' });
+    await patch(staffId, { role: 'PRINCIPAL' });
     expect(await rolesOf(userId)).toEqual(['PRINCIPAL']);
 
     expect((await patch(staffId, { role: 'TEACHER' })).status).toBe(200);
@@ -572,7 +580,7 @@ describe('changing a role', () => {
   it('disables the account when somebody moves to a role with no portal', async () => {
     const { staffId, userId } = await activeTeacher();
 
-    expect((await patch(staffId, { role: 'JANITOR' })).status).toBe(200);
+    expect((await patch(staffId, { role: 'PEON' })).status).toBe(200);
 
     const rows = await admin.$queryRawUnsafe<{ status: string }[]>(
       `SELECT status::text AS status FROM users WHERE id = $1::uuid`,
