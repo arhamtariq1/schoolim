@@ -43,6 +43,11 @@ export function ListTableRowActions({
           onCloseAutoFocus={(event) => {
             event.preventDefault();
           }}
+          // The menu is portalled, but React still bubbles its clicks through the
+          // row it was opened from — which opened the row's detail as well.
+          onClick={(event) => {
+            event.stopPropagation();
+          }}
         >
           {children}
         </DropdownMenuContent>

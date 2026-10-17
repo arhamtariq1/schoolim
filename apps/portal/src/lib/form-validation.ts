@@ -1,7 +1,7 @@
 import { phoneSchema } from '@ilm/contracts';
 import type { ZodError } from 'zod';
 
-import { toE164 } from '@/lib/phone-format';
+import { phoneInputError, toE164 } from '@/lib/phone-format';
 
 export {
   FORM_VALIDATION_TOAST,
@@ -78,8 +78,9 @@ export function withoutFieldErrors(
 /** Validate a display phone before sending E.164 to the API schema. */
 export function phoneDisplayError(display: string): string | undefined {
   const trimmed = display.trim();
-  if (trimmed === '') {
-    return 'This field is required.';
+  const inputError = phoneInputError(trimmed);
+  if (inputError !== undefined) {
+    return inputError;
   }
   const e164 = toE164(trimmed);
   if (!phoneSchema.safeParse(e164).success) {

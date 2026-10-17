@@ -77,29 +77,35 @@ describe('role matrix — segregation of duties', () => {
     expect(hasPermission(['ACCOUNTANT'], 'fees.waiver.approve')).toBe(false);
   });
 
-  it('lets the principal approve but not silently record a payment', () => {
-    expect(hasPermission(['PRINCIPAL'], 'fees.discount.approve')).toBe(true);
-    expect(hasPermission(['PRINCIPAL'], 'fees.payment.create')).toBe(false);
+  it('gives the principal and office staff everything the Admin has except revenue', () => {
+    for (const role of ['PRINCIPAL', 'RECEPTION'] as const) {
+      for (const permission of Object.keys(ROLE_PERMISSIONS.OWNER)) {
+        expect(hasPermission([role], permission as Permission)).toBe(
+          permission !== 'finance.revenue.read',
+        );
+      }
+    }
   });
 
-  it('lets reception take a payment but not cancel or reverse one', () => {
-    expect(hasPermission(['RECEPTION'], 'fees.payment.create')).toBe(true);
-    expect(hasPermission(['RECEPTION'], 'fees.voucher.cancel')).toBe(false);
-    expect(hasPermission(['RECEPTION'], 'fees.payment.reverse')).toBe(false);
-  });
-
-  it('reserves the audit log and full export for the owner and principal', () => {
+  it('reserves revenue for the Admin alone', () => {
     for (const role of SCHOOL_ROLES) {
-      const expected = role === 'OWNER' || role === 'PRINCIPAL';
+      expect(hasPermission([role], 'finance.revenue.read')).toBe(role === 'OWNER');
+    }
+  });
+
+  it('keeps the audit log and full export for the Admin, principal and office staff', () => {
+    for (const role of SCHOOL_ROLES) {
+      const expected = role === 'OWNER' || role === 'PRINCIPAL' || role === 'RECEPTION';
       expect(hasPermission([role], 'audit.log.read')).toBe(expected);
       expect(hasPermission([role], 'settings.data.export')).toBe(expected);
     }
   });
 
-  it('reserves striking a student off for the owner and principal', () => {
+  it('keeps striking a student off away from the legacy admin and accountant', () => {
     expect(hasPermission(['ADMIN'], 'students.student.delete')).toBe(false);
-    expect(hasPermission(['OWNER'], 'students.student.delete')).toBe(true);
-    expect(hasPermission(['PRINCIPAL'], 'students.student.delete')).toBe(true);
+    for (const role of ['OWNER', 'PRINCIPAL', 'RECEPTION'] as const) {
+      expect(hasPermission([role], 'students.student.delete')).toBe(true);
+    }
   });
 
   it('gives the owner every permission', () => {

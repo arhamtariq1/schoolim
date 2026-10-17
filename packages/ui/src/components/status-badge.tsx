@@ -22,6 +22,15 @@ const badge = cva('inline-flex items-center gap-1.5 rounded-md font-medium', {
       warning: 'bg-warning/10 text-warning',
       danger: 'bg-danger/10 text-danger',
       info: 'bg-info/10 text-info',
+      // Categorical colours, for telling roles or kinds apart where no
+      // good/bad meaning is intended.
+      violet: 'bg-violet/10 text-violet',
+      pink: 'bg-pink/10 text-pink',
+      orange: 'bg-orange/10 text-orange',
+      teal: 'bg-teal/10 text-teal',
+      indigo: 'bg-indigo/10 text-indigo',
+      slate: 'bg-slate/10 text-slate',
+      cyan: 'bg-cyan/10 text-cyan',
     },
     size: { sm: 'px-2.5 py-1 text-xs', md: 'px-3 py-1.5 text-sm' },
   },

@@ -65,9 +65,14 @@ const APPLICABLE_OPTIONS = [
 
 type ApplicableMode = (typeof APPLICABLE_OPTIONS)[number]['value'];
 
+/**
+ * The defaults first, then a way to make your own: `CUSTOM` is the type a
+ * school uses for any fee that is not one of the standard ones, named however
+ * it likes. It is listed last and labelled for what it does.
+ */
 const TYPE_OPTIONS = FEE_HEAD_TYPES.map((type) => ({
   value: type,
-  label: FEE_HEAD_TYPE_LABELS[type],
+  label: type === 'CUSTOM' ? 'Other — create your own' : FEE_HEAD_TYPE_LABELS[type],
 }));
 
 const FREQUENCY_OPTIONS = FEE_FREQUENCIES.map((value) => ({
@@ -720,20 +725,34 @@ function FeeHeadForm({
             <SimpleSelect
               value={type}
               onValueChange={(next) => {
-                setType(next as FeeHeadType);
-                if (name === '') {
-                  setName(`${FEE_HEAD_TYPE_LABELS[next as FeeHeadType]} Fee`);
+                const nextType = next as FeeHeadType;
+                // Replace the name only while it is still the one suggested for
+                // the previous type; something the person typed is never touched.
+                const suggested = (value: FeeHeadType): string =>
+                  value === 'CUSTOM' ? '' : `${FEE_HEAD_TYPE_LABELS[value]} Fee`;
+                if (name === '' || name === suggested(type)) {
+                  setName(suggested(nextType));
                 }
+                setType(nextType);
               }}
               options={TYPE_OPTIONS}
               ariaLabel="Fee type"
             />
           </Field>
 
-          <Field label="Fee Name" error={fieldErrors['name']} required>
+          <Field
+            label={type === 'CUSTOM' ? 'New fee type name' : 'Fee Name'}
+            error={fieldErrors['name']}
+            hint={
+              type === 'CUSTOM'
+                ? 'Name your own fee type, for example Uniform Fee or Trip Fee.'
+                : undefined
+            }
+            required
+          >
             <Input
               value={name}
-              placeholder="e.g. Tuition Fee"
+              placeholder={type === 'CUSTOM' ? 'e.g. Uniform Fee' : 'e.g. Tuition Fee'}
               onChange={(event) => {
                 setName(event.target.value);
               }}
@@ -891,7 +910,15 @@ function ClassMultiSelect({
             No classes yet. Add classes under Academics first.
           </p>
         ) : (
-          <ul className="max-h-56 space-y-0.5 overflow-y-auto">
+          <ul
+            className="max-h-56 space-y-0.5 overflow-y-auto overscroll-contain"
+            onWheel={(event) => {
+              event.stopPropagation();
+            }}
+            onTouchMove={(event) => {
+              event.stopPropagation();
+            }}
+          >
             {classes.map((entry) => {
               const checked = selected.has(entry.id);
               return (

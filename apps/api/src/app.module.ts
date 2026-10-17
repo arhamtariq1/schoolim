@@ -6,6 +6,7 @@ import { ENV, type Env } from './config/env';
 import { AcademicsModule } from './modules/academics/academics.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { FeesModule } from './modules/fees/fees.module';
 import { HealthModule } from './modules/health/health.module';
@@ -14,7 +15,9 @@ import { ProfileModule } from './modules/profile/profile.module';
 import { PublicModule } from './modules/public/public.module';
 import { SchoolsModule } from './modules/schools/schools.module';
 import { MarksModule } from './modules/marks/marks.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ParentModule } from './modules/parent/parent.module';
+import { RequestsModule } from './modules/requests/requests.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { StudentsModule } from './modules/students/students.module';
 import { VouchersModule } from './modules/vouchers/vouchers.module';
@@ -56,6 +59,7 @@ import { TenantGuard } from './shared/tenancy/tenant.guard';
     AcademicsModule,
     AuthModule,
     HealthModule,
+    DashboardModule,
     ExpensesModule,
     VouchersModule,
     AttendanceModule,
@@ -68,6 +72,8 @@ import { TenantGuard } from './shared/tenancy/tenant.guard';
     StudentsModule,
     MarksModule,
     ParentModule,
+    NotificationsModule,
+    RequestsModule,
   ],
   providers: [
     // Registered here rather than only in main.ts, so the same error contract

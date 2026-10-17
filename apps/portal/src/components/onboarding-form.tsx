@@ -15,6 +15,7 @@ import { AccountIcon, SchoolIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
+import { BrandColourCard, DEFAULT_BRAND_HEX } from '@/components/brand-colour-card';
 import { SetupFormFooter } from '@/components/form-section-card';
 import { ProfileAccountBanner } from '@/components/profile-account-banner';
 import { ProfileFormActions } from '@/components/profile-form-actions';
@@ -69,6 +70,7 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
   const [availability, setAvailability] = useState<SlugAvailability | undefined>(undefined);
   const [checkingSlug, setCheckingSlug] = useState(false);
   const [logo, setLogo] = useState<UploadSchoolLogo | undefined>(undefined);
+  const [brandColour, setBrandColour] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isPending, setIsPending] = useState(false);
 
@@ -303,6 +305,18 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
 
       toast.success('Setup complete. Welcome to your workspace.');
 
+      // The school exists now, so the colour has somewhere to be saved. A new
+      // session is needed first: the one from before setup has no school role.
+      if (brandColour !== null && brandColour !== DEFAULT_BRAND_HEX) {
+        await fetch(ROUTES.auth.refresh, { method: 'POST', credentials: 'include' });
+        const colourResult = await mutate(ROUTES.school.appearance, 'PUT', {
+          primaryColor: brandColour,
+        });
+        if (!colourResult.ok) {
+          toast.warning('Setup saved, but the portal colour was not. Set it under Profile.');
+        }
+      }
+
       const relocateTo = result.data.relocateTo;
       if (relocateTo !== undefined && relocateTo !== '') {
         window.location.assign(relocateTo);
@@ -360,9 +374,6 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
               setPersonPhone(phoneDigits(value));
               clearErrors('person.phone', 'phone');
             }}
-            designation={OWNER_DESIGNATION}
-            designationLocked
-            onDesignationChange={() => undefined}
             email={initial.email}
             fieldErrors={fieldErrors}
             disabled={isPending}
@@ -386,6 +397,13 @@ export function OnboardingForm({ initial }: { readonly initial: UserProfile }) {
             onLogoChange={setLogo}
           />
         </ProfileSectionCard>
+
+        <BrandColourCard
+          appearance={{ primaryColor: null }}
+          canConfigure
+          deferSave
+          onColourChange={setBrandColour}
+        />
       </div>
 
       <div className="border-t border-border/70 pt-5">

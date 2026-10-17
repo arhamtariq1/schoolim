@@ -64,7 +64,7 @@ export function StaffProfileView({ profile, classNames, can, today }: StaffProfi
   const tabs: (readonly [string, string])[] = [
     ['overview', 'Overview'],
     ['attendance', 'Attendance'],
-    ...(can.salary ? ([['salary', 'Salary history']] as const) : []),
+    ...(can.salary ? ([['salary', 'Salary History']] as const) : []),
   ];
 
   return (

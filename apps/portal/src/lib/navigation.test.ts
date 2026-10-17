@@ -178,3 +178,22 @@ describe('the sidebar as a whole', () => {
     expect(seen).toEqual([...new Set(seen)]);
   });
 });
+
+describe('the Requests door', () => {
+  const find = (permissions: Permission[]) =>
+    visibleNavItems(permissions).find((item) => item.href === '/requests');
+
+  it('reads "My Requests" to anyone who can only raise them', () => {
+    expect(find(['workflow.request.create'])?.label).toBe('My Requests');
+  });
+
+  it('reads "Manage Requests" to anyone who manages them', () => {
+    expect(find(['workflow.request.create', 'workflow.request.manage'])?.label).toBe(
+      'Manage Requests',
+    );
+  });
+
+  it('is not there at all for someone who can do neither', () => {
+    expect(find(['fees.voucher.read'])).toBeUndefined();
+  });
+});

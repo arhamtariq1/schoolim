@@ -29,6 +29,13 @@ export interface NavItem {
   /** Shown only when the user holds this. */
   readonly permission: Permission;
   /**
+   * A different label for people who hold another permission, for one door that
+   * leads to two screens: Requests reads "My Requests" to a parent and
+   * "Manage Requests" to the office. The page makes the same choice from the
+   * same permission, and the API enforces it.
+   */
+  readonly labelWhenHeld?: { readonly permission: Permission; readonly label: string };
+  /**
    * Nested items, up to two levels deep.
    *
    * A section only earns children when it has genuinely distinct screens that
@@ -239,6 +246,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
     permission: 'staff.record.read',
   },
   {
+    href: '/salaries',
+    label: 'Salaries',
+    icon: 'SalaryIcon',
+    permission: 'staff.salary.read',
+  },
+  {
     href: '/finance',
     label: 'Expense',
     icon: 'FinanceIcon',
@@ -246,9 +259,10 @@ export const NAV_ITEMS: readonly NavItem[] = [
   },
   {
     href: '/requests',
-    label: 'Requests',
+    label: 'My Requests',
     icon: 'RequestsIcon',
     permission: 'workflow.request.create',
+    labelWhenHeld: { permission: 'workflow.request.manage', label: 'Manage Requests' },
   },
 ];
 
@@ -257,37 +271,11 @@ export const NAV_ITEMS: readonly NavItem[] = [
  * the capped nav; configuration in the gear).
  */
 export const SETTINGS_MENU_ITEMS: readonly NavItem[] = [
-  // Everybody with a workspace has a profile and a password. Without these a
-  // teacher's gear icon had nothing behind it and was shown disabled.
-  {
-    href: '/profile',
-    label: 'My profile',
-    icon: 'AccountIcon',
-    permission: 'dashboard.workspace.read',
-  },
-  {
-    href: '/settings/password',
-    label: 'Password',
-    icon: 'DesignationIcon',
-    permission: 'dashboard.workspace.read',
-  },
   {
     href: '/settings/fees',
-    label: 'Fee types',
+    label: 'Fee Settings',
     icon: 'FeesIcon',
     permission: 'fees.plan.read',
-  },
-  {
-    href: '/settings/voucher',
-    label: 'Voucher Settings',
-    icon: 'PrintIcon',
-    permission: 'fees.voucher.read',
-  },
-  {
-    href: '/settings/gr-number',
-    label: 'GR numbers',
-    icon: 'DesignationIcon',
-    permission: 'settings.school.configure',
   },
 ];
 
@@ -319,6 +307,11 @@ export function visibleNavItems(permissions: readonly string[]): readonly NavIte
 function prune(items: readonly NavItem[], held: ReadonlySet<string>): readonly NavItem[] {
   return items
     .filter((item) => held.has(item.permission))
+    .map((item) =>
+      item.labelWhenHeld !== undefined && held.has(item.labelWhenHeld.permission)
+        ? { ...item, label: item.labelWhenHeld.label }
+        : item,
+    )
     .map((item) => {
       if (item.children === undefined) {
         return item;

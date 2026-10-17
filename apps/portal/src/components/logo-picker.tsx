@@ -65,22 +65,12 @@ export function LogoPicker({
     }
     setError(undefined);
 
-    if (!LOGO_MIME_TYPES.includes(file.type as (typeof LOGO_MIME_TYPES)[number])) {
-      setError('Choose a PNG, JPEG or WebP image. SVG files are not accepted.');
+    const read = await readLogoFile(file);
+    if (!read.ok) {
+      setError(read.error);
       return;
     }
-    if (file.size > MAX_LOGO_BYTES) {
-      setError(
-        `That image is ${describeSize(file.size)}. The limit is ${describeSize(MAX_LOGO_BYTES)}.`,
-      );
-      return;
-    }
-
-    const buffer = await file.arrayBuffer();
-    onChange({
-      mimeType: file.type as UploadSchoolLogo['mimeType'],
-      dataBase64: toBase64(buffer),
-    });
+    onChange(read.upload);
     setPreview(URL.createObjectURL(file));
   }
 
@@ -183,13 +173,38 @@ export function LogoPicker({
 }
 
 /**
+ * A chosen file as an upload, or the reason it cannot be one.
+ *
+ * The same checks the server makes, run first so a person hears about a
+ * 3 MB photo before it has been sent anywhere.
+ */
+export async function readLogoFile(
+  file: File,
+): Promise<{ ok: true; upload: UploadSchoolLogo } | { ok: false; error: string }> {
+  if (!LOGO_MIME_TYPES.includes(file.type as (typeof LOGO_MIME_TYPES)[number])) {
+    return { ok: false, error: 'Choose a PNG, JPEG or WebP image. SVG files are not accepted.' };
+  }
+  if (file.size > MAX_LOGO_BYTES) {
+    return {
+      ok: false,
+      error: `That image is ${describeSize(file.size)}. The limit is ${describeSize(MAX_LOGO_BYTES)}.`,
+    };
+  }
+  const buffer = await file.arrayBuffer();
+  return {
+    ok: true,
+    upload: { mimeType: file.type as UploadSchoolLogo['mimeType'], dataBase64: toBase64(buffer) },
+  };
+}
+
+/**
  * ArrayBuffer to base64, in chunks.
  *
  * `String.fromCharCode(...bytes)` is the one-liner and it throws on anything
  * large: every byte becomes an argument, and half a megabyte overflows the
  * call stack. Chunking keeps each call to a few thousand arguments.
  */
-function toBase64(buffer: ArrayBuffer): string {
+export function toBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   const chunkSize = 8192;
   let binary = '';

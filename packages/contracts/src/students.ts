@@ -213,6 +213,14 @@ export const createStudentSchema = z
     }).strict(),
 
     /**
+     * An existing student of this school who is the new child's brother or
+     * sister. The server checks it, and links the new child to that family's
+     * guardian(s) so the siblings share one family record — it is never taken
+     * on trust, and the sibling's own details are not touched.
+     */
+    siblingOfStudentId: idSchema.optional(),
+
+    /**
      * The fee structure agreed at admission.
      *
      * Part of this request rather than a second call, for the same reason

@@ -21,5 +21,9 @@ export function pathUsesDashboardShell(innerPath: string | null | undefined): bo
   if (innerPath === null || innerPath === undefined || innerPath === '') {
     return false;
   }
+  // A payment receipt is a printable sheet, not a workspace screen.
+  if (innerPath.startsWith('/salaries/receipt/')) {
+    return false;
+  }
   return !PATHS_WITHOUT_DASHBOARD_SHELL.has(innerPath);
 }

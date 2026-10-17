@@ -18,6 +18,7 @@ import { TenantContextService } from '../../shared/tenancy/tenant-context.servic
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
 
 import { StaffInviteService } from './staff-invite.service';
+import { StaffSalaryService } from './staff-salary.service';
 
 /**
  * Staff — employment records, and the portal accounts some of them carry.
@@ -75,6 +76,7 @@ export class StaffService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly invites: StaffInviteService,
+    private readonly salary: StaffSalaryService,
     private readonly context: TenantContextService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
@@ -352,6 +354,12 @@ export class StaffService {
               data: { status: 'ACTIVE' },
             });
           }
+        }
+
+        // A raise applies from the months made after it. Months that were already
+        // running are made now, at the salary being replaced, so they keep it.
+        if (input.basicSalaryMinor !== undefined) {
+          await this.salary.snapshotBeforeSalaryChange(tx, id);
         }
 
         const updated = await tx.staff.update({

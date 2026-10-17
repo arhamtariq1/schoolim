@@ -1,26 +1,19 @@
 'use client';
 
 import { type ExpenseTotals } from '@ilm/contracts';
-import { Card, cn, Money } from '@ilm/ui';
+import { Card, Money } from '@ilm/ui';
 import {
   CreateIcon,
-  ExpenseIcon,
   FeesIcon,
-  FinanceIcon,
   ICON_SIZE,
-  OverdueIcon,
-  TrendUpIcon,
 } from '@ilm/ui/icons';
 import { minorUnits } from '@ilm/utils';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import {
-  DASHBOARD_STAT_FOOTNOTE_CLASS,
-  DASHBOARD_STAT_LABEL_CLASS,
-  DASHBOARD_STAT_NUMBER_CLASS,
-  DASHBOARD_STAT_VALUE_CLASS,
 } from '@/components/dashboard/dashboard-stat-card';
+import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
 import { FinanceTabs } from '@/components/tab-links';
 import { pageIntro } from '@/lib/page-copy';
 import { useTenantHref } from '@/lib/use-tenant-href';
@@ -62,33 +55,25 @@ export function ExpenseWorkspaceShell({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <ExpenseStatCard
+            <DashboardStatCard
               label="Total expenses"
-              valueMinor={totalMinor}
-              hint={trendLabel}
-              icon={FinanceIcon}
-              iconClassName="bg-primary/10 text-primary"
+              value={<Money valueMinor={totalMinor} />}
+              {...(trendLabel === undefined ? {} : { description: trendLabel })}
             />
-            <ExpenseStatCard
+            <DashboardStatCard
               label="Paid"
-              valueMinor={totalMinor}
-              hint={totalMinor === 0 ? '0% of total' : '100% of total'}
-              icon={TrendUpIcon}
-              iconClassName="bg-success/10 text-success"
+              value={<Money valueMinor={totalMinor} />}
+              description={totalMinor === 0 ? '0% of total' : '100% of total'}
             />
-            <ExpenseStatCard
+            <DashboardStatCard
               label="Unpaid"
-              valueMinor={0}
-              hint="0% of total"
-              icon={OverdueIcon}
-              iconClassName="bg-danger/10 text-danger"
+              value={<Money valueMinor={minorUnits(0)} />}
+              description="0% of total"
             />
-            <ExpenseStatCard
+            <DashboardStatCard
               label="This month"
-              valueMinor={monthMinor}
-              hint={`${String(monthTotals.count)} ${monthTotals.count === 1 ? 'expense' : 'expenses'}`}
-              icon={ExpenseIcon}
-              iconClassName="bg-info/10 text-info"
+              value={<Money valueMinor={monthMinor} />}
+              description={`${String(monthTotals.count)} ${monthTotals.count === 1 ? 'expense' : 'expenses'}`}
             />
           </div>
 
@@ -98,13 +83,6 @@ export function ExpenseWorkspaceShell({
         </div>
 
         <aside className="space-y-4">
-          <SidebarPanel title="Expense summary">
-            <SummaryRow label="Total" valueMinor={totalMinor} />
-            <SummaryRow label="Paid" valueMinor={totalMinor} />
-            <SummaryRow label="Unpaid" valueMinor={0} />
-            <SummaryRow label="This month" valueMinor={monthMinor} />
-          </SidebarPanel>
-
           <SidebarPanel title="Quick actions">
             {canManage && onAddExpense !== undefined ? (
               <button
@@ -142,55 +120,12 @@ export function ExpenseWorkspaceShell({
   );
 }
 
-function ExpenseStatCard({
-  label,
-  valueMinor,
-  hint,
-  icon: Icon,
-  iconClassName,
-}: {
-  label: string;
-  valueMinor: number;
-  hint?: string;
-  icon: typeof FinanceIcon;
-  iconClassName: string;
-}) {
-  return (
-    <Card className="h-full">
-      <div className="flex h-full flex-col p-4">
-        <div className="flex items-start justify-between gap-2">
-          <p className={DASHBOARD_STAT_LABEL_CLASS}>{label}</p>
-          <span
-            className={cn(
-              'inline-flex size-10 shrink-0 items-center justify-center rounded-lg',
-              iconClassName,
-            )}
-          >
-            <Icon className="size-5" aria-hidden />
-          </span>
-        </div>
-        <Money valueMinor={minorUnits(valueMinor)} className={cn('mt-3', DASHBOARD_STAT_VALUE_CLASS)} />
-        {hint === undefined ? null : <p className={DASHBOARD_STAT_FOOTNOTE_CLASS}>{hint}</p>}
-      </div>
-    </Card>
-  );
-}
-
 function SidebarPanel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <Card className="space-y-3 p-4">
       <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       {children}
     </Card>
-  );
-}
-
-function SummaryRow({ label, valueMinor }: { label: string; valueMinor: number }) {
-  return (
-    <div className="flex items-center justify-between gap-2 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <Money valueMinor={minorUnits(valueMinor)} className={DASHBOARD_STAT_NUMBER_CLASS} />
-    </div>
   );
 }
 

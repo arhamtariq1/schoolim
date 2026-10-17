@@ -3,10 +3,8 @@
 import { updateGrNumberSettingsSchema, updateVoucherNumberSettingsSchema } from '@ilm/contracts';
 import {
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
+  cardSurfaceClassName,
+  cn,
   Field,
   FieldIconWrap,
   Input,
@@ -95,39 +93,58 @@ export function NumberStartForm({
   }
 
   return (
-    <Card className={className}>
-      <CardHeader className="flex-row items-center justify-between gap-3">
-        <CardTitle className="text-base">{title}</CardTitle>
-        <StatusBadge tone={configured ? 'success' : 'warning'}>
+    <section className={cn('w-full', cardSurfaceClassName, className)}>
+      <header className="flex flex-col gap-3 border-b border-border/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <DesignationIcon className={ICON_SIZE.nav} aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-foreground">{title}</h2>
+            <p className="text-sm text-muted-foreground">
+              Each new record receives the next number in this sequence.
+            </p>
+          </div>
+        </div>
+        <StatusBadge tone={configured ? 'success' : 'warning'} className="self-start sm:self-center">
           {configured ? 'Configured' : 'Not set'}
         </StatusBadge>
-      </CardHeader>
+      </header>
 
-      <CardContent className="space-y-5 px-4 py-5 sm:px-6">
-        {error === undefined ? null : (
-          <div
-            role="alert"
-            className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+      <form
+        noValidate
+        onSubmit={(event) => {
+          void submit(event);
+        }}
+      >
+        <div className="space-y-4 px-5 py-5 sm:px-6">
+          {error === undefined ? null : (
+            <div
+              role="alert"
+              className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+            >
+              {error}
+            </div>
+          )}
+
+          {configured ? null : (
+            <p className="rounded-md border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
+              No {noun} are issued until this is set. Enter the number your records are up to — for
+              a new school, 1. Any pattern works as long as it ends in the number, for example{' '}
+              {example}.
+            </p>
+          )}
+
+          <Field
+            label={configured ? 'Next number' : 'Starting number'}
+            error={fieldError}
+            hint={
+              settings === undefined || settings.highestIssued === null
+                ? undefined
+                : `Highest number issued so far: ${String(settings.highestIssued)}. The new number must be higher than this.`
+            }
+            required
           >
-            {error}
-          </div>
-        )}
-
-        {configured ? null : (
-          <p className="rounded-md border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
-            No {noun} are issued until this is set. Enter the number your records are up to — for
-            a new school, 1. Any pattern works as long as it ends in the number, for example {example}.
-          </p>
-        )}
-
-        <form
-          noValidate
-          onSubmit={(event) => {
-            void submit(event);
-          }}
-          className="space-y-5"
-        >
-          <Field label={configured ? 'Next number' : 'Starting number'} error={fieldError} required>
             <FieldIconWrap icon={DesignationIcon}>
               <Input
                 autoComplete="off"
@@ -141,23 +158,15 @@ export function NumberStartForm({
               />
             </FieldIconWrap>
           </Field>
+        </div>
 
-          {settings === undefined || settings.highestIssued === null ? null : (
-            <p className="text-sm text-muted-foreground">
-              Highest number issued so far:{' '}
-              <span className="font-medium text-foreground tabular-nums">
-                {settings.highestIssued}
-              </span>
-              . The new number must be higher than this.
-            </p>
-          )}
-
-          <Button type="submit" isPending={isPending}>
+        <footer className="flex justify-end border-t border-border/70 px-5 py-4 sm:px-6">
+          <Button type="submit" isPending={isPending} className="w-full sm:w-auto">
             <SaveIcon className={ICON_SIZE.inline} aria-hidden />
             Save
           </Button>
-        </form>
-      </CardContent>
-    </Card>
+        </footer>
+      </form>
+    </section>
   );
 }

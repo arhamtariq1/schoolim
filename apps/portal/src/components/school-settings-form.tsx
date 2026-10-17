@@ -12,9 +12,11 @@ import { Button, Field, Input, SimpleSelect, Textarea, useToast } from '@ilm/ui'
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, type FormEvent } from 'react';
 
+import { PhoneInput } from '@/components/phone-input';
 import { SchoolLevelPicker } from '@/components/school-level-picker';
 import { showFormValidationToast } from '@/lib/form-validation';
 import { mutate } from '@/lib/mutate';
+import { displayPhone, livePhoneError, phoneInputError } from '@/lib/phone-format';
 import { schoolSlugAffixes } from '@/lib/school-slug-preview';
 
 /**
@@ -124,10 +126,17 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
       toPayload(draft, schoolLevels, oLevelClassNames, aLevelClassNames),
     );
 
-    if (!parsed.success) {
+    const phoneError = phoneInputError(draft.phone);
+
+    if (!parsed.success || phoneError !== undefined) {
       const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        next[issue.path.join('.')] = issue.message;
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          next[issue.path.join('.')] = issue.message;
+        }
+      }
+      if (phoneError !== undefined) {
+        next['phone'] = phoneError;
       }
       setFieldErrors(next);
       showFormValidationToast(toast);
@@ -230,18 +239,14 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
 
           <Field
             label="School phone"
-            hint="Include the country code, or start with 0 and we will add +92."
-            error={fieldErrors['phone']}
+            hint="Digits only, starting with 03 or 02."
+            error={fieldErrors['phone'] ?? livePhoneError(draft.phone)}
             required
           >
-            <Input
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="+92 300 1234567"
+            <PhoneInput
               value={draft.phone}
-              onChange={(event) => {
-                set('phone', event.target.value);
+              onValueChange={(next) => {
+                set('phone', next);
               }}
             />
           </Field>
@@ -358,7 +363,7 @@ function toDraft(settings: SchoolSettings): Draft {
     legalName: settings.legalName ?? '',
     address: settings.address ?? '',
     city: settings.city ?? '',
-    phone: settings.phone ?? '',
+    phone: displayPhone(settings.phone ?? ''),
     email: settings.email ?? '',
     timezone: settings.timezone,
     locale: settings.locale === 'ur' ? 'ur' : 'en',

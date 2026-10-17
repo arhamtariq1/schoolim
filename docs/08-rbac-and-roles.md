@@ -125,6 +125,7 @@ for now.
 | Results — publish                              |   ✓   |     ✓     |   –   |     –      |     –     |    –    |   –   |    –    |   –    |
 | Results — view                                 |   ✓   |     ✓     |   ✓   |     –      |     ✓     |    S    |   S   |    S    |   S    |
 | Requests — raise                               |   ✓   |     ✓     |   ✓   |     ✓      |     ✓     |    ✓    |   ✓   |    ✓    |   ✓    |
+| Requests — manage (all of the school’s requests: reply, assign, set status; ADR-0016) |   ✓   |     ✓     |   ✓   |     –      |     ✓     |    –    |   –   |    –    |   –    |
 | Requests — approve                             |   ✓   |     ✓     |   S   |     S      |     –     |    –    |   S   |    –    |   –    |
 | Communication — send bulk                      |   ✓   |     ✓     |   ✓   |     ✓      |     ✓     |    S    |   S   |    –    |   –    |
 | Settings — school & branding                   |   ✓   |     ✓     |   ✓   |     –      |     –     |    –    |   –   |    –    |   –    |

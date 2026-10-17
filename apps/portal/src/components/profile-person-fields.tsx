@@ -1,199 +1,91 @@
 'use client';
 
 import { Field, Input } from '@ilm/ui';
-import {
-  AccountIcon,
-  DesignationIcon,
-  EmailIcon,
-  PhoneIcon,
-} from '@ilm/ui/icons';
+import { AccountIcon, EmailIcon, PhoneIcon } from '@ilm/ui/icons';
 
+import { PhoneInput } from '@/components/phone-input';
 import { ProfileDisplayField } from '@/components/profile-display-field';
+import { livePhoneError } from '@/lib/phone-format';
 
 /**
  * Personal profile fields — shared by profile workspace, create, edit and onboarding.
+ * The role is shown in the account banner, not as a field.
  */
 export function ProfilePersonFields({
   name,
   onNameChange,
   phone,
   onPhoneChange,
-  designation,
-  onDesignationChange,
   email,
   fieldErrors,
   disabled = false,
   autoFocusName = false,
   layout = 'grid',
   displayOnly = false,
-  designationLocked = false,
 }: {
   name: string;
   onNameChange: (value: string) => void;
   phone: string;
   onPhoneChange: (value: string) => void;
-  designation: string;
-  onDesignationChange: (value: string) => void;
   email?: string;
   fieldErrors: Record<string, string>;
   disabled?: boolean;
   autoFocusName?: boolean;
   layout?: 'grid' | 'reference';
   displayOnly?: boolean;
-  /** The role is fixed by the system (the school owner is the Admin): shown, not editable. */
-  designationLocked?: boolean;
 }) {
   if (layout === 'reference' && displayOnly) {
     return (
-      <dl className="grid gap-4 sm:grid-cols-2">
+      <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <ProfileDisplayField label="Full name" value={name} />
         {email === undefined ? null : <ProfileDisplayField label="Email" value={email} />}
         <ProfileDisplayField label="Personal contact number" value={phone} />
-        <ProfileDisplayField
-          label="Designation (Optional)"
-          value={designation.trim() === '' ? '—' : designation}
-          className="sm:col-span-2"
-        />
       </dl>
     );
   }
 
-  if (layout === 'reference') {
-    return (
-      <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
-        <Field
-          label="Full name"
-          error={fieldErrors['name'] ?? fieldErrors['person.name']}
-          required
-          leadingIcon={AccountIcon}
-        >
-          <Input
-            name="name"
-            autoComplete="name"
-            autoFocus={autoFocusName}
-            value={name}
-            onChange={(event) => {
-              onNameChange(event.target.value);
-            }}
-          />
-        </Field>
-
-        {email === undefined ? null : (
-          <Field label="Email" required leadingIcon={EmailIcon}>
-            <Input readOnly disabled value={email} autoComplete="email" />
-          </Field>
-        )}
-
-        <Field
-          label="Personal contact number"
-          error={fieldErrors['phone'] ?? fieldErrors['person.phone']}
-          required
-          leadingIcon={PhoneIcon}
-        >
-          <Input
-            name="phone"
-            type="tel"
-            autoComplete="tel"
-            inputMode="tel"
-            placeholder="03XX XXXXXXX"
-            value={phone}
-            onChange={(event) => {
-              onPhoneChange(event.target.value);
-            }}
-          />
-        </Field>
-
-        <Field
-          label={designationLocked ? 'Role' : 'Designation (Optional)'}
-          error={fieldErrors['designation'] ?? fieldErrors['person.designation']}
-          className="sm:col-span-2"
-          leadingIcon={DesignationIcon}
-        >
-          <Input
-            name="designation"
-            autoComplete="organization-title"
-            placeholder="e.g. Principal"
-            value={designation}
-            readOnly={designationLocked}
-            onChange={(event) => {
-              onDesignationChange(event.target.value);
-            }}
-          />
-        </Field>
-      </fieldset>
-    );
-  }
+  const gridClass =
+    layout === 'reference' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3' : 'grid gap-4 lg:grid-cols-3 lg:gap-5';
 
   return (
-    <fieldset disabled={disabled} className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-3 lg:gap-5">
-        <Field
-          label="Full name"
-          error={fieldErrors['name'] ?? fieldErrors['person.name']}
-          required
-          leadingIcon={AccountIcon}
-        >
-          <Input
-            name="name"
-            autoComplete="name"
-            autoFocus={autoFocusName}
-            value={name}
-            onChange={(event) => {
-              onNameChange(event.target.value);
-            }}
-          />
-        </Field>
+    <fieldset disabled={disabled} className={gridClass}>
+      <Field
+        label="Full name"
+        error={fieldErrors['name'] ?? fieldErrors['person.name']}
+        required
+        leadingIcon={AccountIcon}
+      >
+        <Input
+          name="name"
+          autoComplete="name"
+          autoFocus={autoFocusName}
+          value={name}
+          onChange={(event) => {
+            onNameChange(event.target.value);
+          }}
+        />
+      </Field>
 
-        {email === undefined ? null : (
-          <Field label="Email" hint="Sign-in address for this account." leadingIcon={EmailIcon}>
-            <Input readOnly disabled value={email} autoComplete="email" />
-          </Field>
-        )}
-
+      {email === undefined ? null : (
         <Field
-          label="Personal contact number"
-          error={fieldErrors['phone'] ?? fieldErrors['person.phone']}
-          hint="Include country code, or start with 03."
-          required
-          leadingIcon={PhoneIcon}
+          label="Email"
+          required={layout === 'reference'}
+          hint={layout === 'reference' ? undefined : 'Sign-in address for this account.'}
+          leadingIcon={EmailIcon}
         >
-          <Input
-            name="phone"
-            type="tel"
-            autoComplete="tel"
-            inputMode="tel"
-            placeholder="03XX XXXXXXX"
-            value={phone}
-            onChange={(event) => {
-              onPhoneChange(event.target.value);
-            }}
-          />
+          <Input readOnly disabled value={email} autoComplete="email" />
         </Field>
-      </div>
+      )}
 
-      <div className="grid gap-4 lg:grid-cols-3 lg:gap-5">
-        <Field
-          label={designationLocked ? 'Role' : 'Designation'}
-          error={fieldErrors['designation'] ?? fieldErrors['person.designation']}
-          hint={
-            designationLocked
-              ? 'The person who registers a school is its Admin.'
-              : 'Optional. For example Principal or Accountant.'
-          }
-          leadingIcon={DesignationIcon}
-        >
-          <Input
-            name="designation"
-            autoComplete="organization-title"
-            placeholder="e.g. Principal"
-            value={designation}
-            readOnly={designationLocked}
-            onChange={(event) => {
-              onDesignationChange(event.target.value);
-            }}
-          />
-        </Field>
-      </div>
+      <Field
+        label="Personal contact number"
+        error={fieldErrors['phone'] ?? fieldErrors['person.phone'] ?? livePhoneError(phone)}
+        hint={layout === 'reference' ? undefined : 'Digits only, starting with 03 or 02.'}
+        required
+        leadingIcon={PhoneIcon}
+      >
+        <PhoneInput name="phone" value={phone} onValueChange={onPhoneChange} />
+      </Field>
     </fieldset>
   );
 }

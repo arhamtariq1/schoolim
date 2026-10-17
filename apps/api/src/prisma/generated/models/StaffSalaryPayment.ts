@@ -14,7 +14,8 @@ import type * as Prisma from "../internal/prismaNamespace.js"
 
 /**
  * Model StaffSalaryPayment
- * Salary paid to a member of staff, one row per month.
+ * Salary paid to a member of staff. Several per month are allowed (part
+ * payments); each belongs to that month's `StaffSalaryPeriod`.
  * 
  * Append-only (R4), enforced by the database: the app role holds INSERT and
  * SELECT on this table and nothing else.
@@ -44,9 +45,14 @@ export type StaffSalaryPaymentMinAggregateOutputType = {
   id: string | null
   schoolId: string | null
   staffId: string | null
+  periodId: string | null
   month: Date | null
   amount: runtime.Decimal | null
   paidOn: Date | null
+  method: string | null
+  reference: string | null
+  notes: string | null
+  idempotencyKey: string | null
   recordedBy: string | null
   createdAt: Date | null
 }
@@ -55,9 +61,14 @@ export type StaffSalaryPaymentMaxAggregateOutputType = {
   id: string | null
   schoolId: string | null
   staffId: string | null
+  periodId: string | null
   month: Date | null
   amount: runtime.Decimal | null
   paidOn: Date | null
+  method: string | null
+  reference: string | null
+  notes: string | null
+  idempotencyKey: string | null
   recordedBy: string | null
   createdAt: Date | null
 }
@@ -66,9 +77,14 @@ export type StaffSalaryPaymentCountAggregateOutputType = {
   id: number
   schoolId: number
   staffId: number
+  periodId: number
   month: number
   amount: number
   paidOn: number
+  method: number
+  reference: number
+  notes: number
+  idempotencyKey: number
   recordedBy: number
   createdAt: number
   _all: number
@@ -87,9 +103,14 @@ export type StaffSalaryPaymentMinAggregateInputType = {
   id?: true
   schoolId?: true
   staffId?: true
+  periodId?: true
   month?: true
   amount?: true
   paidOn?: true
+  method?: true
+  reference?: true
+  notes?: true
+  idempotencyKey?: true
   recordedBy?: true
   createdAt?: true
 }
@@ -98,9 +119,14 @@ export type StaffSalaryPaymentMaxAggregateInputType = {
   id?: true
   schoolId?: true
   staffId?: true
+  periodId?: true
   month?: true
   amount?: true
   paidOn?: true
+  method?: true
+  reference?: true
+  notes?: true
+  idempotencyKey?: true
   recordedBy?: true
   createdAt?: true
 }
@@ -109,9 +135,14 @@ export type StaffSalaryPaymentCountAggregateInputType = {
   id?: true
   schoolId?: true
   staffId?: true
+  periodId?: true
   month?: true
   amount?: true
   paidOn?: true
+  method?: true
+  reference?: true
+  notes?: true
+  idempotencyKey?: true
   recordedBy?: true
   createdAt?: true
   _all?: true
@@ -207,9 +238,14 @@ export type StaffSalaryPaymentGroupByOutputType = {
   id: string
   schoolId: string
   staffId: string
+  periodId: string
   month: Date
   amount: runtime.Decimal
   paidOn: Date
+  method: string
+  reference: string | null
+  notes: string | null
+  idempotencyKey: string | null
   recordedBy: string | null
   createdAt: Date
   _count: StaffSalaryPaymentCountAggregateOutputType | null
@@ -241,52 +277,74 @@ export type StaffSalaryPaymentWhereInput = {
   id?: Prisma.UuidFilter<"StaffSalaryPayment"> | string
   schoolId?: Prisma.UuidFilter<"StaffSalaryPayment"> | string
   staffId?: Prisma.UuidFilter<"StaffSalaryPayment"> | string
+  periodId?: Prisma.UuidFilter<"StaffSalaryPayment"> | string
   month?: Prisma.DateTimeFilter<"StaffSalaryPayment"> | Date | string
   amount?: Prisma.DecimalFilter<"StaffSalaryPayment"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn?: Prisma.DateTimeFilter<"StaffSalaryPayment"> | Date | string
+  method?: Prisma.StringFilter<"StaffSalaryPayment"> | string
+  reference?: Prisma.StringNullableFilter<"StaffSalaryPayment"> | string | null
+  notes?: Prisma.StringNullableFilter<"StaffSalaryPayment"> | string | null
+  idempotencyKey?: Prisma.StringNullableFilter<"StaffSalaryPayment"> | string | null
   recordedBy?: Prisma.UuidNullableFilter<"StaffSalaryPayment"> | string | null
   createdAt?: Prisma.DateTimeFilter<"StaffSalaryPayment"> | Date | string
   school?: Prisma.XOR<Prisma.SchoolScalarRelationFilter, Prisma.SchoolWhereInput>
   staff?: Prisma.XOR<Prisma.StaffScalarRelationFilter, Prisma.StaffWhereInput>
+  period?: Prisma.XOR<Prisma.StaffSalaryPeriodScalarRelationFilter, Prisma.StaffSalaryPeriodWhereInput>
 }
 
 export type StaffSalaryPaymentOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   schoolId?: Prisma.SortOrder
   staffId?: Prisma.SortOrder
+  periodId?: Prisma.SortOrder
   month?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   paidOn?: Prisma.SortOrder
+  method?: Prisma.SortOrder
+  reference?: Prisma.SortOrderInput | Prisma.SortOrder
+  notes?: Prisma.SortOrderInput | Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrderInput | Prisma.SortOrder
   recordedBy?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   school?: Prisma.SchoolOrderByWithRelationInput
   staff?: Prisma.StaffOrderByWithRelationInput
+  period?: Prisma.StaffSalaryPeriodOrderByWithRelationInput
 }
 
 export type StaffSalaryPaymentWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  schoolId_staffId_month?: Prisma.StaffSalaryPaymentSchoolIdStaffIdMonthCompoundUniqueInput
   AND?: Prisma.StaffSalaryPaymentWhereInput | Prisma.StaffSalaryPaymentWhereInput[]
   OR?: Prisma.StaffSalaryPaymentWhereInput[]
   NOT?: Prisma.StaffSalaryPaymentWhereInput | Prisma.StaffSalaryPaymentWhereInput[]
   schoolId?: Prisma.UuidFilter<"StaffSalaryPayment"> | string
   staffId?: Prisma.UuidFilter<"StaffSalaryPayment"> | string
+  periodId?: Prisma.UuidFilter<"StaffSalaryPayment"> | string
   month?: Prisma.DateTimeFilter<"StaffSalaryPayment"> | Date | string
   amount?: Prisma.DecimalFilter<"StaffSalaryPayment"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn?: Prisma.DateTimeFilter<"StaffSalaryPayment"> | Date | string
+  method?: Prisma.StringFilter<"StaffSalaryPayment"> | string
+  reference?: Prisma.StringNullableFilter<"StaffSalaryPayment"> | string | null
+  notes?: Prisma.StringNullableFilter<"StaffSalaryPayment"> | string | null
+  idempotencyKey?: Prisma.StringNullableFilter<"StaffSalaryPayment"> | string | null
   recordedBy?: Prisma.UuidNullableFilter<"StaffSalaryPayment"> | string | null
   createdAt?: Prisma.DateTimeFilter<"StaffSalaryPayment"> | Date | string
   school?: Prisma.XOR<Prisma.SchoolScalarRelationFilter, Prisma.SchoolWhereInput>
   staff?: Prisma.XOR<Prisma.StaffScalarRelationFilter, Prisma.StaffWhereInput>
-}, "id" | "schoolId_staffId_month">
+  period?: Prisma.XOR<Prisma.StaffSalaryPeriodScalarRelationFilter, Prisma.StaffSalaryPeriodWhereInput>
+}, "id">
 
 export type StaffSalaryPaymentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   schoolId?: Prisma.SortOrder
   staffId?: Prisma.SortOrder
+  periodId?: Prisma.SortOrder
   month?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   paidOn?: Prisma.SortOrder
+  method?: Prisma.SortOrder
+  reference?: Prisma.SortOrderInput | Prisma.SortOrder
+  notes?: Prisma.SortOrderInput | Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrderInput | Prisma.SortOrder
   recordedBy?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.StaffSalaryPaymentCountOrderByAggregateInput
@@ -303,9 +361,14 @@ export type StaffSalaryPaymentScalarWhereWithAggregatesInput = {
   id?: Prisma.UuidWithAggregatesFilter<"StaffSalaryPayment"> | string
   schoolId?: Prisma.UuidWithAggregatesFilter<"StaffSalaryPayment"> | string
   staffId?: Prisma.UuidWithAggregatesFilter<"StaffSalaryPayment"> | string
+  periodId?: Prisma.UuidWithAggregatesFilter<"StaffSalaryPayment"> | string
   month?: Prisma.DateTimeWithAggregatesFilter<"StaffSalaryPayment"> | Date | string
   amount?: Prisma.DecimalWithAggregatesFilter<"StaffSalaryPayment"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn?: Prisma.DateTimeWithAggregatesFilter<"StaffSalaryPayment"> | Date | string
+  method?: Prisma.StringWithAggregatesFilter<"StaffSalaryPayment"> | string
+  reference?: Prisma.StringNullableWithAggregatesFilter<"StaffSalaryPayment"> | string | null
+  notes?: Prisma.StringNullableWithAggregatesFilter<"StaffSalaryPayment"> | string | null
+  idempotencyKey?: Prisma.StringNullableWithAggregatesFilter<"StaffSalaryPayment"> | string | null
   recordedBy?: Prisma.UuidNullableWithAggregatesFilter<"StaffSalaryPayment"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"StaffSalaryPayment"> | Date | string
 }
@@ -315,19 +378,29 @@ export type StaffSalaryPaymentCreateInput = {
   month: Date | string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn: Date | string
+  method?: string
+  reference?: string | null
+  notes?: string | null
+  idempotencyKey?: string | null
   recordedBy?: string | null
   createdAt?: Date | string
   school: Prisma.SchoolCreateNestedOneWithoutStaffSalaryPaymentsInput
   staff: Prisma.StaffCreateNestedOneWithoutSalaryPaymentsInput
+  period: Prisma.StaffSalaryPeriodCreateNestedOneWithoutPaymentsInput
 }
 
 export type StaffSalaryPaymentUncheckedCreateInput = {
   id?: string
   schoolId: string
   staffId: string
+  periodId: string
   month: Date | string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn: Date | string
+  method?: string
+  reference?: string | null
+  notes?: string | null
+  idempotencyKey?: string | null
   recordedBy?: string | null
   createdAt?: Date | string
 }
@@ -337,19 +410,29 @@ export type StaffSalaryPaymentUpdateInput = {
   month?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  method?: Prisma.StringFieldUpdateOperationsInput | string
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recordedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   school?: Prisma.SchoolUpdateOneRequiredWithoutStaffSalaryPaymentsNestedInput
   staff?: Prisma.StaffUpdateOneRequiredWithoutSalaryPaymentsNestedInput
+  period?: Prisma.StaffSalaryPeriodUpdateOneRequiredWithoutPaymentsNestedInput
 }
 
 export type StaffSalaryPaymentUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schoolId?: Prisma.StringFieldUpdateOperationsInput | string
   staffId?: Prisma.StringFieldUpdateOperationsInput | string
+  periodId?: Prisma.StringFieldUpdateOperationsInput | string
   month?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  method?: Prisma.StringFieldUpdateOperationsInput | string
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recordedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -358,9 +441,14 @@ export type StaffSalaryPaymentCreateManyInput = {
   id?: string
   schoolId: string
   staffId: string
+  periodId: string
   month: Date | string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn: Date | string
+  method?: string
+  reference?: string | null
+  notes?: string | null
+  idempotencyKey?: string | null
   recordedBy?: string | null
   createdAt?: Date | string
 }
@@ -370,6 +458,10 @@ export type StaffSalaryPaymentUpdateManyMutationInput = {
   month?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  method?: Prisma.StringFieldUpdateOperationsInput | string
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recordedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -378,9 +470,14 @@ export type StaffSalaryPaymentUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schoolId?: Prisma.StringFieldUpdateOperationsInput | string
   staffId?: Prisma.StringFieldUpdateOperationsInput | string
+  periodId?: Prisma.StringFieldUpdateOperationsInput | string
   month?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  method?: Prisma.StringFieldUpdateOperationsInput | string
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recordedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -395,19 +492,18 @@ export type StaffSalaryPaymentOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type StaffSalaryPaymentSchoolIdStaffIdMonthCompoundUniqueInput = {
-  schoolId: string
-  staffId: string
-  month: Date | string
-}
-
 export type StaffSalaryPaymentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   schoolId?: Prisma.SortOrder
   staffId?: Prisma.SortOrder
+  periodId?: Prisma.SortOrder
   month?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   paidOn?: Prisma.SortOrder
+  method?: Prisma.SortOrder
+  reference?: Prisma.SortOrder
+  notes?: Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrder
   recordedBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -420,9 +516,14 @@ export type StaffSalaryPaymentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   schoolId?: Prisma.SortOrder
   staffId?: Prisma.SortOrder
+  periodId?: Prisma.SortOrder
   month?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   paidOn?: Prisma.SortOrder
+  method?: Prisma.SortOrder
+  reference?: Prisma.SortOrder
+  notes?: Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrder
   recordedBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -431,9 +532,14 @@ export type StaffSalaryPaymentMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   schoolId?: Prisma.SortOrder
   staffId?: Prisma.SortOrder
+  periodId?: Prisma.SortOrder
   month?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   paidOn?: Prisma.SortOrder
+  method?: Prisma.SortOrder
+  reference?: Prisma.SortOrder
+  notes?: Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrder
   recordedBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -526,22 +632,74 @@ export type StaffSalaryPaymentUncheckedUpdateManyWithoutStaffNestedInput = {
   deleteMany?: Prisma.StaffSalaryPaymentScalarWhereInput | Prisma.StaffSalaryPaymentScalarWhereInput[]
 }
 
+export type StaffSalaryPaymentCreateNestedManyWithoutPeriodInput = {
+  create?: Prisma.XOR<Prisma.StaffSalaryPaymentCreateWithoutPeriodInput, Prisma.StaffSalaryPaymentUncheckedCreateWithoutPeriodInput> | Prisma.StaffSalaryPaymentCreateWithoutPeriodInput[] | Prisma.StaffSalaryPaymentUncheckedCreateWithoutPeriodInput[]
+  connectOrCreate?: Prisma.StaffSalaryPaymentCreateOrConnectWithoutPeriodInput | Prisma.StaffSalaryPaymentCreateOrConnectWithoutPeriodInput[]
+  createMany?: Prisma.StaffSalaryPaymentCreateManyPeriodInputEnvelope
+  connect?: Prisma.StaffSalaryPaymentWhereUniqueInput | Prisma.StaffSalaryPaymentWhereUniqueInput[]
+}
+
+export type StaffSalaryPaymentUncheckedCreateNestedManyWithoutPeriodInput = {
+  create?: Prisma.XOR<Prisma.StaffSalaryPaymentCreateWithoutPeriodInput, Prisma.StaffSalaryPaymentUncheckedCreateWithoutPeriodInput> | Prisma.StaffSalaryPaymentCreateWithoutPeriodInput[] | Prisma.StaffSalaryPaymentUncheckedCreateWithoutPeriodInput[]
+  connectOrCreate?: Prisma.StaffSalaryPaymentCreateOrConnectWithoutPeriodInput | Prisma.StaffSalaryPaymentCreateOrConnectWithoutPeriodInput[]
+  createMany?: Prisma.StaffSalaryPaymentCreateManyPeriodInputEnvelope
+  connect?: Prisma.StaffSalaryPaymentWhereUniqueInput | Prisma.StaffSalaryPaymentWhereUniqueInput[]
+}
+
+export type StaffSalaryPaymentUpdateManyWithoutPeriodNestedInput = {
+  create?: Prisma.XOR<Prisma.StaffSalaryPaymentCreateWithoutPeriodInput, Prisma.StaffSalaryPaymentUncheckedCreateWithoutPeriodInput> | Prisma.StaffSalaryPaymentCreateWithoutPeriodInput[] | Prisma.StaffSalaryPaymentUncheckedCreateWithoutPeriodInput[]
+  connectOrCreate?: Prisma.StaffSalaryPaymentCreateOrConnectWithoutPeriodInput | Prisma.StaffSalaryPaymentCreateOrConnectWithoutPeriodInput[]
+  upsert?: Prisma.StaffSalaryPaymentUpsertWithWhereUniqueWithoutPeriodInput | Prisma.StaffSalaryPaymentUpsertWithWhereUniqueWithoutPeriodInput[]
+  createMany?: Prisma.StaffSalaryPaymentCreateManyPeriodInputEnvelope
+  set?: Prisma.StaffSalaryPaymentWhereUniqueInput | Prisma.StaffSalaryPaymentWhereUniqueInput[]
+  disconnect?: Prisma.StaffSalaryPaymentWhereUniqueInput | Prisma.StaffSalaryPaymentWhereUniqueInput[]
+  delete?: Prisma.StaffSalaryPaymentWhereUniqueInput | Prisma.StaffSalaryPaymentWhereUniqueInput[]
+  connect?: Prisma.StaffSalaryPaymentWhereUniqueInput | Prisma.StaffSalaryPaymentWhereUniqueInput[]
+  update?: Prisma.StaffSalaryPaymentUpdateWithWhereUniqueWithoutPeriodInput | Prisma.StaffSalaryPaymentUpdateWithWhereUniqueWithoutPeriodInput[]
+  updateMany?: Prisma.StaffSalaryPaymentUpdateManyWithWhereWithoutPeriodInput | Prisma.StaffSalaryPaymentUpdateManyWithWhereWithoutPeriodInput[]
+  deleteMany?: Prisma.StaffSalaryPaymentScalarWhereInput | Prisma.StaffSalaryPaymentScalarWhereInput[]
+}
+
+export type StaffSalaryPaymentUncheckedUpdateManyWithoutPeriodNestedInput = {
+  create?: Prisma.XOR<Prisma.StaffSalaryPaymentCreateWithoutPeriodInput, Prisma.StaffSalaryPaymentUncheckedCreateWithoutPeriodInput> | Prisma.StaffSalaryPaymentCreateWithoutPeriodInput[] | Prisma.StaffSalaryPaymentUncheckedCreateWithoutPeriodInput[]
+  connectOrCreate?: Prisma.StaffSalaryPaymentCreateOrConnectWithoutPeriodInput | Prisma.StaffSalaryPaymentCreateOrConnectWithoutPeriodInput[]
+  upsert?: Prisma.StaffSalaryPaymentUpsertWithWhereUniqueWithoutPeriodInput | Prisma.StaffSalaryPaymentUpsertWithWhereUniqueWithoutPeriodInput[]
+  createMany?: Prisma.StaffSalaryPaymentCreateManyPeriodInputEnvelope
+  set?: Prisma.StaffSalaryPaymentWhereUniqueInput | Prisma.StaffSalaryPaymentWhereUniqueInput[]
+  disconnect?: Prisma.StaffSalaryPaymentWhereUniqueInput | Prisma.StaffSalaryPaymentWhereUniqueInput[]
+  delete?: Prisma.StaffSalaryPaymentWhereUniqueInput | Prisma.StaffSalaryPaymentWhereUniqueInput[]
+  connect?: Prisma.StaffSalaryPaymentWhereUniqueInput | Prisma.StaffSalaryPaymentWhereUniqueInput[]
+  update?: Prisma.StaffSalaryPaymentUpdateWithWhereUniqueWithoutPeriodInput | Prisma.StaffSalaryPaymentUpdateWithWhereUniqueWithoutPeriodInput[]
+  updateMany?: Prisma.StaffSalaryPaymentUpdateManyWithWhereWithoutPeriodInput | Prisma.StaffSalaryPaymentUpdateManyWithWhereWithoutPeriodInput[]
+  deleteMany?: Prisma.StaffSalaryPaymentScalarWhereInput | Prisma.StaffSalaryPaymentScalarWhereInput[]
+}
+
 export type StaffSalaryPaymentCreateWithoutSchoolInput = {
   id?: string
   month: Date | string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn: Date | string
+  method?: string
+  reference?: string | null
+  notes?: string | null
+  idempotencyKey?: string | null
   recordedBy?: string | null
   createdAt?: Date | string
   staff: Prisma.StaffCreateNestedOneWithoutSalaryPaymentsInput
+  period: Prisma.StaffSalaryPeriodCreateNestedOneWithoutPaymentsInput
 }
 
 export type StaffSalaryPaymentUncheckedCreateWithoutSchoolInput = {
   id?: string
   staffId: string
+  periodId: string
   month: Date | string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn: Date | string
+  method?: string
+  reference?: string | null
+  notes?: string | null
+  idempotencyKey?: string | null
   recordedBy?: string | null
   createdAt?: Date | string
 }
@@ -579,9 +737,14 @@ export type StaffSalaryPaymentScalarWhereInput = {
   id?: Prisma.UuidFilter<"StaffSalaryPayment"> | string
   schoolId?: Prisma.UuidFilter<"StaffSalaryPayment"> | string
   staffId?: Prisma.UuidFilter<"StaffSalaryPayment"> | string
+  periodId?: Prisma.UuidFilter<"StaffSalaryPayment"> | string
   month?: Prisma.DateTimeFilter<"StaffSalaryPayment"> | Date | string
   amount?: Prisma.DecimalFilter<"StaffSalaryPayment"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn?: Prisma.DateTimeFilter<"StaffSalaryPayment"> | Date | string
+  method?: Prisma.StringFilter<"StaffSalaryPayment"> | string
+  reference?: Prisma.StringNullableFilter<"StaffSalaryPayment"> | string | null
+  notes?: Prisma.StringNullableFilter<"StaffSalaryPayment"> | string | null
+  idempotencyKey?: Prisma.StringNullableFilter<"StaffSalaryPayment"> | string | null
   recordedBy?: Prisma.UuidNullableFilter<"StaffSalaryPayment"> | string | null
   createdAt?: Prisma.DateTimeFilter<"StaffSalaryPayment"> | Date | string
 }
@@ -591,17 +754,27 @@ export type StaffSalaryPaymentCreateWithoutStaffInput = {
   month: Date | string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn: Date | string
+  method?: string
+  reference?: string | null
+  notes?: string | null
+  idempotencyKey?: string | null
   recordedBy?: string | null
   createdAt?: Date | string
   school: Prisma.SchoolCreateNestedOneWithoutStaffSalaryPaymentsInput
+  period: Prisma.StaffSalaryPeriodCreateNestedOneWithoutPaymentsInput
 }
 
 export type StaffSalaryPaymentUncheckedCreateWithoutStaffInput = {
   id?: string
   schoolId: string
+  periodId: string
   month: Date | string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn: Date | string
+  method?: string
+  reference?: string | null
+  notes?: string | null
+  idempotencyKey?: string | null
   recordedBy?: string | null
   createdAt?: Date | string
 }
@@ -632,12 +805,73 @@ export type StaffSalaryPaymentUpdateManyWithWhereWithoutStaffInput = {
   data: Prisma.XOR<Prisma.StaffSalaryPaymentUpdateManyMutationInput, Prisma.StaffSalaryPaymentUncheckedUpdateManyWithoutStaffInput>
 }
 
-export type StaffSalaryPaymentCreateManySchoolInput = {
+export type StaffSalaryPaymentCreateWithoutPeriodInput = {
   id?: string
+  month: Date | string
+  amount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  paidOn: Date | string
+  method?: string
+  reference?: string | null
+  notes?: string | null
+  idempotencyKey?: string | null
+  recordedBy?: string | null
+  createdAt?: Date | string
+  school: Prisma.SchoolCreateNestedOneWithoutStaffSalaryPaymentsInput
+  staff: Prisma.StaffCreateNestedOneWithoutSalaryPaymentsInput
+}
+
+export type StaffSalaryPaymentUncheckedCreateWithoutPeriodInput = {
+  id?: string
+  schoolId: string
   staffId: string
   month: Date | string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn: Date | string
+  method?: string
+  reference?: string | null
+  notes?: string | null
+  idempotencyKey?: string | null
+  recordedBy?: string | null
+  createdAt?: Date | string
+}
+
+export type StaffSalaryPaymentCreateOrConnectWithoutPeriodInput = {
+  where: Prisma.StaffSalaryPaymentWhereUniqueInput
+  create: Prisma.XOR<Prisma.StaffSalaryPaymentCreateWithoutPeriodInput, Prisma.StaffSalaryPaymentUncheckedCreateWithoutPeriodInput>
+}
+
+export type StaffSalaryPaymentCreateManyPeriodInputEnvelope = {
+  data: Prisma.StaffSalaryPaymentCreateManyPeriodInput | Prisma.StaffSalaryPaymentCreateManyPeriodInput[]
+  skipDuplicates?: boolean
+}
+
+export type StaffSalaryPaymentUpsertWithWhereUniqueWithoutPeriodInput = {
+  where: Prisma.StaffSalaryPaymentWhereUniqueInput
+  update: Prisma.XOR<Prisma.StaffSalaryPaymentUpdateWithoutPeriodInput, Prisma.StaffSalaryPaymentUncheckedUpdateWithoutPeriodInput>
+  create: Prisma.XOR<Prisma.StaffSalaryPaymentCreateWithoutPeriodInput, Prisma.StaffSalaryPaymentUncheckedCreateWithoutPeriodInput>
+}
+
+export type StaffSalaryPaymentUpdateWithWhereUniqueWithoutPeriodInput = {
+  where: Prisma.StaffSalaryPaymentWhereUniqueInput
+  data: Prisma.XOR<Prisma.StaffSalaryPaymentUpdateWithoutPeriodInput, Prisma.StaffSalaryPaymentUncheckedUpdateWithoutPeriodInput>
+}
+
+export type StaffSalaryPaymentUpdateManyWithWhereWithoutPeriodInput = {
+  where: Prisma.StaffSalaryPaymentScalarWhereInput
+  data: Prisma.XOR<Prisma.StaffSalaryPaymentUpdateManyMutationInput, Prisma.StaffSalaryPaymentUncheckedUpdateManyWithoutPeriodInput>
+}
+
+export type StaffSalaryPaymentCreateManySchoolInput = {
+  id?: string
+  staffId: string
+  periodId: string
+  month: Date | string
+  amount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  paidOn: Date | string
+  method?: string
+  reference?: string | null
+  notes?: string | null
+  idempotencyKey?: string | null
   recordedBy?: string | null
   createdAt?: Date | string
 }
@@ -647,17 +881,27 @@ export type StaffSalaryPaymentUpdateWithoutSchoolInput = {
   month?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  method?: Prisma.StringFieldUpdateOperationsInput | string
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recordedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   staff?: Prisma.StaffUpdateOneRequiredWithoutSalaryPaymentsNestedInput
+  period?: Prisma.StaffSalaryPeriodUpdateOneRequiredWithoutPaymentsNestedInput
 }
 
 export type StaffSalaryPaymentUncheckedUpdateWithoutSchoolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   staffId?: Prisma.StringFieldUpdateOperationsInput | string
+  periodId?: Prisma.StringFieldUpdateOperationsInput | string
   month?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  method?: Prisma.StringFieldUpdateOperationsInput | string
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recordedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -665,9 +909,14 @@ export type StaffSalaryPaymentUncheckedUpdateWithoutSchoolInput = {
 export type StaffSalaryPaymentUncheckedUpdateManyWithoutSchoolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   staffId?: Prisma.StringFieldUpdateOperationsInput | string
+  periodId?: Prisma.StringFieldUpdateOperationsInput | string
   month?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  method?: Prisma.StringFieldUpdateOperationsInput | string
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recordedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -675,9 +924,14 @@ export type StaffSalaryPaymentUncheckedUpdateManyWithoutSchoolInput = {
 export type StaffSalaryPaymentCreateManyStaffInput = {
   id?: string
   schoolId: string
+  periodId: string
   month: Date | string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn: Date | string
+  method?: string
+  reference?: string | null
+  notes?: string | null
+  idempotencyKey?: string | null
   recordedBy?: string | null
   createdAt?: Date | string
 }
@@ -687,17 +941,27 @@ export type StaffSalaryPaymentUpdateWithoutStaffInput = {
   month?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  method?: Prisma.StringFieldUpdateOperationsInput | string
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recordedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   school?: Prisma.SchoolUpdateOneRequiredWithoutStaffSalaryPaymentsNestedInput
+  period?: Prisma.StaffSalaryPeriodUpdateOneRequiredWithoutPaymentsNestedInput
 }
 
 export type StaffSalaryPaymentUncheckedUpdateWithoutStaffInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  periodId?: Prisma.StringFieldUpdateOperationsInput | string
   month?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  method?: Prisma.StringFieldUpdateOperationsInput | string
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recordedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -705,9 +969,74 @@ export type StaffSalaryPaymentUncheckedUpdateWithoutStaffInput = {
 export type StaffSalaryPaymentUncheckedUpdateManyWithoutStaffInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  periodId?: Prisma.StringFieldUpdateOperationsInput | string
   month?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   paidOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  method?: Prisma.StringFieldUpdateOperationsInput | string
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recordedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type StaffSalaryPaymentCreateManyPeriodInput = {
+  id?: string
+  schoolId: string
+  staffId: string
+  month: Date | string
+  amount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  paidOn: Date | string
+  method?: string
+  reference?: string | null
+  notes?: string | null
+  idempotencyKey?: string | null
+  recordedBy?: string | null
+  createdAt?: Date | string
+}
+
+export type StaffSalaryPaymentUpdateWithoutPeriodInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  month?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  paidOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  method?: Prisma.StringFieldUpdateOperationsInput | string
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recordedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  school?: Prisma.SchoolUpdateOneRequiredWithoutStaffSalaryPaymentsNestedInput
+  staff?: Prisma.StaffUpdateOneRequiredWithoutSalaryPaymentsNestedInput
+}
+
+export type StaffSalaryPaymentUncheckedUpdateWithoutPeriodInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  staffId?: Prisma.StringFieldUpdateOperationsInput | string
+  month?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  paidOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  method?: Prisma.StringFieldUpdateOperationsInput | string
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recordedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type StaffSalaryPaymentUncheckedUpdateManyWithoutPeriodInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  staffId?: Prisma.StringFieldUpdateOperationsInput | string
+  month?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  paidOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  method?: Prisma.StringFieldUpdateOperationsInput | string
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recordedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -718,64 +1047,90 @@ export type StaffSalaryPaymentSelect<ExtArgs extends runtime.Types.Extensions.In
   id?: boolean
   schoolId?: boolean
   staffId?: boolean
+  periodId?: boolean
   month?: boolean
   amount?: boolean
   paidOn?: boolean
+  method?: boolean
+  reference?: boolean
+  notes?: boolean
+  idempotencyKey?: boolean
   recordedBy?: boolean
   createdAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   staff?: boolean | Prisma.StaffDefaultArgs<ExtArgs>
+  period?: boolean | Prisma.StaffSalaryPeriodDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["staffSalaryPayment"]>
 
 export type StaffSalaryPaymentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   schoolId?: boolean
   staffId?: boolean
+  periodId?: boolean
   month?: boolean
   amount?: boolean
   paidOn?: boolean
+  method?: boolean
+  reference?: boolean
+  notes?: boolean
+  idempotencyKey?: boolean
   recordedBy?: boolean
   createdAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   staff?: boolean | Prisma.StaffDefaultArgs<ExtArgs>
+  period?: boolean | Prisma.StaffSalaryPeriodDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["staffSalaryPayment"]>
 
 export type StaffSalaryPaymentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   schoolId?: boolean
   staffId?: boolean
+  periodId?: boolean
   month?: boolean
   amount?: boolean
   paidOn?: boolean
+  method?: boolean
+  reference?: boolean
+  notes?: boolean
+  idempotencyKey?: boolean
   recordedBy?: boolean
   createdAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   staff?: boolean | Prisma.StaffDefaultArgs<ExtArgs>
+  period?: boolean | Prisma.StaffSalaryPeriodDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["staffSalaryPayment"]>
 
 export type StaffSalaryPaymentSelectScalar = {
   id?: boolean
   schoolId?: boolean
   staffId?: boolean
+  periodId?: boolean
   month?: boolean
   amount?: boolean
   paidOn?: boolean
+  method?: boolean
+  reference?: boolean
+  notes?: boolean
+  idempotencyKey?: boolean
   recordedBy?: boolean
   createdAt?: boolean
 }
 
-export type StaffSalaryPaymentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "staffId" | "month" | "amount" | "paidOn" | "recordedBy" | "createdAt", ExtArgs["result"]["staffSalaryPayment"]>
+export type StaffSalaryPaymentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "staffId" | "periodId" | "month" | "amount" | "paidOn" | "method" | "reference" | "notes" | "idempotencyKey" | "recordedBy" | "createdAt", ExtArgs["result"]["staffSalaryPayment"]>
 export type StaffSalaryPaymentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   staff?: boolean | Prisma.StaffDefaultArgs<ExtArgs>
+  period?: boolean | Prisma.StaffSalaryPeriodDefaultArgs<ExtArgs>
 }
 export type StaffSalaryPaymentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   staff?: boolean | Prisma.StaffDefaultArgs<ExtArgs>
+  period?: boolean | Prisma.StaffSalaryPeriodDefaultArgs<ExtArgs>
 }
 export type StaffSalaryPaymentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   staff?: boolean | Prisma.StaffDefaultArgs<ExtArgs>
+  period?: boolean | Prisma.StaffSalaryPeriodDefaultArgs<ExtArgs>
 }
 
 export type $StaffSalaryPaymentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -783,11 +1138,13 @@ export type $StaffSalaryPaymentPayload<ExtArgs extends runtime.Types.Extensions.
   objects: {
     school: Prisma.$SchoolPayload<ExtArgs>
     staff: Prisma.$StaffPayload<ExtArgs>
+    period: Prisma.$StaffSalaryPeriodPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     schoolId: string
     staffId: string
+    periodId: string
     /**
      * First day of the month the salary is for.
      */
@@ -797,6 +1154,13 @@ export type $StaffSalaryPaymentPayload<ExtArgs extends runtime.Types.Extensions.
      */
     amount: runtime.Decimal
     paidOn: Date
+    /**
+     * CASH | BANK_TRANSFER | OTHER (checked in the database).
+     */
+    method: string
+    reference: string | null
+    notes: string | null
+    idempotencyKey: string | null
     recordedBy: string | null
     createdAt: Date
   }, ExtArgs["result"]["staffSalaryPayment"]>
@@ -1195,6 +1559,7 @@ export interface Prisma__StaffSalaryPaymentClient<T, Null = never, ExtArgs exten
   readonly [Symbol.toStringTag]: "PrismaPromise"
   school<T extends Prisma.SchoolDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SchoolDefaultArgs<ExtArgs>>): Prisma.Prisma__SchoolClient<runtime.Types.Result.GetResult<Prisma.$SchoolPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   staff<T extends Prisma.StaffDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.StaffDefaultArgs<ExtArgs>>): Prisma.Prisma__StaffClient<runtime.Types.Result.GetResult<Prisma.$StaffPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  period<T extends Prisma.StaffSalaryPeriodDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.StaffSalaryPeriodDefaultArgs<ExtArgs>>): Prisma.Prisma__StaffSalaryPeriodClient<runtime.Types.Result.GetResult<Prisma.$StaffSalaryPeriodPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1227,9 +1592,14 @@ export interface StaffSalaryPaymentFieldRefs {
   readonly id: Prisma.FieldRef<"StaffSalaryPayment", 'String'>
   readonly schoolId: Prisma.FieldRef<"StaffSalaryPayment", 'String'>
   readonly staffId: Prisma.FieldRef<"StaffSalaryPayment", 'String'>
+  readonly periodId: Prisma.FieldRef<"StaffSalaryPayment", 'String'>
   readonly month: Prisma.FieldRef<"StaffSalaryPayment", 'DateTime'>
   readonly amount: Prisma.FieldRef<"StaffSalaryPayment", 'Decimal'>
   readonly paidOn: Prisma.FieldRef<"StaffSalaryPayment", 'DateTime'>
+  readonly method: Prisma.FieldRef<"StaffSalaryPayment", 'String'>
+  readonly reference: Prisma.FieldRef<"StaffSalaryPayment", 'String'>
+  readonly notes: Prisma.FieldRef<"StaffSalaryPayment", 'String'>
+  readonly idempotencyKey: Prisma.FieldRef<"StaffSalaryPayment", 'String'>
   readonly recordedBy: Prisma.FieldRef<"StaffSalaryPayment", 'String'>
   readonly createdAt: Prisma.FieldRef<"StaffSalaryPayment", 'DateTime'>
 }

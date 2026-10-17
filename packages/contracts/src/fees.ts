@@ -253,6 +253,12 @@ export const lateFeePolicySchema = z.object({
    * that prints "due the 10th, late from the 15th" sets this to 5.
    */
   graceDays: z.int().min(0).max(90),
+  /**
+   * The fee heads the surcharge is charged on. Empty means none: a school that
+   * sets a rate but picks no head charges no late fee, rather than silently
+   * charging it on everything.
+   */
+  feeHeadIds: z.array(idSchema).max(200).default([]),
 });
 
 export type LateFeePolicy = z.infer<typeof lateFeePolicySchema>;

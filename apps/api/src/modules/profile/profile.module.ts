@@ -319,7 +319,7 @@ export class ProfileService {
           await tx.schoolLogo.upsert({
             // The school's own mark, not the bank's — a school now has a row
             // for each, and this path only ever writes the letterhead.
-            where: { schoolId_kind: { schoolId: schoolBefore.id, kind: 'SCHOOL' } },
+            where: { schoolId_kind_slot: { schoolId: schoolBefore.id, kind: 'SCHOOL', slot: 0 } },
             create: { schoolId: schoolBefore.id, kind: 'SCHOOL', ...stored },
             update: stored,
           });

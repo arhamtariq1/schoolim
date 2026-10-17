@@ -271,3 +271,48 @@ export const SchoolImageKind = {
 } as const
 
 export type SchoolImageKind = (typeof SchoolImageKind)[keyof typeof SchoolImageKind]
+
+
+export const RequestCategory = {
+  LEAVE: 'LEAVE',
+  FEE: 'FEE',
+  ACADEMIC: 'ACADEMIC',
+  DOCUMENT: 'DOCUMENT',
+  TRANSPORT: 'TRANSPORT',
+  COMPLAINT: 'COMPLAINT',
+  CONCERN: 'CONCERN',
+  OTHER: 'OTHER'
+} as const
+
+export type RequestCategory = (typeof RequestCategory)[keyof typeof RequestCategory]
+
+
+export const RequestPriority = {
+  LOW: 'LOW',
+  NORMAL: 'NORMAL',
+  HIGH: 'HIGH',
+  URGENT: 'URGENT'
+} as const
+
+export type RequestPriority = (typeof RequestPriority)[keyof typeof RequestPriority]
+
+
+export const RequestStatus = {
+  PENDING: 'PENDING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  RESOLVED: 'RESOLVED',
+  REJECTED: 'REJECTED',
+  REOPENED: 'REOPENED'
+} as const
+
+export type RequestStatus = (typeof RequestStatus)[keyof typeof RequestStatus]
+
+
+export const RequestEventKind = {
+  CREATED: 'CREATED',
+  MESSAGE: 'MESSAGE',
+  STATUS_CHANGED: 'STATUS_CHANGED',
+  ASSIGNED: 'ASSIGNED'
+} as const
+
+export type RequestEventKind = (typeof RequestEventKind)[keyof typeof RequestEventKind]

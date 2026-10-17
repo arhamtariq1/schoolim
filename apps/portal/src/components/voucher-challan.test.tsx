@@ -107,7 +107,7 @@ function paint(
   voucher: Challan = VOUCHER,
   extra: {
     logoVersion?: string;
-    bankLogoVersion?: string;
+    bankLogos?: { slot: number; version: string }[];
     accentColor?: string;
   } = {},
 ) {
@@ -163,15 +163,15 @@ describe('the bank at the foot', () => {
     expect(screen.queryByText('Meezan Bank Ltd.')).toBeNull();
   });
 
-  it('prints the bank’s name on every copy', () => {
+  it('never prints the bank’s name — the uploaded mark stands alone', () => {
     paint({ ...DEFAULT_VOUCHER_SETTINGS, bankName: 'Meezan Bank Ltd.' });
 
-    expect(screen.getAllByText('Meezan Bank Ltd.')).toHaveLength(3);
+    expect(screen.queryByText('Meezan Bank Ltd.')).toBeNull();
   });
 
   it('prints the bank’s mark, versioned so a replacement is not cached', () => {
     paint({ ...DEFAULT_VOUCHER_SETTINGS, bankName: 'Meezan Bank Ltd.' }, VOUCHER, {
-      bankLogoVersion: 'b3',
+      bankLogos: [{ slot: 0, version: 'b3' }],
     });
 
     const marks = screen
@@ -182,16 +182,29 @@ describe('the bank at the foot', () => {
 
   it('prints the mark even with no name', () => {
     // A mark alone is a complete answer to "where does this get deposited".
-    paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, { bankLogoVersion: 'b3' });
+    paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, { bankLogos: [{ slot: 0, version: 'b3' }] });
     const marks = screen
       .getAllByRole('presentation', { hidden: true })
       .filter((img) => img.getAttribute('src')?.includes('v=b3'));
     expect(marks).toHaveLength(3);
   });
 
-  it('prints the name even with no mark', () => {
-    paint({ ...DEFAULT_VOUCHER_SETTINGS, bankName: 'HBL' });
-    expect(screen.getAllByText('HBL')).toHaveLength(3);
+  it('prints several banks’ marks in one row, each from its own slot', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, {
+      bankLogos: [
+        { slot: 0, version: 'm1' },
+        { slot: 2, version: 'h1' },
+      ],
+    });
+
+    const marks = screen
+      .getAllByRole('presentation', { hidden: true })
+      .map((img) => img.getAttribute('src') ?? '')
+      .filter((src) => src.includes('bank-logos'));
+    // Two marks on each of three copies, each addressed by its slot.
+    expect(marks).toHaveLength(6);
+    expect(marks.filter((src) => src.endsWith('/bank-logos/0?v=m1'))).toHaveLength(3);
+    expect(marks.filter((src) => src.endsWith('/bank-logos/2?v=h1'))).toHaveLength(3);
   });
 });
 
@@ -222,7 +235,7 @@ describe('filling the sheet', () => {
     // once down at 6.5px, which is legible on a screen at 2x and not on paper
     // under a fluorescent light. Anything below this is a figure somebody has
     // to guess at.
-    const { container } = paint(BOTH, VOUCHER, { bankLogoVersion: 'b1' });
+    const { container } = paint(BOTH, VOUCHER, { bankLogos: [{ slot: 0, version: 'b1' }] });
 
     const tooSmall = [...container.querySelectorAll('*')]
       .flatMap((element) => [...element.className.toString().matchAll(/text-\[([\d.]+)px\]/g)])
@@ -413,49 +426,12 @@ describe('the logo', () => {
 });
 
 describe('the payment strip', () => {
-  it('is absent for a school with no arrangement', () => {
-    paint(DEFAULT_VOUCHER_SETTINGS);
-
-    expect(screen.queryByText('Kuickpay')).toBeNull();
-    expect(screen.queryByText(/1LINK/)).toBeNull();
-  });
-
-  it('prints the consumer number derived from the prefix and the GR', () => {
-    paint(KUICKPAY);
-    expect(screen.getAllByText('15140810')).toHaveLength(3);
-  });
-
-  it('lists where a parent may pay', () => {
-    paint(KUICKPAY);
-    expect(screen.getAllByText(/Meezan Bank/)).toHaveLength(3);
-    expect(screen.getAllByText(/JazzCash/)).toHaveLength(3);
-  });
-
-  it('prints the 1LINK number in front of the Kuickpay one', () => {
+  it('is never printed, even for a school that once turned Kuickpay and 1LINK on', () => {
     paint(BOTH);
-    expect(screen.getAllByText('10004715140810')).toHaveLength(3);
-  });
-
-  it('prints no strip at all for a child with no GR number', () => {
-    // There is no consumer number to quote, and half a number is worse than
-    // none: a parent would be turned away at the counter having been given
-    // something that looks payable.
-    paint(BOTH, { ...VOUCHER, grNo: null });
 
     expect(screen.queryByText('Kuickpay')).toBeNull();
     expect(screen.queryByText(/1LINK/)).toBeNull();
-  });
-
-  it('keeps the consumer number legible without its background fill', () => {
-    // A printer with background graphics off, or any photocopier, drops every
-    // tint on the page. The number a parent quotes must survive that, so it
-    // carries its own white ground and dark text rather than being reversed
-    // out of a filled bar.
-    paint(KUICKPAY);
-
-    const chip = screen.getAllByText('15140810')[0]?.parentElement;
-    expect(chip?.className).toContain('bg-white');
-    expect(chip?.className).toContain('text-black');
+    expect(screen.queryByText('15140810')).toBeNull();
   });
 });
 
@@ -484,5 +460,69 @@ describe('the school’s own words', () => {
     // An em dash reads as "nothing recorded", which is what it is.
     paint(DEFAULT_VOUCHER_SETTINGS, { ...VOUCHER, sectionName: null, fatherName: null });
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(6);
+  });
+});
+
+describe('after the due date', () => {
+  it('prints the late fee and the amount payable after the due date on every copy', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS);
+
+    expect(screen.getAllByText('Late fee after 10-10-2026')).toHaveLength(3);
+    expect(screen.getAllByText('Payable after due date')).toHaveLength(3);
+    // 15,700 within the due date + 200 late fee.
+    expect(screen.getAllByText('15,900')).toHaveLength(3);
+  });
+
+  it('prints no after-due-date rows when the voucher carries no late fee', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS, { ...VOUCHER, lateFeeMinor: 0 });
+
+    expect(screen.queryByText('Payable after due date')).toBeNull();
+    expect(screen.queryByText(/Late fee after/)).toBeNull();
+  });
+});
+
+describe('what the school chose to show', () => {
+  it('prints the register details, the dates and the bank marks by default', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, { bankLogos: [{ slot: 0, version: 'b1' }] });
+
+    expect(screen.getAllByText('GR No')).toHaveLength(3);
+    expect(screen.getAllByText('Issue Date')).toHaveLength(3);
+    expect(
+      screen
+        .getAllByRole('presentation', { hidden: true })
+        .filter((img) => img.getAttribute('src')?.includes('bank-logos')),
+    ).toHaveLength(3);
+  });
+
+  it('drops GR, class, section and session — but never the names', () => {
+    paint({ ...DEFAULT_VOUCHER_SETTINGS, showStudentDetails: false });
+
+    for (const label of ['GR No', 'Class', 'Section', 'Session']) {
+      expect(screen.queryByText(label)).toBeNull();
+    }
+    expect(screen.getAllByText('Kaneez Fatima')).toHaveLength(3);
+    expect(screen.getAllByText('Student Name')).toHaveLength(3);
+    expect(screen.getAllByText('Father Name')).toHaveLength(3);
+  });
+
+  it('drops the issue and due date rows, but still says when the late fee starts', () => {
+    paint({ ...DEFAULT_VOUCHER_SETTINGS, showDates: false });
+
+    expect(screen.queryByText('Issue Date')).toBeNull();
+    expect(screen.queryByText('Due Date')).toBeNull();
+    // The surcharge line is the figure a parent is charged; its date stays.
+    expect(screen.getAllByText('Late fee after 10-10-2026')).toHaveLength(3);
+  });
+
+  it('drops the bank marks when the school turns them off', () => {
+    paint({ ...DEFAULT_VOUCHER_SETTINGS, showBankLogos: false }, VOUCHER, {
+      bankLogos: [{ slot: 0, version: 'b1' }],
+    });
+
+    expect(
+      screen
+        .queryAllByRole('presentation', { hidden: true })
+        .filter((img) => img.getAttribute('src')?.includes('bank-logos')),
+    ).toHaveLength(0);
   });
 });

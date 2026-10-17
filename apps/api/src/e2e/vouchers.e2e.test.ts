@@ -120,8 +120,8 @@ async function seed(): Promise<void> {
     [HEAD_ANNUAL, 'Annual Charges', 'ANNUAL', 'ANNUAL', '6000.00'],
   ] as const) {
     await admin.$executeRawUnsafe(
-      `INSERT INTO fee_heads (id, school_id, type, name, default_amount, frequency, sort_order, created_at, updated_at)
-       VALUES ($1::uuid, $2::uuid, $3::"fee_head_type", $4, $5::numeric, $6::"fee_frequency", 0, now(), now())`,
+      `INSERT INTO fee_heads (id, school_id, type, name, default_amount, frequency, sort_order, late_fee_applies, created_at, updated_at)
+       VALUES ($1::uuid, $2::uuid, $3::"fee_head_type", $4, $5::numeric, $6::"fee_frequency", 0, true, now(), now())`,
       id,
       SCHOOL_A,
       type,
@@ -1374,5 +1374,107 @@ describe('sorting the list', () => {
     expect(first).toHaveLength(1);
     expect(second).toHaveLength(1);
     expect(first[0]?.id).not.toBe(second[0]?.id);
+  });
+});
+
+describe('recording payment for a selection', () => {
+  interface BulkPayBody {
+    paid: number;
+    totalMinor: number;
+    skipped: { id: string; voucherNo: string | null; reason: string }[];
+  }
+
+  async function bulkPay(ids: string[], idempotencyKey = freshKey()) {
+    const response = await post(ROUTES.vouchers.bulkPay, {
+      ids,
+      method: 'CASH',
+      paidOn: '2026-09-10',
+      idempotencyKey,
+    });
+    return {
+      status: response.statusCode,
+      data: () => response.json<{ data: BulkPayBody }>().data,
+    };
+  }
+
+  it('settles every voucher in the selection in full', async () => {
+    await generate();
+    const { data } = await listVouchers();
+    expect(data.length).toBeGreaterThan(1);
+    const owed = data.reduce((sum, voucher) => sum + voucher.balanceMinor, 0);
+
+    const result = await bulkPay(data.map((voucher) => voucher.id));
+    const body = result.data();
+
+    expect(result.status).toBe(201);
+    expect(body.paid).toBe(data.length);
+    expect(body.totalMinor).toBe(owed);
+    expect(body.skipped).toEqual([]);
+
+    const after = await listVouchers();
+    expect(after.data.every((voucher) => voucher.status === 'PAID')).toBe(true);
+  });
+
+  it('skips a voucher already paid at the counter, names it, and pays the rest', async () => {
+    await generate();
+    const { data } = await listVouchers('?sort=studentName&order=asc');
+    const settled = data[0];
+    const rest = data.slice(1);
+    await post(ROUTES.vouchers.pay(settled?.id ?? ''), {
+      method: 'CASH',
+      paidOn: '2026-09-10',
+      idempotencyKey: freshKey(),
+    });
+
+    const body = (await bulkPay(data.map((voucher) => voucher.id))).data();
+
+    expect(body.paid).toBe(rest.length);
+    expect(body.skipped).toEqual([
+      { id: settled?.id, voucherNo: settled?.voucherNo, reason: 'ALREADY_PAID' },
+    ]);
+  });
+
+  it('records each payment once when the same batch is sent twice', async () => {
+    await generate();
+    const { data } = await listVouchers();
+    const ids = data.map((voucher) => voucher.id);
+    const key = freshKey();
+
+    const first = (await bulkPay(ids, key)).data();
+    const second = (await bulkPay(ids, key)).data();
+
+    // The resend finds every payment it already made rather than a voucher
+    // that is now "already paid", and reports the same run.
+    expect(second).toEqual(first);
+    const receipts = await admin.$queryRawUnsafe<{ n: bigint }[]>(
+      `SELECT count(*) AS n FROM fee_payments WHERE idempotency_key LIKE $1`,
+      `${key}:%`,
+    );
+    expect(Number(receipts[0]?.n ?? 0)).toBe(ids.length);
+  });
+
+  it('cannot pay another school’s voucher, and calls it not found', async () => {
+    await generate();
+    const mine = (await listVouchers()).data.map((voucher) => voucher.id);
+    const theirs = await foreignVoucher();
+
+    const body = (await bulkPay([...mine, theirs])).data();
+
+    expect(body.paid).toBe(mine.length);
+    expect(body.skipped).toEqual([{ id: theirs, voucherNo: null, reason: 'NOT_FOUND' }]);
+  });
+
+  it('refuses a selection with no date', async () => {
+    await generate();
+    const { data } = await listVouchers();
+
+    const response = await post(ROUTES.vouchers.bulkPay, {
+      ids: data.map((voucher) => voucher.id),
+      method: 'CASH',
+      idempotencyKey: freshKey(),
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect((await listVouchers()).data.every((voucher) => voucher.status !== 'PAID')).toBe(true);
   });
 });

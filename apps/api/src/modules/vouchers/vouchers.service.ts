@@ -1,5 +1,8 @@
 import {
   type BulkDeleteResult,
+  type BulkPaymentResult,
+  type BulkPaySkipReason,
+  type BulkRecordPayment,
   type Challan,
   type VoucherIds,
   type BulkSkipReason,
@@ -21,7 +24,7 @@ import { type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
 
-import { computeLateFee } from './voucher-generation.service';
+import { computeLateFee, lateFeeBaseMinor } from './voucher-generation.service';
 import { firstOfMonth, monthLabel } from './voucher-planner';
 
 /**
@@ -377,7 +380,7 @@ export class VouchersService {
       const waiver = decimalToMinor(voucher.waiverAmount);
       const net = gross - discount - waiver + arrears;
 
-      const lateFee = input.applyLateFee === false ? 0 : await recomputeLateFee(tx, net);
+      const lateFee = input.applyLateFee === false ? 0 : await recomputeLateFee(tx, id);
 
       await tx.feeVoucher.update({
         where: { id },
@@ -899,157 +902,245 @@ export class VouchersService {
    * between, and settling it twice would take money for a debt already cleared.
    */
   async pay(id: string, input: RecordPayment, actorId: string | undefined): Promise<VoucherDetail> {
-    await this.prisma.tenant(async (tx) => {
-      const replay = await tx.feePayment.findFirst({
-        where: { idempotencyKey: input.idempotencyKey },
-        select: { id: true },
-      });
-      if (replay !== null) {
-        // A double-submitted form is one payment.
-        return;
-      }
+    await this.prisma.tenant(async (tx) => this.recordPayment(tx, id, input, actorId));
+    return this.detail(id);
+  }
 
-      const voucher = await tx.feeVoucher.findUnique({
+  /**
+   * Settle many vouchers in full — the bulk bar's Record payment.
+   *
+   * ## One transaction per voucher, not one for the batch
+   *
+   * A selection of forty will routinely hold one that was paid at the counter
+   * a minute ago. Rolling back thirty-nine receipts for it would make the
+   * operator find it, untick it and start again; instead it is skipped and
+   * named, and the rest are recorded. Each voucher is the same transaction the
+   * single Pay button runs, so the arrears re-read and the late-fee rule are
+   * not reimplemented here.
+   *
+   * ## Oldest due date first
+   *
+   * October may carry September as arrears. Paying September first leaves
+   * October owing only its own month; the other order settles September
+   * through October's allocation and then finds September already paid. Both
+   * add up to the same money, but this order gives each voucher its own receipt.
+   *
+   * ## Idempotent, and so resumable
+   *
+   * Each payment is keyed `{batch key}:{voucher id}`. Resending the batch —
+   * after a double click, or after a run that died half way — finds the
+   * payments already made and records only the rest.
+   */
+  async payMany(input: BulkRecordPayment, actorId: string | undefined): Promise<BulkPaymentResult> {
+    const found = await this.prisma.tenant(async (tx) =>
+      tx.feeVoucher.findMany({
+        where: { id: { in: input.ids } },
+        select: { id: true, voucherNo: true },
+        orderBy: [{ dueDate: 'asc' }, { voucherNo: 'asc' }],
+      }),
+    );
+
+    const skipped: BulkPaymentResult['skipped'] = input.ids
+      .filter((id) => !found.some((voucher) => voucher.id === id))
+      .map((id) => ({ id, voucherNo: null, reason: 'NOT_FOUND' as const }));
+
+    let paid = 0;
+    let total = 0;
+
+    for (const voucher of found) {
+      try {
+        const amount = await this.prisma.tenant(async (tx) =>
+          this.recordPayment(
+            tx,
+            voucher.id,
+            {
+              method: input.method,
+              paidOn: input.paidOn,
+              ...(input.reference === undefined ? {} : { reference: input.reference }),
+              idempotencyKey: `${input.idempotencyKey}:${voucher.id}`,
+            },
+            actorId,
+          ),
+        );
+        paid += 1;
+        total += amount;
+      } catch (error) {
+        const reason = bulkPaySkipReason(error);
+        if (reason === undefined) {
+          // Not a property of this voucher — the database is down, the
+          // school went read-only. Everything recorded so far is committed
+          // and keyed, so resending the batch picks up from here.
+          throw error;
+        }
+        skipped.push({ id: voucher.id, voucherNo: voucher.voucherNo, reason });
+      }
+    }
+
+    return { paid, totalMinor: minorUnits(total), skipped };
+  }
+
+  /**
+   * One payment, inside the caller's transaction. Returns what was recorded.
+   */
+  private async recordPayment(
+    tx: TransactionClient,
+    id: string,
+    input: RecordPayment,
+    actorId: string | undefined,
+  ): Promise<number> {
+    const replay = await tx.feePayment.findFirst({
+      where: { idempotencyKey: input.idempotencyKey },
+      select: { amount: true },
+    });
+    if (replay !== null) {
+      // A double-submitted form is one payment.
+      return decimalToMinor(replay.amount);
+    }
+
+    const voucher = await tx.feeVoucher.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        studentId: true,
+        status: true,
+        grossAmount: true,
+        netPayable: true,
+        paidAmount: true,
+        dueDate: true,
+        lateFeeAmount: true,
+        arrears: { select: { sourceVoucherId: true } },
+      },
+    });
+    if (voucher === null) {
+      throw new NotFoundError('voucher');
+    }
+    if (voucher.status === 'CANCELLED') {
+      throw new BusinessRuleError(
+        'FEES_VOUCHER_CANCELLED',
+        'That voucher was cancelled. Nothing is owed on it.',
+      );
+    }
+
+    // The vouchers this one carries, re-read rather than trusted. The parent
+    // may have paid September at the counter since October was printed, and
+    // settling it twice would take money for a debt already cleared.
+    const carried =
+      voucher.arrears.length === 0
+        ? []
+        : await tx.feeVoucher.findMany({
+            where: {
+              id: { in: voucher.arrears.map((arrear) => arrear.sourceVoucherId) },
+              status: { in: ['UNPAID', 'PARTIALLY_PAID'] },
+            },
+            orderBy: { dueDate: 'asc' },
+            select: { id: true, netPayable: true, paidAmount: true },
+          });
+
+    const arrearsOutstanding = carried.reduce(
+      (sum, source) =>
+        sum + decimalToMinor(source.netPayable) - decimalToMinor(source.paidAmount),
+      0,
+    );
+
+    // Paying after the due date (plus any grace days) owes the surcharge, and
+    // at that point it becomes a real charge on this voucher rather than a
+    // number in a box.
+    const school = await tx.school.findFirst({
+      select: { lateFeeGraceDays: true },
+    });
+    const graceDays = school?.lateFeeGraceDays ?? 0;
+    const lateFrom = new Date(voucher.dueDate);
+    lateFrom.setUTCDate(lateFrom.getUTCDate() + graceDays);
+    const paidLate = new Date(input.paidOn) > lateFrom;
+    // A second, part payment must not raise the surcharge again: once the
+    // LATE_FEE line exists it is already inside `netPayable`.
+    const alreadyCharged =
+      (await tx.feeVoucherLine.count({ where: { voucherId: id, kind: 'LATE_FEE' } })) > 0;
+    const lateFee = paidLate && !alreadyCharged ? decimalToMinor(voucher.lateFeeAmount) : 0;
+
+    if (lateFee > 0) {
+      await tx.feeVoucherLine.create({
+        data: {
+          voucherId: id,
+          kind: 'LATE_FEE',
+          label: 'Late payment surcharge',
+          amount: toDecimalString(minorUnits(lateFee)),
+          sortOrder: 900,
+        } as never,
+      });
+      // Raised on gross as well as payable, so `net = gross - discount -
+      // waiver` still holds. The database refuses anything else.
+      await tx.feeVoucher.update({
         where: { id },
-        select: {
-          id: true,
-          studentId: true,
-          status: true,
-          grossAmount: true,
-          netPayable: true,
-          paidAmount: true,
-          dueDate: true,
-          lateFeeAmount: true,
-          arrears: { select: { sourceVoucherId: true } },
+        data: {
+          grossAmount: toDecimalString(minorUnits(decimalToMinor(voucher.grossAmount) + lateFee)),
+          netPayable: toDecimalString(minorUnits(decimalToMinor(voucher.netPayable) + lateFee)),
         },
       });
-      if (voucher === null) {
-        throw new NotFoundError('voucher');
-      }
-      if (voucher.status === 'CANCELLED') {
-        throw new BusinessRuleError(
-          'FEES_VOUCHER_CANCELLED',
-          'That voucher was cancelled. Nothing is owed on it.',
-        );
-      }
+    }
 
-      // The vouchers this one carries, re-read rather than trusted. The parent
-      // may have paid September at the counter since October was printed, and
-      // settling it twice would take money for a debt already cleared.
-      const carried =
-        voucher.arrears.length === 0
-          ? []
-          : await tx.feeVoucher.findMany({
-              where: {
-                id: { in: voucher.arrears.map((arrear) => arrear.sourceVoucherId) },
-                status: { in: ['UNPAID', 'PARTIALLY_PAID'] },
-              },
-              orderBy: { dueDate: 'asc' },
-              select: { id: true, netPayable: true, paidAmount: true },
-            });
-
-      const arrearsOutstanding = carried.reduce(
-        (sum, source) =>
-          sum + decimalToMinor(source.netPayable) - decimalToMinor(source.paidAmount),
-        0,
+    const ownBalance =
+      decimalToMinor(voucher.netPayable) + lateFee - decimalToMinor(voucher.paidAmount);
+    if (ownBalance + arrearsOutstanding <= 0) {
+      throw new BusinessRuleError(
+        'FEES_VOUCHER_ALREADY_PAID',
+        'That voucher is already settled.',
       );
+    }
 
-      // Paying after the due date (plus any grace days) owes the surcharge, and
-      // at that point it becomes a real charge on this voucher rather than a
-      // number in a box.
-      const school = await tx.school.findFirst({
-        select: { lateFeeGraceDays: true },
-      });
-      const graceDays = school?.lateFeeGraceDays ?? 0;
-      const lateFrom = new Date(voucher.dueDate);
-      lateFrom.setUTCDate(lateFrom.getUTCDate() + graceDays);
-      const paidLate = new Date(input.paidOn) > lateFrom;
-      const lateFee = paidLate ? decimalToMinor(voucher.lateFeeAmount) : 0;
+    const due = ownBalance + arrearsOutstanding;
+    const amount = input.amountMinor ?? due;
 
-      if (lateFee > 0) {
-        await tx.feeVoucherLine.create({
-          data: {
-            voucherId: id,
-            kind: 'LATE_FEE',
-            label: 'Late payment surcharge',
-            amount: toDecimalString(minorUnits(lateFee)),
-            sortOrder: 900,
-          } as never,
-        });
-        // Raised on gross as well as payable, so `net = gross - discount -
-        // waiver` still holds. The database refuses anything else.
-        await tx.feeVoucher.update({
-          where: { id },
-          data: {
-            grossAmount: toDecimalString(minorUnits(decimalToMinor(voucher.grossAmount) + lateFee)),
-            netPayable: toDecimalString(minorUnits(decimalToMinor(voucher.netPayable) + lateFee)),
-          },
-        });
-      }
+    if (amount > due) {
+      throw new BusinessRuleError(
+        'FEES_PAYMENT_EXCEEDS_BALANCE',
+        `That is more than the ${formatRupees(due)} outstanding. Overpayment is not recorded here.`,
+      );
+    }
 
-      const ownBalance =
-        decimalToMinor(voucher.netPayable) + lateFee - decimalToMinor(voucher.paidAmount);
-      if (ownBalance + arrearsOutstanding <= 0) {
-        throw new BusinessRuleError(
-          'FEES_VOUCHER_ALREADY_PAID',
-          'That voucher is already settled.',
-        );
-      }
-
-      const due = ownBalance + arrearsOutstanding;
-      const amount = input.amountMinor ?? due;
-
-      if (amount > due) {
-        throw new BusinessRuleError(
-          'FEES_PAYMENT_EXCEEDS_BALANCE',
-          `That is more than the ${formatRupees(due)} outstanding. Overpayment is not recorded here.`,
-        );
-      }
-
-      const receiptNo = await nextReceiptNo(tx);
-      const payment = await tx.feePayment.create({
-        data: {
-          studentId: voucher.studentId,
-          receiptNo,
-          amount: toDecimalString(minorUnits(amount)),
-          method: input.method,
-          paidOn: new Date(input.paidOn),
-          idempotencyKey: input.idempotencyKey,
-          ...(input.reference === undefined ? {} : { reference: input.reference }),
-          ...(actorId === undefined ? {} : { createdBy: actorId }),
-        } as never,
-        select: { id: true },
-      });
-
-      /**
-       * Oldest first, across the vouchers this one carries, then whatever is
-       * left to the voucher in hand — docs §7, "allocation is oldest-first".
-       *
-       * A part payment therefore closes September before it touches October,
-       * which is both what an accountant expects and what stops the oldest
-       * debt ageing indefinitely while newer ones are settled.
-       */
-      let remaining = amount;
-
-      for (const source of carried) {
-        if (remaining <= 0) {
-          break;
-        }
-        const owed = decimalToMinor(source.netPayable) - decimalToMinor(source.paidAmount);
-        if (owed <= 0) {
-          continue;
-        }
-        const applied = Math.min(owed, remaining);
-        await this.applyToVoucher(tx, payment.id, source.id, applied);
-        remaining -= applied;
-      }
-
-      if (remaining > 0) {
-        await this.applyToVoucher(tx, payment.id, id, Math.min(remaining, ownBalance));
-      }
+    const receiptNo = await nextReceiptNo(tx);
+    const payment = await tx.feePayment.create({
+      data: {
+        studentId: voucher.studentId,
+        receiptNo,
+        amount: toDecimalString(minorUnits(amount)),
+        method: input.method,
+        paidOn: new Date(input.paidOn),
+        idempotencyKey: input.idempotencyKey,
+        ...(input.reference === undefined ? {} : { reference: input.reference }),
+        ...(actorId === undefined ? {} : { createdBy: actorId }),
+      } as never,
+      select: { id: true },
     });
 
-    return this.detail(id);
+    /**
+     * Oldest first, across the vouchers this one carries, then whatever is
+     * left to the voucher in hand — docs §7, "allocation is oldest-first".
+     *
+     * A part payment therefore closes September before it touches October,
+     * which is both what an accountant expects and what stops the oldest
+     * debt ageing indefinitely while newer ones are settled.
+     */
+    let remaining = amount;
+
+    for (const source of carried) {
+      if (remaining <= 0) {
+        break;
+      }
+      const owed = decimalToMinor(source.netPayable) - decimalToMinor(source.paidAmount);
+      if (owed <= 0) {
+        continue;
+      }
+      const applied = Math.min(owed, remaining);
+      await this.applyToVoucher(tx, payment.id, source.id, applied);
+      remaining -= applied;
+    }
+
+    if (remaining > 0) {
+      await this.applyToVoucher(tx, payment.id, id, Math.min(remaining, ownBalance));
+    }
+
+    return amount;
   }
 
   /**
@@ -1430,12 +1521,27 @@ async function agreedAmountFor(
   };
 }
 
-async function recomputeLateFee(tx: TransactionClient, netMinor: number): Promise<number> {
+async function recomputeLateFee(tx: TransactionClient, voucherId: string): Promise<number> {
   const school = await tx.school.findFirstOrThrow({
     select: { lateFeePercent: true, lateFeeFlat: true },
   });
+  const [lines, heads] = await Promise.all([
+    tx.feeVoucherLine.findMany({
+      where: { voucherId, kind: 'FEE' },
+      select: { feeHeadId: true, amount: true, discount: true },
+    }),
+    tx.feeHead.findMany({ where: { lateFeeApplies: true }, select: { id: true } }),
+  ]);
+  const base = lateFeeBaseMinor(
+    lines.map((line) => ({
+      feeHeadId: line.feeHeadId,
+      amountMinor: decimalToMinor(line.amount),
+      discountMinor: decimalToMinor(line.discount),
+    })),
+    new Set(heads.map((head) => head.id)),
+  );
   return computeLateFee(
-    netMinor,
+    base,
     fromDecimalString(school.lateFeePercent.toFixed(2)),
     fromDecimalString(school.lateFeeFlat.toFixed(2)),
   );
@@ -1488,4 +1594,23 @@ function isoDate(value: Date): string {
 
 function formatRupees(minor: number): string {
   return `PKR ${(minor / 100).toLocaleString('en-PK', { minimumFractionDigits: 0 })}`;
+}
+
+/**
+ * Whether a failure belongs to one voucher in a bulk payment — and so skips it —
+ * or to the whole run. Only the voucher's own state is a skip.
+ */
+function bulkPaySkipReason(error: unknown): BulkPaySkipReason | undefined {
+  if (error instanceof NotFoundError) {
+    return 'NOT_FOUND';
+  }
+  if (error instanceof BusinessRuleError) {
+    if (error.code === 'FEES_VOUCHER_ALREADY_PAID') {
+      return 'ALREADY_PAID';
+    }
+    if (error.code === 'FEES_VOUCHER_CANCELLED') {
+      return 'CANCELLED';
+    }
+  }
+  return undefined;
 }

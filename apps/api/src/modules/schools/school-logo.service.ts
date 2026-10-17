@@ -1,4 +1,9 @@
-import { type AssetKind, type SchoolLogoInfo, type UploadSchoolLogo } from '@ilm/contracts';
+import {
+  type AssetKind,
+  type BankLogo,
+  type SchoolLogoInfo,
+  type UploadSchoolLogo,
+} from '@ilm/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../prisma/prisma.service';
@@ -47,10 +52,10 @@ export class SchoolLogoService {
   ) {}
 
   /** What the portal needs to decide whether to render an `<img>` at all. */
-  async info(kind: AssetKind): Promise<SchoolLogoInfo> {
+  async info(kind: AssetKind, slot = 0): Promise<SchoolLogoInfo> {
     return this.prisma.tenant(async (tx) => {
       const logo = await tx.schoolLogo.findFirst({
-        where: { kind: toColumn(kind) },
+        where: { kind: toColumn(kind), slot },
         // Deliberately not selecting `bytes`: this is called on page loads and
         // the whole point of the separate table is that the image does not ride
         // along with questions about it.
@@ -70,6 +75,18 @@ export class SchoolLogoService {
     });
   }
 
+  /** Every filled bank-logo slot, in print order. */
+  async listBank(): Promise<BankLogo[]> {
+    return this.prisma.tenant(async (tx) => {
+      const rows = await tx.schoolLogo.findMany({
+        where: { kind: 'BANK' },
+        select: { slot: true, etag: true },
+        orderBy: { slot: 'asc' },
+      });
+      return rows.map((row) => ({ slot: row.slot, version: row.etag }));
+    });
+  }
+
   /**
    * Where the image is, for the endpoint that serves it.
    *
@@ -77,10 +94,13 @@ export class SchoolLogoService {
    * what is configured now. A deployment that turned Cloudinary on last week
    * still serves everything uploaded before it.
    */
-  async locate(kind: AssetKind): Promise<AssetLocation & { mimeType: string; etag: string }> {
+  async locate(
+    kind: AssetKind,
+    slot = 0,
+  ): Promise<AssetLocation & { mimeType: string; etag: string }> {
     const row = await this.prisma.tenant(async (tx) =>
       tx.schoolLogo.findFirst({
-        where: { kind: toColumn(kind) },
+        where: { kind: toColumn(kind), slot },
         select: {
           bytes: true,
           mimeType: true,
@@ -120,7 +140,7 @@ export class SchoolLogoService {
   }
 
   /** Upload, or replace what is there. */
-  async replace(kind: AssetKind, input: UploadSchoolLogo): Promise<SchoolLogoInfo> {
+  async replace(kind: AssetKind, input: UploadSchoolLogo, slot = 0): Promise<SchoolLogoInfo> {
     const image = verifyImage(kind, input);
     const schoolId = this.context.schoolId;
 
@@ -133,6 +153,7 @@ export class SchoolLogoService {
     const stored = await this.storage.put({
       kind,
       schoolId,
+      slot,
       bytes: image.bytes,
       mimeType: image.mimeType,
       etag: image.etag,
@@ -157,10 +178,11 @@ export class SchoolLogoService {
 
     await this.prisma.tenant(async (tx) => {
       await tx.schoolLogo.upsert({
-        where: { schoolId_kind: { schoolId, kind: toColumn(kind) } },
+        where: { schoolId_kind_slot: { schoolId, kind: toColumn(kind), slot } },
         create: {
           schoolId,
           kind: toColumn(kind),
+          slot,
           ...data,
           ...(actorId === undefined ? {} : { createdBy: actorId }),
         } as never,
@@ -168,13 +190,13 @@ export class SchoolLogoService {
       });
     });
 
-    return this.info(kind);
+    return this.info(kind, slot);
   }
 
-  async remove(kind: AssetKind): Promise<void> {
+  async remove(kind: AssetKind, slot = 0): Promise<void> {
     const row = await this.prisma.tenant(async (tx) =>
       tx.schoolLogo.findFirst({
-        where: { kind: toColumn(kind) },
+        where: { kind: toColumn(kind), slot },
         select: { storageProvider: true, storageKey: true, storageUrl: true },
       }),
     );
@@ -199,7 +221,7 @@ export class SchoolLogoService {
     await this.prisma.tenant(async (tx) => {
       // `deleteMany`, so removing a logo a school does not have is not an
       // error — and so a row that vanished between the read and now is fine.
-      await tx.schoolLogo.deleteMany({ where: { kind: toColumn(kind) } });
+      await tx.schoolLogo.deleteMany({ where: { kind: toColumn(kind), slot } });
     });
   }
 }

@@ -41,6 +41,12 @@ export class LateFeePolicyService {
         throw new NotFoundError('school');
       }
 
+      const heads = await tx.feeHead.findMany({
+        where: { lateFeeApplies: true },
+        select: { id: true },
+        orderBy: { sortOrder: 'asc' },
+      });
+
       return {
         // `5.00` in the column is 5%, which is 500 basis points. Routed through
         // `fromDecimalString` rather than `Number()` so the conversion never
@@ -48,6 +54,7 @@ export class LateFeePolicyService {
         percentBasisPoints: fromDecimalString(school.lateFeePercent.toFixed(2)),
         flatMinor: minorUnits(fromDecimalString(school.lateFeeFlat.toFixed(2))),
         graceDays: school.lateFeeGraceDays,
+        feeHeadIds: heads.map((head) => head.id),
       };
     });
   }
@@ -67,6 +74,22 @@ export class LateFeePolicyService {
           lateFeeFlat: toDecimalString(minorUnits(input.flatMinor)),
           lateFeeGraceDays: input.graceDays,
         },
+      });
+
+      // Row-level security scopes both statements to this school, so the ids
+      // another school's Admin sent can never flip a head that is not ours.
+      const chosen = [...new Set(input.feeHeadIds)];
+      const found = await tx.feeHead.count({ where: { id: { in: chosen } } });
+      if (found !== chosen.length) {
+        throw new NotFoundError('fee');
+      }
+      await tx.feeHead.updateMany({
+        where: { id: { in: chosen }, lateFeeApplies: false },
+        data: { lateFeeApplies: true },
+      });
+      await tx.feeHead.updateMany({
+        where: { id: { notIn: chosen }, lateFeeApplies: true },
+        data: { lateFeeApplies: false },
       });
     });
 

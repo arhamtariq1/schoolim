@@ -55,6 +55,9 @@ export class VoucherSettingsService {
 
       const data = {
         showLogo: input.showLogo,
+        showBankLogos: input.showBankLogos,
+        showDates: input.showDates,
+        showStudentDetails: input.showStudentDetails,
         copyCount: input.copyCount,
         bankName: input.bankName,
         footerNote: input.footerNote,
@@ -99,6 +102,9 @@ export class VoucherSettingsService {
 
 const SELECTION = {
   showLogo: true,
+  showBankLogos: true,
+  showDates: true,
+  showStudentDetails: true,
   copyCount: true,
   bankName: true,
   footerNote: true,
@@ -112,6 +118,9 @@ const SELECTION = {
 
 function toSettings(row: {
   showLogo: boolean;
+  showBankLogos: boolean;
+  showDates: boolean;
+  showStudentDetails: boolean;
   copyCount: number;
   bankName: string | null;
   footerNote: string | null;

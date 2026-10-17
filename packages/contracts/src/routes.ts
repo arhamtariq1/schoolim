@@ -71,6 +71,10 @@ export const ROUTES = {
     signupCancel: `${API_PREFIX}/public/signup/cancel`,
     slugAvailable: `${API_PREFIX}/public/slug-available`,
   },
+  /** The home screen's data, shaped by the caller's role. */
+  dashboard: {
+    summary: `${API_PREFIX}/dashboard`,
+  },
   students: {
     list: `${API_PREFIX}/students`,
     create: `${API_PREFIX}/students`,
@@ -136,8 +140,13 @@ export const ROUTES = {
    * logo's URL — which appears on every page — was assembled at each call site.
    */
   bankLogo: {
+    /** Slot 0. Kept so a challan printed before slots existed still resolves. */
     image: `${API_PREFIX}/schools/bank-logo`,
     info: `${API_PREFIX}/schools/bank-logo/info`,
+    /** Every filled slot, in print order. */
+    list: `${API_PREFIX}/schools/bank-logos`,
+    /** One slot's image — GET serves it, PUT replaces it, DELETE clears it. */
+    slot: (slot: number) => `${API_PREFIX}/schools/bank-logos/${String(slot)}`,
   },
 
   /**
@@ -209,6 +218,8 @@ export const ROUTES = {
     cancel: (id: string) => `${API_PREFIX}/fee-vouchers/${id}/cancel`,
     /** Remove many at once, in one transaction, reporting what could not go. */
     bulkDelete: `${API_PREFIX}/fee-vouchers/bulk-delete`,
+    /** Settle many vouchers in full at once. Per-voucher results, never all-or-nothing. */
+    bulkPay: `${API_PREFIX}/fee-vouchers/bulk-payments`,
     /**
      * Just the ids behind a set of filters, for "select all matching".
      *
@@ -304,8 +315,15 @@ export const ROUTES = {
     invite: (id: string) => `${API_PREFIX}/staff/${id}/invite`,
     /** Month-by-month salary, paid and due. */
     salary: (id: string) => `${API_PREFIX}/staff/${id}/salary`,
-    /** Record one month's payment. Append-only. */
+    /** Record a payment (full or part) against a month's salary. Append-only. */
     salaryPayments: (id: string) => `${API_PREFIX}/staff/${id}/salary-payments`,
+    /** Add a bonus, allowance, deduction or manual adjustment to a month's salary. */
+    salaryAdjustments: (id: string) => `${API_PREFIX}/staff/${id}/salary-adjustments`,
+  },
+  /** The Salaries page: every person's salary for a month. */
+  staffSalaries: {
+    list: `${API_PREFIX}/staff-salaries`,
+    receipt: (paymentId: string) => `${API_PREFIX}/staff-salaries/payments/${paymentId}/receipt`,
   },
   marks: {
     subjects: `${API_PREFIX}/marks/subjects`,
@@ -333,6 +351,33 @@ export const ROUTES = {
     child: (id: string) => `${API_PREFIX}/parent/children/${id}`,
     attendance: (id: string) => `${API_PREFIX}/parent/children/${id}/attendance`,
     marks: (id: string) => `${API_PREFIX}/parent/children/${id}/marks`,
+  },
+  /**
+   * Requests and concerns (ADR-0016).
+   *
+   * The fixed paths (`summary`, `students`, `assignees`, `attachments/:id`) are
+   * declared ahead of `:id` in the controller so none can be read as an id.
+   */
+  requests: {
+    list: `${API_PREFIX}/requests`,
+    summary: `${API_PREFIX}/requests/summary`,
+    /** Children the caller may raise a request about. */
+    students: `${API_PREFIX}/requests/students`,
+    /** Staff a request can be assigned to. */
+    assignees: `${API_PREFIX}/requests/assignees`,
+    detail: (id: string) => `${API_PREFIX}/requests/${id}`,
+    status: (id: string) => `${API_PREFIX}/requests/${id}/status`,
+    assign: (id: string) => `${API_PREFIX}/requests/${id}/assign`,
+    /** POST one picture onto the event that raised the request. */
+    eventAttachments: (id: string, eventId: string) =>
+      `${API_PREFIX}/requests/${id}/events/${eventId}/attachments`,
+    /** GET serves the picture itself, so it can be an image source. */
+    attachment: (attachmentId: string) => `${API_PREFIX}/requests/attachments/${attachmentId}`,
+  },
+  /** The signed-in person's own notifications. */
+  notifications: {
+    list: `${API_PREFIX}/notifications`,
+    read: `${API_PREFIX}/notifications/read`,
   },
   health: `${API_PREFIX}/health`,
 

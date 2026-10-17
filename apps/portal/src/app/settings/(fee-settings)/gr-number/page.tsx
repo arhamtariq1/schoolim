@@ -22,14 +22,13 @@ export default async function GrNumberSettingsPage() {
   const result = await apiFetch<{ data: GrNumberSettings }>(ROUTES.school.grNumber);
 
   return (
-    <div className="w-full space-y-8">
+    <>
       <WorkspacePageHeader
-        title="GR numbers"
+        title="GR Number"
         description="Where the school’s General Register numbering starts. Each new admission receives the next number, and the same number is the student’s roll number."
       />
 
       <NumberStartForm
-        className="max-w-2xl"
         title="Starting GR number"
         noun="GR numbers"
         route={ROUTES.school.grNumber}
@@ -46,6 +45,6 @@ export default async function GrNumberSettingsPage() {
         }
         error={result.ok ? undefined : result.message}
       />
-    </div>
+    </>
   );
 }

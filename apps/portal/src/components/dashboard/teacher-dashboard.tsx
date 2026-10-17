@@ -1,7 +1,7 @@
-import type { SessionUser } from '@ilm/contracts';
+import type { SessionUser, TeacherDashboard as TeacherDashboardData } from '@ilm/contracts';
 import { Button, CardContent, CardDescription, CardHeader, CardTitle } from '@ilm/ui';
 import { AttendanceIcon, ClassIcon } from '@ilm/ui/icons';
-import { DEFAULT_TIMEZONE, systemClock } from '@ilm/utils';
+import { DEFAULT_TIMEZONE } from '@ilm/utils';
 import Link from 'next/link';
 
 import { DashboardAttendanceWeekChart } from '@/components/dashboard/dashboard-attendance-week-chart';
@@ -12,66 +12,32 @@ import {
 } from '@/components/dashboard/dashboard-header-band';
 import { DashboardMonthCalendar } from '@/components/dashboard/dashboard-month-calendar';
 import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
-import type { DashboardWeeklyAttendance } from '@/lib/dashboard-data';
+import { formatMinorCompact } from '@/components/dashboard/dashboard-chart-theme';
 import { withTenantPrefix } from '@/lib/tenant-mode';
 
 /**
  * The teacher's home — "Do my classes."
  *
- * ## Static, on purpose
- *
- * The salary, the attendance figures and the week's chart below are invented:
- * they have no summary endpoint behind them yet. **The classes and the student
- * head-count are real** — read from the attendance overview, which the API has
- * already narrowed to the teacher's own classes. When the remaining endpoints
- * exist, replace `TEACHER_DEMO`; nothing else here changes.
- *
- * There is deliberately no fee, voucher or admission widget: a teacher's home
- * must never show money or the school-wide picture.
+ * Everything here is read from the dashboard API, which has already narrowed it
+ * to the teacher's own classes and their own record. There is deliberately no
+ * fee, voucher or admission widget: a teacher's home must never show money or
+ * the school-wide picture.
  */
-
-const TEACHER_DEMO = {
-  /** Rupees, shown as a headline figure only. */
-  monthlySalaryLabel: 'Rs 45,000',
-  salaryNote: 'Paid on the 1st of every month',
-  attendanceTodayPercent: 94,
-  weeklyAttendance: [
-    { label: 'Mon', present: 134, absent: 6, leave: 2 },
-    { label: 'Tue', present: 137, absent: 4, leave: 1 },
-    { label: 'Wed', present: 131, absent: 8, leave: 3 },
-    { label: 'Thu', present: 139, absent: 2, leave: 1 },
-    { label: 'Fri', present: 133, absent: 7, leave: 2 },
-    { label: 'Sat', present: 128, absent: 10, leave: 4 },
-  ] satisfies DashboardWeeklyAttendance[],
-  events: [
-    { id: 'e1', date: '', title: 'Monthly test — Grade 5 Maths', time: '09:00' },
-  ],
-} as const;
-
-/** One of the teacher's own classes, read from the attendance overview. */
-export interface TeacherClassCard {
-  readonly classLevelId: string;
-  readonly name: string;
-  readonly students: number;
-  readonly presentToday: number;
-  /** False until somebody has taken today's register for the class. */
-  readonly markedToday: boolean;
-}
 
 export function TeacherDashboard({
   session,
   tenantSlug,
-  classes,
+  data,
 }: {
   session: SessionUser;
   tenantSlug: string | undefined;
-  /** Only the classes assigned to this teacher — the API never sends another. */
-  classes: readonly TeacherClassCard[];
+  /** Only this teacher's classes and record — the API never sends another. */
+  data: TeacherDashboardData;
 }) {
-  const demo = TEACHER_DEMO;
+  const classes = data.classes;
   const firstName = session.name.trim().split(/s+/)[0] ?? '';
   const greeting = timeBasedGreeting(firstName, session.school.timezone ?? DEFAULT_TIMEZONE);
-  const today = systemClock.now().toISOString().slice(0, 10);
+  const today = data.todayDate;
   // Tenant-aware, so the links also work when the portal runs in path mode.
   const hrefFor = (path: string): string => withTenantPrefix(path, tenantSlug);
 
@@ -85,7 +51,7 @@ export function TeacherDashboard({
       >
         <DashboardStatCard
           label="My students"
-          value={String(classes.reduce((sum, entry) => sum + entry.students, 0))}
+          value={String(data.studentCount)}
           description={
             classes.length === 0
               ? 'No classes assigned yet'
@@ -96,21 +62,30 @@ export function TeacherDashboard({
         />
         <DashboardStatCard
           label="Present today"
-          value={`${String(demo.attendanceTodayPercent)}%`}
-          description="Across all of my classes"
+          value={data.attendanceTodayPercent === null ? '—' : `${String(data.attendanceTodayPercent)}%`}
+          description={
+            data.attendanceTodayPercent === null
+              ? 'No register taken yet today'
+              : 'Across all of my classes'
+          }
           href={hrefFor('/attendance/mark/students')}
           icon="AttendanceIcon"
-          trend={{ label: '+2%', positive: true }}
         />
         <DashboardStatCard
           label="Monthly salary"
-          value={demo.monthlySalaryLabel}
-          description={demo.salaryNote}
+          value={data.monthlySalaryMinor === null ? '—' : formatMinorCompact(data.monthlySalaryMinor)}
+          description={
+            data.lastSalaryPaidOn === null ? 'No salary paid yet' : `Last paid ${data.lastSalaryPaidOn}`
+          }
           icon="FeesIcon"
         />
         <DashboardStatCard
           label="My attendance"
-          value="22 / 24"
+          value={
+            data.myAttendance === null || data.myAttendance.markedDays === 0
+              ? '—'
+              : `${String(data.myAttendance.presentDays)} / ${String(data.myAttendance.markedDays)}`
+          }
           description="Days present this month"
           href={hrefFor('/attendance/my')}
           icon="AccountIcon"
@@ -122,13 +97,13 @@ export function TeacherDashboard({
         className="grid w-full gap-3 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:items-stretch"
       >
         <div className="flex h-full min-w-0 w-full">
-          <DashboardAttendanceWeekChart weekly={[...demo.weeklyAttendance]} />
+          <DashboardAttendanceWeekChart weekly={data.weeklyAttendance} />
         </div>
         <div className="flex h-full min-w-0 w-full">
           <DashboardMonthCalendar
             today={today}
-            holidays={[]}
-            events={demo.events.map((event) => ({ ...event, date: today }))}
+            holidays={data.calendarHolidays}
+            events={data.upcomingEvents}
           />
         </div>
       </section>

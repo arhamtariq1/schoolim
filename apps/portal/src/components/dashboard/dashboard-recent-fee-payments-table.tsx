@@ -26,6 +26,7 @@ import { useMemo, type ReactNode } from 'react';
 import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
 import type { DashboardRecentFeePayment } from '@/lib/dashboard-data';
+import { DASHBOARD_RECENT_ROWS } from '@/lib/dashboard-limits';
 import { displayPhone } from '@/lib/phone-format';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
@@ -41,7 +42,7 @@ export function DashboardRecentFeePaymentsTable({
   const tenantHref = useTenantHref();
   const visibleRows = useMemo(
     () =>
-      [...rows].sort((a, b) => (a.paidOn < b.paidOn ? 1 : a.paidOn > b.paidOn ? -1 : 0)).slice(0, 8),
+      [...rows].sort((a, b) => (a.paidOn < b.paidOn ? 1 : a.paidOn > b.paidOn ? -1 : 0)).slice(0, DASHBOARD_RECENT_ROWS),
     [rows],
   );
 

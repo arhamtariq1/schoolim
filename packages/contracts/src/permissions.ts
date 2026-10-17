@@ -57,6 +57,8 @@ export const PERMISSIONS = [
   'finance.expense.create',
   'finance.expense.approve',
   'finance.report.read',
+  /** Revenue figures, charts and trends. The Admin (school owner) alone. */
+  'finance.revenue.read',
 
   // --- Attendance -----------------------------------------------------------
   'attendance.record.read',
@@ -94,6 +96,11 @@ export const PERMISSIONS = [
   // --- Workflow and communication -------------------------------------------
   'workflow.request.create',
   'workflow.request.approve',
+  /**
+   * Every request in the school: read, reply, assign, set status (ADR-0016).
+   * Raising one and reading your own is `workflow.request.create`, held by all.
+   */
+  'workflow.request.manage',
   'comms.message.create',
 
   // --- Settings and governance ----------------------------------------------

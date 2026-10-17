@@ -8,6 +8,7 @@ import {
   VOUCHER_STATUSES,
   VOUCHER_STATUS_LABELS,
   type AcademicSession,
+  type BankLogo,
   type ClassLevel,
   type FeeHead,
   type VoucherDetail,
@@ -74,21 +75,6 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 
-import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
-import {
-  FEE_LIST_SELECT_COLUMN,
-  FEE_LIST_TABLE_CELL,
-  classBadgeTone,
-  feeListSelectCheckboxWrap,
-  feeListSortableTableHeader,
-  feeListTableHeader,
-  splitStudentDisplayName,
-  useDebouncedSearchFilter,
-} from '@/components/fees/fee-list-shared';
-import { WorkspacePageHeader } from '@/components/workspace-page-header';
-import { formatInclusiveDateRange } from '@/lib/expense-date-range';
-import { nextSortParams } from '@/lib/list-page';
-import { pageIntro } from '@/lib/page-copy';
 
 function afterMenuAction(action: () => void): void {
   action();
@@ -108,9 +94,25 @@ import { VoucherBulkBar } from './voucher-bulk-bar';
 import { VoucherChallan } from './voucher-challan';
 import { VoucherEditDialog } from './voucher-edit-dialog';
 
+import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
+import {
+  FEE_LIST_SELECT_COLUMN,
+  FEE_LIST_TABLE_CELL,
+  classBadgeTone,
+  feeListSelectCheckboxWrap,
+  feeListSortableTableHeader,
+  feeListTableHeader,
+  splitStudentDisplayName,
+  useDebouncedSearchFilter,
+} from '@/components/fees/fee-list-shared';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { formatInclusiveDateRange } from '@/lib/expense-date-range';
+import { nextSortParams } from '@/lib/list-page';
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
+import { pageIntro } from '@/lib/page-copy';
 import { stashPrintSelection } from '@/lib/print-handoff';
+import { selectionScope, useScopedSelection } from '@/lib/use-scoped-selection';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 /** Matches app header search (`md:max-w-xl` in app-shell). */
@@ -160,7 +162,7 @@ export interface VouchersViewProps {
     address?: string | undefined;
     phone?: string | undefined;
     logoVersion?: string | undefined;
-    bankLogoVersion?: string | undefined;
+    bankLogos?: readonly BankLogo[] | undefined;
     accentColor?: string | undefined;
   };
   /** How this school’s challan is laid out. Defaults until they change it. */
@@ -207,7 +209,11 @@ export function VouchersView({
   const [previewing, setPreviewing] = useState<VoucherDetail | undefined>(undefined);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [editing, setEditing] = useState<VoucherSummary | undefined>(undefined);
-  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+  // Survives moving between pages — see use-scoped-selection for why useState cannot.
+  const [selected, setSelected] = useScopedSelection(
+    'fee-vouchers',
+    selectionScope(new URLSearchParams(params.toString())),
+  );
   const [rangeDraft, setRangeDraft] = useState({ from: filters.from, to: filters.to });
 
   useEffect(() => {
@@ -801,6 +807,7 @@ export function VouchersView({
           total > rows.length && total <= MAX_BULK_VOUCHERS ? selectAllMatching : undefined
         }
         canDelete={canCancel}
+        canCollect={canCollect}
       />
 
       <VoucherEditDialog

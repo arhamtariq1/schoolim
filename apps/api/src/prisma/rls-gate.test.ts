@@ -49,6 +49,8 @@ const MODEL_TO_TABLE: Readonly<Record<string, string>> = {
   Staff: 'staff',
   StaffClassAssignment: 'staff_class_assignments',
   StaffSalaryPayment: 'staff_salary_payments',
+  StaffSalaryPeriod: 'staff_salary_periods',
+  StaffSalaryAdjustment: 'staff_salary_adjustments',
   Subject: 'subjects',
   AssessmentType: 'assessment_types',
   ClassSubject: 'class_subjects',
@@ -71,6 +73,10 @@ const MODEL_TO_TABLE: Readonly<Record<string, string>> = {
   SchoolLogo: 'school_logos',
   SchoolVoucherSettings: 'school_voucher_settings',
   NumberSequence: 'number_sequences',
+  Request: 'requests',
+  RequestEvent: 'request_events',
+  RequestAttachment: 'request_attachments',
+  Notification: 'notifications',
 };
 
 const tenantTables = TENANT_MODELS.map((model) => {

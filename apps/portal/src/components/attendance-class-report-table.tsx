@@ -309,7 +309,7 @@ export function AttendanceClassReportTable({
                 primary={row.className}
                 secondary={`${meta.levelLabel} · ${String(row.strength)} students`}
               />
-              <div className="text-end">
+              <div className="text-start">
                 {pct < 0 ? (
                   <StatusBadge tone="warning" size="sm">
                     Not marked
@@ -362,7 +362,7 @@ function StatCount({
   const dot =
     tone === 'success' ? 'bg-success' : tone === 'danger' ? 'bg-danger' : 'bg-warning';
   return (
-    <span className="inline-flex w-full items-center justify-end gap-1.5 font-mono tabular-nums text-foreground">
+    <span className="inline-flex w-full items-center justify-start gap-1.5 font-mono tabular-nums text-foreground">
       <span className={cn('size-2 shrink-0 rounded-full', dot)} aria-hidden="true" />
       {value}
     </span>

@@ -1,6 +1,7 @@
 import {
   DEFAULT_VOUCHER_SETTINGS,
   ROUTES,
+  type BankLogo,
   type SchoolLogoInfo,
   type SchoolSettings,
   type VoucherSettings,
@@ -36,7 +37,7 @@ export default async function PrintVouchersPage() {
     apiFetch<{ data: SchoolSettings }>(ROUTES.school.settings),
     apiFetch<{ data: VoucherSettings }>(ROUTES.school.voucherSettings),
     apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info),
-    apiFetch<{ data: SchoolLogoInfo }>(ROUTES.bankLogo.info),
+    apiFetch<{ data: BankLogo[] }>(ROUTES.bankLogo.list),
   ]);
 
   const school = schoolResult.ok ? schoolResult.data.data : undefined;
@@ -44,7 +45,6 @@ export default async function PrintVouchersPage() {
     ? voucherResult.data.data
     : DEFAULT_VOUCHER_SETTINGS;
   const logo = logoResult.ok ? logoResult.data.data : undefined;
-  const bankLogo = bankLogoResult.ok ? bankLogoResult.data.data : undefined;
 
   return (
     <ChallanPrintView
@@ -55,7 +55,7 @@ export default async function PrintVouchersPage() {
         // Undefined when the school has never uploaded one, which is what
         // makes the challan leave the space out rather than print a gap.
         logoVersion: logo?.present === true ? (logo.version ?? '') : undefined,
-        bankLogoVersion: bankLogo?.present === true ? (bankLogo.version ?? '') : undefined,
+        bankLogos: bankLogoResult.ok ? bankLogoResult.data.data : [],
         accentColor: school?.primaryColor ?? undefined,
       }}
       settings={settings}

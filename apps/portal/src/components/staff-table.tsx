@@ -51,6 +51,7 @@ import { TableSelectionBar } from '@/components/table-selection-bar';
 import { useDebouncedSearchFilter } from '@/components/fees/fee-list-shared';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
 import { nextSortParams } from '@/lib/list-page';
+import { GENDER_TONE, STAFF_ROLE_TONE } from '@/lib/staff-badge-tones';
 import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
 import { StaffDialog } from '@/components/staff-dialog';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
@@ -251,7 +252,7 @@ export function StaffTable({
         icon: StudentsIcon,
         width: 'w-[12%]',
         sortable: true,
-        render: (row) => <StatusBadge tone="info">{STAFF_ROLE_LABELS[row.role]}</StatusBadge>,
+        render: (row) => <StatusBadge tone={STAFF_ROLE_TONE[row.role]}>{STAFF_ROLE_LABELS[row.role]}</StatusBadge>,
       },
       {
         key: 'status',
@@ -270,7 +271,7 @@ export function StaffTable({
           row.gender === null ? (
             <span className="text-sm text-muted-foreground">—</span>
           ) : (
-            <StatusBadge tone="warning">
+            <StatusBadge tone={GENDER_TONE[row.gender as 'MALE' | 'FEMALE' | 'OTHER']}>
               {row.gender.charAt(0) + row.gender.slice(1).toLowerCase()}
             </StatusBadge>
           ),

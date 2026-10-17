@@ -1,14 +1,14 @@
 import {
   DEFAULT_VOUCHER_SETTINGS,
   ROUTES,
+  type BankLogo,
   type VoucherNumberSettings,
   type SchoolLogoInfo,
   type SchoolSettings,
   type VoucherSettings,
 } from '@ilm/contracts';
 
-import { NumberStartForm } from '@/components/number-start-form';
-import { SchoolLogoCard } from '@/components/school-logo-card';
+import { BankLogosCard } from '@/components/bank-logos-card';
 import { VoucherSettingsForm } from '@/components/voucher-settings-form';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
 import { apiFetch } from '@/lib/api';
@@ -33,7 +33,7 @@ export default async function VoucherSettingsPage() {
     apiFetch<{ data: VoucherSettings }>(ROUTES.school.voucherSettings),
     apiFetch<{ data: SchoolSettings }>(ROUTES.school.settings),
     apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info),
-    apiFetch<{ data: SchoolLogoInfo }>(ROUTES.bankLogo.info),
+    apiFetch<{ data: BankLogo[] }>(ROUTES.bankLogo.list),
     apiFetch<{ data: VoucherNumberSettings }>(ROUTES.school.voucherNumber),
   ]);
 
@@ -46,37 +46,13 @@ export default async function VoucherSettingsPage() {
 
   const school = schoolResult.ok ? schoolResult.data.data : undefined;
   const logoVersion = logoResult.ok ? logoResult.data.data.version : null;
-  const bankLogo: SchoolLogoInfo = bankLogoResult.ok
-    ? bankLogoResult.data.data
-    : { present: false, mimeType: null, byteSize: null, version: null };
-
+  const bankLogos: BankLogo[] = bankLogoResult.ok ? bankLogoResult.data.data : [];
   return (
-    <div className="w-full space-y-8">
+    <>
       <WorkspacePageHeader
         title="Voucher Settings"
-        description="Where voucher numbering starts, what every printed voucher says, and how a parent pays it. Layout changes apply to vouchers printed from now on — one already in a parent’s hand is unaffected."
+        description="Where voucher numbering starts and what every printed voucher says. Layout changes apply to vouchers printed from now on — one already in a parent’s hand is unaffected."
       />
-
-      {canConfigure ? (
-        <NumberStartForm
-          className="max-w-2xl"
-          title="Starting voucher number"
-          noun="voucher numbers"
-          route={ROUTES.school.voucherNumber}
-          example="FV-000001"
-          kind="voucher"
-          settings={
-            numberResult.ok
-              ? {
-                  configured: numberResult.data.data.configured,
-                  next: numberResult.data.data.nextVoucherNo,
-                  highestIssued: numberResult.data.data.highestIssued,
-                }
-              : undefined
-          }
-          error={numberResult.ok ? undefined : numberResult.message}
-        />
-      ) : null}
 
       <VoucherSettingsForm
         settings={settings}
@@ -87,7 +63,7 @@ export default async function VoucherSettingsPage() {
           address: school?.address ?? undefined,
           phone: school?.phone ?? undefined,
           logoVersion: logoVersion ?? undefined,
-          bankLogoVersion: bankLogo.version ?? undefined,
+          bankLogos,
           // The challan is inked in the school's own colour, the same one the
           // portal is painted in.
           accentColor: school?.primaryColor ?? session?.school.primaryColor ?? undefined,
@@ -95,17 +71,27 @@ export default async function VoucherSettingsPage() {
         canConfigure={canConfigure}
         error={voucherResult.ok ? undefined : voucherResult.message}
         bankLogoSlot={
-          <SchoolLogoCard
-            info={bankLogo}
+          <BankLogosCard
+            logos={bankLogos}
             canConfigure={canConfigure}
-            imageRoute={ROUTES.bankLogo.image}
-            title="Bank logo"
-            description="Printed at the foot of every copy, beside the bank’s name. Optional — a school that collects at its own office needs neither."
-            noun="Bank logo"
             error={bankLogoResult.ok ? undefined : bankLogoResult.message}
           />
         }
+        // Numbering is edited here only by someone who may change it; a viewer
+        // sees the challan settings without a counter they cannot touch.
+        numbering={
+          canConfigure && numberResult.ok
+            ? {
+                configured: numberResult.data.data.configured,
+                next: numberResult.data.data.nextVoucherNo,
+                highestIssued: numberResult.data.data.highestIssued,
+              }
+            : canConfigure
+              ? { configured: false, next: null, highestIssued: null }
+              : undefined
+        }
+        numberingError={canConfigure && !numberResult.ok ? numberResult.message : undefined}
       />
-    </div>
+    </>
   );
 }

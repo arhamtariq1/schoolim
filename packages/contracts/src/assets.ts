@@ -84,6 +84,19 @@ export const ASSET_KINDS = {
     folder: 'bank-logo',
     label: 'bank logo',
   },
+  REQUEST_ATTACHMENT: {
+    // A phone photograph is shrunk in the browser to fit; this is the ceiling
+    // the server holds it to, and it keeps the base64 body well inside the
+    // API's request-size limit.
+    maxBytes: 512 * 1024,
+    mimeTypes: IMAGE_MIME_TYPES,
+    // A picture of a document or a child's injury, sent to the school. Private
+    // means it is routed to the database whatever storage is configured, and
+    // can never be put behind a public CDN address.
+    visibility: 'private',
+    folder: 'request-attachment',
+    label: 'attachment',
+  },
 } as const satisfies Record<string, AssetRules>;
 
 export type AssetKind = keyof typeof ASSET_KINDS;

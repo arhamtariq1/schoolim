@@ -42,6 +42,9 @@ export const TENANT_MODELS = [
   'StaffClassAssignment',
   /** Salary paid per month. Append-only: the app role cannot UPDATE or DELETE. */
   'StaffSalaryPayment',
+  /** One monthly salary record per staff member, and its adjustments. Append-only. */
+  'StaffSalaryPeriod',
+  'StaffSalaryAdjustment',
   /** Marks: subjects, tests and exams, and per-student results. */
   'Subject',
   'AssessmentType',
@@ -70,6 +73,12 @@ export const TENANT_MODELS = [
   'SchoolLogo',
   'SchoolVoucherSettings',
   'NumberSequence',
+  /** ADR-0016: parent and teacher concerns, their append-only timeline and pictures. */
+  'Request',
+  'RequestEvent',
+  'RequestAttachment',
+  /** The header bell: a pointer to something that happened, for one user. */
+  'Notification',
 ] as const;
 
 export type TenantModel = (typeof TENANT_MODELS)[number];

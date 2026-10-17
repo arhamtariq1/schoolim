@@ -38,7 +38,7 @@ export function ProfileForm({
   const tenantHref = useTenantHref();
   const [name, setName] = useState(initial?.name ?? '');
   const [phone, setPhone] = useState(displayPhone(initial?.phone ?? ''));
-  const [designation, setDesignation] = useState(initial?.designation ?? '');
+  const designation = initial?.designation ?? '';
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isPending, setIsPending] = useState(false);
 
@@ -121,7 +121,7 @@ export function ProfileForm({
         description={
           mode === 'create'
             ? 'Your account details as they appear across the school portal.'
-            : 'Update your name, phone or designation.'
+            : 'Update your name or phone.'
         }
       >
         <ProfilePersonFields
@@ -134,13 +134,6 @@ export function ProfileForm({
           onPhoneChange={(value) => {
             setPhone(phoneDigits(value));
             setFieldErrors((current) => withoutFieldErrors(current, 'phone', 'person.phone'));
-          }}
-          designation={designation}
-          onDesignationChange={(value) => {
-            setDesignation(value);
-            setFieldErrors((current) =>
-              withoutFieldErrors(current, 'designation', 'person.designation'),
-            );
           }}
           email={initial?.email}
           fieldErrors={fieldErrors}

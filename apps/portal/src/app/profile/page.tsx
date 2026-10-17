@@ -1,4 +1,4 @@
-import { ROUTES, type UserProfile } from '@ilm/contracts';
+import { ROUTES, SCHOOL_ROLE_LABELS, type UserProfile } from '@ilm/contracts';
 
 import { ProfilePageLayout } from '@/components/profile-page-layout';
 import { ProfileWorkspaceEditor } from '@/components/profile-workspace-editor';
@@ -15,7 +15,7 @@ export default async function ProfilePage() {
     loadProfileSchoolWorkspace(),
   ]);
 
-  const roleLabel = session?.roles.join(', ') ?? '';
+  const roleLabel = [...new Set((session?.roles ?? []).map((role) => SCHOOL_ROLE_LABELS[role]))].join(', ');
 
   return (
     <ProfilePageLayout title="Profile" description={PROFILE_DESCRIPTION}>

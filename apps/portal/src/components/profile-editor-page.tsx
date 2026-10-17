@@ -1,8 +1,7 @@
-import { ROUTES, type UserProfile } from '@ilm/contracts';
+import { ROUTES, SCHOOL_ROLE_LABELS, type UserProfile } from '@ilm/contracts';
 
 import { OnboardingForm } from '@/components/onboarding-form';
 import { ProfilePageLayout } from '@/components/profile-page-layout';
-import { ProfileSchoolBranding } from '@/components/profile-school-branding';
 import { ProfileWorkspaceEditor } from '@/components/profile-workspace-editor';
 import { apiFetch } from '@/lib/api';
 import { loadProfileSchoolWorkspace } from '@/lib/profile-school-workspace';
@@ -23,7 +22,7 @@ export async function ProfileEditorPage({ mode }: { mode: 'setup' | 'edit' }) {
 
   const profile = profileResult.data.data;
   const needsSchoolSetup = mode === 'setup' && !profile.school.onboarded;
-  const roleLabel = session?.roles.join(', ') ?? '';
+  const roleLabel = [...new Set((session?.roles ?? []).map((role) => SCHOOL_ROLE_LABELS[role]))].join(', ');
 
   return (
     <ProfilePageLayout
@@ -42,9 +41,7 @@ export async function ProfileEditorPage({ mode }: { mode: 'setup' | 'edit' }) {
           profile={profile}
           workspace={workspace}
           roleLabel={roleLabel}
-        >
-          {mode === 'edit' ? <ProfileSchoolBranding workspace={workspace} /> : null}
-        </ProfileWorkspaceEditor>
+        />
       )}
     </ProfilePageLayout>
   );

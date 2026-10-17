@@ -31,6 +31,8 @@ import {
   showFormValidationToast,
   showNetworkErrorToast,
 } from '@/lib/form-validation';
+import { PhoneInput } from '@/components/phone-input';
+import { livePhoneError, phoneInputError } from '@/lib/phone-format';
 import { clearSignupDraft } from '@/lib/signup-draft';
 import { TENANT_MODE } from '@/lib/tenant-mode';
 
@@ -113,8 +115,13 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
       ...(logo === undefined ? {} : { logo }),
     });
 
-    if (!parsed.success) {
-      setFieldErrors(fieldErrorsFromZod(parsed.error));
+    const phoneError = phoneInputError(schoolPhone);
+
+    if (!parsed.success || phoneError !== undefined) {
+      setFieldErrors({
+        ...(parsed.success ? {} : fieldErrorsFromZod(parsed.error)),
+        ...(phoneError === undefined ? {} : { 'school.phone': phoneError }),
+      });
       showFormValidationToast(toast);
       return;
     }
@@ -240,22 +247,12 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
 
           <Field
             label="School phone"
-            error={fieldErrors['school.phone']}
-            hint="Include the country code, or start with 0 and we will add +92."
+            error={fieldErrors['school.phone'] ?? livePhoneError(schoolPhone)}
+            hint="Digits only, starting with 03 or 02."
             required
             leadingIcon={PhoneIcon}
           >
-            <Input
-              name="schoolPhone"
-              type="tel"
-              autoComplete="tel"
-              inputMode="tel"
-              placeholder="+92 300 1234567"
-              value={schoolPhone}
-              onChange={(event) => {
-                setSchoolPhone(event.target.value);
-              }}
-            />
+            <PhoneInput name="schoolPhone" value={schoolPhone} onValueChange={setSchoolPhone} />
           </Field>
         </div>
 

@@ -202,9 +202,7 @@ export function DataTable<TRow>({
                   scope="col"
                   className={cn(
                     frame === 'plain' ? 'px-4 py-3' : 'px-3 py-2',
-                    'text-xs font-medium whitespace-nowrap',
-                    frame === 'plain' ? 'text-foreground' : 'text-muted-foreground',
-                    column.align === 'end' ? 'text-end' : 'text-start',
+                    'text-start text-xs font-semibold whitespace-nowrap text-foreground',
                   )}
                 >
                   {column.header}
@@ -263,7 +261,7 @@ export function DataTable<TRow>({
                         key={column.key}
                         className={cn(
                           frame === 'plain' ? 'px-4 py-3' : 'px-3 py-2',
-                          column.align === 'end' ? 'text-end' : 'text-start',
+                          'text-start',
                         )}
                       >
                         {column.render(row)}

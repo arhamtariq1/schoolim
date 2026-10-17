@@ -3,9 +3,10 @@
 import { Command as CommandPrimitive } from 'cmdk';
 import { useMemo, useState } from 'react';
 
-import { ApproveIcon, ChevronDownIcon, CloseIcon } from '../icons';
+import { ChevronDownIcon, CloseIcon } from '../icons';
 import { cn } from '../lib/cn';
 
+import { Checkbox } from './checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
 export interface MultiSelectOption {
@@ -98,7 +99,9 @@ export function MultiSelect({
             >
               {selected.length === 0
                 ? placeholder
-                : `${String(selected.length)} ${selected.length === 1 ? 'class' : 'classes'} selected`}
+                : selected.length <= 2
+                  ? selected.map((option) => option.label).join(', ')
+                  : `${String(selected.length)} classes selected`}
             </span>
             <ChevronDownIcon className="size-4 shrink-0 opacity-60" aria-hidden="true" />
           </button>
@@ -120,7 +123,20 @@ export function MultiSelect({
                 className="h-9 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>
-            <CommandPrimitive.List className="overflow-y-auto p-1">
+            <CommandPrimitive.List
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1"
+              // Inside a modal dialog the popover is portalled outside the
+              // dialog, so the dialog's scroll lock swallows the wheel and the
+              // list cannot move. Stopping the event at the list keeps it from
+              // reaching that lock, and `overscroll-contain` keeps the end of
+              // the list from scrolling the dialog behind it.
+              onWheel={(event) => {
+                event.stopPropagation();
+              }}
+              onTouchMove={(event) => {
+                event.stopPropagation();
+              }}
+            >
               {filtered.length === 0 ? (
                 <CommandPrimitive.Empty className="px-2 py-6 text-center text-sm text-muted-foreground">
                   {emptyMessage}
@@ -138,12 +154,11 @@ export function MultiSelect({
                       'data-[selected=true]:bg-muted data-[selected=true]:text-foreground',
                     )}
                   >
-                    <ApproveIcon
-                      className={cn(
-                        'size-4 shrink-0',
-                        chosen.has(option.value) ? 'opacity-100' : 'opacity-0',
-                      )}
+                    <Checkbox
+                      checked={chosen.has(option.value)}
+                      tabIndex={-1}
                       aria-hidden="true"
+                      className="pointer-events-none"
                     />
                     <span className="min-w-0 flex-1 truncate">{option.label}</span>
                   </CommandPrimitive.Item>

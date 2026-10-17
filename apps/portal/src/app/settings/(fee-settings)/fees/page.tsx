@@ -2,11 +2,9 @@ import {
   ROUTES,
   type ClassLevel,
   type FeeHead,
-  type LateFeePolicy,
 } from '@ilm/contracts';
 
 import { FeeHeadsManager } from '@/components/fee-heads-manager';
-import { LateFeePolicyCard } from '@/components/late-fee-policy-card';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
@@ -27,10 +25,9 @@ import { getSession } from '@/lib/session';
  * data that was one query away (docs/16 §7).
  */
 export default async function FeeSettingsPage() {
-  const [session, result, lateFeeResult, classesResult] = await Promise.all([
+  const [session, result, classesResult] = await Promise.all([
     getSession(),
     apiFetch<{ data: FeeHead[] }>(ROUTES.fees.heads),
-    apiFetch<{ data: LateFeePolicy }>(ROUTES.fees.lateFeePolicy),
     // Class levels, not setup: setup returns [] when there is no current
     // session, and fee applicability is about the class catalogue itself.
     apiFetch<{ data: ClassLevel[] }>(ROUTES.academics.classes),
@@ -39,10 +36,6 @@ export default async function FeeSettingsPage() {
   // A school that has never set one charges nothing, which is also what the
   // columns default to — so a failed fetch renders the same thing the database
   // would have said, with the reason beside it.
-  const policy: LateFeePolicy = lateFeeResult.ok
-    ? lateFeeResult.data.data
-    : { percentBasisPoints: 0, flatMinor: 0, graceDays: 0 };
-
   const classes = (classesResult.ok ? classesResult.data.data : []).map((entry) => ({
     id: entry.id,
     name: entry.name,
@@ -51,9 +44,9 @@ export default async function FeeSettingsPage() {
   const canConfigure = session?.permissions.includes('fees.plan.configure') ?? false;
 
   return (
-    <div className="w-full space-y-8">
+    <>
       <WorkspacePageHeader
-        title="Fees Setting"
+        title="All Fees"
         description="Define fee types for admissions and monthly collection. Changes to amounts apply to new admissions only."
       />
 
@@ -63,12 +56,6 @@ export default async function FeeSettingsPage() {
         error={result.ok ? undefined : result.message}
         canConfigure={canConfigure}
       />
-
-      <LateFeePolicyCard
-        policy={policy}
-        canConfigure={canConfigure}
-        error={lateFeeResult.ok ? undefined : lateFeeResult.message}
-      />
-    </div>
+    </>
   );
 }

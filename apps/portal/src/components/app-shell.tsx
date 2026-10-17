@@ -17,34 +17,31 @@ import {
 } from '@ilm/ui';
 import {
   AccountIcon,
-  AttendanceIcon,
-  CalendarIcon,
   ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   CloseIcon,
-  FeesIcon,
   FinanceIcon,
   ICON_SIZE,
   MenuIcon,
-  NotificationsIcon,
-  PrintIcon,
   SearchIcon,
   SettingsIcon,
   SignOutIcon,
-  StudentsIcon,
   TrendUpIcon,
 } from '@ilm/ui/icons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { AppSearch } from '@/components/app-search';
 import { BrandTheme } from '@/components/brand-theme';
-import { SidebarBrandMark } from '@/components/sidebar-brand-mark';
 import { NAV_ICONS } from '@/components/nav-icons';
+import { NotificationsMenu } from '@/components/notifications-menu';
+import { SidebarBrandMark } from '@/components/sidebar-brand-mark';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { VerifyEmailBanner } from '@/components/verify-email-banner';
 import { NAV_ITEMS, visibleNavItems, visibleSettingsMenuItems, type NavItem } from '@/lib/navigation';
-import { SCHOOL_LOGO_UPDATED_EVENT } from '@/lib/school-logo-shell';
+import { SCHOOL_COLOUR_UPDATED_EVENT, SCHOOL_LOGO_UPDATED_EVENT } from '@/lib/school-logo-shell';
 import { useCanonicalPathname, useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -91,6 +88,8 @@ const NAV_LEAF_HREFS: readonly string[] = (() => {
  * `pb-24` on small screens clears the bottom tab bar; from `md` the bar is
  * gone and the padding is even on all four sides.
  */
+const SIDEBAR_COLLAPSED_KEY = 'ilm:sidebar-collapsed';
+
 const CONTENT_PADDING = 'px-3 pt-3 pb-20 md:px-4 md:pt-4 md:pb-5';
 
 
@@ -135,7 +134,7 @@ export function AppShell({
   permissions,
   profileCompleted = true,
   unverifiedEmail,
-  brandColor,
+  brandColor: serverBrandColor,
   schoolLogo: initialSchoolLogo,
   children,
 }: AppShellProps) {
@@ -146,8 +145,48 @@ export function AppShell({
   const navLocked = !profileCompleted && canonicalPath === '/profile/create';
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Remembered per browser. Read after mount so the server and first client
+  // render agree; storage can be blocked, so every access is guarded.
+  useEffect(() => {
+    try {
+      setCollapsed(window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1');
+    } catch {
+      // Private mode or blocked storage: start expanded.
+    }
+  }, []);
+
+  function toggleSidebar(): void {
+    setCollapsed((current) => {
+      const next = !current;
+      try {
+        window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? '1' : '0');
+      } catch {
+        // Not persisted; still works for this visit.
+      }
+      return next;
+    });
+  }
   const [schoolLogo, setSchoolLogo] = useState(initialSchoolLogo);
   const scrollport = useRef<HTMLElement>(null);
+
+  const [brandColor, setBrandColor] = useState(serverBrandColor);
+
+  useEffect(() => {
+    setBrandColor(serverBrandColor);
+  }, [serverBrandColor]);
+
+  useEffect(() => {
+    function onColourUpdated(event: Event): void {
+      const detail = (event as CustomEvent<string | null>).detail;
+      setBrandColor(detail ?? undefined);
+    }
+    window.addEventListener(SCHOOL_COLOUR_UPDATED_EVENT, onColourUpdated);
+    return () => {
+      window.removeEventListener(SCHOOL_COLOUR_UPDATED_EVENT, onColourUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     setSchoolLogo(initialSchoolLogo);
@@ -202,6 +241,7 @@ export function AppShell({
       <div className="fixed inset-x-0 top-0 flex h-dvh overflow-hidden bg-workspace-canvas">
         <Sidebar
           className="hidden md:flex"
+          collapsed={collapsed}
           items={items}
           schoolLogo={schoolLogo}
           profileCompleted={profileCompleted}
@@ -237,6 +277,8 @@ export function AppShell({
             user={user}
             permissions={permissions}
             settingsEnabled={!navLocked}
+            sidebarCollapsed={collapsed}
+            onToggleSidebar={toggleSidebar}
             onOpenMenu={() => {
               setDrawerOpen(true);
             }}
@@ -275,14 +317,19 @@ function AppHeader({
   user,
   permissions,
   settingsEnabled = false,
+  sidebarCollapsed,
+  onToggleSidebar,
   onOpenMenu,
 }: {
   schoolName: string;
   user: { name: string; email?: string; roleLabel: string; avatarUrl?: string | null };
   permissions: readonly string[];
   settingsEnabled?: boolean;
+  sidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
   onOpenMenu: () => void;
 }) {
+  const ToggleIcon = sidebarCollapsed ? ChevronRightIcon : ChevronLeftIcon;
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border/50 bg-card px-3 md:gap-4 md:px-5">
       <button
@@ -292,6 +339,17 @@ function AppHeader({
         className="-ms-1 inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:hidden"
       >
         <MenuIcon className={ICON_SIZE.nav} aria-hidden="true" />
+      </button>
+
+      <button
+        type="button"
+        aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-pressed={sidebarCollapsed}
+        title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        onClick={onToggleSidebar}
+        className="-ms-1 hidden size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:inline-flex"
+      >
+        <ToggleIcon className={ICON_SIZE.nav} aria-hidden="true" />
       </button>
 
       <span className="truncate text-sm font-semibold md:hidden">{schoolName}</span>
@@ -320,7 +378,7 @@ function AppHeader({
           {user.roleLabel}
         </StatusBadge>
 
-        <HeaderNotificationsMenu />
+        <NotificationsMenu />
 
         <HeaderSettingsMenu permissions={permissions} disabled={!settingsEnabled} />
 
@@ -383,138 +441,6 @@ const HEADER_ICON_CLASS = 'size-5 shrink-0';
 
 const HEADER_ACTION_CLASS =
   'inline-flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
-
-type HeaderNotificationIcon = ComponentType<{ className?: string }>;
-
-const STATIC_HEADER_NOTIFICATIONS: readonly {
-  id: string;
-  title: string;
-  detail: string;
-  time: string;
-  unread: boolean;
-  icon: HeaderNotificationIcon;
-}[] = [
-    {
-      id: 'n1',
-      title: 'Fee payment recorded',
-      detail: 'GR 1042 — Rs 12,500 received at reception.',
-      time: 'Today, 9:14 AM',
-      unread: true,
-      icon: FeesIcon,
-    },
-    {
-      id: 'n2',
-      title: 'New admission',
-      detail: 'Ayesha Khan enrolled in Grade 1 · A.',
-      time: 'Yesterday, 4:30 PM',
-      unread: true,
-      icon: StudentsIcon,
-    },
-    {
-      id: 'n3',
-      title: 'Attendance not marked',
-      detail: '3 classes still unmarked for today.',
-      time: 'Yesterday, 8:00 AM',
-      unread: true,
-      icon: AttendanceIcon,
-    },
-    {
-      id: 'n4',
-      title: 'Voucher batch ready',
-      detail: 'October tuition vouchers are ready to print.',
-      time: 'Mon, 6 Oct',
-      unread: false,
-      icon: PrintIcon,
-    },
-    {
-      id: 'n5',
-      title: 'Session calendar updated',
-      detail: 'Mid-term break added to the academic calendar.',
-      time: 'Fri, 3 Oct',
-      unread: false,
-      icon: CalendarIcon,
-    },
-  ];
-
-function HeaderNotificationsMenu() {
-  const unreadCount = STATIC_HEADER_NOTIFICATIONS.filter((entry) => entry.unread).length;
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button type="button" aria-label="Notifications" className={cn(HEADER_ACTION_CLASS, 'relative')}>
-          <NotificationsIcon className={HEADER_ICON_CLASS} aria-hidden="true" />
-          {unreadCount === 0 ? null : (
-            <span className="absolute end-0.5 top-0.5 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-semibold tabular-nums leading-none text-primary-foreground ring-2 ring-card">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="w-[min(100vw-2rem,24rem)] overflow-hidden rounded-xl border border-border p-0 shadow-raised"
-      >
-        <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/30 px-4 py-3">
-          <span className="text-sm font-semibold text-foreground">Notifications</span>
-          {unreadCount === 0 ? null : (
-            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-              {unreadCount} new
-            </span>
-          )}
-        </div>
-        <ul
-          className="scrollbar-hidden max-h-[min(20rem,70vh)] divide-y divide-border overflow-y-auto overscroll-y-contain"
-          aria-label="Recent notifications"
-        >
-          {STATIC_HEADER_NOTIFICATIONS.map((entry) => {
-            const ItemIcon = entry.icon;
-            return (
-              <li key={entry.id}>
-                <button
-                  type="button"
-                  className={cn(
-                    'flex w-full gap-3 px-4 py-3 text-start transition-colors hover:bg-muted/50',
-                    entry.unread ? 'bg-primary/[0.04]' : undefined,
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'relative flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary',
-                      entry.unread ? 'ring-2 ring-primary/20' : undefined,
-                    )}
-                  >
-                    <ItemIcon className="size-4 shrink-0" aria-hidden="true" />
-                    {entry.unread ? (
-                      <span
-                        aria-hidden="true"
-                        className="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-primary ring-2 ring-card"
-                      />
-                    ) : null}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-start justify-between gap-2">
-                      <span className="text-sm font-medium text-foreground">{entry.title}</span>
-                      <span className="shrink-0 text-[11px] whitespace-nowrap text-muted-foreground">
-                        {entry.time}
-                      </span>
-                    </span>
-                    <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
-                      {entry.detail}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        <p className="border-t border-border bg-muted/20 px-4 py-2.5 text-center text-xs text-muted-foreground">
-          Live feed coming soon
-        </p>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
 
 /** The signed-in person's photo, or their initials until they add one. */
 function HeaderAvatar({
@@ -625,8 +551,10 @@ function Sidebar({
   profileCompleted,
   navLocked,
   className,
+  collapsed = false,
   onClose,
 }: {
+  collapsed?: boolean;
   items: readonly NavItem[];
   schoolLogo: SchoolLogoInfo | undefined;
   profileCompleted: boolean;
@@ -639,14 +567,23 @@ function Sidebar({
   return (
     <aside
       className={cn(
-        'flex w-56 shrink-0 flex-col border-e border-border/50 bg-card md:flex',
+        'flex shrink-0 flex-col border-e border-border/50 bg-card transition-[width] duration-200 ease-in-out motion-reduce:transition-none md:flex',
+        collapsed ? 'w-16' : 'w-56',
         className,
       )}
     >
-      <div className="relative flex h-16 shrink-0 items-center justify-start border-b border-border/50 bg-card px-3">
+      <div
+        className={cn(
+          'relative flex h-16 shrink-0 items-center border-b border-border/50 bg-card px-3',
+          collapsed ? 'justify-center' : 'justify-start',
+        )}
+      >
         <Link
           href={tenantHref('/')}
-          className="inline-flex max-w-[148px] items-center justify-start rounded-md ps-3 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className={cn(
+            'inline-flex items-center rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+            collapsed ? 'size-10 justify-center overflow-hidden' : 'max-w-[148px] justify-start ps-3',
+          )}
           aria-label="Home"
         >
           <SidebarBrandMark
@@ -659,6 +596,7 @@ function Sidebar({
               }
             }
             profileCompleted={profileCompleted}
+            className={collapsed ? 'w-10' : undefined}
           />
         </Link>
         {onClose === undefined ? null : (
@@ -675,10 +613,13 @@ function Sidebar({
 
       <nav
         aria-label="Main"
-        className="scrollbar-hidden flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4"
+        className={cn(
+          'scrollbar-hidden flex flex-1 flex-col gap-1 overflow-y-auto py-4',
+          collapsed ? 'items-center px-2' : 'px-3',
+        )}
       >
         {items.map((item) => (
-          <NavBranch key={item.href} item={item} disabled={navLocked} />
+          <NavBranch key={item.href} item={item} disabled={navLocked} collapsed={collapsed} />
         ))}
       </nav>
     </aside>
@@ -754,7 +695,12 @@ function NavLink({
   compact = false,
   disabled = false,
   depth = 0,
+  collapsed = false,
+  forceActive = false,
 }: {
+  collapsed?: boolean;
+  /** A collapsed group stays lit while any of its pages is open. */
+  forceActive?: boolean;
   item: NavItem;
   compact?: boolean;
   disabled?: boolean;
@@ -762,7 +708,7 @@ function NavLink({
 }) {
   const pathname = useCanonicalPathname();
   const tenantHref = useTenantHref();
-  const isActive = isCurrent(item.href, pathname);
+  const isActive = forceActive || isCurrent(item.href, pathname);
   const Icon = NAV_ICONS[item.icon];
   const nested = depth > 0;
 
@@ -773,13 +719,19 @@ function NavLink({
         title="Complete your profile to unlock this"
         className={cn(
           'group relative flex cursor-not-allowed items-center gap-2.5 rounded-lg text-sm font-medium text-muted-foreground/50',
-          compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : cn('py-2 pe-3', navDepthPadding(depth)),
+          compact
+            ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs'
+            : collapsed
+              ? 'size-10 justify-center'
+              : cn('py-2 pe-3', navDepthPadding(depth)),
         )}
       >
         {Icon === undefined ? null : (
           <Icon className={cn('shrink-0 opacity-60', nested ? 'size-4' : ICON_SIZE.nav)} aria-hidden />
         )}
-        <span className={cn('truncate', nested ? 'text-xs' : undefined)}>{item.label}</span>
+        <span className={cn('truncate', nested ? 'text-xs' : undefined, collapsed && 'sr-only')}>
+          {item.label}
+        </span>
       </span>
     );
   }
@@ -788,9 +740,14 @@ function NavLink({
     <Link
       href={tenantHref(item.href)}
       aria-current={isActive ? 'page' : undefined}
+      title={collapsed ? item.label : undefined}
       className={cn(
         'relative flex items-center gap-2.5 rounded-lg text-sm transition-colors duration-150',
-        compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : cn('py-2 pe-3', navDepthPadding(depth)),
+        compact
+          ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs'
+          : collapsed
+            ? 'size-10 justify-center'
+            : cn('py-2 pe-3', navDepthPadding(depth)),
         nested ? 'font-normal' : 'font-medium',
         isActive
           ? 'bg-primary/10 text-primary'
@@ -807,7 +764,14 @@ function NavLink({
           aria-hidden
         />
       )}
-      <span className={cn('truncate', nested ? 'text-xs' : undefined, isActive && 'text-primary')}>
+      <span
+        className={cn(
+          'truncate',
+          nested ? 'text-xs' : undefined,
+          isActive && 'text-primary',
+          collapsed && 'sr-only',
+        )}
+      >
         {item.label}
       </span>
     </Link>
@@ -818,10 +782,12 @@ function NavBranch({
   item,
   depth = 0,
   disabled = false,
+  collapsed = false,
 }: {
   item: NavItem;
   depth?: number;
   disabled?: boolean;
+  collapsed?: boolean;
 }) {
   const pathname = useCanonicalPathname();
   const children = item.children ?? [];
@@ -831,7 +797,20 @@ function NavBranch({
   const isOpen = overridden ?? containsCurrent;
 
   if (children.length === 0) {
-    return <NavLink item={item} disabled={disabled} depth={depth} />;
+    return <NavLink item={item} disabled={disabled} depth={depth} collapsed={collapsed} />;
+  }
+
+  // Collapsed: a group is one icon that opens its first page, and stays lit
+  // while any page inside it is the current one.
+  if (collapsed) {
+    return (
+      <NavLink
+        item={{ ...firstLeaf(item), label: item.label, icon: item.icon }}
+        disabled={disabled}
+        collapsed
+        forceActive={containsCurrent}
+      />
+    );
   }
 
   const Icon = NAV_ICONS[item.icon];

@@ -195,7 +195,7 @@ function assertWithinSession(
   }
 }
 
-function toHoliday(row: {
+export function toHoliday(row: {
   id: string;
   sessionId: string;
   name: string;

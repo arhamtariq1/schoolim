@@ -234,6 +234,23 @@ export class StudentsService {
         });
       }
 
+      // A named sibling must be a real student of this school. Row-level security
+      // already confines the lookup to the school; a missing row means the id was
+      // wrong, removed, or somebody else's.
+      const sibling =
+        input.siblingOfStudentId === undefined
+          ? null
+          : await tx.student.findFirst({
+              where: { id: input.siblingOfStudentId, deletedAt: null },
+              select: { id: true },
+            });
+      if (input.siblingOfStudentId !== undefined && sibling === null) {
+        throw new BusinessRuleError(
+          'BUSINESS_RULE_VIOLATION',
+          'The selected sibling could not be found in this school. Search for them again.',
+        );
+      }
+
       if (input.guardian !== undefined) {
         // One guardian per email. A second child of the same family links to the
         // guardian the first one created, so the family is one record, one
@@ -270,6 +287,29 @@ export class StudentsService {
             isFeePayer: true,
           } as never,
         });
+
+        // The family link. If the guardian typed in is the sibling's own (same
+        // email, so the lookup above found them) the new child is already on the
+        // family record. If it was edited to somebody else, the sibling's
+        // guardians are attached as well — not as primary, not as fee payer — so
+        // the two children still belong to one family and a sibling search
+        // finds both. The sibling's own record is never changed.
+        if (sibling !== null) {
+          const familyLinks = await tx.studentGuardian.findMany({
+            where: { studentId: sibling.id, guardianId: { not: guardian.id } },
+            select: { guardianId: true },
+          });
+          for (const link of familyLinks) {
+            await tx.studentGuardian.create({
+              data: {
+                studentId: student.id,
+                guardianId: link.guardianId,
+                isPrimary: false,
+                isFeePayer: false,
+              } as never,
+            });
+          }
+        }
 
         // Give the guardian a parent login, or link to the one they already
         // have. Same transaction, so a child is never admitted with a guardian

@@ -47,7 +47,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { fetchJson, mutate } from '@/lib/mutate';
-import { displayPhone, toE164 } from '@/lib/phone-format';
+import { PhoneInput } from '@/components/phone-input';
+import { decimalOnly, digitsOnly } from '@/lib/input-filters';
+import { displayPhone, livePhoneError, phoneInputError, toE164 } from '@/lib/phone-format';
 
 const roleOptions = (roles: readonly StaffRole[]) =>
   roles.map((value) => ({ value, label: STAFF_ROLE_LABELS[value] }));
@@ -162,6 +164,13 @@ export function StaffDialog({
     const rupees = Number(salary);
     if (!Number.isFinite(rupees) || rupees < 0) {
       setFieldErrors({ basicSalaryMinor: 'Enter an amount, for example 40000.' });
+      return;
+    }
+
+    const phoneError = phoneInputError(phone, { required: editing === undefined });
+    if (phoneError !== undefined) {
+      setFieldErrors({ phone: phoneError });
+      setFormError('Check the highlighted fields.');
       return;
     }
 
@@ -336,17 +345,18 @@ export function StaffDialog({
                     </FieldIconWrap>
                   </Field>
 
-                  <Field label="Phone" error={fieldErrors['phone']} required>
+                  <Field
+                    label="Phone"
+                    error={fieldErrors['phone'] || livePhoneError(phone)}
+                    required
+                  >
                     <FieldIconWrap icon={PhoneIcon}>
-                      <Input
-                        type="tel"
-                        inputMode="numeric"
+                      <PhoneInput
                         autoComplete="tel-national"
                         placeholder="03001234567"
-                        maxLength={11}
                         value={phone}
-                        onChange={(event) => {
-                          setPhone(event.target.value.replace(/\D/g, '').slice(0, 11));
+                        onValueChange={(next) => {
+                          setPhone(next);
                           setFieldErrors((current) => ({ ...current, phone: '' }));
                         }}
                       />
@@ -458,8 +468,9 @@ export function StaffDialog({
                         value={casual}
                         inputMode="numeric"
                         placeholder="0"
+                        maxLength={3}
                         onChange={(event) => {
-                          setCasual(event.target.value);
+                          setCasual(digitsOnly(event.target.value, 3));
                         }}
                       />
                     </FieldIconWrap>
@@ -470,8 +481,9 @@ export function StaffDialog({
                         value={sick}
                         inputMode="numeric"
                         placeholder="0"
+                        maxLength={3}
                         onChange={(event) => {
-                          setSick(event.target.value);
+                          setSick(digitsOnly(event.target.value, 3));
                         }}
                       />
                     </FieldIconWrap>
@@ -483,7 +495,7 @@ export function StaffDialog({
                         inputMode="decimal"
                         placeholder="Enter monthly salary"
                         onChange={(event) => {
-                          setSalary(event.target.value);
+                          setSalary(decimalOnly(event.target.value));
                         }}
                       />
                     </FieldIconWrap>

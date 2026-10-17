@@ -78,7 +78,7 @@ export function feeListTableHeader(
       {Icon === undefined ? null : (
         <Icon className="size-4 shrink-0 opacity-80" aria-hidden />
       )}
-      <span className="text-xs leading-none font-medium text-muted-foreground">{label}</span>
+      <span className="text-xs leading-none font-semibold text-foreground">{label}</span>
     </div>
   );
 }
@@ -97,12 +97,12 @@ export function feeListSortableTableHeader(
       onClick={() => {
         onToggle(columnKey);
       }}
-      className="flex w-full items-center gap-2 rounded-md text-start text-muted-foreground hover:bg-muted/40"
+      className="flex w-full items-center gap-2 rounded-md text-start text-foreground hover:bg-muted/40"
     >
       {Icon === undefined ? null : (
         <Icon className="size-4 shrink-0 opacity-80" aria-hidden />
       )}
-      <span className="text-xs leading-none font-medium">{label}</span>
+      <span className="text-xs leading-none font-semibold">{label}</span>
       <SortIcon
         className={`size-3.5 shrink-0 ${active ? 'opacity-100' : 'opacity-60'} ${active && sort.direction === 'desc' ? 'rotate-180' : ''}`}
         aria-hidden

@@ -279,9 +279,15 @@ export class VoucherGenerationService {
         select: { lateFeePercent: true, lateFeeFlat: true },
       });
 
+      const lateFeeHeads = await tx.feeHead.findMany({
+        where: { lateFeeApplies: true },
+        select: { id: true },
+      });
+
       return {
         sessionId: session.id,
         heads,
+        lateFeeHeadIds: new Set(lateFeeHeads.map((head) => head.id)),
         // A numeric(5,2) percent parsed as a decimal IS its basis points:
         // 5.00 becomes 500. No float, no rounding, no second unit to confuse.
         lateFeeBasisPoints: fromDecimalString(school.lateFeePercent.toFixed(2)),
@@ -724,19 +730,23 @@ function amountsFor(
   const gross = lines.reduce((sum, line) => sum + line.amountMinor, 0);
   const discount = lines.reduce((sum, line) => sum + line.discountMinor, 0);
   const net = gross - discount;
-  const total = net + plan.arrearsMinor;
 
   return {
     grossAmount: toDecimalString(minorUnits(gross)),
     discountAmount: toDecimalString(minorUnits(discount)),
     arrearsAmount: toDecimalString(minorUnits(plan.arrearsMinor)),
     netPayable: toDecimalString(minorUnits(net)),
-    // Charged on the whole figure the parent is asked for, arrears included —
-    // that is what "payable after due date" means on a challan.
+    // Charged only on the heads the Admin ticked, after discount. Arrears are
+    // left out: they were already rated on the voucher they came from, and
+    // rating them again is how one late payment gets charged twice.
     lateFeeAmount: toDecimalString(
       minorUnits(
         applyLateFee
-          ? computeLateFee(total, context.lateFeeBasisPoints, context.lateFeeFlatMinor)
+          ? computeLateFee(
+              lateFeeBaseMinor(lines, context.lateFeeHeadIds),
+              context.lateFeeBasisPoints,
+              context.lateFeeFlatMinor,
+            )
           : 0,
       ),
     ),
@@ -806,6 +816,8 @@ interface GenerationContext {
   readonly heads: HeadCatalogue;
   readonly lateFeeBasisPoints: number;
   readonly lateFeeFlatMinor: MinorUnits;
+  /** Heads the school's late fee is charged on. */
+  readonly lateFeeHeadIds: ReadonlySet<string>;
 }
 
 /**
@@ -819,10 +831,29 @@ interface GenerationContext {
  * percent becomes when parsed as a decimal: 5.00% is 500.
  */
 export function computeLateFee(netMinor: number, basisPoints: number, flatMinor: number): number {
-  if (basisPoints <= 0 && flatMinor <= 0) {
+  // Nothing late-fee bearing on the voucher: no percentage and no flat charge.
+  if (netMinor <= 0 || (basisPoints <= 0 && flatMinor <= 0)) {
     return 0;
   }
   return percentageOfMoney(minorUnits(netMinor), basisPoints) + flatMinor;
+}
+
+/** What the late fee is rated on: the chosen heads' lines, net of discount. */
+export function lateFeeBaseMinor(
+  lines: readonly {
+    readonly feeHeadId: string | null;
+    readonly amountMinor: number;
+    readonly discountMinor: number;
+  }[],
+  eligibleHeadIds: ReadonlySet<string>,
+): number {
+  return lines.reduce(
+    (sum, line) =>
+      line.feeHeadId !== null && eligibleHeadIds.has(line.feeHeadId)
+        ? sum + line.amountMinor - line.discountMinor
+        : sum,
+    0,
+  );
 }
 
 /** Prisma `where` for a scope, without ever taking `schoolId` as a parameter. */

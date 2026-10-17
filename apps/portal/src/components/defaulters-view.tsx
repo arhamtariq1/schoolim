@@ -200,7 +200,7 @@ export function DefaultersView({
                 ))}
                 <th
                   scope="col"
-                  className="px-3 py-2 text-end text-xs font-medium whitespace-nowrap text-muted-foreground"
+                  className="px-3 py-2 text-start text-xs font-semibold whitespace-nowrap text-foreground"
                 >
                   Amount
                 </th>
@@ -229,7 +229,7 @@ export function DefaultersView({
                       {VOUCHER_STATUS_LABELS[voucher.status]}
                     </StatusBadge>
                   </td>
-                  <td className="px-3 py-2 text-end font-mono text-sm tabular-nums">
+                  <td className="px-3 py-2 text-start font-mono text-sm tabular-nums">
                     <Money valueMinor={voucher.balanceMinor} />
                     {/* A part payment is shown rather than implied: "owes
                           3,000" and "owes 3,000 of 5,000" are different

@@ -29,6 +29,7 @@ import {
   Textarea,
   useToast,
   cn,
+  CheckboxField,
 } from '@ilm/ui';
 import {
   AccountIcon,
@@ -60,7 +61,11 @@ import {
   type ReactNode,
 } from 'react';
 
-import { mutate } from '@/lib/mutate';
+import { decimalOnly } from '@/lib/input-filters';
+import { PhoneInput } from '@/components/phone-input';
+import { fetchJson, mutate } from '@/lib/mutate';
+import { SiblingPicker, type SiblingChoice } from '@/components/sibling-picker';
+import { displayPhone, livePhoneError, phoneInputError } from '@/lib/phone-format';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -196,6 +201,13 @@ export function AdmissionForm({
   const [guardianOccupation, setGuardianOccupation] = useState('');
   const [guardianAddress, setGuardianAddress] = useState('');
 
+  // Admitting a brother or sister of somebody already here.
+  const [hasSibling, setHasSibling] = useState(false);
+  const [sibling, setSibling] = useState<SiblingChoice | undefined>(undefined);
+  const [siblingLoading, setSiblingLoading] = useState(false);
+  const [siblingNote, setSiblingNote] = useState<string | undefined>(undefined);
+  const [siblingError, setSiblingError] = useState<string | undefined>(undefined);
+
   const [fees, setFees] = useState<FeeRow[]>(() =>
     catalogue.map((head) => ({
       feeHeadId: head.id,
@@ -269,6 +281,10 @@ export function AdmissionForm({
     setGuardianCnic('');
     setGuardianOccupation('');
     setGuardianAddress('');
+    setHasSibling(false);
+    setSibling(undefined);
+    setSiblingNote(undefined);
+    setSiblingError(undefined);
     setFees(
       catalogue.map((head) => ({
         feeHeadId: head.id,
@@ -314,6 +330,83 @@ export function AdmissionForm({
     }
   }
 
+  /**
+   * Copy the chosen sibling's family details into the guardian fields.
+   *
+   * Only what the sibling's record actually has is written; a field they have
+   * no value for is left as the admin typed it. Nothing here changes the
+   * sibling — the fields are this form's own state, and stay editable.
+   */
+  async function fillFromSibling(student: SiblingChoice): Promise<void> {
+    setSibling(student);
+    setSiblingError(undefined);
+    setSiblingNote(undefined);
+    setSiblingLoading(true);
+
+    const result = await fetchJson<{
+      data: {
+        address: string | null;
+        guardians: {
+          name: string;
+          relation: string;
+          phone: string | null;
+          email: string | null;
+          cnic: string | null;
+          occupation: string | null;
+          isPrimary: boolean;
+        }[];
+      };
+    }>(ROUTES.students.profile(student.id));
+    setSiblingLoading(false);
+
+    if (!result.ok) {
+      setSiblingError(`Could not load ${student.firstName}’s family details. ${result.message}`);
+      return;
+    }
+
+    const profile = result.data.data;
+    const guardian = profile.guardians.find((entry) => entry.isPrimary) ?? profile.guardians[0];
+    if (guardian === undefined && (profile.address === null || profile.address === '')) {
+      setSiblingNote(`${student.firstName} has no guardian details on file, so nothing was filled in.`);
+      return;
+    }
+
+    if (guardian !== undefined) {
+      setGuardianName(guardian.name);
+      if (RELATION_OPTIONS.some((option) => option.value === guardian.relation)) {
+        setGuardianRelation(guardian.relation);
+      }
+      if (guardian.phone !== null && guardian.phone !== '') {
+        setGuardianPhone(displayPhone(guardian.phone));
+      }
+      if (guardian.email !== null && guardian.email !== '') {
+        setGuardianEmail(guardian.email);
+      }
+      if (guardian.cnic !== null && guardian.cnic !== '') {
+        setGuardianCnic(guardian.cnic);
+      }
+      if (guardian.occupation !== null && guardian.occupation !== '') {
+        setGuardianOccupation(guardian.occupation);
+      }
+    }
+    if (profile.address !== null && profile.address !== '') {
+      setGuardianAddress(profile.address);
+    }
+
+    setFieldErrors((current) => {
+      const next = { ...current };
+      for (const key of Object.keys(next)) {
+        if (key.startsWith('guardian.')) {
+          delete next[key];
+        }
+      }
+      return next;
+    });
+    setSiblingNote(
+      `Guardian details filled in from ${student.firstName} ${student.lastName} (${student.grNo}). You can edit anything before saving.`,
+    );
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFieldErrors({});
@@ -336,6 +429,7 @@ export function AdmissionForm({
         classLevelId,
         ...(sectionId === '' ? {} : { sectionId }),
       },
+      ...(hasSibling && sibling !== undefined ? { siblingOfStudentId: sibling.id } : {}),
       guardian: {
         name: guardianName,
         relation: guardianRelation,
@@ -365,12 +459,17 @@ export function AdmissionForm({
     // asks for it even though the API tolerates records that predate the field.
     const emailMissing = guardianEmail.trim() === '';
 
-    if (!parsed.success || emailMissing) {
+    const phoneError = phoneInputError(guardianPhone);
+
+    if (!parsed.success || emailMissing || phoneError !== undefined) {
       const next: Record<string, string> = {};
       if (!parsed.success) {
         for (const issue of parsed.error.issues) {
           next[issue.path.join('.')] = issue.message;
         }
+      }
+      if (phoneError !== undefined) {
+        next['guardian.phone'] = phoneError;
       }
       if (emailMissing) {
         next['guardian.email'] = 'Enter an email — the parent portal invitation is sent here.';
@@ -629,6 +728,56 @@ export function AdmissionForm({
           title="Guardian Contact"
           description="One contactable adult. Fee notices and absence messages go here."
         >
+          <div className="mb-5 space-y-3">
+            <CheckboxField
+              label="Already have a sibling studying at this school?"
+              checked={hasSibling}
+              onCheckedChange={(checked) => {
+                const on = checked === true;
+                setHasSibling(on);
+                if (!on) {
+                  // The details already typed stay; only the link is dropped.
+                  setSibling(undefined);
+                  setSiblingNote(undefined);
+                  setSiblingError(undefined);
+                }
+              }}
+            />
+
+            {hasSibling ? (
+              <div className="space-y-2">
+                <SiblingPicker
+                  value={sibling}
+                  disabled={siblingLoading}
+                  onSelect={(student) => {
+                    void fillFromSibling(student);
+                  }}
+                  onClear={() => {
+                    setSibling(undefined);
+                    setSiblingNote(undefined);
+                    setSiblingError(undefined);
+                  }}
+                />
+                {siblingLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading family details…</p>
+                ) : null}
+                {siblingError === undefined ? null : (
+                  <p role="alert" className="text-sm text-danger">
+                    {siblingError}
+                  </p>
+                )}
+                {siblingNote === undefined ? null : (
+                  <p
+                    role="status"
+                    className="rounded-md border border-primary/25 bg-primary/5 px-3 py-2 text-sm text-foreground"
+                  >
+                    {siblingNote}
+                  </p>
+                )}
+              </div>
+            ) : null}
+          </div>
+
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             <Field label="Name" error={fieldErrors['guardian.name']} required>
               <FieldIconWrap icon={AccountIcon}>
@@ -651,17 +800,16 @@ export function AdmissionForm({
                 />
               </FieldIconWrap>
             </Field>
-            <Field label="Phone" error={fieldErrors['guardian.phone']} required>
+            <Field
+              label="Phone"
+              error={fieldErrors['guardian.phone'] ?? livePhoneError(guardianPhone)}
+              required
+            >
               <FieldIconWrap icon={PhoneIcon}>
-                <Input
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel"
+                <PhoneInput
                   placeholder="03001234567"
                   value={guardianPhone}
-                  onChange={(event) => {
-                    setGuardianPhone(digitsOnly(event.target.value, 15));
-                  }}
+                  onValueChange={setGuardianPhone}
                 />
               </FieldIconWrap>
             </Field>
@@ -1037,7 +1185,7 @@ function DiscountDialog({
               className="text-right font-mono tabular-nums"
               value={agreed}
               onChange={(event) => {
-                setAgreed(event.target.value);
+                setAgreed(decimalOnly(event.target.value));
               }}
             />
           </Field>

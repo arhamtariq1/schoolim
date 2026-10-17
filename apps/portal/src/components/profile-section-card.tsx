@@ -33,7 +33,7 @@ export function ProfileSectionCard({
           </span>
           <div className="min-w-0">
             <h2 className="text-base font-semibold text-foreground">{title}</h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
+            <p className="text-sm text-muted-foreground">{description}</p>
           </div>
         </div>
         {action === undefined ? null : <div className="shrink-0">{action}</div>}

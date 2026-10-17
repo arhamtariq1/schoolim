@@ -1,6 +1,9 @@
 'use client';
 
 import { cn } from '@ilm/ui';
+import { TrendDownIcon, TrendUpIcon } from '@ilm/ui/icons';
+import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import {
@@ -11,8 +14,6 @@ import {
   DASHBOARD_TREND_UNFAVORABLE_BADGE_CLASS,
   DASHBOARD_TREND_UNFAVORABLE_ICON_CLASS,
 } from '@/components/dashboard/dashboard-trend-styles';
-import { TrendDownIcon, TrendUpIcon } from '@ilm/ui/icons';
-import Link from 'next/link';
 
 export const DASHBOARD_STAT_ICON_NAMES = [
   'StudentsIcon',
@@ -48,11 +49,16 @@ const DASHBOARD_STAT_CARD_CLASS = cn(
 
 type DashboardStatCardProps = {
   label: string;
-  value: string;
+  /** A figure, or a money / date component — shown in the same large type. */
+  value: ReactNode;
   description?: string;
   href?: string;
-  icon: DashboardStatIconName;
+  icon?: DashboardStatIconName;
   trend?: { label: string; positive: boolean };
+  /** Makes the whole card a button, e.g. to filter the list beneath it. */
+  onSelect?: () => void;
+  /** Marks the card whose filter is currently applied. */
+  selected?: boolean;
 };
 
 /** Reference-style KPI tile: title + pill, bold figure + trend dot, footnote. */
@@ -62,6 +68,8 @@ export function DashboardStatCard({
   description,
   href,
   trend,
+  onSelect,
+  selected = false,
 }: DashboardStatCardProps) {
   const footnote = description ?? (trend === undefined ? undefined : trendFootnote(trend));
   const neutral = trend !== undefined && trend.label.toLowerCase().includes('stable');
@@ -115,6 +123,27 @@ export function DashboardStatCard({
       )}
     </div>
   );
+
+  if (onSelect !== undefined) {
+    return (
+      <DashboardCard
+        className={cn(
+          DASHBOARD_STAT_CARD_CLASS,
+          selected && 'border-primary',
+          'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background',
+        )}
+      >
+        <button
+          type="button"
+          aria-pressed={selected}
+          onClick={onSelect}
+          className="block h-full w-full text-start outline-none"
+        >
+          {content}
+        </button>
+      </DashboardCard>
+    );
+  }
 
   if (href === undefined) {
     return <DashboardCard className={DASHBOARD_STAT_CARD_CLASS}>{content}</DashboardCard>;

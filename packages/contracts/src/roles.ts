@@ -115,6 +115,7 @@ const OWNER: RoleGrants = {
   'finance.expense.create': ALL,
   'finance.expense.approve': ALL,
   'finance.report.read': ALL,
+  'finance.revenue.read': ALL,
   'attendance.record.read': ALL,
   'attendance.record.create': ALL,
   'attendance.record.unlock': ALL,
@@ -131,6 +132,7 @@ const OWNER: RoleGrants = {
   'exams.result.publish': ALL,
   'workflow.request.create': ALL,
   'workflow.request.approve': ALL,
+  'workflow.request.manage': ALL,
   'comms.message.create': ALL,
   'settings.school.configure': ALL,
   'settings.user.manage': ALL,
@@ -139,64 +141,23 @@ const OWNER: RoleGrants = {
 };
 
 /**
- * The principal oversees and approves but cannot silently record a payment.
- * That omission is deliberate: segregation of duties is why a school trusts the
- * software (docs/08 section 4).
+ * Everything the Admin (owner) can do, except revenue.
+ *
+ * Revenue — the figures, charts and trends on the dashboard — is the one thing
+ * kept for the Admin alone. The Principal and Office Staff otherwise work with
+ * the same modules, pages and settings, so both are derived from the Admin's
+ * grants rather than listed again: a permission added for the Admin reaches
+ * them without a second edit, and `finance.revenue.read` can never leak by
+ * being copied across.
  */
+const WITHOUT_REVENUE: RoleGrants = Object.fromEntries(
+  Object.entries(OWNER).filter(([permission]) => permission !== 'finance.revenue.read'),
+) as RoleGrants;
+
+/** The principal: the Admin's access without revenue, plus their own attendance record. */
 const PRINCIPAL: RoleGrants = {
-  ...WORKSPACE,
-  'exams.setup.manage': ALL,
+  ...WITHOUT_REVENUE,
   'attendance.own.read': ALL,
-  'students.student.read': ALL,
-  'students.student.create': ALL,
-  'students.student.update': ALL,
-  'students.student.delete': ALL,
-  'students.guardian.read': ALL,
-  'students.guardian.create': ALL,
-  'students.guardian.update': ALL,
-  'admissions.application.read': ALL,
-  'admissions.application.create': ALL,
-  'admissions.application.update': ALL,
-  'academics.structure.read': ALL,
-  'academics.structure.configure': ALL,
-  'academics.timetable.read': ALL,
-  'academics.timetable.configure': ALL,
-  'academics.session.configure': ALL,
-  'fees.plan.read': ALL,
-  'fees.plan.configure': ALL,
-  'fees.increment.generate': ALL,
-  'fees.voucher.read': ALL,
-  'fees.voucher.generate': ALL,
-  'fees.voucher.cancel': ALL,
-  'fees.payment.reverse': ALL,
-  'fees.discount.create': ALL,
-  'fees.discount.approve': ALL,
-  'fees.waiver.create': ALL,
-  'fees.waiver.approve': ALL,
-  'fees.deposit.read': ALL,
-  'fees.deposit.update': ALL,
-  'fees.defaulter.read': ALL,
-  'finance.expense.read': ALL,
-  'finance.expense.create': ALL,
-  'finance.expense.approve': ALL,
-  'finance.report.read': ALL,
-  'attendance.record.read': ALL,
-  'attendance.record.unlock': ALL,
-  'attendance.report.read': ALL,
-  'attendance.staff.read': ALL,
-  'staff.record.read': ALL,
-  'staff.record.update': ALL,
-  'staff.salary.read': ALL,
-  'exams.exam.configure': ALL,
-  'exams.result.read': ALL,
-  'exams.result.publish': ALL,
-  'workflow.request.create': ALL,
-  'workflow.request.approve': ALL,
-  'comms.message.create': ALL,
-  'settings.school.configure': ALL,
-  'settings.user.manage': ALL,
-  'settings.data.export': ALL,
-  'audit.log.read': ALL,
 };
 
 /** The power user who runs the system day to day, but approves nothing. */
@@ -242,6 +203,7 @@ const ADMIN: RoleGrants = {
   'exams.result.read': ALL,
   'workflow.request.create': ALL,
   'workflow.request.approve': SCOPED,
+  'workflow.request.manage': ALL,
   'comms.message.create': ALL,
   'settings.school.configure': ALL,
   'settings.user.manage': ALL,
@@ -280,34 +242,10 @@ const ACCOUNTANT: RoleGrants = {
   'comms.message.create': ALL,
 };
 
-/** Takes a payment at the counter, but cannot cancel a voucher or reverse one. */
+/** Office Staff: the Admin's access without revenue, plus their own attendance record. */
 const RECEPTION: RoleGrants = {
-  ...WORKSPACE,
-  'exams.setup.manage': ALL,
+  ...WITHOUT_REVENUE,
   'attendance.own.read': ALL,
-  'students.student.read': ALL,
-  'students.student.create': ALL,
-  'students.student.update': ALL,
-  'students.guardian.read': ALL,
-  'students.guardian.create': ALL,
-  'students.guardian.update': ALL,
-  'admissions.application.read': ALL,
-  'admissions.application.create': ALL,
-  'admissions.application.update': ALL,
-  'academics.timetable.read': ALL,
-  'fees.voucher.read': ALL,
-  'fees.payment.create': ALL,
-  'fees.discount.create': ALL,
-  'fees.waiver.create': ALL,
-  'fees.defaulter.read': ALL,
-  'attendance.record.read': ALL,
-  'attendance.record.create': ALL,
-  'attendance.report.read': ALL,
-  'attendance.staff.read': ALL,
-  'attendance.staff.create': ALL,
-  'exams.result.read': ALL,
-  'workflow.request.create': ALL,
-  'comms.message.create': ALL,
 };
 
 /**

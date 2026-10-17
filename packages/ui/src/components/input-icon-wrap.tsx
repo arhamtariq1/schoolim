@@ -43,7 +43,7 @@ export function InputIconWrap({ icon: Icon, alignTop = false, children }: InputI
       <span
         className={cn(
           'pointer-events-none absolute start-0 flex w-10 justify-center text-muted-foreground',
-          alignTop ? 'top-2.5' : 'inset-y-0 items-center',
+          alignTop ? 'top-3' : 'inset-y-0 items-center',
         )}
       >
         <Icon className="size-4 shrink-0" aria-hidden="true" />

@@ -4,9 +4,10 @@ import { brandColorSchema, ROUTES, type SchoolAppearance } from '@ilm/contracts'
 import { brandRamp, Button, cardSurfaceClassName, cn, Field, Input, useToast } from '@ilm/ui';
 import { ApproveIcon, ICON_SIZE, PaletteIcon, SuccessIcon, WarningIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { mutate } from '@/lib/mutate';
+import { notifySchoolColourUpdated } from '@/lib/school-logo-shell';
 
 /**
  * Settings › School › the school's own colour.
@@ -58,14 +59,28 @@ const PRESETS = [
 
 /** What the portal ships with, and what "Reset" goes back to. */
 const DEFAULT_HEX = '#147f8a';
+export const DEFAULT_BRAND_HEX = DEFAULT_HEX;
 
 export interface BrandColourCardProps {
   readonly appearance: SchoolAppearance;
   readonly canConfigure: boolean;
   readonly error?: string | undefined;
+  /**
+   * Setup: the school does not exist yet, so there is nothing to save to. The
+   * card drops its own Save / Reset buttons and reports the pick through
+   * `onColourChange`; the setup form saves it once the school has been created.
+   */
+  readonly deferSave?: boolean;
+  readonly onColourChange?: ((hex: string | null) => void) | undefined;
 }
 
-export function BrandColourCard({ appearance, canConfigure, error }: BrandColourCardProps) {
+export function BrandColourCard({
+  appearance,
+  canConfigure,
+  error,
+  deferSave = false,
+  onColourChange,
+}: BrandColourCardProps) {
   const router = useRouter();
   const toast = useToast();
 
@@ -87,6 +102,12 @@ export function BrandColourCard({ appearance, canConfigure, error }: BrandColour
   // never chosen still counts as a change worth saving.
   const isDirty = (valid ?? '') !== (saved ?? DEFAULT_HEX);
 
+  useEffect(() => {
+    if (deferSave) {
+      onColourChange?.(valid ?? null);
+    }
+  }, [deferSave, onColourChange, valid]);
+
   const isCustomColour =
     valid !== undefined && !PRESETS.some((preset) => preset.hex === valid);
 
@@ -105,6 +126,7 @@ export function BrandColourCard({ appearance, canConfigure, error }: BrandColour
     }
 
     setChosen(result.data.primaryColor ?? DEFAULT_HEX);
+    notifySchoolColourUpdated(result.data.primaryColor);
     toast.success(next === null ? 'Back to the default colour.' : 'Portal colour saved.');
     router.refresh();
   }
@@ -204,6 +226,7 @@ export function BrandColourCard({ appearance, canConfigure, error }: BrandColour
           </div>
         </div>
 
+        {deferSave ? null : (
         <Field
           label="Or enter your own"
           hint="Six-digit hex, the way a brand book writes it."
@@ -220,11 +243,12 @@ export function BrandColourCard({ appearance, canConfigure, error }: BrandColour
             }}
           />
         </Field>
+        )}
 
-        {ramp === undefined ? null : <Preview ramp={ramp} />}
+        {deferSave || ramp === undefined ? null : <Preview ramp={ramp} />}
       </fieldset>
 
-      {!canConfigure ? (
+      {deferSave ? null : !canConfigure ? (
         <p className="mt-4 text-sm text-muted-foreground">
           Only an owner or principal can change this.
         </p>

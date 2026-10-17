@@ -44,7 +44,7 @@ export const staffRoleSchema = z.enum(STAFF_ROLES);
 export type StaffRole = z.infer<typeof staffRoleSchema>;
 
 export const STAFF_ROLE_LABELS: Readonly<Record<StaffRole, string>> = {
-  ADMIN: 'Admin (School Owner)',
+  ADMIN: 'Admin',
   PRINCIPAL: 'Principal',
   OFFICE_STAFF: 'Office Staff',
   TEACHER: 'Teacher',
@@ -277,43 +277,213 @@ export const updateStaffSchema = z
 export type UpdateStaff = z.infer<typeof updateStaffSchema>;
 
 /**
- * Salary history — what a member of staff was paid, month by month.
+ * Salary — one monthly record per person, many payments against it.
+ *
+ * ## Shape
+ *
+ * Each month a person is paid for has one **salary record** (a snapshot of their
+ * basic salary when the month became payable, so a later raise never rewrites an
+ * earlier month). Payments are recorded against it, any number of them, and
+ * adjustments (bonus, allowance, deduction, manual) change what is owed:
+ *
+ *     net = base + adjustments        remaining = net - paid
  *
  * ## Append-only
  *
- * A payment is recorded once per person per month and never edited or deleted;
- * the database allows INSERT and nothing else on the table (docs/12 R4). A
- * month with no payment is shown as `DUE` at the basic salary, which is what is
- * owed, not what was paid.
+ * A payment or an adjustment is recorded once and never edited or deleted; the
+ * database allows INSERT and nothing else on those tables (docs/12 R4). Money is
+ * integer paisa everywhere here.
  */
 const salaryMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Choose a month.');
+
+export const SALARY_PAYMENT_METHODS = ['CASH', 'BANK_TRANSFER', 'OTHER'] as const;
+export type SalaryPaymentMethod = (typeof SALARY_PAYMENT_METHODS)[number];
+
+export const SALARY_PAYMENT_METHOD_LABELS: Readonly<Record<SalaryPaymentMethod, string>> = {
+  CASH: 'Cash',
+  BANK_TRANSFER: 'Bank transfer',
+  OTHER: 'Other',
+};
 
 export const recordSalaryPaymentSchema = z
   .object({
     month: salaryMonthSchema,
     paidOn: calendarDateSchema,
-    /** Defaults to the basic salary. Integer paisa. */
+    /** Defaults to the whole remaining balance. Integer paisa. */
     amountMinor: positiveMinorUnitsSchema
       .refine((value) => value > 0, 'Enter an amount above zero.')
       .optional(),
+    method: z.enum(SALARY_PAYMENT_METHODS).default('CASH'),
+    reference: z.string().trim().max(120).optional(),
+    notes: z.string().trim().max(500).optional(),
+    /** Made once per open dialog, so a double click or a retry cannot pay twice. */
+    idempotencyKey: z.string().trim().min(8).max(80).optional(),
   })
   .strict();
 
 export type RecordSalaryPayment = z.infer<typeof recordSalaryPaymentSchema>;
 
-export interface StaffSalaryRow {
+export const SALARY_ADJUSTMENT_KINDS = ['BONUS', 'ALLOWANCE', 'DEDUCTION', 'ADJUSTMENT'] as const;
+export type SalaryAdjustmentKind = (typeof SALARY_ADJUSTMENT_KINDS)[number];
+
+export const SALARY_ADJUSTMENT_KIND_LABELS: Readonly<Record<SalaryAdjustmentKind, string>> = {
+  BONUS: 'Bonus',
+  ALLOWANCE: 'Allowance',
+  DEDUCTION: 'Deduction',
+  ADJUSTMENT: 'Manual adjustment',
+};
+
+export const addSalaryAdjustmentSchema = z
+  .object({
+    month: salaryMonthSchema,
+    kind: z.enum(SALARY_ADJUSTMENT_KINDS),
+    /** Always positive; the kind (and `direction` for a manual one) gives the sign. */
+    amountMinor: positiveMinorUnitsSchema.refine((value) => value > 0, 'Enter an amount above zero.'),
+    /** Only read for `ADJUSTMENT`: add to, or take from, the salary. */
+    direction: z.enum(['ADD', 'SUBTRACT']).optional(),
+    reason: reasonSchema,
+  })
+  .strict();
+
+export type AddSalaryAdjustment = z.infer<typeof addSalaryAdjustmentSchema>;
+
+export type SalaryStatus = 'PAID' | 'PARTIAL' | 'UNPAID';
+
+export const SALARY_STATUS_LABELS: Readonly<Record<SalaryStatus, string>> = {
+  PAID: 'Paid',
+  PARTIAL: 'Partially paid',
+  UNPAID: 'Unpaid',
+};
+
+/** One person's salary for one month, as a row on the Salaries page. */
+export interface StaffSalaryListItem {
+  staffId: string;
+  name: string;
+  employeeNo: string;
+  role: StaffRole;
+  photoUrl: string | null;
   /** `YYYY-MM`. */
   month: string;
-  /** Paid amount, or the basic salary still owed for a `DUE` month. Integer paisa. */
-  amountMinor: number;
-  status: 'PAID' | 'DUE';
-  paidOn: string | null;
+  baseMinor: number;
+  adjustmentsMinor: number;
+  netMinor: number;
+  paidMinor: number;
+  remainingMinor: number;
+  status: SalaryStatus;
+  /** Latest payment, `YYYY-MM-DD`. */
+  lastPaidOn: string | null;
 }
 
-export interface StaffSalaryHistory {
-  basicSalaryMinor: number;
+export interface StaffSalarySummary {
+  totalPayrollMinor: number;
+  totalPaidMinor: number;
+  totalPendingMinor: number;
+  unpaidStaffCount: number;
+}
+
+export const staffSalaryListQuerySchema = z.object({
+  month: salaryMonthSchema.optional(),
+  q: z.string().trim().max(120).optional(),
+  status: z.enum(['PAID', 'PARTIAL', 'UNPAID']).optional(),
+  sort: z.enum(['name', 'role', 'net', 'paid', 'remaining', 'status', 'lastPaidOn']).default('name'),
+  order: z.enum(['asc', 'desc']).default('asc'),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+export type StaffSalaryListQuery = z.infer<typeof staffSalaryListQuerySchema>;
+
+export interface StaffSalaryList {
+  month: string;
+  items: StaffSalaryListItem[];
+  summary: StaffSalarySummary;
+  total: number;
+}
+
+export interface StaffSalaryMonth {
+  month: string;
+  baseMinor: number;
+  adjustmentsMinor: number;
+  netMinor: number;
+  paidMinor: number;
+  remainingMinor: number;
+  status: SalaryStatus;
+  lastPaidOn: string | null;
+  /** Joined or left during this month: add an adjustment if pay should be prorated. */
+  partialMonth: 'JOINED' | 'LEFT' | null;
+}
+
+export interface StaffSalaryPaymentRecord {
+  id: string;
+  month: string;
+  amountMinor: number;
+  paidOn: string;
+  method: SalaryPaymentMethod;
+  reference: string | null;
+  notes: string | null;
+  recordedByName: string | null;
+  /** `YYYY-MM-DDTHH:mm:ssZ`. */
+  recordedAt: string;
+}
+
+export interface StaffSalaryAdjustmentRecord {
+  id: string;
+  month: string;
+  kind: SalaryAdjustmentKind;
+  /** Signed: deductions are negative. */
+  amountMinor: number;
+  reason: string;
+  createdByName: string | null;
+  createdAt: string;
+}
+
+/** Everything the salary detail page, and the staff profile's salary tab, show. */
+export interface StaffSalaryDetail {
+  staff: {
+    id: string;
+    name: string;
+    employeeNo: string;
+    role: StaffRole;
+    photoUrl: string | null;
+    email: string | null;
+    phone: string | null;
+    designation: string | null;
+    joinedOn: string | null;
+    status: 'ACTIVE' | 'LEFT';
+    basicSalaryMinor: number;
+  };
+  summary: {
+    currentMonthlySalaryMinor: number;
+    paidThisYearMinor: number;
+    outstandingMinor: number;
+    lastPayment: {
+      amountMinor: number;
+      paidOn: string;
+      month: string;
+      method: SalaryPaymentMethod;
+    } | null;
+  };
   /** Newest month first. */
-  rows: StaffSalaryRow[];
+  months: StaffSalaryMonth[];
+  /** Newest payment first. */
+  payments: StaffSalaryPaymentRecord[];
+  /** Newest first. */
+  adjustments: StaffSalaryAdjustmentRecord[];
+}
+
+export interface StaffSalaryReceipt {
+  receiptNo: string;
+  schoolName: string;
+  staff: { id: string; name: string; employeeNo: string; role: StaffRole };
+  month: string;
+  amountMinor: number;
+  paidOn: string;
+  method: SalaryPaymentMethod;
+  reference: string | null;
+  notes: string | null;
+  recordedByName: string | null;
+  /** What was still owed for the month after this payment. */
+  remainingAfterMinor: number;
 }
 
 /**

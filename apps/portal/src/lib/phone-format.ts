@@ -42,3 +42,60 @@ export function toE164(input: string): string {
   }
   return `+92${digits}`;
 }
+
+/** Longest phone number a form accepts, in digits. */
+export const PHONE_MAX_DIGITS = 13;
+
+/** Digits only, capped at {@link PHONE_MAX_DIGITS}. Everything else is dropped as you type. */
+export function sanitizePhoneInput(value: string): string {
+  return value.replace(/\D/g, '').slice(0, PHONE_MAX_DIGITS);
+}
+
+/**
+ * The one phone rule for every form: digits only, starts with 03 or 02, at most
+ * 13 digits. Returns a message, or `undefined` when the value is fine. An empty
+ * value is only an error when `required` is set.
+ */
+export function phoneInputError(
+  value: string,
+  { required = true }: { readonly required?: boolean } = {},
+): string | undefined {
+  const trimmed = value.trim();
+  if (trimmed === '') {
+    return required ? 'This field is required.' : undefined;
+  }
+  if (!/^\d+$/.test(trimmed)) {
+    return 'Use digits only, for example 03001234567.';
+  }
+  if (trimmed.length === 1 ? trimmed !== '0' : !/^0[23]/.test(trimmed)) {
+    return 'Phone number must start with 03 or 02.';
+  }
+  if (trimmed.length > PHONE_MAX_DIGITS) {
+    return `Phone number can be at most ${String(PHONE_MAX_DIGITS)} digits.`;
+  }
+  if (trimmed.length < 10) {
+    return 'Phone number is too short. Enter at least 10 digits.';
+  }
+  if (trimmed.startsWith('03') && trimmed.length !== 11) {
+    return 'Mobile numbers have 11 digits, for example 03001234567.';
+  }
+  return undefined;
+}
+
+/**
+ * Real-time variant: stays quiet while somebody is still typing a valid
+ * prefix (too short is not an error yet), and speaks as soon as a character
+ * makes the number unsalvageable.
+ */
+export function livePhoneError(value: string): string | undefined {
+  const trimmed = value.trim();
+  if (trimmed === '') {
+    return undefined;
+  }
+  const error = phoneInputError(trimmed, { required: false });
+  if (error === undefined) {
+    return undefined;
+  }
+  const stillTyping = error.includes('too short') || error.startsWith('Mobile numbers');
+  return stillTyping && trimmed.length < 11 ? undefined : error;
+}

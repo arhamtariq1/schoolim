@@ -24,7 +24,7 @@ export const PAGE_INTRO: Partial<Record<Route, string>> = {
   '/academics/promote': 'Move students to the next class for a new session.',
   '/classes': 'Classes, sections, and strength for the active session.',
   '/staff': 'Teachers and support staff on payroll.',
-  '/requests': 'Parent and staff requests awaiting action.',
+  '/requests': 'Questions, complaints and concerns sent to the school, and where each stands.',
 };
 
 export function pageIntro(path: Route): string | undefined {

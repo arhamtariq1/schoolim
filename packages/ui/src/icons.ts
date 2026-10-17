@@ -37,13 +37,14 @@ export {
   CalendarCheck as AttendanceIcon,
   BookOpen as AcademicsIcon,
   Banknote as FinanceIcon,
+  Coins as SalaryIcon,
   Inbox as RequestsIcon,
   Settings as SettingsIcon,
   ChevronRight as ChevronRightIcon,
   ChevronDown as ChevronDownIcon,
   ChevronLeft as ChevronLeftIcon,
   ArrowLeft as BackIcon,
-  MoreHorizontal as MoreIcon,
+  MoreVertical as MoreIcon,
   MoreVertical as MoreVerticalIcon,
 
   // --- Status ---------------------------------------------------------------

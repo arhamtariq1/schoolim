@@ -1,5 +1,6 @@
 import {
   bulkDeleteVouchersSchema,
+  bulkRecordPaymentSchema,
   MAX_BULK_VOUCHERS,
   cancelVoucherSchema,
   challanBatchSchema,
@@ -14,6 +15,7 @@ import {
   type GenerationResult,
   type StudentLookupResult,
   type BulkDeleteResult,
+  type BulkPaymentResult,
   type Challan,
   type VoucherIds,
   type VoucherDetail,
@@ -183,6 +185,20 @@ export class VouchersController {
   async cancel(@Param('id') id: string, @Body() body: unknown): Promise<{ data: { ok: true } }> {
     await this.vouchers.cancel(id, cancelVoucherSchema.parse(body));
     return { data: { ok: true } };
+  }
+
+  /**
+   * Settle a selection in full. Same permission as a single payment — it is
+   * the same act, done for several families at once.
+   */
+  @Post(ROUTES.vouchers.bulkPay)
+  @RequirePermission('fees.payment.create')
+  async bulkPay(
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+  ): Promise<{ data: BulkPaymentResult }> {
+    const input = bulkRecordPaymentSchema.parse(body);
+    return { data: await this.vouchers.payMany(input, request.claims?.sub) };
   }
 
   @Post('/api/v1/fee-vouchers/:id/payments')

@@ -99,9 +99,15 @@ export const ModelName = {
   AssessmentType: 'AssessmentType',
   Assessment: 'Assessment',
   MarkEntry: 'MarkEntry',
+  StaffSalaryPeriod: 'StaffSalaryPeriod',
+  StaffSalaryAdjustment: 'StaffSalaryAdjustment',
   StaffSalaryPayment: 'StaffSalaryPayment',
   ClassSubject: 'ClassSubject',
-  ClassAssessmentType: 'ClassAssessmentType'
+  ClassAssessmentType: 'ClassAssessmentType',
+  Request: 'Request',
+  RequestEvent: 'RequestEvent',
+  RequestAttachment: 'RequestAttachment',
+  Notification: 'Notification'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -619,6 +625,7 @@ export const FeeHeadScalarFieldEnum = {
   sortOrder: 'sortOrder',
   isActive: 'isActive',
   frequency: 'frequency',
+  lateFeeApplies: 'lateFeeApplies',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -867,6 +874,7 @@ export const SchoolLogoScalarFieldEnum = {
   id: 'id',
   schoolId: 'schoolId',
   kind: 'kind',
+  slot: 'slot',
   bytes: 'bytes',
   mimeType: 'mimeType',
   etag: 'etag',
@@ -886,6 +894,9 @@ export const SchoolVoucherSettingsScalarFieldEnum = {
   id: 'id',
   schoolId: 'schoolId',
   showLogo: 'showLogo',
+  showBankLogos: 'showBankLogos',
+  showDates: 'showDates',
+  showStudentDetails: 'showStudentDetails',
   footerNote: 'footerNote',
   copyCount: 'copyCount',
   copyLabels: 'copyLabels',
@@ -952,13 +963,45 @@ export const MarkEntryScalarFieldEnum = {
 export type MarkEntryScalarFieldEnum = (typeof MarkEntryScalarFieldEnum)[keyof typeof MarkEntryScalarFieldEnum]
 
 
-export const StaffSalaryPaymentScalarFieldEnum = {
+export const StaffSalaryPeriodScalarFieldEnum = {
   id: 'id',
   schoolId: 'schoolId',
   staffId: 'staffId',
   month: 'month',
+  baseSalary: 'baseSalary',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt'
+} as const
+
+export type StaffSalaryPeriodScalarFieldEnum = (typeof StaffSalaryPeriodScalarFieldEnum)[keyof typeof StaffSalaryPeriodScalarFieldEnum]
+
+
+export const StaffSalaryAdjustmentScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  periodId: 'periodId',
+  kind: 'kind',
+  amount: 'amount',
+  reason: 'reason',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt'
+} as const
+
+export type StaffSalaryAdjustmentScalarFieldEnum = (typeof StaffSalaryAdjustmentScalarFieldEnum)[keyof typeof StaffSalaryAdjustmentScalarFieldEnum]
+
+
+export const StaffSalaryPaymentScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  staffId: 'staffId',
+  periodId: 'periodId',
+  month: 'month',
   amount: 'amount',
   paidOn: 'paidOn',
+  method: 'method',
+  reference: 'reference',
+  notes: 'notes',
+  idempotencyKey: 'idempotencyKey',
   recordedBy: 'recordedBy',
   createdAt: 'createdAt'
 } as const
@@ -986,6 +1029,82 @@ export const ClassAssessmentTypeScalarFieldEnum = {
 } as const
 
 export type ClassAssessmentTypeScalarFieldEnum = (typeof ClassAssessmentTypeScalarFieldEnum)[keyof typeof ClassAssessmentTypeScalarFieldEnum]
+
+
+export const RequestScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  requestNo: 'requestNo',
+  createdBy: 'createdBy',
+  requesterRole: 'requesterRole',
+  category: 'category',
+  priority: 'priority',
+  status: 'status',
+  subject: 'subject',
+  description: 'description',
+  studentId: 'studentId',
+  assignedTo: 'assignedTo',
+  resolvedAt: 'resolvedAt',
+  lastActivityAt: 'lastActivityAt',
+  idempotencyKey: 'idempotencyKey',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type RequestScalarFieldEnum = (typeof RequestScalarFieldEnum)[keyof typeof RequestScalarFieldEnum]
+
+
+export const RequestEventScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  requestId: 'requestId',
+  kind: 'kind',
+  actorId: 'actorId',
+  body: 'body',
+  fromStatus: 'fromStatus',
+  toStatus: 'toStatus',
+  assigneeId: 'assigneeId',
+  idempotencyKey: 'idempotencyKey',
+  createdAt: 'createdAt'
+} as const
+
+export type RequestEventScalarFieldEnum = (typeof RequestEventScalarFieldEnum)[keyof typeof RequestEventScalarFieldEnum]
+
+
+export const RequestAttachmentScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  requestId: 'requestId',
+  eventId: 'eventId',
+  uploadedBy: 'uploadedBy',
+  fileName: 'fileName',
+  mimeType: 'mimeType',
+  byteSize: 'byteSize',
+  etag: 'etag',
+  bytes: 'bytes',
+  storageProvider: 'storageProvider',
+  storageKey: 'storageKey',
+  storageUrl: 'storageUrl',
+  createdAt: 'createdAt'
+} as const
+
+export type RequestAttachmentScalarFieldEnum = (typeof RequestAttachmentScalarFieldEnum)[keyof typeof RequestAttachmentScalarFieldEnum]
+
+
+export const NotificationScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  userId: 'userId',
+  kind: 'kind',
+  title: 'title',
+  body: 'body',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  readAt: 'readAt',
+  createdAt: 'createdAt'
+} as const
+
+export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
 
 
 export const SortOrder = {

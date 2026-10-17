@@ -41,6 +41,9 @@ export type SchoolVoucherSettingsMinAggregateOutputType = {
   id: string | null
   schoolId: string | null
   showLogo: boolean | null
+  showBankLogos: boolean | null
+  showDates: boolean | null
+  showStudentDetails: boolean | null
   footerNote: string | null
   copyCount: number | null
   bankName: string | null
@@ -56,6 +59,9 @@ export type SchoolVoucherSettingsMaxAggregateOutputType = {
   id: string | null
   schoolId: string | null
   showLogo: boolean | null
+  showBankLogos: boolean | null
+  showDates: boolean | null
+  showStudentDetails: boolean | null
   footerNote: string | null
   copyCount: number | null
   bankName: string | null
@@ -71,6 +77,9 @@ export type SchoolVoucherSettingsCountAggregateOutputType = {
   id: number
   schoolId: number
   showLogo: number
+  showBankLogos: number
+  showDates: number
+  showStudentDetails: number
   footerNote: number
   copyCount: number
   copyLabels: number
@@ -98,6 +107,9 @@ export type SchoolVoucherSettingsMinAggregateInputType = {
   id?: true
   schoolId?: true
   showLogo?: true
+  showBankLogos?: true
+  showDates?: true
+  showStudentDetails?: true
   footerNote?: true
   copyCount?: true
   bankName?: true
@@ -113,6 +125,9 @@ export type SchoolVoucherSettingsMaxAggregateInputType = {
   id?: true
   schoolId?: true
   showLogo?: true
+  showBankLogos?: true
+  showDates?: true
+  showStudentDetails?: true
   footerNote?: true
   copyCount?: true
   bankName?: true
@@ -128,6 +143,9 @@ export type SchoolVoucherSettingsCountAggregateInputType = {
   id?: true
   schoolId?: true
   showLogo?: true
+  showBankLogos?: true
+  showDates?: true
+  showStudentDetails?: true
   footerNote?: true
   copyCount?: true
   copyLabels?: true
@@ -232,6 +250,9 @@ export type SchoolVoucherSettingsGroupByOutputType = {
   id: string
   schoolId: string
   showLogo: boolean
+  showBankLogos: boolean
+  showDates: boolean
+  showStudentDetails: boolean
   footerNote: string | null
   copyCount: number
   copyLabels: string[]
@@ -272,6 +293,9 @@ export type SchoolVoucherSettingsWhereInput = {
   id?: Prisma.UuidFilter<"SchoolVoucherSettings"> | string
   schoolId?: Prisma.UuidFilter<"SchoolVoucherSettings"> | string
   showLogo?: Prisma.BoolFilter<"SchoolVoucherSettings"> | boolean
+  showBankLogos?: Prisma.BoolFilter<"SchoolVoucherSettings"> | boolean
+  showDates?: Prisma.BoolFilter<"SchoolVoucherSettings"> | boolean
+  showStudentDetails?: Prisma.BoolFilter<"SchoolVoucherSettings"> | boolean
   footerNote?: Prisma.StringNullableFilter<"SchoolVoucherSettings"> | string | null
   copyCount?: Prisma.IntFilter<"SchoolVoucherSettings"> | number
   copyLabels?: Prisma.StringNullableListFilter<"SchoolVoucherSettings">
@@ -290,6 +314,9 @@ export type SchoolVoucherSettingsOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   schoolId?: Prisma.SortOrder
   showLogo?: Prisma.SortOrder
+  showBankLogos?: Prisma.SortOrder
+  showDates?: Prisma.SortOrder
+  showStudentDetails?: Prisma.SortOrder
   footerNote?: Prisma.SortOrderInput | Prisma.SortOrder
   copyCount?: Prisma.SortOrder
   copyLabels?: Prisma.SortOrder
@@ -311,6 +338,9 @@ export type SchoolVoucherSettingsWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.SchoolVoucherSettingsWhereInput[]
   NOT?: Prisma.SchoolVoucherSettingsWhereInput | Prisma.SchoolVoucherSettingsWhereInput[]
   showLogo?: Prisma.BoolFilter<"SchoolVoucherSettings"> | boolean
+  showBankLogos?: Prisma.BoolFilter<"SchoolVoucherSettings"> | boolean
+  showDates?: Prisma.BoolFilter<"SchoolVoucherSettings"> | boolean
+  showStudentDetails?: Prisma.BoolFilter<"SchoolVoucherSettings"> | boolean
   footerNote?: Prisma.StringNullableFilter<"SchoolVoucherSettings"> | string | null
   copyCount?: Prisma.IntFilter<"SchoolVoucherSettings"> | number
   copyLabels?: Prisma.StringNullableListFilter<"SchoolVoucherSettings">
@@ -329,6 +359,9 @@ export type SchoolVoucherSettingsOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   schoolId?: Prisma.SortOrder
   showLogo?: Prisma.SortOrder
+  showBankLogos?: Prisma.SortOrder
+  showDates?: Prisma.SortOrder
+  showStudentDetails?: Prisma.SortOrder
   footerNote?: Prisma.SortOrderInput | Prisma.SortOrder
   copyCount?: Prisma.SortOrder
   copyLabels?: Prisma.SortOrder
@@ -354,6 +387,9 @@ export type SchoolVoucherSettingsScalarWhereWithAggregatesInput = {
   id?: Prisma.UuidWithAggregatesFilter<"SchoolVoucherSettings"> | string
   schoolId?: Prisma.UuidWithAggregatesFilter<"SchoolVoucherSettings"> | string
   showLogo?: Prisma.BoolWithAggregatesFilter<"SchoolVoucherSettings"> | boolean
+  showBankLogos?: Prisma.BoolWithAggregatesFilter<"SchoolVoucherSettings"> | boolean
+  showDates?: Prisma.BoolWithAggregatesFilter<"SchoolVoucherSettings"> | boolean
+  showStudentDetails?: Prisma.BoolWithAggregatesFilter<"SchoolVoucherSettings"> | boolean
   footerNote?: Prisma.StringNullableWithAggregatesFilter<"SchoolVoucherSettings"> | string | null
   copyCount?: Prisma.IntWithAggregatesFilter<"SchoolVoucherSettings"> | number
   copyLabels?: Prisma.StringNullableListFilter<"SchoolVoucherSettings">
@@ -370,6 +406,9 @@ export type SchoolVoucherSettingsScalarWhereWithAggregatesInput = {
 export type SchoolVoucherSettingsCreateInput = {
   id?: string
   showLogo?: boolean
+  showBankLogos?: boolean
+  showDates?: boolean
+  showStudentDetails?: boolean
   footerNote?: string | null
   copyCount?: number
   copyLabels?: Prisma.SchoolVoucherSettingsCreatecopyLabelsInput | string[]
@@ -388,6 +427,9 @@ export type SchoolVoucherSettingsUncheckedCreateInput = {
   id?: string
   schoolId: string
   showLogo?: boolean
+  showBankLogos?: boolean
+  showDates?: boolean
+  showStudentDetails?: boolean
   footerNote?: string | null
   copyCount?: number
   copyLabels?: Prisma.SchoolVoucherSettingsCreatecopyLabelsInput | string[]
@@ -404,6 +446,9 @@ export type SchoolVoucherSettingsUncheckedCreateInput = {
 export type SchoolVoucherSettingsUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   showLogo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showBankLogos?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showDates?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showStudentDetails?: Prisma.BoolFieldUpdateOperationsInput | boolean
   footerNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyCount?: Prisma.IntFieldUpdateOperationsInput | number
   copyLabels?: Prisma.SchoolVoucherSettingsUpdatecopyLabelsInput | string[]
@@ -422,6 +467,9 @@ export type SchoolVoucherSettingsUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schoolId?: Prisma.StringFieldUpdateOperationsInput | string
   showLogo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showBankLogos?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showDates?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showStudentDetails?: Prisma.BoolFieldUpdateOperationsInput | boolean
   footerNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyCount?: Prisma.IntFieldUpdateOperationsInput | number
   copyLabels?: Prisma.SchoolVoucherSettingsUpdatecopyLabelsInput | string[]
@@ -439,6 +487,9 @@ export type SchoolVoucherSettingsCreateManyInput = {
   id?: string
   schoolId: string
   showLogo?: boolean
+  showBankLogos?: boolean
+  showDates?: boolean
+  showStudentDetails?: boolean
   footerNote?: string | null
   copyCount?: number
   copyLabels?: Prisma.SchoolVoucherSettingsCreatecopyLabelsInput | string[]
@@ -455,6 +506,9 @@ export type SchoolVoucherSettingsCreateManyInput = {
 export type SchoolVoucherSettingsUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   showLogo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showBankLogos?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showDates?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showStudentDetails?: Prisma.BoolFieldUpdateOperationsInput | boolean
   footerNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyCount?: Prisma.IntFieldUpdateOperationsInput | number
   copyLabels?: Prisma.SchoolVoucherSettingsUpdatecopyLabelsInput | string[]
@@ -472,6 +526,9 @@ export type SchoolVoucherSettingsUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schoolId?: Prisma.StringFieldUpdateOperationsInput | string
   showLogo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showBankLogos?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showDates?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showStudentDetails?: Prisma.BoolFieldUpdateOperationsInput | boolean
   footerNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyCount?: Prisma.IntFieldUpdateOperationsInput | number
   copyLabels?: Prisma.SchoolVoucherSettingsUpdatecopyLabelsInput | string[]
@@ -494,6 +551,9 @@ export type SchoolVoucherSettingsCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   schoolId?: Prisma.SortOrder
   showLogo?: Prisma.SortOrder
+  showBankLogos?: Prisma.SortOrder
+  showDates?: Prisma.SortOrder
+  showStudentDetails?: Prisma.SortOrder
   footerNote?: Prisma.SortOrder
   copyCount?: Prisma.SortOrder
   copyLabels?: Prisma.SortOrder
@@ -515,6 +575,9 @@ export type SchoolVoucherSettingsMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   schoolId?: Prisma.SortOrder
   showLogo?: Prisma.SortOrder
+  showBankLogos?: Prisma.SortOrder
+  showDates?: Prisma.SortOrder
+  showStudentDetails?: Prisma.SortOrder
   footerNote?: Prisma.SortOrder
   copyCount?: Prisma.SortOrder
   bankName?: Prisma.SortOrder
@@ -530,6 +593,9 @@ export type SchoolVoucherSettingsMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   schoolId?: Prisma.SortOrder
   showLogo?: Prisma.SortOrder
+  showBankLogos?: Prisma.SortOrder
+  showDates?: Prisma.SortOrder
+  showStudentDetails?: Prisma.SortOrder
   footerNote?: Prisma.SortOrder
   copyCount?: Prisma.SortOrder
   bankName?: Prisma.SortOrder
@@ -598,6 +664,9 @@ export type SchoolVoucherSettingsUpdatekuickpayChannelsInput = {
 export type SchoolVoucherSettingsCreateWithoutSchoolInput = {
   id?: string
   showLogo?: boolean
+  showBankLogos?: boolean
+  showDates?: boolean
+  showStudentDetails?: boolean
   footerNote?: string | null
   copyCount?: number
   copyLabels?: Prisma.SchoolVoucherSettingsCreatecopyLabelsInput | string[]
@@ -614,6 +683,9 @@ export type SchoolVoucherSettingsCreateWithoutSchoolInput = {
 export type SchoolVoucherSettingsUncheckedCreateWithoutSchoolInput = {
   id?: string
   showLogo?: boolean
+  showBankLogos?: boolean
+  showDates?: boolean
+  showStudentDetails?: boolean
   footerNote?: string | null
   copyCount?: number
   copyLabels?: Prisma.SchoolVoucherSettingsCreatecopyLabelsInput | string[]
@@ -646,6 +718,9 @@ export type SchoolVoucherSettingsUpdateToOneWithWhereWithoutSchoolInput = {
 export type SchoolVoucherSettingsUpdateWithoutSchoolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   showLogo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showBankLogos?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showDates?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showStudentDetails?: Prisma.BoolFieldUpdateOperationsInput | boolean
   footerNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyCount?: Prisma.IntFieldUpdateOperationsInput | number
   copyLabels?: Prisma.SchoolVoucherSettingsUpdatecopyLabelsInput | string[]
@@ -662,6 +737,9 @@ export type SchoolVoucherSettingsUpdateWithoutSchoolInput = {
 export type SchoolVoucherSettingsUncheckedUpdateWithoutSchoolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   showLogo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showBankLogos?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showDates?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showStudentDetails?: Prisma.BoolFieldUpdateOperationsInput | boolean
   footerNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copyCount?: Prisma.IntFieldUpdateOperationsInput | number
   copyLabels?: Prisma.SchoolVoucherSettingsUpdatecopyLabelsInput | string[]
@@ -681,6 +759,9 @@ export type SchoolVoucherSettingsSelect<ExtArgs extends runtime.Types.Extensions
   id?: boolean
   schoolId?: boolean
   showLogo?: boolean
+  showBankLogos?: boolean
+  showDates?: boolean
+  showStudentDetails?: boolean
   footerNote?: boolean
   copyCount?: boolean
   copyLabels?: boolean
@@ -699,6 +780,9 @@ export type SchoolVoucherSettingsSelectCreateManyAndReturn<ExtArgs extends runti
   id?: boolean
   schoolId?: boolean
   showLogo?: boolean
+  showBankLogos?: boolean
+  showDates?: boolean
+  showStudentDetails?: boolean
   footerNote?: boolean
   copyCount?: boolean
   copyLabels?: boolean
@@ -717,6 +801,9 @@ export type SchoolVoucherSettingsSelectUpdateManyAndReturn<ExtArgs extends runti
   id?: boolean
   schoolId?: boolean
   showLogo?: boolean
+  showBankLogos?: boolean
+  showDates?: boolean
+  showStudentDetails?: boolean
   footerNote?: boolean
   copyCount?: boolean
   copyLabels?: boolean
@@ -735,6 +822,9 @@ export type SchoolVoucherSettingsSelectScalar = {
   id?: boolean
   schoolId?: boolean
   showLogo?: boolean
+  showBankLogos?: boolean
+  showDates?: boolean
+  showStudentDetails?: boolean
   footerNote?: boolean
   copyCount?: boolean
   copyLabels?: boolean
@@ -748,7 +838,7 @@ export type SchoolVoucherSettingsSelectScalar = {
   updatedAt?: boolean
 }
 
-export type SchoolVoucherSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "showLogo" | "footerNote" | "copyCount" | "copyLabels" | "bankName" | "kuickpayEnabled" | "kuickpayPrefix" | "kuickpayChannels" | "onelinkEnabled" | "onelinkInstitutionId" | "createdAt" | "updatedAt", ExtArgs["result"]["schoolVoucherSettings"]>
+export type SchoolVoucherSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "showLogo" | "showBankLogos" | "showDates" | "showStudentDetails" | "footerNote" | "copyCount" | "copyLabels" | "bankName" | "kuickpayEnabled" | "kuickpayPrefix" | "kuickpayChannels" | "onelinkEnabled" | "onelinkInstitutionId" | "createdAt" | "updatedAt", ExtArgs["result"]["schoolVoucherSettings"]>
 export type SchoolVoucherSettingsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
 }
@@ -768,6 +858,12 @@ export type $SchoolVoucherSettingsPayload<ExtArgs extends runtime.Types.Extensio
     id: string
     schoolId: string
     showLogo: boolean
+    showBankLogos: boolean
+    showDates: boolean
+    /**
+     * GR number, class, section and session. The child's and father's names always print.
+     */
+    showStudentDetails: boolean
     /**
      * Printed under the signature line: the school's own note to parents.
      */
@@ -1228,6 +1324,9 @@ export interface SchoolVoucherSettingsFieldRefs {
   readonly id: Prisma.FieldRef<"SchoolVoucherSettings", 'String'>
   readonly schoolId: Prisma.FieldRef<"SchoolVoucherSettings", 'String'>
   readonly showLogo: Prisma.FieldRef<"SchoolVoucherSettings", 'Boolean'>
+  readonly showBankLogos: Prisma.FieldRef<"SchoolVoucherSettings", 'Boolean'>
+  readonly showDates: Prisma.FieldRef<"SchoolVoucherSettings", 'Boolean'>
+  readonly showStudentDetails: Prisma.FieldRef<"SchoolVoucherSettings", 'Boolean'>
   readonly footerNote: Prisma.FieldRef<"SchoolVoucherSettings", 'String'>
   readonly copyCount: Prisma.FieldRef<"SchoolVoucherSettings", 'Int'>
   readonly copyLabels: Prisma.FieldRef<"SchoolVoucherSettings", 'String[]'>

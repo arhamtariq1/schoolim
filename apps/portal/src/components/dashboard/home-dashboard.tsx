@@ -40,6 +40,31 @@ function can(permissions: readonly string[], permission: string): boolean {
   return permissions.includes(permission);
 }
 
+/**
+ * Column classes for the summary row, by how many cards are actually shown.
+ *
+ * Whole class names, not interpolated ones, so Tailwind can see them. A row of
+ * three cards on a four-column grid leaves a hole where the missing card was;
+ * the grid follows the count instead, and the cards share the full width.
+ */
+function summaryColumns(count: number): string {
+  if (count <= 1) {
+    return 'grid-cols-1';
+  }
+  if (count === 2) {
+    return 'grid-cols-1 sm:grid-cols-2';
+  }
+  if (count === 3) {
+    return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+  }
+  return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
+}
+
+/** Revenue is the Admin's alone; everyone else gets the expenses half of the row. */
+function showRevenue(snapshot: DashboardSnapshot, permissions: readonly string[]): boolean {
+  return can(permissions, 'finance.revenue.read') && snapshot.revenueTrend.length > 0;
+}
+
 function showRevenueExpensesRow(
   snapshot: DashboardSnapshot,
   permissions: readonly string[],
@@ -47,7 +72,7 @@ function showRevenueExpensesRow(
   if (!can(permissions, 'finance.expense.read')) {
     return false;
   }
-  return snapshot.revenueTrend.length > 0 || snapshot.monthlyExpenses.length > 0;
+  return showRevenue(snapshot, permissions) || snapshot.monthlyExpenses.length > 0;
 }
 
 function showFeesCardsColumn(
@@ -92,7 +117,7 @@ export function HomeDashboard({
       {statCards.length > 0 ? (
         <section
           aria-label="Summary"
-          className="grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          className={`grid auto-rows-fr gap-3 ${summaryColumns(statCards.length)}`}
         >
           {statCards.map(({ key, ...card }) => (
             <DashboardStatCard key={key} {...card} />
@@ -103,9 +128,13 @@ export function HomeDashboard({
       {showRevenueExpensesRow(snapshot, permissions) ? (
         <section
           aria-label="Revenue and monthly expenses"
-          className="grid w-full gap-3 lg:grid-cols-2 lg:items-stretch"
+          className={`grid w-full gap-3 lg:items-stretch ${
+            showRevenue(snapshot, permissions) && snapshot.monthlyExpenses.length > 0
+              ? 'lg:grid-cols-2'
+              : 'grid-cols-1'
+          }`}
         >
-          {snapshot.revenueTrend.length > 0 ? (
+          {showRevenue(snapshot, permissions) ? (
             <div className="flex h-full min-h-0 min-w-0 w-full">
               <DashboardRevenueChart trend={snapshot.revenueTrend} />
             </div>
@@ -253,7 +282,7 @@ function buildStatCards(
   const latestNetMinor = snapshot.revenueTrend.at(-1)?.netRevenueMinor;
   if (
     latestNetMinor !== undefined &&
-    can(permissions, 'finance.expense.read') &&
+    can(permissions, 'finance.revenue.read') &&
     snapshot.revenueTrend.length > 0
   ) {
     cards.push({

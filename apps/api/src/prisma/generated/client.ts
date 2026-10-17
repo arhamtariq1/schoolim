@@ -447,8 +447,29 @@ export type Assessment = Prisma.AssessmentModel
  */
 export type MarkEntry = Prisma.MarkEntryModel
 /**
+ * Model StaffSalaryPeriod
+ * One monthly salary record per member of staff.
+ * 
+ * The base salary is a snapshot taken when the month became payable, so a later
+ * raise never rewrites an earlier month. Adjustments and payments hang off it.
+ * Append-only (R4): the app role holds SELECT and INSERT only.
+ * 
+ * Erasure: a payroll record, kept with the financial records (docs/17 s4:
+ * 10 years) and never deleted.
+ */
+export type StaffSalaryPeriod = Prisma.StaffSalaryPeriodModel
+/**
+ * Model StaffSalaryAdjustment
+ * A bonus, allowance, deduction or manual correction to one month's salary.
+ * Signed amount, with a reason. Append-only.
+ * 
+ * Erasure: kept with the payroll record.
+ */
+export type StaffSalaryAdjustment = Prisma.StaffSalaryAdjustmentModel
+/**
  * Model StaffSalaryPayment
- * Salary paid to a member of staff, one row per month.
+ * Salary paid to a member of staff. Several per month are allowed (part
+ * payments); each belongs to that month's `StaffSalaryPeriod`.
  * 
  * Append-only (R4), enforced by the database: the app role holds INSERT and
  * SELECT on this table and nothing else.
@@ -470,3 +491,39 @@ export type ClassSubject = Prisma.ClassSubjectModel
  * Which assessment types a class has. Same shape and reasoning as `ClassSubject`.
  */
 export type ClassAssessmentType = Prisma.ClassAssessmentTypeModel
+/**
+ * Model Request
+ * A question, complaint or concern a parent or teacher raised with the school.
+ * 
+ * A ticket, not an approval: nothing here changes another record. What
+ * happened to it is the timeline in `request_events`; this row is its current
+ * state. The state machine lives in `@ilm/contracts` (`REQUEST_TRANSITIONS`).
+ * 
+ * Erasure (docs/17 s4): kept for the life of the relationship + 1 year,
+ * redacted when a per-student erasure runs on the child it names, deleted with
+ * the tenant. Never deleted by the application role (no DELETE grant).
+ */
+export type Request = Prisma.RequestModel
+/**
+ * Model RequestEvent
+ * One thing that happened to a request, oldest first: it being raised, a
+ * message, a status change, an assignment. Append-only — the application role
+ * holds SELECT and INSERT only — so the history of who said or changed what
+ * cannot be edited by the application.
+ */
+export type RequestEvent = Prisma.RequestEventModel
+/**
+ * Model RequestAttachment
+ * A picture attached to a request or a reply. Same storage columns as
+ * `school_logos` (ADR-0013); always the private asset kind, so the bytes stay
+ * in Postgres whatever storage is configured. Append-only.
+ */
+export type RequestAttachment = Prisma.RequestAttachmentModel
+/**
+ * Model Notification
+ * The header bell: a pointer to something that happened, for one person.
+ * 
+ * Not a record of anything — the thing it points at is. Erasure (docs/17 s4):
+ * deleted 90 days after it is read, with the user, and with the tenant.
+ */
+export type Notification = Prisma.NotificationModel

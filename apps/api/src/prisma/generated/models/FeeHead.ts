@@ -48,6 +48,7 @@ export type FeeHeadMinAggregateOutputType = {
   sortOrder: number | null
   isActive: boolean | null
   frequency: $Enums.FeeFrequency | null
+  lateFeeApplies: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -61,6 +62,7 @@ export type FeeHeadMaxAggregateOutputType = {
   sortOrder: number | null
   isActive: boolean | null
   frequency: $Enums.FeeFrequency | null
+  lateFeeApplies: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -74,6 +76,7 @@ export type FeeHeadCountAggregateOutputType = {
   sortOrder: number
   isActive: number
   frequency: number
+  lateFeeApplies: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -99,6 +102,7 @@ export type FeeHeadMinAggregateInputType = {
   sortOrder?: true
   isActive?: true
   frequency?: true
+  lateFeeApplies?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -112,6 +116,7 @@ export type FeeHeadMaxAggregateInputType = {
   sortOrder?: true
   isActive?: true
   frequency?: true
+  lateFeeApplies?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -125,6 +130,7 @@ export type FeeHeadCountAggregateInputType = {
   sortOrder?: true
   isActive?: true
   frequency?: true
+  lateFeeApplies?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -225,6 +231,7 @@ export type FeeHeadGroupByOutputType = {
   sortOrder: number
   isActive: boolean
   frequency: $Enums.FeeFrequency
+  lateFeeApplies: boolean
   createdAt: Date
   updatedAt: Date
   _count: FeeHeadCountAggregateOutputType | null
@@ -261,6 +268,7 @@ export type FeeHeadWhereInput = {
   sortOrder?: Prisma.IntFilter<"FeeHead"> | number
   isActive?: Prisma.BoolFilter<"FeeHead"> | boolean
   frequency?: Prisma.EnumFeeFrequencyFilter<"FeeHead"> | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFilter<"FeeHead"> | boolean
   createdAt?: Prisma.DateTimeFilter<"FeeHead"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FeeHead"> | Date | string
   school?: Prisma.XOR<Prisma.SchoolScalarRelationFilter, Prisma.SchoolWhereInput>
@@ -279,6 +287,7 @@ export type FeeHeadOrderByWithRelationInput = {
   sortOrder?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   frequency?: Prisma.SortOrder
+  lateFeeApplies?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   school?: Prisma.SchoolOrderByWithRelationInput
@@ -301,6 +310,7 @@ export type FeeHeadWhereUniqueInput = Prisma.AtLeast<{
   sortOrder?: Prisma.IntFilter<"FeeHead"> | number
   isActive?: Prisma.BoolFilter<"FeeHead"> | boolean
   frequency?: Prisma.EnumFeeFrequencyFilter<"FeeHead"> | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFilter<"FeeHead"> | boolean
   createdAt?: Prisma.DateTimeFilter<"FeeHead"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FeeHead"> | Date | string
   school?: Prisma.XOR<Prisma.SchoolScalarRelationFilter, Prisma.SchoolWhereInput>
@@ -319,6 +329,7 @@ export type FeeHeadOrderByWithAggregationInput = {
   sortOrder?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   frequency?: Prisma.SortOrder
+  lateFeeApplies?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.FeeHeadCountOrderByAggregateInput
@@ -340,6 +351,7 @@ export type FeeHeadScalarWhereWithAggregatesInput = {
   sortOrder?: Prisma.IntWithAggregatesFilter<"FeeHead"> | number
   isActive?: Prisma.BoolWithAggregatesFilter<"FeeHead"> | boolean
   frequency?: Prisma.EnumFeeFrequencyWithAggregatesFilter<"FeeHead"> | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolWithAggregatesFilter<"FeeHead"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"FeeHead"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"FeeHead"> | Date | string
 }
@@ -352,6 +364,7 @@ export type FeeHeadCreateInput = {
   sortOrder?: number
   isActive?: boolean
   frequency?: $Enums.FeeFrequency
+  lateFeeApplies?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   school: Prisma.SchoolCreateNestedOneWithoutFeeHeadsInput
@@ -370,6 +383,7 @@ export type FeeHeadUncheckedCreateInput = {
   sortOrder?: number
   isActive?: boolean
   frequency?: $Enums.FeeFrequency
+  lateFeeApplies?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   studentFees?: Prisma.StudentFeeUncheckedCreateNestedManyWithoutFeeHeadInput
@@ -386,6 +400,7 @@ export type FeeHeadUpdateInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   school?: Prisma.SchoolUpdateOneRequiredWithoutFeeHeadsNestedInput
@@ -404,6 +419,7 @@ export type FeeHeadUncheckedUpdateInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   studentFees?: Prisma.StudentFeeUncheckedUpdateManyWithoutFeeHeadNestedInput
@@ -421,6 +437,7 @@ export type FeeHeadCreateManyInput = {
   sortOrder?: number
   isActive?: boolean
   frequency?: $Enums.FeeFrequency
+  lateFeeApplies?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -433,6 +450,7 @@ export type FeeHeadUpdateManyMutationInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -446,6 +464,7 @@ export type FeeHeadUncheckedUpdateManyInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -474,6 +493,7 @@ export type FeeHeadCountOrderByAggregateInput = {
   sortOrder?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   frequency?: Prisma.SortOrder
+  lateFeeApplies?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -492,6 +512,7 @@ export type FeeHeadMaxOrderByAggregateInput = {
   sortOrder?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   frequency?: Prisma.SortOrder
+  lateFeeApplies?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -505,6 +526,7 @@ export type FeeHeadMinOrderByAggregateInput = {
   sortOrder?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   frequency?: Prisma.SortOrder
+  lateFeeApplies?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -640,6 +662,7 @@ export type FeeHeadCreateWithoutSchoolInput = {
   sortOrder?: number
   isActive?: boolean
   frequency?: $Enums.FeeFrequency
+  lateFeeApplies?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   studentFees?: Prisma.StudentFeeCreateNestedManyWithoutFeeHeadInput
@@ -656,6 +679,7 @@ export type FeeHeadUncheckedCreateWithoutSchoolInput = {
   sortOrder?: number
   isActive?: boolean
   frequency?: $Enums.FeeFrequency
+  lateFeeApplies?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   studentFees?: Prisma.StudentFeeUncheckedCreateNestedManyWithoutFeeHeadInput
@@ -702,6 +726,7 @@ export type FeeHeadScalarWhereInput = {
   sortOrder?: Prisma.IntFilter<"FeeHead"> | number
   isActive?: Prisma.BoolFilter<"FeeHead"> | boolean
   frequency?: Prisma.EnumFeeFrequencyFilter<"FeeHead"> | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFilter<"FeeHead"> | boolean
   createdAt?: Prisma.DateTimeFilter<"FeeHead"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FeeHead"> | Date | string
 }
@@ -714,6 +739,7 @@ export type FeeHeadCreateWithoutClassLevelsInput = {
   sortOrder?: number
   isActive?: boolean
   frequency?: $Enums.FeeFrequency
+  lateFeeApplies?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   school: Prisma.SchoolCreateNestedOneWithoutFeeHeadsInput
@@ -731,6 +757,7 @@ export type FeeHeadUncheckedCreateWithoutClassLevelsInput = {
   sortOrder?: number
   isActive?: boolean
   frequency?: $Enums.FeeFrequency
+  lateFeeApplies?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   studentFees?: Prisma.StudentFeeUncheckedCreateNestedManyWithoutFeeHeadInput
@@ -762,6 +789,7 @@ export type FeeHeadUpdateWithoutClassLevelsInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   school?: Prisma.SchoolUpdateOneRequiredWithoutFeeHeadsNestedInput
@@ -779,6 +807,7 @@ export type FeeHeadUncheckedUpdateWithoutClassLevelsInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   studentFees?: Prisma.StudentFeeUncheckedUpdateManyWithoutFeeHeadNestedInput
@@ -794,6 +823,7 @@ export type FeeHeadCreateWithoutStudentFeesInput = {
   sortOrder?: number
   isActive?: boolean
   frequency?: $Enums.FeeFrequency
+  lateFeeApplies?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   school: Prisma.SchoolCreateNestedOneWithoutFeeHeadsInput
@@ -811,6 +841,7 @@ export type FeeHeadUncheckedCreateWithoutStudentFeesInput = {
   sortOrder?: number
   isActive?: boolean
   frequency?: $Enums.FeeFrequency
+  lateFeeApplies?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   voucherLines?: Prisma.FeeVoucherLineUncheckedCreateNestedManyWithoutFeeHeadInput
@@ -842,6 +873,7 @@ export type FeeHeadUpdateWithoutStudentFeesInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   school?: Prisma.SchoolUpdateOneRequiredWithoutFeeHeadsNestedInput
@@ -859,6 +891,7 @@ export type FeeHeadUncheckedUpdateWithoutStudentFeesInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   voucherLines?: Prisma.FeeVoucherLineUncheckedUpdateManyWithoutFeeHeadNestedInput
@@ -874,6 +907,7 @@ export type FeeHeadCreateWithoutVoucherLinesInput = {
   sortOrder?: number
   isActive?: boolean
   frequency?: $Enums.FeeFrequency
+  lateFeeApplies?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   school: Prisma.SchoolCreateNestedOneWithoutFeeHeadsInput
@@ -891,6 +925,7 @@ export type FeeHeadUncheckedCreateWithoutVoucherLinesInput = {
   sortOrder?: number
   isActive?: boolean
   frequency?: $Enums.FeeFrequency
+  lateFeeApplies?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   studentFees?: Prisma.StudentFeeUncheckedCreateNestedManyWithoutFeeHeadInput
@@ -922,6 +957,7 @@ export type FeeHeadUpdateWithoutVoucherLinesInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   school?: Prisma.SchoolUpdateOneRequiredWithoutFeeHeadsNestedInput
@@ -939,6 +975,7 @@ export type FeeHeadUncheckedUpdateWithoutVoucherLinesInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   studentFees?: Prisma.StudentFeeUncheckedUpdateManyWithoutFeeHeadNestedInput
@@ -954,6 +991,7 @@ export type FeeHeadCreateWithoutVoucherPeriodsInput = {
   sortOrder?: number
   isActive?: boolean
   frequency?: $Enums.FeeFrequency
+  lateFeeApplies?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   school: Prisma.SchoolCreateNestedOneWithoutFeeHeadsInput
@@ -971,6 +1009,7 @@ export type FeeHeadUncheckedCreateWithoutVoucherPeriodsInput = {
   sortOrder?: number
   isActive?: boolean
   frequency?: $Enums.FeeFrequency
+  lateFeeApplies?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   studentFees?: Prisma.StudentFeeUncheckedCreateNestedManyWithoutFeeHeadInput
@@ -1002,6 +1041,7 @@ export type FeeHeadUpdateWithoutVoucherPeriodsInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   school?: Prisma.SchoolUpdateOneRequiredWithoutFeeHeadsNestedInput
@@ -1019,6 +1059,7 @@ export type FeeHeadUncheckedUpdateWithoutVoucherPeriodsInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   studentFees?: Prisma.StudentFeeUncheckedUpdateManyWithoutFeeHeadNestedInput
@@ -1034,6 +1075,7 @@ export type FeeHeadCreateManySchoolInput = {
   sortOrder?: number
   isActive?: boolean
   frequency?: $Enums.FeeFrequency
+  lateFeeApplies?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1046,6 +1088,7 @@ export type FeeHeadUpdateWithoutSchoolInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   studentFees?: Prisma.StudentFeeUpdateManyWithoutFeeHeadNestedInput
@@ -1062,6 +1105,7 @@ export type FeeHeadUncheckedUpdateWithoutSchoolInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   studentFees?: Prisma.StudentFeeUncheckedUpdateManyWithoutFeeHeadNestedInput
@@ -1078,6 +1122,7 @@ export type FeeHeadUncheckedUpdateManyWithoutSchoolInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   frequency?: Prisma.EnumFeeFrequencyFieldUpdateOperationsInput | $Enums.FeeFrequency
+  lateFeeApplies?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1149,6 +1194,7 @@ export type FeeHeadSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   sortOrder?: boolean
   isActive?: boolean
   frequency?: boolean
+  lateFeeApplies?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
@@ -1168,6 +1214,7 @@ export type FeeHeadSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   sortOrder?: boolean
   isActive?: boolean
   frequency?: boolean
+  lateFeeApplies?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
@@ -1182,6 +1229,7 @@ export type FeeHeadSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   sortOrder?: boolean
   isActive?: boolean
   frequency?: boolean
+  lateFeeApplies?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
@@ -1196,11 +1244,12 @@ export type FeeHeadSelectScalar = {
   sortOrder?: boolean
   isActive?: boolean
   frequency?: boolean
+  lateFeeApplies?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type FeeHeadOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "type" | "name" | "defaultAmount" | "sortOrder" | "isActive" | "frequency" | "createdAt" | "updatedAt", ExtArgs["result"]["feeHead"]>
+export type FeeHeadOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "type" | "name" | "defaultAmount" | "sortOrder" | "isActive" | "frequency" | "lateFeeApplies" | "createdAt" | "updatedAt", ExtArgs["result"]["feeHead"]>
 export type FeeHeadInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   studentFees?: boolean | Prisma.FeeHead$studentFeesArgs<ExtArgs>
@@ -1248,6 +1297,11 @@ export type $FeeHeadPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
      * three months at once would charge three admission fees.
      */
     frequency: $Enums.FeeFrequency
+    /**
+     * Whether the school late fee is charged on this head. Off by default: the
+     * Admin picks which heads a surcharge applies to.
+     */
+    lateFeeApplies: boolean
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["feeHead"]>
@@ -1686,6 +1740,7 @@ export interface FeeHeadFieldRefs {
   readonly sortOrder: Prisma.FieldRef<"FeeHead", 'Int'>
   readonly isActive: Prisma.FieldRef<"FeeHead", 'Boolean'>
   readonly frequency: Prisma.FieldRef<"FeeHead", 'FeeFrequency'>
+  readonly lateFeeApplies: Prisma.FieldRef<"FeeHead", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"FeeHead", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"FeeHead", 'DateTime'>
 }

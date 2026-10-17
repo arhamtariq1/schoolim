@@ -29,6 +29,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 
 import { ClassesTable } from '@/components/classes-table';
 import { mutate } from '@/lib/mutate';
+import { digitsOnly } from '@/lib/input-filters';
 
 export interface ClassesManagerProps {
   classes: ClassLevel[];
@@ -294,7 +295,7 @@ function ClassDialog({
                 inputMode="numeric"
                 className="w-24 font-mono tabular-nums"
                 onChange={(event) => {
-                  setOrder(event.target.value);
+                  setOrder(digitsOnly(event.target.value, 4));
                 }}
               />
             </Field>
@@ -463,7 +464,7 @@ function SectionDialog({
                 inputMode="numeric"
                 placeholder="No limit"
                 onChange={(event) => {
-                  setCapacity(event.target.value);
+                  setCapacity(digitsOnly(event.target.value, 4));
                 }}
               />
             </Field>

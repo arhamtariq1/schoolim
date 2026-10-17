@@ -16,6 +16,7 @@ import { useMemo, useState } from 'react';
 
 import { ListDataTable } from './list-data-table';
 
+import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
 import {
   FEE_LIST_TABLE_CELL,
   LIST_TABLE_BADGE_CLASS,
@@ -161,18 +162,12 @@ export function ParentMarksCard({ marks }: { marks: readonly StudentMarkResult[]
       {tiles.length === 0 ? null : (
         <div className="grid gap-3 px-4 pb-4 sm:grid-cols-2 sm:px-6 xl:grid-cols-3">
           {tiles.map((tile) => (
-            <div key={tile.name} className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm font-semibold text-foreground">{tile.name}</p>
-                <span className="text-xs text-muted-foreground">
-                  {tile.tests} test{tile.tests === 1 ? '' : 's'}
-                </span>
-              </div>
-              <p className="mt-2 text-2xl font-medium tracking-tight text-foreground tabular-nums">
-                {tile.mean === null ? '—' : `${String(tile.mean)}%`}
-              </p>
-              <p className="text-xs text-muted-foreground">Average</p>
-            </div>
+            <DashboardStatCard
+              key={tile.name}
+              label={tile.name}
+              value={tile.mean === null ? '—' : `${String(tile.mean)}%`}
+              description={`Average · ${String(tile.tests)} test${tile.tests === 1 ? '' : 's'}`}
+            />
           ))}
         </div>
       )}

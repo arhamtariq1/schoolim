@@ -27,6 +27,7 @@ import { useMemo, type ReactNode } from 'react';
 
 import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
+import { DASHBOARD_RECENT_ROWS } from '@/lib/dashboard-limits';
 import { displayPhone } from '@/lib/phone-format';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
@@ -41,7 +42,7 @@ export function DashboardRecentAdmissionsTable({
 }: DashboardRecentAdmissionsTableProps) {
   const router = useRouter();
   const tenantHref = useTenantHref();
-  const visibleRows = useMemo(() => rows.slice(0, 8), [rows]);
+  const visibleRows = useMemo(() => rows.slice(0, DASHBOARD_RECENT_ROWS), [rows]);
 
   function openStudent(id: string): void {
     router.push(tenantHref(`/students/${id}` as Route));

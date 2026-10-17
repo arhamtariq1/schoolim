@@ -106,6 +106,14 @@ export const ERROR_CODES = [
    */
   'FEES_ALREADY_BILLED',
 
+  // --- Requests -------------------------------------------------------------
+  /** A status the state machine does not allow from where the request is. */
+  'REQUESTS_INVALID_TRANSITION',
+  /** Somebody else moved it while this person was deciding. */
+  'REQUESTS_CHANGED',
+  /** A picture refused because of how many, or how late, rather than what it is. */
+  'REQUESTS_ATTACHMENT_REFUSED',
+
   // --- Attendance -----------------------------------------------------------
   'ATTENDANCE_ALREADY_MARKED',
   'ATTENDANCE_WINDOW_CLOSED',
@@ -191,6 +199,10 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, number>> = {
   FEES_DEPOSIT_ALREADY_RECORDED: 409,
   FEES_INCREMENT_RACED: 409,
   FEES_ALREADY_BILLED: 409,
+
+  REQUESTS_INVALID_TRANSITION: 422,
+  REQUESTS_CHANGED: 409,
+  REQUESTS_ATTACHMENT_REFUSED: 422,
 
   ATTENDANCE_ALREADY_MARKED: 409,
   ATTENDANCE_WINDOW_CLOSED: 422,

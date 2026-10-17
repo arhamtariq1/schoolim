@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
+import { BrandColourCard, DEFAULT_BRAND_HEX } from '@/components/brand-colour-card';
 import { ChangePasswordDialog } from '@/components/change-password-dialog';
 import { ProfileAccountBanner } from '@/components/profile-account-banner';
 import { ProfileAppearanceSummary } from '@/components/profile-appearance-summary';
@@ -35,7 +36,7 @@ import {
   withoutFieldErrors,
 } from '@/lib/form-validation';
 import { mutate } from '@/lib/mutate';
-import { notifySchoolLogoUpdated } from '@/lib/school-logo-shell';
+import { notifySchoolColourUpdated, notifySchoolLogoUpdated } from '@/lib/school-logo-shell';
 import { provinceForPakistanCity } from '@/lib/pakistan-locations';
 import { displayPhone, phoneDigits, toE164 } from '@/lib/phone-format';
 import type { ProfileSchoolWorkspace } from '@/lib/profile-school-workspace';
@@ -73,7 +74,7 @@ export function ProfileWorkspaceEditor({
 
   const [name, setName] = useState(profile.name);
   const [phone, setPhone] = useState(displayPhone(profile.phone ?? ''));
-  const [designation, setDesignation] = useState(profile.designation ?? '');
+  const designation = profile.designation ?? '';
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatarUrl);
   const [school, setSchool] = useState<ProfileSchoolEditorValues>(() =>
     schoolValuesFromProfile(profile, initialProvince, {
@@ -82,6 +83,7 @@ export function ProfileWorkspaceEditor({
     }),
   );
   const [logo, setLogo] = useState<UploadSchoolLogo | undefined>(undefined);
+  const [brandColour, setBrandColour] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isPending, setIsPending] = useState(false);
 
@@ -222,6 +224,18 @@ export function ProfileWorkspaceEditor({
         notifySchoolLogoUpdated(logoResult.data);
       }
 
+      const savedColour = workspace.settings.primaryColor ?? DEFAULT_BRAND_HEX;
+      if (canEditSchool && brandColour !== null && brandColour !== savedColour) {
+        const colourResult = await mutate(ROUTES.school.appearance, 'PUT', {
+          primaryColor: brandColour,
+        });
+        if (!colourResult.ok) {
+          toast.error(colourResult.message);
+          return;
+        }
+        notifySchoolColourUpdated(brandColour);
+      }
+
       await fetch(ROUTES.auth.refresh, { method: 'POST', credentials: 'include' });
 
       if (mode === 'create') {
@@ -244,6 +258,16 @@ export function ProfileWorkspaceEditor({
         icon={AccountIcon}
         title="Account Information"
         description="Your personal details and account access."
+        action={
+          readOnly ? (
+            <Button asChild>
+              <Link href="/profile/edit" className="cursor-pointer">
+                <EditIcon className={ICON_SIZE.inline} aria-hidden="true" />
+                Edit profile
+              </Link>
+            </Button>
+          ) : undefined
+        }
       >
         <ProfileAccountBanner
           name={name}
@@ -266,8 +290,6 @@ export function ProfileWorkspaceEditor({
           onPhoneChange={(value) => {
             setPhone(phoneDigits(value));
           }}
-          designation={designation}
-          onDesignationChange={setDesignation}
           email={profile.email}
           fieldErrors={fieldErrors}
           disabled={isPending}
@@ -302,6 +324,15 @@ export function ProfileWorkspaceEditor({
       </ProfileSectionCard>
       )}
 
+      {canEditSchool && !readOnly ? (
+        <BrandColourCard
+          appearance={{ primaryColor: workspace.settings.primaryColor }}
+          canConfigure
+          deferSave
+          onColourChange={setBrandColour}
+        />
+      ) : null}
+
       {canEditSchool ? (
         readOnly ? (
           <ProfileAppearanceSummary
@@ -314,20 +345,7 @@ export function ProfileWorkspaceEditor({
   );
 
   if (readOnly) {
-    return (
-      <>
-        {body}
-        <div className="flex flex-col-reverse gap-3 border-t border-border/70 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <ChangePasswordDialog triggerSize="default" />
-          <Button asChild>
-            <Link href="/profile/edit" className="cursor-pointer">
-              <EditIcon className={ICON_SIZE.inline} aria-hidden="true" />
-              Edit profile
-            </Link>
-          </Button>
-        </div>
-      </>
-    );
+    return body;
   }
 
   return (

@@ -5,6 +5,7 @@ import {
   type AcademicSession,
   type ClassLevel,
   type FeeHead,
+  type BankLogo,
   type SchoolLogoInfo,
   type SchoolSettings,
   type VoucherSettings,
@@ -101,7 +102,7 @@ export default async function VouchersPage({
     apiFetch<{ data: SchoolSettings }>(ROUTES.school.settings),
     apiFetch<{ data: VoucherSettings }>(ROUTES.school.voucherSettings),
     apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info),
-    apiFetch<{ data: SchoolLogoInfo }>(ROUTES.bankLogo.info),
+    apiFetch<{ data: BankLogo[] }>(ROUTES.bankLogo.list),
   ]);
 
   const emptyTotals: VoucherTotals = {
@@ -132,10 +133,7 @@ export default async function VouchersPage({
             logoResult.ok && logoResult.data.data.present
               ? (logoResult.data.data.version ?? '')
               : undefined,
-          bankLogoVersion:
-            bankLogoResult.ok && bankLogoResult.data.data.present
-              ? (bankLogoResult.data.data.version ?? '')
-              : undefined,
+          bankLogos: bankLogoResult.ok ? bankLogoResult.data.data : [],
           accentColor: schoolResult.ok
             ? (schoolResult.data.data.primaryColor ?? undefined)
             : (session?.school.primaryColor ?? undefined),

@@ -235,14 +235,22 @@ function CardTableBody<TRow>({
           <thead>
             <tr className="border-b border-border bg-primary/[0.04]">
               {columns.map((column) =>
-                column.headerCell !== undefined ? (
+                isActionColumn(column) ? (
+                  <th
+                    key={column.key}
+                    scope="col"
+                    className="w-14 px-4 py-3 text-start align-middle"
+                  >
+                    <span className="sr-only">{column.label}</span>
+                  </th>
+                ) : column.headerCell !== undefined ? (
                   <th
                     key={column.key}
                     scope="col"
                     className={cn(
                       'align-middle',
                       column.headerClassName ?? 'px-4 py-3',
-                      column.align === 'end' ? 'text-end' : 'text-start',
+                      'text-start',
                     )}
                   >
                     {column.headerCell}
@@ -304,7 +312,6 @@ function CardTableBody<TRow>({
                         className={cn(
                           'align-middle',
                           column.cellClassName ?? 'px-4 py-3',
-                          column.align === 'end' ? 'text-end' : undefined,
                         )}
                       >
                         {column.render(row)}
@@ -351,6 +358,11 @@ function CardTableBody<TRow>({
   );
 }
 
+/** The row-menu column: its header is dropped, only the vertical dots remain. */
+function isActionColumn<TRow>(column: CardTableColumn<TRow>): boolean {
+  return /^actions?$/i.test(column.key) || /^actions?$/i.test(column.label);
+}
+
 function CardTableHeaderCell({
   label,
   icon: Icon,
@@ -364,20 +376,19 @@ function CardTableHeaderCell({
     <th
       scope="col"
       className={cn(
-        'px-4 py-3 align-middle whitespace-nowrap text-muted-foreground',
-        align === 'end' ? 'text-end' : 'text-start',
+        'px-4 py-3 align-middle whitespace-nowrap text-foreground',
+        'text-start',
       )}
     >
       <div
         className={cn(
           'inline-flex items-center gap-2',
-          align === 'end' ? 'justify-end' : undefined,
         )}
       >
         {Icon === undefined ? null : (
           <Icon className="size-4 shrink-0 opacity-80" aria-hidden="true" />
         )}
-        <span className="text-xs leading-none font-medium">{label}</span>
+        <span className="text-xs leading-none font-semibold">{label}</span>
       </div>
     </th>
   );
@@ -399,13 +410,12 @@ function CardTableSortHeader({
   onSort: () => void;
 }) {
   return (
-    <th scope="col" className={cn('p-0 align-middle', align === 'end' ? 'text-end' : undefined)}>
+    <th scope="col" className="p-0 text-start align-middle">
       <button
         type="button"
         onClick={onSort}
         className={cn(
-          'flex w-full items-center gap-2 px-4 py-3 text-xs font-medium whitespace-nowrap text-muted-foreground hover:bg-muted/40',
-          align === 'end' ? 'justify-end' : 'justify-start',
+          'flex w-full items-center justify-start gap-2 px-4 py-3 text-xs font-semibold whitespace-nowrap text-foreground hover:bg-muted/40',
         )}
       >
         {Icon === undefined ? null : (

@@ -1,9 +1,8 @@
 'use client';
 
 import {
-  kuickpayConsumerNo,
-  onelinkConsumerNo,
   ROUTES,
+  type BankLogo,
   type Challan,
   type VoucherSettings,
 } from '@ilm/contracts';
@@ -51,8 +50,8 @@ export interface ChallanProps {
     phone?: string | undefined;
     /** Version string for the logo URL, so a replaced mark is not cached. */
     logoVersion?: string | undefined;
-    /** The same, for the bank's mark at the foot. */
-    bankLogoVersion?: string | undefined;
+    /** Every filled bank-logo slot, in print order — printed in one row at the foot. */
+    bankLogos?: readonly BankLogo[] | undefined;
     /** The school's brand colour, `#rrggbb`. Absent means the default ink. */
     accentColor?: string | undefined;
   };
@@ -101,18 +100,6 @@ export function VoucherChallan({ voucher, school, settings, preview = false }: C
   );
 }
 
-/**
- * Dotted cut lines between copies: a vertical rule after every copy but the
- * last in the three-across layout, and a cross (right of the left column,
- * below the top row) in the 2x2 layout.
- */
-function separators(copyCount: number, index: number): string {
-  if (copyCount === 4) {
-    return `${index % 2 === 0 ? 'border-e-2' : ''} ${index < 2 ? 'border-b-2' : ''}`;
-  }
-  return index < copyCount - 1 ? 'border-e-2' : '';
-}
-
 function ChallanCopy({
   copy,
   copyIndex,
@@ -122,16 +109,22 @@ function ChallanCopy({
   preview = false,
 }: ChallanProps & { copy: string; copyIndex: number }) {
   const charges = voucher.lines.filter((line) => line.kind === 'FEE');
-  const theme = COPY_THEMES[copyIndex] ?? COPY_THEMES[3]!;
-  const showBank = settings.bankName !== null || school.bankLogoVersion !== undefined;
-  const kuickpay = kuickpayConsumerNo(settings, voucher.grNo);
-  const onelink = onelinkConsumerNo(settings, voucher.grNo);
-  const pad = preview ? 'px-2' : 'px-2.5';
+  const theme = COPY_THEMES[copyIndex] ?? COPY_THEMES[3];
+  // Four copies share a portrait sheet, so each gets half the height: the same
+  // layout in the denser type, with tighter spacing and smaller marks.
+  const tight = settings.copyCount === 4;
+  const dense = preview || tight;
+  const pad = dense ? 'px-2' : 'px-2.5';
+  const gap = tight ? 'mt-1.5' : 'mt-3';
+  const rowPad = tight ? 'py-1' : 'py-2';
+  const bankLogos = (settings.showBankLogos ? (school.bankLogos ?? []) : []).map(
+    (logo) => `${ROUTES.bankLogo.slot(logo.slot)}?v=${logo.version}`,
+  );
 
   return (
     <article
-      className={`challan-copy relative flex h-full break-inside-avoid flex-col justify-between overflow-hidden border-dotted border-neutral-400 bg-white py-3 leading-snug ${separators(settings.copyCount, copyIndex)} text-neutral-900 ${
-        preview ? 'text-[8.5px]' : 'text-[9.5px]'
+      className={`challan-copy relative flex h-full break-inside-avoid flex-col justify-between overflow-hidden border border-dashed border-neutral-400 bg-white ${tight ? 'py-1.5' : 'py-3'} leading-snug text-neutral-900 ${
+        dense ? 'text-[8.5px]' : 'text-[9.5px]'
       }`}
       style={
         {
@@ -142,103 +135,113 @@ function ChallanCopy({
       }
     >
       <div className="shrink-0">
-        {/* Logo + copy badge */}
-        <div className={`flex items-center justify-between gap-2 pt-2 ${pad}`}>
+        {/* Centred school identity: logo, name, address, contact */}
+        <div className={`flex flex-col items-center gap-1 border-b border-neutral-200 ${tight ? 'pt-1 pb-1.5' : 'pt-2 pb-3'} text-center ${pad}`}>
           <ChallanMark
             showSchoolLogo={settings.showLogo && school.logoVersion !== undefined}
             logoVersion={school.logoVersion}
-            preview={preview}
+            preview={dense}
           />
-          <span
-            className={`shrink-0 font-semibold tracking-wide text-neutral-700 uppercase ${
-              preview ? 'text-[9px]' : 'text-[10px]'
-            }`}
-          >
-            {copy}
-          </span>
-        </div>
-
-        {/* School identity + challan meta */}
-        <div className={`mt-2 flex items-start justify-between gap-2 border-b border-neutral-200 pb-3 ${pad}`}>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0">
             <h3
               className={`font-bold tracking-tight text-balance text-neutral-900 ${
-                preview ? 'text-[11px] leading-tight' : 'text-[13px] leading-snug'
+                dense ? 'text-[11px] leading-tight' : 'text-[13px] leading-snug'
               }`}
             >
               {school.name}
             </h3>
             {school.address === undefined ? null : (
               <p
-                className={`mt-0.5 text-neutral-500 ${preview ? 'text-[8px] leading-snug' : 'text-[8.5px] leading-snug'}`}
+                className={`mt-0.5 text-neutral-500 ${dense ? 'text-[8px] leading-snug' : 'text-[8.5px] leading-snug'}`}
               >
                 {school.address}
               </p>
             )}
             {school.phone === undefined ? null : (
-              <p className={`text-neutral-500 ${preview ? 'text-[8px]' : 'text-[8.5px]'}`}>
+              <p className={`text-neutral-500 ${dense ? 'text-[8px]' : 'text-[8.5px]'}`}>
                 {school.phone}
               </p>
             )}
           </div>
-          <div className="shrink-0 text-right">
-            <p className={`text-neutral-500 ${preview ? 'text-[8px]' : 'text-[8px]'}`}>Challan No.</p>
-            <p
+        </div>
+
+        {/* Copy label + challan meta, below the header */}
+        <div className={`flex items-center justify-between gap-2 border-b border-neutral-200 ${rowPad} ${pad}`}>
+          <span
+            className={`shrink-0 font-semibold tracking-wide text-neutral-700 uppercase ${
+              dense ? 'text-[9px]' : 'text-[10px]'
+            }`}
+          >
+            {copy}
+          </span>
+          <div className="flex items-baseline gap-2 text-right">
+            <span className={`text-neutral-500 ${dense ? 'text-[8px]' : 'text-[8px]'}`}>Challan No.</span>
+            <span
               className={`font-bold tabular-nums text-neutral-900 ${
-                preview ? 'text-[9px]' : 'text-[11px]'
+                dense ? 'text-[9px]' : 'text-[11px]'
               }`}
             >
               {voucher.voucherNo}
-            </p>
-            <p className={`mt-0.5 text-neutral-500 ${preview ? 'text-[8px]' : 'text-[8px]'}`}>
-              {formatBillMonth(voucher.billMonths[0] ?? voucher.issueDate)}
-            </p>
+            </span>
+            <span className={`text-neutral-500 ${dense ? 'text-[8px]' : 'text-[8px]'}`}>
+              · {formatBillMonth(voucher.billMonths[0] ?? voucher.issueDate)}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Student details — compact two-column card, never stretched */}
-      <div className={`mt-3 shrink-0 border-b border-neutral-200 pb-3 ${pad}`}>
-        <dl className="flex flex-col gap-2">
-          <DetailRow label="Student Name" value={voucher.studentName} preview={preview} />
-          <DetailRow label="Father Name" value={voucher.fatherName ?? '—'} preview={preview} />
-          <DetailRow label="GR No" value={voucher.grNo ?? '—'} preview={preview} />
-          <DetailRow label="Class" value={voucher.className ?? '—'} preview={preview} />
-          <DetailRow label="Section" value={voucher.sectionName ?? '—'} preview={preview} />
-          <DetailRow label="Session" value={voucher.sessionName} preview={preview} />
+      {/* Student details + dates — two columns so the copy's full width is used */}
+      <div className={`${gap} shrink-0 border-b border-neutral-200 ${tight ? 'pb-1.5' : 'pb-3'} ${pad}`}>
+        <dl className={`grid grid-cols-2 gap-x-3 ${tight ? 'gap-y-1' : 'gap-y-2'}`}>
+          <DetailRow label="Student Name" value={voucher.studentName} preview={dense} />
+          <DetailRow label="Father Name" value={voucher.fatherName ?? '—'} preview={dense} />
+          {settings.showStudentDetails ? (
+            <>
+              <DetailRow label="GR No" value={voucher.grNo ?? '—'} preview={dense} />
+              <DetailRow label="Class" value={voucher.className ?? '—'} preview={dense} />
+              <DetailRow label="Section" value={voucher.sectionName ?? '—'} preview={dense} />
+              <DetailRow label="Session" value={voucher.sessionName} preview={dense} />
+            </>
+          ) : null}
+          {settings.showDates ? (
+            <>
+              <DetailRow label="Issue Date" value={formatDate(voucher.issueDate)} preview={dense} />
+              <DetailRow label="Due Date" value={formatDate(voucher.dueDate)} preview={dense} />
+            </>
+          ) : null}
         </dl>
       </div>
 
       {/* Particulars */}
-      <div className={`mt-3 shrink-0 ${pad}`}>
-      <table className="w-full table-fixed border-collapse overflow-hidden rounded-t-lg">
+      <div className={`${gap} shrink-0 ${pad}`}>
+      <table className="w-full table-fixed border-separate border-spacing-0">
         <thead>
-          <tr className="bg-neutral-100">
+          <tr>
             <th
-              className={`py-2 text-left font-semibold text-neutral-700 ${pad} ${
-                preview ? 'text-[8px]' : 'text-[9px]'
+              className={`rounded-s-lg bg-neutral-100 ${rowPad} text-left font-semibold text-neutral-700 ${pad} ${
+                dense ? 'text-[8px]' : 'text-[9px]'
               }`}
             >
               Particulars
             </th>
             <th
-              className={`py-2 text-right font-semibold text-neutral-700 ${pad} ${
-                preview ? 'text-[8px]' : 'text-[9px]'
+              className={`rounded-e-lg bg-neutral-100 ${rowPad} text-right font-semibold text-neutral-700 ${pad} ${
+                dense ? 'text-[8px]' : 'text-[9px]'
               }`}
             >
               Amount (Rs.)
             </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="[&_td]:border-t [&_td]:border-neutral-200 [&_tr:first-child_td]:border-t-0">
           {charges.map((line) => (
-            <tr key={line.id} className="border-t border-neutral-200">
-              <td className={`truncate py-2 ${pad} ${preview ? 'text-[8px]' : 'text-[9px]'}`}>
+            <tr key={line.id}>
+              <td className={`truncate ${rowPad} ${pad} ${dense ? 'text-[8px]' : 'text-[9px]'}`}>
                 {line.label}
               </td>
               <td
-                className={`py-2 text-right font-medium tabular-nums ${pad} ${
-                  preview ? 'text-[8px]' : 'text-[9px]'
+                className={`${rowPad} text-right font-medium tabular-nums ${pad} ${
+                  dense ? 'text-[8px]' : 'text-[9px]'
                 }`}
               >
                 <Money valueMinor={line.amountMinor - line.discountMinor} withSymbol={false} />
@@ -246,15 +249,15 @@ function ChallanCopy({
             </tr>
           ))}
           {voucher.waiverMinor > 0 ? (
-            <tr className="border-t border-neutral-200">
-              <td className={`py-2 ${pad}`}>Waived</td>
-              <td className={`py-2 text-right tabular-nums ${pad}`}>
+            <tr>
+              <td className={`${rowPad} ${pad}`}>Waived</td>
+              <td className={`${rowPad} text-right tabular-nums ${pad}`}>
                 <Money valueMinor={-voucher.waiverMinor} withSymbol={false} />
               </td>
             </tr>
           ) : null}
-          <tr className="border-t border-neutral-200">
-            <td className={`py-2 ${pad} ${preview ? 'text-[8px]' : 'text-[9px]'}`}>
+          <tr>
+            <td className={`${rowPad} ${pad} ${dense ? 'text-[8px]' : 'text-[9px]'}`}>
               Arrears
               {voucher.arrears.length === 0 ? null : (
                 <span className="ms-1 text-neutral-500">
@@ -263,8 +266,8 @@ function ChallanCopy({
               )}
             </td>
             <td
-              className={`py-2 text-right font-medium tabular-nums ${pad} ${
-                preview ? 'text-[8px]' : 'text-[9px]'
+              className={`${rowPad} text-right font-medium tabular-nums ${pad} ${
+                dense ? 'text-[8px]' : 'text-[9px]'
               }`}
             >
               <Money valueMinor={voucher.arrearsMinor} withSymbol={false} />
@@ -273,64 +276,75 @@ function ChallanCopy({
         </tbody>
       </table>
 
+      {/* After the due date — the surcharge frozen on this voucher, never re-rated */}
+      {voucher.lateFeeMinor > 0 ? (
+        <div className={`${tight ? 'my-1' : 'my-1.5'} flex flex-col gap-1 px-2.5`}>
+          <div
+            className={`flex items-center justify-between gap-2 text-neutral-600 ${
+              dense ? 'text-[8px]' : 'text-[9px]'
+            }`}
+          >
+            <span>Late fee after {formatDate(voucher.dueDate)}</span>
+            <span className="font-medium tabular-nums">
+              + <Money valueMinor={voucher.lateFeeMinor} withSymbol={false} />
+            </span>
+          </div>
+          <div
+            className={`flex items-center justify-between gap-2 font-semibold text-neutral-900 ${
+              dense ? 'text-[9px]' : 'text-[10px]'
+            }`}
+          >
+            <span>Payable after due date</span>
+            <span className="tabular-nums">
+              <Money
+                valueMinor={voucher.totalPayableMinor + voucher.lateFeeMinor}
+                withSymbol={false}
+              />
+            </span>
+          </div>
+        </div>
+      ) : null}
+
       {/* Total — tinted bar, dark ink (survives mono print as a grey band) */}
       <div
-        className="flex shrink-0 items-center justify-between gap-2 rounded-b-lg px-2.5 py-3"
+        className={`flex shrink-0 items-center justify-between gap-2 rounded-lg px-2.5 ${tight ? 'py-1.5' : 'py-3'}`}
         style={{ backgroundColor: theme.wash, color: theme.ink }}
       >
-        <span className={`font-bold ${preview ? 'text-[10px]' : 'text-[11px]'}`}>Total Payable</span>
-        <span className={`font-bold tabular-nums ${preview ? 'text-[13px]' : 'text-[15px]'}`}>
+        <span className={`font-bold ${dense ? 'text-[10px]' : 'text-[11px]'}`}>Total Payable</span>
+        <span className={`font-bold tabular-nums ${dense ? 'text-[13px]' : 'text-[15px]'}`}>
           <Money valueMinor={voucher.totalPayableMinor} withSymbol={false} />
         </span>
       </div>
 
       </div>
-      {/* Bank + late-fee note */}
-      {showBank || settings.footerNote !== null ? (
-        <div className={`mt-3 shrink-0 ${pad}`}>
-          <div className="flex items-center gap-2.5 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5">
-            <BankGlyph />
-            <div className="min-w-0 flex-1">
-              {settings.bankName === null ? null : (
-                <p
-                  className={`font-semibold text-neutral-900 ${preview ? 'text-[8px]' : 'text-[9px]'}`}
-                >
-                  {settings.bankName}
-                </p>
-              )}
-              {school.bankLogoVersion === undefined ? null : (
+      {/* Bank mark + footer note — the uploaded mark alone, no name and no box */}
+      {bankLogos.length > 0 || settings.footerNote !== null ? (
+        <div className={`${gap} flex shrink-0 flex-col items-start gap-1.5 text-left ${pad}`}>
+          {bankLogos.length === 0 ? null : (
+            // One row from the left, packed side by side in upload order; the
+            // height steps down as marks are added, and each shrinks if the row overflows.
+            <div className="flex w-full items-center justify-start gap-2">
+              {bankLogos.map((src) => (
                 <img
-                  src={`${ROUTES.bankLogo.image}?v=${school.bankLogoVersion}`}
+                  key={src}
+                  src={src}
                   alt=""
                   role="presentation"
-                  className={`mt-1 w-auto object-contain ${preview ? 'h-4 max-w-12' : 'h-5 max-w-16'}`}
+                  className={`w-auto min-w-0 shrink object-contain ${bankLogoHeight(bankLogos.length, tight)}`}
                 />
-              )}
-              {settings.footerNote === null ? null : (
-                <p className={`mt-0.5 text-neutral-500 ${preview ? 'text-[8px]' : 'text-[8px]'}`}>
-                  {settings.footerNote}
-                </p>
-              )}
+              ))}
             </div>
-          </div>
+          )}
+          {settings.footerNote === null ? null : (
+            <p className={`text-neutral-500 ${dense ? 'text-[8px]' : 'text-[8px]'}`}>
+              {settings.footerNote}
+            </p>
+          )}
         </div>
       ) : null}
 
-      {/* Dates */}
-      <div className={`mt-3 grid shrink-0 grid-cols-3 gap-1 border-b border-neutral-200 pb-3 ${pad}`}>
-        <DateCell label="Issue Date" value={formatDate(voucher.issueDate)} preview={preview} />
-        <DateCell label="Due Date" value={formatDate(voucher.dueDate)} preview={preview} />
-        <DateCell label="Valid Till" value={formatDate(voucher.validTill)} preview={preview} />
-      </div>
-
-      {kuickpay === undefined ? null : (
-        <div className="shrink-0">
-          <PaymentBlock kuickpay={kuickpay} onelink={onelink} channels={settings.kuickpayChannels} />
-        </div>
-      )}
-
       {/* Signatures — pinned to the foot of the copy */}
-      <div className={`mt-auto flex shrink-0 justify-between gap-3 pt-8 pb-2 ${pad}`}>
+      <div className={`mt-auto flex shrink-0 justify-between gap-3 ${tight ? 'pt-4 pb-1' : 'pt-8 pb-2'} ${pad}`}>
         <span className="flex-1 border-t border-dotted border-neutral-400 pt-1 text-[8px] text-neutral-600 last:text-right">
           Receiver&rsquo;s Signature
         </span>
@@ -362,7 +376,7 @@ function ChallanMark({
       <img
         src={`${ROUTES.schoolLogo.image}?v=${logoVersion}`}
         alt=""
-        className={`${size} object-contain object-left`}
+        className={`${size} object-contain object-center`}
       />
     );
   }
@@ -371,9 +385,21 @@ function ChallanMark({
     <img
       src="/auth/lemma-logo.png"
       alt={BRAND.name}
-      className={`${size} object-contain object-left`}
+      className={`${size} object-contain object-center`}
     />
   );
+}
+
+/**
+ * A lone mark prints large; each extra mark in the row steps the height down.
+ * The four-copy sheet gives each copy half the height, so its marks start smaller.
+ */
+function bankLogoHeight(count: number, tight: boolean): string {
+  if (tight) return count <= 2 ? 'h-9' : 'h-7';
+  if (count <= 1) return 'h-16';
+  if (count === 2) return 'h-12';
+  if (count === 3) return 'h-10';
+  return 'h-8';
 }
 
 function DetailRow({
@@ -386,88 +412,15 @@ function DetailRow({
   preview: boolean;
 }) {
   return (
-    <div className="flex items-baseline gap-3">
-      <dt className={`w-20 shrink-0 text-neutral-600 ${preview ? 'text-[8px]' : 'text-[9px]'}`}>
+    <div className="flex min-w-0 items-baseline gap-1.5">
+      <dt className={`shrink-0 text-neutral-500 ${preview ? 'text-[8px]' : 'text-[8.5px]'}`}>
         {label}
       </dt>
       <dd
-        className={`min-w-0 font-semibold break-words text-neutral-900 ${preview ? 'text-[9px]' : 'text-[10px]'}`}
+        className={`min-w-0 font-semibold tabular-nums break-words text-neutral-900 ${preview ? 'text-[9px]' : 'text-[10px]'}`}
       >
         {value}
       </dd>
-    </div>
-  );
-}
-
-function DateCell({
-  label,
-  value,
-  preview,
-}: {
-  label: string;
-  value: string;
-  preview: boolean;
-}) {
-  return (
-    <div className="min-w-0">
-      <p className={`text-neutral-500 ${preview ? 'text-[8px]' : 'text-[8px]'}`}>{label}</p>
-      <p className={`font-semibold tabular-nums text-neutral-900 ${preview ? 'text-[8px]' : 'text-[9px]'}`}>
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function BankGlyph() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="mt-0.5 size-4 shrink-0 text-neutral-500"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      aria-hidden
-    >
-      <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
-    </svg>
-  );
-}
-
-function PaymentBlock({
-  kuickpay,
-  onelink,
-  channels,
-}: {
-  kuickpay: string;
-  onelink: string | undefined;
-  channels: readonly string[];
-}) {
-  return (
-    <div className="mt-2 border-t border-neutral-200 px-3 pt-2">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] font-bold tracking-tight text-[var(--challan-accent)]">
-          Kuickpay
-        </span>
-        <span className="flex items-center gap-1.5 rounded border border-neutral-400 bg-white px-2 py-0.5 text-black">
-          <span className="text-[8px] tracking-wide text-neutral-500 uppercase">ID</span>
-          <span className="font-mono text-[11px] font-bold tracking-wider">{kuickpay}</span>
-        </span>
-      </div>
-      {channels.length === 0 ? null : (
-        <ul className="mt-1 grid grid-cols-2 gap-x-2 gap-y-px text-[8px] text-neutral-600">
-          {channels.map((channel) => (
-            <li key={channel} className="truncate">
-              {channel}
-            </li>
-          ))}
-        </ul>
-      )}
-      {onelink === undefined ? null : (
-        <p className="mt-1 text-center text-[9px]">
-          <span className="text-neutral-500">1LINK ID</span>{' '}
-          <span className="font-mono font-semibold tracking-wider">{onelink}</span>
-        </p>
-      )}
     </div>
   );
 }

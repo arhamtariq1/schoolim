@@ -30,6 +30,7 @@ import { ListDataTable } from './list-data-table';
 import { ListTablePaginationFooter } from './list-table-pagination-footer';
 import { ListTableScreen } from './list-table-screen';
 
+import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
 import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
 import {
   FEE_LIST_TABLE_CELL,
@@ -252,48 +253,36 @@ function OverviewTab({
 }) {
   return (
     <div className="space-y-4">
-      <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Tile
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <DashboardStatCard
           label="Students"
           value={String(entry.sessionStudentCount)}
-          note="Enrolled this session"
+          description="Enrolled this session"
         />
-        <Tile
+        <DashboardStatCard
           label="Sections"
           value={String(entry.sections.length)}
-          note={
+          description={
             entry.sections.length === 0
               ? 'None yet'
               : entry.sections.map((item) => item.name).join(' · ')
           }
         />
-        <Tile
+        <DashboardStatCard
           label="Tests entered"
           value={summary === undefined ? '—' : String(summary.testCount)}
-          note="This session"
+          description="This session"
         />
-        <Tile
+        <DashboardStatCard
           label="Class average"
           value={
             summary === undefined || summary.averagePercent === null
               ? '—'
               : `${String(summary.averagePercent)}%`
           }
-          note="Across all tests"
+          description="Across all tests"
         />
-      </dl>
-    </div>
-  );
-}
-
-function Tile({ label, value, note }: { label: string; value: string; note: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-card px-4 py-3">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-1 text-2xl font-medium tracking-tight text-foreground tabular-nums">
-        {value}
-      </dd>
-      <p className="truncate text-xs text-muted-foreground">{note}</p>
+      </div>
     </div>
   );
 }

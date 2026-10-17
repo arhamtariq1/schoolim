@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  formatCnic,
   GUARDIAN_RELATIONS,
   ROUTES,
   upsertGuardianSchema,
@@ -11,7 +12,9 @@ import { SearchIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
+import { PhoneInput } from '@/components/phone-input';
 import { mutate } from '@/lib/mutate';
+import { displayPhone, livePhoneError, phoneInputError } from '@/lib/phone-format';
 
 /**
  * Add or edit a guardian.
@@ -69,7 +72,7 @@ export function GuardianDialog({
 
   const [name, setName] = useState(guardian?.name ?? '');
   const [relation, setRelation] = useState<string>(guardian?.relation ?? 'FATHER');
-  const [phone, setPhone] = useState(guardian?.phone ?? '');
+  const [phone, setPhone] = useState(displayPhone(guardian?.phone ?? ''));
   const [email, setEmail] = useState(guardian?.email ?? '');
   const [cnic, setCnic] = useState(guardian?.cnic ?? '');
   const [occupation, setOccupation] = useState(guardian?.occupation ?? '');
@@ -134,6 +137,12 @@ export function GuardianDialog({
     event.preventDefault();
     setFormError(undefined);
     setFieldErrors({});
+
+    const phoneError = phoneInputError(phone, { required: false });
+    if (phoneError !== undefined) {
+      setFieldErrors({ phone: phoneError });
+      return;
+    }
 
     const normalisedPhone = toE164(phone);
 
@@ -280,17 +289,10 @@ export function GuardianDialog({
 
               <Field
                 label="Phone"
-                error={fieldErrors['phone']}
-                hint="03001234567 or +923001234567."
+                error={fieldErrors['phone'] ?? livePhoneError(phone)}
+                hint="Digits only, starting with 03 or 02."
               >
-                <Input
-                  type="tel"
-                  inputMode="tel"
-                  value={phone}
-                  onChange={(event) => {
-                    setPhone(event.target.value);
-                  }}
-                />
+                <PhoneInput value={phone} onValueChange={setPhone} />
               </Field>
 
               <Field label="Email" error={fieldErrors['email']}>
@@ -320,8 +322,12 @@ export function GuardianDialog({
               >
                 <Input
                   value={cnic}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="35202-1234567-1"
+                  maxLength={15}
                   onChange={(event) => {
-                    setCnic(event.target.value);
+                    setCnic(formatCnic(event.target.value));
                   }}
                 />
               </Field>

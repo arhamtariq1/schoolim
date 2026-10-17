@@ -317,38 +317,48 @@ describe('a member of staff’s attendance on their page', () => {
 });
 
 describe('salary history', () => {
-  it('lists every month since joining, due at the basic salary until paid', async () => {
+  type Detail = {
+    summary: { currentMonthlySalaryMinor: number };
+    months: { month: string; status: string; baseMinor: number; paidMinor: number; remainingMinor: number }[];
+    payments: { month: string; amountMinor: number; paidOn: string }[];
+  };
+
+  it('lists every month since joining, unpaid at the basic salary until paid', async () => {
     const response = await as('owner', 'GET', ROUTES.staff.salary(ahmedId));
     expect(response.statusCode).toBe(200);
-    const body = response.json<{
-      data: { basicSalaryMinor: number; rows: { month: string; status: string; amountMinor: number; paidOn: string | null }[] };
-    }>().data;
+    const body = response.json<{ data: Detail }>().data;
 
-    expect(body.basicSalaryMinor).toBe(3_000_000);
-    expect(body.rows.at(-1)?.month).toBe('2026-08'); // the month they joined, oldest last
-    expect(body.rows.every((row) => row.status === 'DUE')).toBe(true);
-    expect(body.rows.every((row) => row.amountMinor === 3_000_000 && row.paidOn === null)).toBe(true);
+    expect(body.summary.currentMonthlySalaryMinor).toBe(3_000_000);
+    expect(body.months.at(-1)?.month).toBe('2026-08'); // the month they joined, oldest last
+    expect(body.months.every((row) => row.status === 'UNPAID')).toBe(true);
+    expect(body.months.every((row) => row.baseMinor === 3_000_000 && row.paidMinor === 0)).toBe(true);
   });
 
-  it('records a payment once, with its date', async () => {
+  it('records a payment with its date, and refuses another once the month is settled', async () => {
     const paid = await as('owner', 'POST', ROUTES.staff.salaryPayments(ahmedId), {
       month: '2026-08',
       paidOn: '2026-09-01',
     });
     expect(paid.statusCode).toBe(201);
-    const row = paid
-      .json<{ data: { rows: { month: string; status: string; amountMinor: number; paidOn: string | null }[] } }>()
-      .data.rows.find((entry) => entry.month === '2026-08');
-    expect(row).toMatchObject({ status: 'PAID', amountMinor: 3_000_000, paidOn: '2026-09-01' });
+    const body = paid.json<{ data: Detail }>().data;
+    expect(body.months.find((entry) => entry.month === '2026-08')).toMatchObject({
+      status: 'PAID',
+      paidMinor: 3_000_000,
+      remainingMinor: 0,
+    });
+    expect(body.payments.find((entry) => entry.month === '2026-08')).toMatchObject({
+      amountMinor: 3_000_000,
+      paidOn: '2026-09-01',
+    });
 
     const again = await as('owner', 'POST', ROUTES.staff.salaryPayments(ahmedId), {
       month: '2026-08',
       paidOn: '2026-09-02',
     });
-    expect(again.statusCode).toBe(409);
+    expect(again.statusCode).toBe(422);
   });
 
-  it('refuses a month that has not started, and a person with no salary to default to', async () => {
+  it('refuses a month that has not started, and a person with no salary to pay', async () => {
     const future = await as('owner', 'POST', ROUTES.staff.salaryPayments(ahmedId), {
       month: '2099-01',
       paidOn: '2026-09-02',
@@ -362,19 +372,22 @@ describe('salary history', () => {
     expect([404, 422]).toContain(noSalary.statusCode);
   });
 
-  it('lets the principal read it but not record a payment', async () => {
+  it('lets the principal read it and record a payment, like the admin', async () => {
     expect((await as('principal', 'GET', ROUTES.staff.salary(ahmedId))).statusCode).toBe(200);
     expect(
       (await as('principal', 'POST', ROUTES.staff.salaryPayments(ahmedId), { month: '2026-09', paidOn: '2026-09-30' }))
         .statusCode,
-    ).toBe(403);
+    ).toBe(201);
   });
 
   it('is append-only in the database itself: the app role cannot update or delete', async () => {
-    const grants = await admin.$queryRawUnsafe<{ privilege_type: string }[]>(
-      `SELECT privilege_type FROM information_schema.role_table_grants
-        WHERE table_name = 'staff_salary_payments' AND grantee = 'ilm_app'`,
-    );
-    expect(grants.map((row) => row.privilege_type).sort()).toEqual(['INSERT', 'SELECT']);
+    for (const table of ['staff_salary_payments', 'staff_salary_periods', 'staff_salary_adjustments']) {
+      const grants = await admin.$queryRawUnsafe<{ privilege_type: string }[]>(
+        `SELECT privilege_type FROM information_schema.role_table_grants
+          WHERE table_name = $1 AND grantee = 'ilm_app'`,
+        table,
+      );
+      expect(grants.map((row) => row.privilege_type).sort()).toEqual(['INSERT', 'SELECT']);
+    }
   });
 });

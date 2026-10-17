@@ -1,12 +1,11 @@
-import { ROUTES, type ClassOverview } from '@ilm/contracts';
+import { EmptyState } from '@ilm/ui';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { DashboardLoading } from '@/components/dashboard/dashboard-loading';
 import { HomeDashboard } from '@/components/dashboard/home-dashboard';
-import { TeacherDashboard, type TeacherClassCard } from '@/components/dashboard/teacher-dashboard';
-import { apiFetch } from '@/lib/api';
-import { loadDashboardDemoSnapshot } from '@/lib/dashboard-demo-data';
+import { TeacherDashboard } from '@/components/dashboard/teacher-dashboard';
+import { loadDashboard } from '@/lib/dashboard-data';
 import { requireSchoolSession } from '@/lib/require-session';
 import { tenantSlugFromHeaders } from '@/lib/tenant-from-request';
 
@@ -24,29 +23,21 @@ async function HomeDashboardContent({
 
   const tenantSlug = await tenantSlugFromHeaders();
 
-  // A teacher's home is their own: classes, attendance, salary — and no
-  // school-wide money, which the general dashboard is full of.
-  const STAFF_OVERVIEW_ROLES = ['OWNER', 'PRINCIPAL', 'ADMIN', 'ACCOUNTANT', 'RECEPTION', 'COORDINATOR'];
-  if (
-    session.roles.includes('TEACHER') &&
-    !session.roles.some((role) => STAFF_OVERVIEW_ROLES.includes(role))
-  ) {
-    // Only this teacher's classes: the overview endpoint is narrowed by the API
-    // to their assignments, so nothing here filters and nothing could leak.
-    const overview = await apiFetch<{ data: ClassOverview }>(ROUTES.attendance.classes);
-    const classes: TeacherClassCard[] = overview.ok
-      ? overview.data.data.classes.map((entry) => ({
-          classLevelId: entry.classLevelId,
-          name: entry.className,
-          students: entry.strength,
-          presentToday: entry.present,
-          markedToday: entry.markedAt !== null,
-        }))
-      : [];
-    return <TeacherDashboard session={session} tenantSlug={tenantSlug} classes={classes} />;
+  // One call: the API decides by role what comes back — revenue for the Admin
+  // alone, a teacher's own classes for a teacher. Nothing is filtered here.
+  const dashboard = await loadDashboard(session);
+
+  if (dashboard.kind === 'error') {
+    return (
+      <EmptyState title="The dashboard did not load" description={dashboard.message} />
+    );
   }
 
-  const snapshot = loadDashboardDemoSnapshot(session);
+  if (dashboard.kind === 'teacher') {
+    return <TeacherDashboard session={session} tenantSlug={tenantSlug} data={dashboard.data} />;
+  }
+
+  const snapshot = dashboard.snapshot;
 
   const verifyBanner =
     verifyOutcome === undefined ? null : (
@@ -79,23 +70,9 @@ async function HomeDashboardContent({
 /**
  * Home — the dashboard.
  *
- * ## Deliberately static, for now
- *
- * This renders `loadDashboardDemoSnapshot`: a fixed payload, not the school's
- * own figures. That is a decision, not an oversight. Half of this screen —
- * revenue trend, monthly expenses, expense breakdown, weekly attendance, recent
- * fee payments — has no endpoint behind it yet, and `HomeDashboard` hides any
- * widget whose data is empty. Wired to the live loader today it would show four
- * cards and a lot of white space, which is not the product being demonstrated.
- *
- * `loadDashboardSnapshot` in `@/lib/dashboard-data` is the real thing and is
- * already written: it asks the same list endpoints the rest of the portal uses,
- * permission-gated and in parallel. **Swap the import below for it once the
- * summary endpoints exist** — nothing else on this page has to change, because
- * both return the same `DashboardSnapshot`.
- *
- * Until then the figures here are invented, so this screen must not be used to
- * answer a question about a real school's money.
+ * Every figure comes from `GET /api/v1/dashboard`, computed from the school's
+ * own rows in one transaction; `loadDashboard` in `@/lib/dashboard-data` is the
+ * only place that calls it.
  */
 export default async function HomePage({
   searchParams,

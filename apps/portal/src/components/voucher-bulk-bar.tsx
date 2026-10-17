@@ -21,9 +21,11 @@ import {
   Input,
   useToast,
 } from '@ilm/ui';
-import { DeleteIcon, ICON_SIZE, PrintIcon } from '@ilm/ui/icons';
+import { DeleteIcon, FinanceIcon, ICON_SIZE, PrintIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+
+import { BulkVoucherPaymentDialog } from './bulk-voucher-payment-dialog';
 
 import { mutate } from '@/lib/mutate';
 import { stashPrintSelection } from '@/lib/print-handoff';
@@ -61,6 +63,8 @@ export interface VoucherBulkBarProps {
   /** Select all rows behind the filters. Absent when there are too many. */
   readonly onSelectAllMatching?: (() => Promise<void>) | undefined;
   readonly canDelete: boolean;
+  /** May record payments (`fees.payment.create`). */
+  readonly canCollect: boolean;
 }
 
 export function VoucherBulkBar({
@@ -69,6 +73,7 @@ export function VoucherBulkBar({
   matching,
   onSelectAllMatching,
   canDelete,
+  canCollect,
 }: VoucherBulkBarProps) {
   const router = useRouter();
   const toast = useToast();
@@ -76,6 +81,7 @@ export function VoucherBulkBar({
   const [confirming, setConfirming] = useState(false);
   const [reason, setReason] = useState('');
   const [isBusy, setIsBusy] = useState(false);
+  const [collecting, setCollecting] = useState(false);
 
   const count = selected.size;
   if (count === 0) {
@@ -83,16 +89,6 @@ export function VoucherBulkBar({
   }
 
   const overCap = count > MAX_BULK_VOUCHERS;
-
-  /**
-   * More match than can be selected, so there is no honest "select all".
-   *
-   * Offering it would take the first five hundred by sort order, which is an
-   * arbitrary five hundred of two thousand — useless for printing, where the
-   * stack has to be a class. So the bar says the limit and points at the
-   * filter that makes the selection meaningful.
-   */
-  const tooManyMatching = matching > MAX_BULK_VOUCHERS && onSelectAllMatching === undefined;
 
   function print() {
     const token = stashPrintSelection([...selected]);
@@ -137,25 +133,7 @@ export function VoucherBulkBar({
   return (
     <>
       <FloatingActionBar
-        message={
-          <>
-            <span className="font-medium">
-              {count} {count === 1 ? 'voucher' : 'vouchers'} selected
-            </span>
-            {matching > count ? (
-              <span className="text-muted-foreground">
-                {' '}
-                of {matching} matching these filters
-              </span>
-            ) : null}
-            {!tooManyMatching ? null : (
-              <span className="text-warning">
-                {' '}
-                — only {MAX_BULK_VOUCHERS} at once; filter by class to print a stack.
-              </span>
-            )}
-          </>
-        }
+        message={<span className="font-medium whitespace-nowrap">{count} selected</span>}
         leadingActions={
           onSelectAllMatching === undefined ? null : (
             <Button
@@ -174,6 +152,20 @@ export function VoucherBulkBar({
             <Button tone="ghost" size="sm" onClick={onClear}>
               Clear selection
             </Button>
+
+            {!canCollect ? null : (
+              <Button
+                tone="outline"
+                size="sm"
+                disabled={overCap}
+                onClick={() => {
+                  setCollecting(true);
+                }}
+              >
+                <FinanceIcon className={ICON_SIZE.inline} aria-hidden />
+                Record payment
+              </Button>
+            )}
 
             {!canDelete ? null : (
               <Button
@@ -196,6 +188,20 @@ export function VoucherBulkBar({
           </>
         }
       />
+
+      {collecting ? (
+        <BulkVoucherPaymentDialog
+          ids={[...selected]}
+          onClose={() => {
+            setCollecting(false);
+          }}
+          onDone={() => {
+            setCollecting(false);
+            onClear();
+            router.refresh();
+          }}
+        />
+      ) : null}
 
       {/* A plain Dialog rather than ConfirmDialog, for the reason the
           single-voucher delete already found: that component takes no

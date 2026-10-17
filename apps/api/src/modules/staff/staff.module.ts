@@ -2,7 +2,9 @@ import {
   bulkDeleteStaffSchema,
   createStaffSchema,
   deleteStaffSchema,
+  addSalaryAdjustmentSchema,
   recordSalaryPaymentSchema,
+  staffSalaryListQuerySchema,
   ROUTES,
   staffListQuerySchema,
   updateStaffSchema,
@@ -10,7 +12,9 @@ import {
   type StaffInviteResult,
   type StaffListItem,
   type StaffProfile,
-  type StaffSalaryHistory,
+  type StaffSalaryDetail,
+  type StaffSalaryList,
+  type StaffSalaryReceipt,
 } from '@ilm/contracts';
 import {
   Body,
@@ -128,18 +132,46 @@ export class StaffController {
    */
   @Get('/api/v1/staff/:id/salary')
   @RequirePermission('staff.salary.read')
-  async salaryHistory(@Param('id') id: string): Promise<{ data: StaffSalaryHistory }> {
-    return { data: await this.salary.history(id) };
+  async salaryDetail(@Param('id') id: string): Promise<{ data: StaffSalaryDetail }> {
+    return { data: await this.salary.detail(id) };
   }
 
-  /** Record one month's payment. Append-only: there is no edit and no delete. */
+  /**
+   * Record a payment — full or part — against one month's salary. Append-only:
+   * there is no edit and no delete, and it cannot exceed what is still owed.
+   */
   @Post('/api/v1/staff/:id/salary-payments')
   @RequirePermission('staff.salary.pay')
   async recordSalary(
     @Param('id') id: string,
     @Body() body: unknown,
-  ): Promise<{ data: StaffSalaryHistory }> {
+  ): Promise<{ data: StaffSalaryDetail }> {
     return { data: await this.salary.record(id, recordSalaryPaymentSchema.parse(body)) };
+  }
+
+  /** A bonus, allowance, deduction or manual adjustment, with a reason. Append-only. */
+  @Post('/api/v1/staff/:id/salary-adjustments')
+  @RequirePermission('staff.salary.pay')
+  async adjustSalary(
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<{ data: StaffSalaryDetail }> {
+    return { data: await this.salary.adjust(id, addSalaryAdjustmentSchema.parse(body)) };
+  }
+
+  /** Every person's salary for a month — the Salaries page. */
+  @Get('/api/v1/staff-salaries')
+  @RequirePermission('staff.salary.read')
+  async salaryList(@Query() rawQuery: unknown): Promise<{ data: StaffSalaryList }> {
+    return { data: await this.salary.list(staffSalaryListQuerySchema.parse(rawQuery)) };
+  }
+
+  @Get('/api/v1/staff-salaries/payments/:paymentId/receipt')
+  @RequirePermission('staff.salary.read')
+  async salaryReceipt(
+    @Param('paymentId') paymentId: string,
+  ): Promise<{ data: StaffSalaryReceipt }> {
+    return { data: await this.salary.receipt(paymentId) };
   }
 
   @Delete('/api/v1/staff/:id')

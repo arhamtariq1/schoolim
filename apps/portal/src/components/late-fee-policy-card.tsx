@@ -1,7 +1,7 @@
 'use client';
 
 import { ROUTES, type LateFeePolicy } from '@ilm/contracts';
-import { Button, Field, Input, Money, SimpleSelect, useToast } from '@ilm/ui';
+import { Button, Field, Input, Money, MultiSelect, SimpleSelect, useToast } from '@ilm/ui';
 import { ICON_SIZE, OverdueIcon } from '@ilm/ui/icons';
 import { minorUnits, percentageOfMoney } from '@ilm/utils';
 import { useRouter } from 'next/navigation';
@@ -9,6 +9,7 @@ import { useState, type FormEvent } from 'react';
 
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
+import { digitsOnly } from '@/lib/input-filters';
 
 /**
  * Settings › Fees › the late fee.
@@ -34,11 +35,18 @@ type LateFeeMode = (typeof MODE_OPTIONS)[number]['value'];
 
 export interface LateFeePolicyCardProps {
   readonly policy: LateFeePolicy;
+  /** The catalogue, so the Admin can tick which heads the late fee applies to. */
+  readonly feeHeads: readonly { readonly id: string; readonly name: string }[];
   readonly canConfigure: boolean;
   readonly error?: string | undefined;
 }
 
-export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicyCardProps) {
+export function LateFeePolicyCard({
+  policy,
+  feeHeads,
+  canConfigure,
+  error,
+}: LateFeePolicyCardProps) {
   const router = useRouter();
   const toast = useToast();
 
@@ -46,6 +54,10 @@ export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicy
   const [percent, setPercent] = useState(() => displayPercent(policy.percentBasisPoints));
   const [flat, setFlat] = useState(() => displayFlat(policy.flatMinor));
   const [graceDays, setGraceDays] = useState(() => String(policy.graceDays));
+  const [pickedHeadIds, setFeeHeadIds] = useState<string[]>(() => [...policy.feeHeadIds]);
+  // A fee type deleted since the page loaded must not be sent back: it would
+  // fail the whole save. Newly added types simply appear in the list.
+  const feeHeadIds = pickedHeadIds.filter((id) => feeHeads.some((head) => head.id === id));
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState<string | undefined>(undefined);
 
@@ -65,7 +77,10 @@ export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicy
     (mode === 'percentage'
       ? percentBasisPoints !== policy.percentBasisPoints
       : (flatMinor ?? -1) !== policy.flatMinor) ||
-    (graceDaysValue ?? -1) !== policy.graceDays;
+    (graceDaysValue ?? -1) !== policy.graceDays ||
+    !sameIds(feeHeadIds, policy.feeHeadIds);
+
+  const chargesNothing = feeHeadIds.length === 0;
 
   const exampleMinor =
     percentInvalid || flatInvalid || percentBasisPoints === undefined || flatMinor === undefined
@@ -98,6 +113,7 @@ export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicy
       percentBasisPoints,
       flatMinor,
       graceDays: graceDaysValue,
+      feeHeadIds,
     });
 
     setIsSaving(false);
@@ -126,8 +142,8 @@ export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicy
             Late fee
           </h2>
           <p className="text-sm text-muted-foreground">
-            Added to a challan when it is paid after the due date. Choose percentage or a fixed
-            amount — only one applies.{' '}
+            Added to a challan when it is paid after the due date, on the fee types you choose
+            below. Choose percentage or a fixed amount — only one applies.{' '}
             <strong className="font-medium text-foreground">
               Changing it never re-rates a voucher that has already been issued.
             </strong>
@@ -222,11 +238,31 @@ export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicy
                 className="tabular-nums"
                 disabled={!canConfigure}
                 onChange={(event) => {
-                  setGraceDays(event.target.value);
+                  setGraceDays(digitsOnly(event.target.value, 2));
                 }}
               />
             </Field>
           </div>
+
+          <Field
+            label="Charge late fee on"
+            hint="Pick one or more fee types. Nothing is charged on a fee type you leave out."
+            error={
+              chargesNothing && !draftIsZero
+                ? 'Pick at least one fee type, or no late fee will be charged.'
+                : undefined
+            }
+          >
+            <MultiSelect
+              value={feeHeadIds}
+              onValueChange={setFeeHeadIds}
+              options={feeHeads.map((head) => ({ value: head.id, label: head.name }))}
+              placeholder="Select fee types"
+              searchPlaceholder="Search fee types…"
+              emptyMessage="No fee types yet."
+              disabled={!canConfigure}
+            />
+          </Field>
 
           {canConfigure ? (
             <div className="flex justify-end">
@@ -266,6 +302,10 @@ export function LateFeePolicyCard({ policy, canConfigure, error }: LateFeePolicy
       </div>
     </section>
   );
+}
+
+function sameIds(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((id) => b.includes(id));
 }
 
 function modeFromPolicy(policy: LateFeePolicy): LateFeeMode {

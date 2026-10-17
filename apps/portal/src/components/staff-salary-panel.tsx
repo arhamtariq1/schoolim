@@ -2,239 +2,425 @@
 
 import {
   ROUTES,
-  type StaffSalaryHistory,
-  type StaffSalaryRow,
+  SALARY_PAYMENT_METHOD_LABELS,
+  STAFF_ROLE_LABELS,
+  type StaffSalaryDetail,
+  type StaffSalaryMonth,
+  type StaffSalaryPaymentRecord,
 } from '@ilm/contracts';
 import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  DatePicker,
   DateDisplay,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Field,
-  FieldIconWrap,
-  Input,
+  DropdownMenuItem,
   Money,
   StatusBadge,
-  useToast,
   type CardTableColumn,
 } from '@ilm/ui';
-import { FeesIcon } from '@ilm/ui/icons';
+import {
+  CalendarIcon,
+  CreateIcon,
+  EmailIcon,
+  FeesIcon,
+  FinanceIcon,
+  PhoneIcon,
+  PrintIcon,
+} from '@ilm/ui/icons';
 import { minorUnits } from '@ilm/utils';
-import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type ComponentType, type ReactNode } from 'react';
 
 import { ListDataTable } from './list-data-table';
+import { ListTablePaginationFooter } from './list-table-pagination-footer';
+import { ListTableRowActions } from './list-table-row-actions';
+import { PaySalaryDialog, type PaySalaryTarget } from './pay-salary-dialog';
+import { SalaryDetailSkeleton } from './salary-skeletons';
+import { SalaryAvatar, SalaryStatusBadge, salaryMonthLabel } from './salary-ui';
 
-import {
-  FEE_LIST_TABLE_CELL,
-  LIST_TABLE_BADGE_CLASS,
-  feeListTableHeader,
-} from '@/components/fees/fee-list-shared';
-import { fetchJson, mutate } from '@/lib/mutate';
+import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
+import { afterMenuAction } from '@/components/fees/fee-list-shared';
+import { fetchJson } from '@/lib/mutate';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
-function monthLabel(month: string): string {
-  return new Date(`${month}-01T00:00:00Z`).toLocaleDateString('en-GB', {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
+const DEFAULT_PAGE_SIZE = 20;
+
+function money(minor: number, dashOnZero = false) {
+  return <Money valueMinor={minorUnits(minor)} withSymbol dashOnZero={dashOnZero} />;
+}
+
+function dateOrDash(value: string | null) {
+  return value === null ? (
+    <span className="text-sm text-muted-foreground">—</span>
+  ) : (
+    <DateDisplay value={value} className="text-sm" />
+  );
 }
 
 /**
- * A member of staff's salary, month by month.
+ * One person's salary: who they are, this year in four figures, month by month,
+ * and every payment.
  *
- * **Paid** and **Due** are labelled, never inferred from the amount: a due
- * month shows the basic salary because that is what is owed, and a paid month
- * shows what was actually paid and the day. A payment is recorded once and
- * cannot be edited here — there is no edit control because the database does
- * not allow one (append-only).
+ * The single place that shows it. The Salary Details page renders it with the
+ * person's card on top, and the staff profile's Salary History tab renders the
+ * very same panel without — one source of figures, one set of rules.
  */
 export function StaffSalaryPanel({
   staffId,
   staffName,
   canPay,
   today,
+  showStaffInfo = false,
+  initial,
 }: {
   staffId: string;
   staffName: string;
   canPay: boolean;
   /** `YYYY-MM-DD` — the latest date a payment can be recorded as made. */
   today: string;
+  /** The Salary Details page shows who this is; the profile tab already does. */
+  showStaffInfo?: boolean;
+  /** What the page already fetched, so the panel does not ask twice. */
+  initial?: StaffSalaryDetail | undefined;
 }) {
-  const router = useRouter();
-  const [history, setHistory] = useState<StaffSalaryHistory | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
+  const tenantHref = useTenantHref();
+  const [detail, setDetail] = useState<StaffSalaryDetail | undefined>(initial);
+  const [loading, setLoading] = useState(initial === undefined);
   const [error, setError] = useState<string | undefined>(undefined);
-  const [paying, setPaying] = useState<StaffSalaryRow | undefined>(undefined);
+  const [paying, setPaying] = useState<PaySalaryTarget | undefined>(undefined);
+
+  const [monthLimit, setMonthLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [monthOffset, setMonthOffset] = useState(0);
+  const [paymentLimit, setPaymentLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [paymentOffset, setPaymentOffset] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const result = await fetchJson<{ data: StaffSalaryHistory }>(ROUTES.staff.salary(staffId));
+    const result = await fetchJson<{ data: StaffSalaryDetail }>(ROUTES.staff.salary(staffId));
     setLoading(false);
     if (!result.ok) {
       setError(result.message);
       return;
     }
     setError(undefined);
-    setHistory(result.data.data);
+    setDetail(result.data.data);
   }, [staffId]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (initial === undefined) {
+      void load();
+    }
+  }, [load, initial]);
 
-  const rows = history?.rows ?? [];
-  const paidRows = rows.filter((row) => row.status === 'PAID');
-  const dueRows = rows.filter((row) => row.status === 'DUE');
-  const totalPaid = paidRows.reduce((sum, row) => sum + row.amountMinor, 0);
+  if (loading && detail === undefined) {
+    return <SalaryDetailSkeleton showStaffInfo={showStaffInfo} />;
+  }
 
-  const columns: CardTableColumn<StaffSalaryRow>[] = [
+  if (detail === undefined) {
+    return (
+      <div
+        role="alert"
+        className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+      >
+        {error ?? 'Could not load the salary.'}{' '}
+        <button
+          type="button"
+          className="font-medium underline"
+          onClick={() => {
+            void load();
+          }}
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  const openPay = (row: StaffSalaryMonth): void => {
+    setPaying({
+      staffId,
+      staffName,
+      month: row.month,
+      netMinor: row.netMinor,
+      paidMinor: row.paidMinor,
+    });
+  };
+
+  const monthColumns: CardTableColumn<StaffSalaryMonth>[] = [
     {
       key: 'month',
       label: 'Month',
-      ...FEE_LIST_TABLE_CELL,
-      width: 'w-[26%]',
-      headerCell: feeListTableHeader('Month'),
-      render: (row) => <span className="text-sm font-medium">{monthLabel(row.month)}</span>,
+      width: 'w-[20%]',
+      render: (row) => (
+        <div>
+          <span className="text-sm font-medium">{salaryMonthLabel(row.month)}</span>
+          {row.partialMonth === null ? null : (
+            <p className="text-xs text-muted-foreground">
+              {row.partialMonth === 'JOINED' ? 'Joined' : 'Left'} part-way through the month.
+            </p>
+          )}
+        </div>
+      ),
     },
     {
-      key: 'amount',
+      key: 'salary',
       label: 'Salary',
-      ...FEE_LIST_TABLE_CELL,
-      width: 'w-[20%]',
-      headerCell: feeListTableHeader('Salary', FeesIcon),
-      render: (row) => <Money valueMinor={minorUnits(row.amountMinor)} withSymbol />,
+      width: 'w-[15%]',
+      render: (row) => (
+        <div className="text-sm">
+          {money(row.netMinor)}
+          {row.adjustmentsMinor === 0 ? null : (
+            <p className="text-xs text-muted-foreground">
+              {row.adjustmentsMinor > 0 ? '+' : '−'}
+              {money(Math.abs(row.adjustmentsMinor))} adjusted
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'paid',
+      label: 'Paid',
+      width: 'w-[14%]',
+      render: (row) => <span className="text-sm">{money(row.paidMinor)}</span>,
+    },
+    {
+      key: 'remaining',
+      label: 'Remaining',
+      width: 'w-[14%]',
+      render: (row) => <span className="text-sm">{money(row.remainingMinor)}</span>,
     },
     {
       key: 'status',
       label: 'Status',
-      ...FEE_LIST_TABLE_CELL,
-      width: 'w-[16%]',
-      headerCell: feeListTableHeader('Status'),
-      render: (row) => (
-        <StatusBadge
-          tone={row.status === 'PAID' ? 'success' : 'warning'}
-          size="sm"
-          className={LIST_TABLE_BADGE_CLASS}
-        >
-          {row.status === 'PAID' ? 'Paid' : 'Due'}
-        </StatusBadge>
-      ),
+      width: 'w-[15%]',
+      render: (row) => <SalaryStatusBadge status={row.status} />,
     },
     {
-      key: 'paidOn',
-      label: 'Payment date',
-      ...FEE_LIST_TABLE_CELL,
-      width: 'w-[20%]',
-      headerCell: feeListTableHeader('Payment date'),
-      render: (row) =>
-        row.paidOn === null ? (
-          <span className="text-sm text-muted-foreground">—</span>
-        ) : (
-          <DateDisplay value={row.paidOn} className="text-sm" />
-        ),
+      key: 'lastPaid',
+      label: 'Last payment',
+      width: 'w-[15%]',
+      render: (row) => dateOrDash(row.lastPaidOn),
     },
     {
       key: 'actions',
       label: 'Actions',
-      ...FEE_LIST_TABLE_CELL,
-      width: 'w-[18%]',
-      headerCell: feeListTableHeader('Actions'),
+      width: 'w-[7%]',
       render: (row) =>
-        canPay && row.status === 'DUE' ? (
-          <Button
-            type="button"
-            size="sm"
-            tone="outline"
-            onClick={() => {
-              setPaying(row);
-            }}
-          >
-            Record payment
-          </Button>
-        ) : (
-          <span className="text-sm text-muted-foreground">—</span>
-        ),
+        canPay && row.remainingMinor > 0 ? (
+          <ListTableRowActions ariaLabel={`Actions for ${salaryMonthLabel(row.month)}`}>
+            <DropdownMenuItem
+              onSelect={() => {
+                afterMenuAction(() => {
+                  openPay(row);
+                });
+              }}
+            >
+              <CreateIcon aria-hidden="true" />
+              Pay salary
+            </DropdownMenuItem>
+          </ListTableRowActions>
+        ) : null,
     },
   ];
 
-  return (
-    <div className="space-y-6">
-      <dl className="grid gap-3 sm:grid-cols-3">
-        <Tile label="Basic salary" value={<Money valueMinor={minorUnits(history?.basicSalaryMinor ?? 0)} withSymbol dashOnZero />} />
-        <Tile label="Total paid" value={<Money valueMinor={minorUnits(totalPaid)} withSymbol dashOnZero />} note={`${String(paidRows.length)} month${paidRows.length === 1 ? '' : 's'}`} />
-        <Tile
-          label="Months due"
-          value={<span className="tabular-nums">{dueRows.length}</span>}
-          note="At the basic salary"
-        />
-      </dl>
+  const paymentColumns: CardTableColumn<StaffSalaryPaymentRecord>[] = [
+    {
+      key: 'paidOn',
+      label: 'Payment date',
+      width: 'w-[13%]',
+      render: (row) => dateOrDash(row.paidOn),
+    },
+    {
+      key: 'month',
+      label: 'Salary month',
+      width: 'w-[15%]',
+      render: (row) => <span className="text-sm">{salaryMonthLabel(row.month)}</span>,
+    },
+    {
+      key: 'amount',
+      label: 'Amount paid',
+      width: 'w-[13%]',
+      render: (row) => <span className="text-sm">{money(row.amountMinor)}</span>,
+    },
+    {
+      key: 'method',
+      label: 'Method',
+      width: 'w-[12%]',
+      render: (row) => (
+        <span className="text-sm">{SALARY_PAYMENT_METHOD_LABELS[row.method]}</span>
+      ),
+    },
+    {
+      key: 'reference',
+      label: 'Reference',
+      width: 'w-[13%]',
+      render: (row) => <span className="text-sm">{row.reference ?? '—'}</span>,
+    },
+    {
+      key: 'by',
+      label: 'Recorded by',
+      width: 'w-[16%]',
+      render: (row) => <span className="text-sm">{row.recordedByName ?? '—'}</span>,
+    },
+    {
+      key: 'notes',
+      label: 'Notes',
+      width: 'w-[11%]',
+      render: (row) => (
+        <span className="line-clamp-2 text-sm text-muted-foreground">{row.notes ?? '—'}</span>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      width: 'w-[7%]',
+      render: (row) => (
+        <ListTableRowActions ariaLabel={`Actions for the ${salaryMonthLabel(row.month)} payment`}>
+          <DropdownMenuItem asChild>
+            <a href={tenantHref(`/salaries/receipt/${row.id}`)} target="_blank" rel="noreferrer">
+              <PrintIcon aria-hidden="true" />
+              View receipt
+            </a>
+          </DropdownMenuItem>
+        </ListTableRowActions>
+      ),
+    },
+  ];
 
-      <Card className="overflow-hidden">
-        <CardHeader className="space-y-1 border-b border-border">
-          <CardTitle className="text-lg">Salary history</CardTitle>
-          <CardDescription>
-            Newest first. A recorded payment is permanent — it cannot be edited or deleted.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
+  const year = today.slice(0, 4);
+  const paymentsThisYear = detail.payments.filter((payment) =>
+    payment.paidOn.startsWith(year),
+  ).length;
+  const last = detail.summary.lastPayment;
+  const monthsOwing = detail.months.filter((month) => month.remainingMinor > 0).length;
+
+  return (
+    <div className="space-y-5">
+      {showStaffInfo ? <StaffInfoCard detail={detail} /> : null}
+
+      <section aria-label="Salary summary" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <DashboardStatCard
+          label="Current monthly salary"
+          value={money(detail.summary.currentMonthlySalaryMinor, true)}
+        />
+        <DashboardStatCard
+          label="Total paid this year"
+          value={money(detail.summary.paidThisYearMinor, true)}
+          description={`${String(paymentsThisYear)} payment${paymentsThisYear === 1 ? '' : 's'}`}
+        />
+        <DashboardStatCard
+          label="Outstanding salary"
+          value={money(detail.summary.outstandingMinor)}
+          description={
+            detail.summary.outstandingMinor === 0
+              ? 'Fully paid'
+              : `${String(monthsOwing)} month${monthsOwing === 1 ? '' : 's'} pending`
+          }
+        />
+        <DashboardStatCard
+          label="Last payment"
+          value={
+            last === null ? (
+              '—'
+            ) : (
+              <DateDisplay value={last.paidOn} />
+            )
+          }
+          description={
+            last === null
+              ? 'Nothing paid yet'
+              : `${SALARY_PAYMENT_METHOD_LABELS[last.method]} · ${salaryMonthLabel(last.month)}`
+          }
+        />
+      </section>
+
+      <SectionCard icon={FeesIcon} title="Monthly Salary History">
+        <ListDataTable
+          title="Monthly salary history"
+          caption="Monthly salary history"
+          rows={detail.months.slice(monthOffset, monthOffset + monthLimit)}
+          columns={monthColumns}
+          rowKey={(row) => row.month}
+          minWidthClass="min-w-[48rem]"
+          empty={{
+            title: 'No salary months yet',
+            description: 'Months appear from the month this person joined, once a salary is set.',
+          }}
+          renderMobileRow={(row) => (
+            <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+              <span>
+                <span className="block text-sm font-medium">{salaryMonthLabel(row.month)}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {money(row.paidMinor, true)} of {money(row.netMinor)}
+                </span>
+              </span>
+              <SalaryStatusBadge status={row.status} />
+            </div>
+          )}
+        />
+        <ListTablePaginationFooter
+          total={detail.months.length}
+          limit={monthLimit}
+          offset={monthOffset}
+          label="records"
+          onPageChange={setMonthOffset}
+          onLimitChange={(next) => {
+            setMonthLimit(Number(next));
+            setMonthOffset(0);
+          }}
+        />
+      </SectionCard>
+
+      <section id="payment-history">
+        <SectionCard icon={FinanceIcon} title="Payment History">
           <ListDataTable
-            title="Salary history"
-            caption="Salary history"
-            rows={rows}
-            columns={columns}
-            rowKey={(row) => row.month}
-            minWidthClass="min-w-[40rem]"
-            isLoading={loading}
-            error={error}
-            onRetry={() => {
-              void load();
-            }}
-            empty={{
-              title: 'No salary months yet',
-              description: 'Months appear from the day this person joined.',
-            }}
+            title="Payment history"
+            caption="Payment history"
+            rows={detail.payments.slice(paymentOffset, paymentOffset + paymentLimit)}
+            columns={paymentColumns}
+            rowKey={(row) => row.id}
+            minWidthClass="min-w-[56rem]"
+            empty={{ title: 'No payments yet', description: 'Payments appear here once recorded.' }}
             renderMobileRow={(row) => (
               <div className="flex items-center justify-between gap-3 px-4 py-3">
                 <div>
-                  <p className="text-sm font-medium">{monthLabel(row.month)}</p>
+                  <p className="text-sm font-medium">{money(row.amountMinor)}</p>
                   <p className="text-xs text-muted-foreground">
-                    {row.paidOn === null ? 'Not paid yet' : `Paid ${row.paidOn}`}
+                    {salaryMonthLabel(row.month)} · {row.paidOn}
                   </p>
                 </div>
-                <StatusBadge tone={row.status === 'PAID' ? 'success' : 'warning'} size="sm">
-                  {row.status === 'PAID' ? 'Paid' : 'Due'}
-                </StatusBadge>
+                <a
+                  className="text-sm font-medium text-primary underline-offset-2 hover:underline"
+                  href={tenantHref(`/salaries/receipt/${row.id}`)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Receipt
+                </a>
               </div>
             )}
           />
-        </CardContent>
-      </Card>
+          <ListTablePaginationFooter
+            total={detail.payments.length}
+            limit={paymentLimit}
+            offset={paymentOffset}
+            label="records"
+            onPageChange={setPaymentOffset}
+            onLimitChange={(next) => {
+              setPaymentLimit(Number(next));
+              setPaymentOffset(0);
+            }}
+          />
+        </SectionCard>
+      </section>
 
       {paying === undefined ? null : (
-        <RecordPaymentDialog
-          staffId={staffId}
-          staffName={staffName}
-          row={paying}
+        <PaySalaryDialog
+          target={paying}
           today={today}
           onClose={() => {
             setPaying(undefined);
           }}
           onSaved={(next) => {
-            setHistory(next);
+            setDetail(next);
             setPaying(undefined);
-            router.refresh();
           }}
         />
       )}
@@ -242,121 +428,88 @@ export function StaffSalaryPanel({
   );
 }
 
-function Tile({ label, value, note }: { label: string; value: React.ReactNode; note?: string }) {
+
+function SectionCard({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="rounded-xl border border-border bg-card px-4 py-3">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-1 text-2xl font-medium tracking-tight text-foreground">{value}</dd>
-      {note === undefined ? null : <p className="text-xs text-muted-foreground">{note}</p>}
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <header className="flex items-center gap-3 px-4 py-3">
+        <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Icon className="size-5" aria-hidden="true" />
+        </span>
+        <h2 className="text-base font-semibold text-foreground">{title}</h2>
+      </header>
+      {children}
     </div>
   );
 }
 
-function RecordPaymentDialog({
-  staffId,
-  staffName,
-  row,
-  today,
-  onClose,
-  onSaved,
-}: {
-  staffId: string;
-  staffName: string;
-  row: StaffSalaryRow;
-  today: string;
-  onClose: () => void;
-  onSaved: (history: StaffSalaryHistory) => void;
-}) {
-  const toast = useToast();
-  const [paidOn, setPaidOn] = useState(today);
-  const [amount, setAmount] = useState((row.amountMinor / 100).toFixed(2));
-  const [error, setError] = useState<string | undefined>(undefined);
-  const [isPending, setIsPending] = useState(false);
-
-  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    const rupees = Number(amount);
-    if (!Number.isFinite(rupees) || rupees <= 0) {
-      setError('Enter the amount paid, e.g. 40000.');
-      return;
-    }
-    if (paidOn === '') {
-      setError('Choose the date it was paid.');
-      return;
-    }
-
-    setIsPending(true);
-    const result = await mutate<{ data: StaffSalaryHistory }>(
-      ROUTES.staff.salaryPayments(staffId),
-      'POST',
-      { month: row.month, paidOn, amountMinor: Math.trunc(rupees * 100 + 0.5) },
-    );
-    setIsPending(false);
-
-    if (!result.ok) {
-      setError(result.message);
-      return;
-    }
-    toast.success(`${monthLabel(row.month)} salary recorded for ${staffName}`);
-    onSaved(result.data.data);
-  }
-
+function StaffInfoCard({ detail }: { detail: StaffSalaryDetail }) {
+  const { staff } = detail;
   return (
-    <Dialog
-      open
-      onOpenChange={(next) => {
-        if (!next) {
-          onClose();
-        }
-      }}
-    >
-      <DialogContent className="max-w-md">
-        <form
-          noValidate
-          onSubmit={(event) => {
-            void submit(event);
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>Record salary payment</DialogTitle>
-            <DialogDescription>
-              {staffName} · {monthLabel(row.month)}. Once saved, a payment cannot be changed.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogBody className="space-y-4">
-            {error === undefined ? null : (
-              <div
-                role="alert"
-                className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
-              >
-                {error}
-              </div>
-            )}
-            <Field label="Paid on" required>
-              <DatePicker value={paidOn} onChange={setPaidOn} max={today} aria-label="Payment date" />
-            </Field>
-            <Field label="Amount paid (PKR)" required>
-              <FieldIconWrap icon={FeesIcon}>
-                <Input
-                  value={amount}
-                  inputMode="decimal"
-                  onChange={(event) => {
-                    setAmount(event.target.value);
-                  }}
-                />
-              </FieldIconWrap>
-            </Field>
-          </DialogBody>
-          <DialogFooter>
-            <Button type="button" tone="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" isPending={isPending}>
-              Save payment
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <section className="rounded-xl border border-border bg-card p-5">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
+        <div className="flex min-w-0 flex-1 items-center gap-5">
+          <SalaryAvatar name={staff.name} photoUrl={staff.photoUrl} className="size-20 text-2xl" />
+          <div className="min-w-0 space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="truncate text-xl font-semibold text-foreground">{staff.name}</h2>
+              <StatusBadge tone={staff.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">
+                {staff.status === 'ACTIVE' ? 'Active' : 'Left'}
+              </StatusBadge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {staff.employeeNo} · {STAFF_ROLE_LABELS[staff.role]}
+            </p>
+            <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
+              {staff.email === null ? null : (
+                <li className="flex items-center gap-1.5">
+                  <EmailIcon className="size-4" aria-hidden="true" />
+                  {staff.email}
+                </li>
+              )}
+              {staff.phone === null ? null : (
+                <li className="flex items-center gap-1.5">
+                  <PhoneIcon className="size-4" aria-hidden="true" />
+                  {staff.phone}
+                </li>
+              )}
+              {staff.joinedOn === null ? null : (
+                <li className="flex items-center gap-1.5">
+                  <CalendarIcon className="size-4" aria-hidden="true" />
+                  Joined <DateDisplay value={staff.joinedOn} />
+                </li>
+              )}
+            </ul>
+          </div>
+        </div>
+
+        <dl className="grid grid-cols-2 gap-x-8 gap-y-3 border-t border-border pt-4 text-sm sm:grid-cols-4 lg:border-s lg:border-t-0 lg:ps-8 lg:pt-0">
+          <div>
+            <dt className="text-xs text-muted-foreground">Monthly salary</dt>
+            <dd className="mt-0.5 font-semibold">{money(staff.basicSalaryMinor, true)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted-foreground">Role</dt>
+            <dd className="mt-0.5 font-semibold">{STAFF_ROLE_LABELS[staff.role]}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted-foreground">Designation</dt>
+            <dd className="mt-0.5 font-semibold">{staff.designation ?? '—'}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted-foreground">Joining date</dt>
+            <dd className="mt-0.5 font-semibold">{dateOrDash(staff.joinedOn)}</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
   );
 }

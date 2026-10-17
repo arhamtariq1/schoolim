@@ -23,7 +23,8 @@ import {
   PAKISTAN_COUNTRY_LABEL,
   PAKISTAN_PROVINCES,
 } from '@/lib/pakistan-locations';
-import { displayPhone, phoneDigits } from '@/lib/phone-format';
+import { PhoneInput } from '@/components/phone-input';
+import { displayPhone, livePhoneError } from '@/lib/phone-format';
 import { schoolSlugAffixes } from '@/lib/school-slug-preview';
 
 export type ProfileSchoolEditorValues = {
@@ -162,19 +163,15 @@ export function ProfileSchoolEditorFields({
 
         <Field
           label="School contact number"
-          error={fieldErrors['school.phone']}
+          error={fieldErrors['school.phone'] ?? livePhoneError(values.phone)}
           required
           leadingIcon={PhoneIcon}
         >
-          <Input
+          <PhoneInput
             name="schoolPhone"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            placeholder="03XX XXXXXXX"
             value={values.phone}
-            onChange={(event) => {
-              onChange({ phone: phoneDigits(event.target.value) });
+            onValueChange={(next) => {
+              onChange({ phone: next });
             }}
           />
         </Field>
