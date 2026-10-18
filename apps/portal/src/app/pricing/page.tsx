@@ -1,6 +1,8 @@
 import { EmptyState } from '@ilm/ui';
+import { redirect } from 'next/navigation';
 
 import { PageHeader } from '@/components/page-header';
+import { requireSchoolSession } from '@/lib/require-session';
 
 /**
  * In-app view of subscription plans for the signed-in school.
@@ -8,7 +10,13 @@ import { PageHeader } from '@/components/page-header';
  * Public list pricing lives on the welcome page at the apex; this route is the
  * tenant-scoped place to compare plans and upgrade once billing is wired (docs/14).
  */
-export default function PricingPage() {
+export default async function PricingPage() {
+  // The school's dealings with the platform are the Admin's alone.
+  const session = await requireSchoolSession();
+  if (!session.permissions.includes('settings.billing.manage')) {
+    redirect('/');
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader

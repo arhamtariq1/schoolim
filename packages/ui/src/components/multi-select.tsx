@@ -87,7 +87,7 @@ export function MultiSelect({
             aria-haspopup="listbox"
             className={cn(
               'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input',
-              'bg-background px-3 text-sm text-start',
+              'bg-field px-3 text-sm text-start',
               'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
               'disabled:cursor-not-allowed disabled:opacity-50',
               'aria-[invalid=true]:border-danger aria-[invalid=true]:focus-visible:ring-danger',
@@ -181,7 +181,7 @@ export function MultiSelect({
                 type="button"
                 disabled={disabled}
                 aria-label={`Remove ${option.label}`}
-                className="rounded-full p-0.5 hover:bg-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="rounded-full p-0.5 hover:bg-field focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 onClick={() => {
                   toggle(option.value);
                 }}

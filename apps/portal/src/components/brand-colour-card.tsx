@@ -295,7 +295,7 @@ function Preview({ ramp }: { readonly ramp: NonNullable<ReturnType<typeof brandR
   const passes = ramp.lightContrast >= 4.5;
 
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
+    <div className="rounded-lg border border-border bg-field p-4">
       <div
         className="flex flex-wrap items-center gap-3"
         style={

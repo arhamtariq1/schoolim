@@ -77,6 +77,8 @@ const MODEL_TO_TABLE: Readonly<Record<string, string>> = {
   RequestEvent: 'request_events',
   RequestAttachment: 'request_attachments',
   Notification: 'notifications',
+  Timetable: 'timetables',
+  TimetableEntry: 'timetable_entries',
 };
 
 const tenantTables = TENANT_MODELS.map((model) => {

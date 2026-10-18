@@ -114,6 +114,10 @@ export const ERROR_CODES = [
   /** A picture refused because of how many, or how late, rather than what it is. */
   'REQUESTS_ATTACHMENT_REFUSED',
 
+  // --- Timetables -----------------------------------------------------------
+  /** The same class, teacher or room in two places at once. The message names which. */
+  'TIMETABLE_CONFLICT',
+
   // --- Attendance -----------------------------------------------------------
   'ATTENDANCE_ALREADY_MARKED',
   'ATTENDANCE_WINDOW_CLOSED',
@@ -203,6 +207,8 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, number>> = {
   REQUESTS_INVALID_TRANSITION: 422,
   REQUESTS_CHANGED: 409,
   REQUESTS_ATTACHMENT_REFUSED: 422,
+
+  TIMETABLE_CONFLICT: 409,
 
   ATTENDANCE_ALREADY_MARKED: 409,
   ATTENDANCE_WINDOW_CLOSED: 422,

@@ -15,11 +15,14 @@ export const NOTIFICATION_KINDS = [
   'request.submitted',
   'request.assigned',
   'request.status_changed',
+  'timetable.published',
+  'timetable.updated',
+  'voucher.generated',
 ] as const;
 export const notificationKindSchema = z.enum(NOTIFICATION_KINDS);
 export type NotificationKind = z.infer<typeof notificationKindSchema>;
 
-export const NOTIFICATION_ENTITY_TYPES = ['request'] as const;
+export const NOTIFICATION_ENTITY_TYPES = ['request', 'timetable', 'voucher'] as const;
 export const notificationEntityTypeSchema = z.enum(NOTIFICATION_ENTITY_TYPES);
 export type NotificationEntityType = z.infer<typeof notificationEntityTypeSchema>;
 

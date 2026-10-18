@@ -1,8 +1,8 @@
 import { ROUTES, type AcademicSession, type ClassLevel, type UserProfile } from '@ilm/contracts';
 
 import { ClassesManager } from '@/components/classes-manager';
-import { parseSchoolLevels } from '@/lib/parse-school-levels';
 import { apiFetch } from '@/lib/api';
+import { parseSchoolLevels } from '@/lib/parse-school-levels';
 import { getSession } from '@/lib/session';
 
 /**

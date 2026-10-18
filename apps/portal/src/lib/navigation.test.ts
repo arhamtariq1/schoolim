@@ -197,3 +197,21 @@ describe('the Requests door', () => {
     expect(find(['fees.voucher.read'])).toBeUndefined();
   });
 });
+
+describe('the Timetables item', () => {
+  it('shows for anyone who can read timetables', () => {
+    const items = visibleNavItems(['academics.timetable.read']);
+    expect(labels(items)).toContain('Timetables');
+  });
+
+  it('is hidden from someone who cannot', () => {
+    expect(labels(visibleNavItems(ACCOUNTANT))).not.toContain('Timetables');
+  });
+});
+
+describe('the parent Fee vouchers item', () => {
+  it('shows for a guardian, and not for an accountant', () => {
+    expect(labels(visibleNavItems(['parent.child.read', 'parent.voucher.read']))).toContain('Fee vouchers');
+    expect(labels(visibleNavItems(ACCOUNTANT))).not.toContain('Fee vouchers');
+  });
+});

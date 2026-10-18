@@ -54,7 +54,7 @@ import { VoucherSettingsService } from './voucher-settings.service';
  * asset never reaches this branch: the router keeps it in Postgres, and it is
  * streamed from here behind the session like everything else.
  */
-async function serveAsset(
+export async function serveAsset(
   logos: SchoolLogoService,
   kind: AssetKind,
   request: FastifyRequest,
@@ -310,6 +310,6 @@ export class VoucherSettingsController {
     SchoolAppearanceService,
     VoucherSettingsService,
   ],
-  exports: [SchoolLogoService],
+  exports: [SchoolLogoService, SchoolSettingsService, VoucherSettingsService],
 })
 export class SchoolsModule {}

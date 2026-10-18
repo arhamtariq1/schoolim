@@ -586,7 +586,7 @@ function LayoutChoice({
         'has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-ring',
         checked
           ? 'border-primary bg-primary/5'
-          : 'border-border bg-background hover:border-primary/40',
+          : 'border-border bg-field hover:border-primary/40',
       )}
     >
       <input
@@ -601,7 +601,7 @@ function LayoutChoice({
         aria-hidden
         className={cn(
           'flex size-5 shrink-0 items-center justify-center rounded-full border',
-          checked ? 'border-primary bg-primary text-primary-foreground' : 'border-input bg-background',
+          checked ? 'border-primary bg-primary text-primary-foreground' : 'border-input bg-field',
         )}
       >
         {checked ? <ApproveIcon className="size-3" aria-hidden /> : null}
@@ -691,7 +691,7 @@ function PrefixedInput({
   ...props
 }: ComponentProps<typeof Input> & { readonly prefix: string }) {
   return (
-    <div className="flex items-stretch overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring">
+    <div className="flex items-stretch overflow-hidden rounded-md border border-input bg-field focus-within:ring-2 focus-within:ring-ring">
       <span className="flex shrink-0 items-center border-e border-input bg-muted px-3 font-mono text-xs whitespace-nowrap text-muted-foreground">
         {prefix}
       </span>

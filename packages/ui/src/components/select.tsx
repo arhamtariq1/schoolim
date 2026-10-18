@@ -39,7 +39,7 @@ export function SelectTrigger({
     <SelectPrimitive.Trigger
       className={cn(
         'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-border',
-        'bg-background px-3 text-sm',
+        'bg-field px-3 text-sm',
         'placeholder:text-muted-foreground',
         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',

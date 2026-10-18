@@ -894,7 +894,7 @@ function ClassMultiSelect({
         <button
           type="button"
           className={cn(
-            'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-sm',
+            'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-field px-3 text-sm',
             'hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
             value.length === 0 ? 'text-muted-foreground' : 'text-foreground',
           )}

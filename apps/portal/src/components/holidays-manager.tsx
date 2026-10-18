@@ -11,6 +11,7 @@ import {
   ROUTES,
   type AcademicSession,
   type Holiday,
+  type TimetableCalendarEvent,
   type HolidayColorKey,
   type HolidayType,
 } from '@ilm/contracts';
@@ -58,6 +59,8 @@ export interface HolidaysManagerProps {
   holidays: Holiday[];
   sessions: AcademicSession[];
   activeSessionId: string | undefined;
+  /** Class periods, tests and exams for this person, read from the timetables. */
+  scheduled?: readonly TimetableCalendarEvent[];
   today: string;
   error?: string | undefined;
   canConfigure: boolean;
@@ -65,6 +68,7 @@ export interface HolidaysManagerProps {
 
 export function HolidaysManager({
   holidays,
+  scheduled = [],
   sessions,
   activeSessionId,
   today,
@@ -128,6 +132,7 @@ export function HolidaysManager({
     <>
       <AcademicCalendarView
         holidays={holidays}
+        scheduled={scheduled}
         sessions={sessions}
         activeSessionId={activeSessionId}
         activeSession={activeSession}

@@ -1,4 +1,5 @@
 import {
+  DEFAULT_ASSESSMENT_TYPE_NAMES,
   type AssessmentDetail,
   type AssessmentListItem,
   type AssessmentListQuery,
@@ -9,6 +10,7 @@ import {
   type CreateAssessment,
   type MarksRoster,
   type NamedItem,
+  type SetSubjectTeacher,
   type StudentMarkResult,
   type SubjectItem,
   type UpdateAssessment,
@@ -37,9 +39,6 @@ const DEFAULT_SUBJECTS = [
   'Social Studies',
   'Computer',
 ] as const;
-
-/** Generic starting points, not one school's list (R1). Renamed or deleted freely. */
-const DEFAULT_ASSESSMENT_TYPES = ['Class test', 'Monthly test', 'Surprise test', 'Exam'] as const;
 
 type MarksReadPermission = 'exams.result.read' | 'exams.mark.create';
 
@@ -145,7 +144,7 @@ export class MarksService {
     return this.prisma.tenant(async (tx) => {
       if ((await tx.assessmentType.count()) === 0) {
         await tx.assessmentType.createMany({
-          data: DEFAULT_ASSESSMENT_TYPES.map((name) => ({ name })) as never,
+          data: DEFAULT_ASSESSMENT_TYPE_NAMES.map((name) => ({ name })) as never,
           skipDuplicates: true,
         });
       }
@@ -289,10 +288,19 @@ export class MarksService {
       await this.assertClassVisible(tx, classLevelId, 'exams.result.read');
 
       const [subjectLinks, typeLinks] = await Promise.all([
-        tx.classSubject.findMany({ where: { classLevelId }, select: { subjectId: true } }),
+        tx.classSubject.findMany({
+          where: { classLevelId },
+          select: { subjectId: true, teacher: { select: { id: true, name: true } } },
+        }),
         tx.classAssessmentType.findMany({ where: { classLevelId }, select: { assessmentTypeId: true } }),
       ]);
       const hasSubject = new Set(subjectLinks.map((link) => link.subjectId));
+      const teacherOf = new Map(subjectLinks.map((link) => [link.subjectId, link.teacher]));
+      const teachers = await tx.staff.findMany({
+        where: { role: 'TEACHER', status: 'ACTIVE', deletedAt: null },
+        orderBy: { name: 'asc' },
+        select: { id: true, name: true },
+      });
       const hasType = new Set(typeLinks.map((link) => link.assessmentTypeId));
 
       const session =
@@ -334,6 +342,7 @@ export class MarksService {
           lastHeldOn: mine.map((test) => test.heldOn).sort().at(-1) ?? null,
           averagePercent:
             percents.length === 0 ? null : tenth(percents.reduce((sum, value) => sum + value, 0) / percents.length),
+          teacher: null,
         };
       };
 
@@ -341,7 +350,10 @@ export class MarksService {
       return {
         subjects: subjects
           .filter((item) => hasSubject.has(item.id))
-          .map((item) => usage(item.id, item.name, (test) => test.subjectId)),
+          .map((item) => ({
+            ...usage(item.id, item.name, (test) => test.subjectId),
+            teacher: teacherOf.get(item.id) ?? null,
+          })),
         assessmentTypes: types
           .filter((item) => hasType.has(item.id))
           .map((item) => usage(item.id, item.name, (test) => test.typeId)),
@@ -351,6 +363,7 @@ export class MarksService {
         availableAssessmentTypes: types
           .filter((item) => !hasType.has(item.id))
           .map((item) => ({ id: item.id, name: item.name })),
+        teachers,
         testCount: perTest.length,
         averagePercent: all.length === 0 ? null : tenth(all.reduce((sum, value) => sum + value, 0) / all.length),
       };
@@ -414,6 +427,36 @@ export class MarksService {
         );
       }
       await tx.classSubject.deleteMany({ where: { classLevelId, subjectId } });
+    });
+    return this.classSummary(classLevelId);
+  }
+
+  /**
+   * Choose who teaches a subject in a class, or take them off it (null).
+   *
+   * A teacher can be chosen for any number of classes and subjects; each choice
+   * is one row. Only an active teacher can be chosen. Audited, because it decides
+   * who the timetable offers and who a family is told is teaching.
+   */
+  async setSubjectTeacher(classLevelId: string, subjectId: string, input: SetSubjectTeacher): Promise<ClassMarksSummary> {
+    await this.prisma.tenant(async (tx) => {
+      const link = await tx.classSubject.findFirst({
+        where: { classLevelId, subjectId },
+        select: { id: true, teacherId: true },
+      });
+      if (link === null) {
+        throw new NotFoundError('subject');
+      }
+      if (input.teacherId !== null) {
+        const teacher = await tx.staff.count({
+          where: { id: input.teacherId, role: 'TEACHER', status: 'ACTIVE', deletedAt: null },
+        });
+        if (teacher === 0) {
+          throw new BusinessRuleError('VALIDATION_FAILED', 'Choose a teacher from the list of active teachers.');
+        }
+      }
+      await tx.classSubject.update({ where: { id: link.id }, data: { teacherId: input.teacherId } });
+      await this.audit(tx, 'marks.class-subject.teacher', link.id, { teacherId: link.teacherId }, { teacherId: input.teacherId });
     });
     return this.classSummary(classLevelId);
   }
@@ -720,7 +763,7 @@ export class MarksService {
       data: {
         schoolId: this.context.schoolId,
         action,
-        entityType: 'Assessment',
+        entityType: action.startsWith('marks.class-subject') ? 'ClassSubject' : 'Assessment',
         entityId,
         actorType: 'USER',
         actorUserId: this.context.userId ?? null,

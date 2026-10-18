@@ -24,6 +24,8 @@ export const PERMISSIONS = [
   'students.guardian.update',
   /** A guardian reading their own children. Held by PARENT alone — staff roles use the screens above. */
   'parent.child.read',
+  /** A guardian reading the fee vouchers of their own children. Held by PARENT alone. */
+  'parent.voucher.read',
   'admissions.application.read',
   'admissions.application.create',
   'admissions.application.update',
@@ -105,6 +107,8 @@ export const PERMISSIONS = [
 
   // --- Settings and governance ----------------------------------------------
   'settings.school.configure',
+  /** The school's plan and its invoices with the platform. The Admin's alone, like revenue. */
+  'settings.billing.manage',
   'settings.user.manage',
   'settings.data.export',
   'audit.log.read',

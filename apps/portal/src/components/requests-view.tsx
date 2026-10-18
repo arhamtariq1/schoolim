@@ -307,7 +307,10 @@ export function RequestsView(props: RequestsViewProps) {
         />
       ) : null}
 
-      <SummaryCards summary={summary} active={filters.status} onPick={(status) => pushFilters({ status })} />
+      {/* The office works from these counts; a person reading their own few requests does not need them. */}
+      {manage ? (
+        <SummaryCards summary={summary} active={filters.status} onPick={(status) => pushFilters({ status })} />
+      ) : null}
 
       <ListTableScreen
         tableTitle={manage ? 'All requests' : 'Your requests'}

@@ -1,5 +1,5 @@
-import { ProfileViewSkeleton } from '@/components/profile-skeletons';
 import { WorkspacePageHeaderSkeleton } from '@/components/page-skeletons';
+import { ProfileViewSkeleton } from '@/components/profile-skeletons';
 
 export default function SchoolSettingsLoading() {
   return (

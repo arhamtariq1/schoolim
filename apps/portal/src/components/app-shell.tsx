@@ -35,6 +35,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { AppSearch } from '@/components/app-search';
 import { BrandTheme } from '@/components/brand-theme';
+import { FEE_SETTINGS_ITEMS } from '@/components/fee-settings-nav';
 import { NAV_ICONS } from '@/components/nav-icons';
 import { NotificationsMenu } from '@/components/notifications-menu';
 import { SidebarBrandMark } from '@/components/sidebar-brand-mark';
@@ -146,6 +147,16 @@ export function AppShell({
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  // Fee settings has a menu of its own beside the page, so the main sidebar steps aside
+  // there: folded on arrival, and the arrow opens it for this visit. Leaving the area
+  // forgets that, and the person's own remembered choice applies again everywhere else.
+  const inFeeSettings = FEE_SETTINGS_ITEMS.some((item) => item.href === canonicalPath);
+  const [openInFeeSettings, setOpenInFeeSettings] = useState(false);
+  useEffect(() => {
+    if (!inFeeSettings) {
+      setOpenInFeeSettings(false);
+    }
+  }, [inFeeSettings]);
 
   // Remembered per browser. Read after mount so the server and first client
   // render agree; storage can be blocked, so every access is guarded.
@@ -158,6 +169,10 @@ export function AppShell({
   }, []);
 
   function toggleSidebar(): void {
+    if (inFeeSettings) {
+      setOpenInFeeSettings((current) => !current);
+      return;
+    }
     setCollapsed((current) => {
       const next = !current;
       try {
@@ -168,6 +183,7 @@ export function AppShell({
       return next;
     });
   }
+  const sidebarCollapsed = inFeeSettings ? !openInFeeSettings : collapsed;
   const [schoolLogo, setSchoolLogo] = useState(initialSchoolLogo);
   const scrollport = useRef<HTMLElement>(null);
 
@@ -241,7 +257,7 @@ export function AppShell({
       <div className="fixed inset-x-0 top-0 flex h-dvh overflow-hidden bg-workspace-canvas">
         <Sidebar
           className="hidden md:flex"
-          collapsed={collapsed}
+          collapsed={sidebarCollapsed}
           items={items}
           schoolLogo={schoolLogo}
           profileCompleted={profileCompleted}
@@ -277,7 +293,7 @@ export function AppShell({
             user={user}
             permissions={permissions}
             settingsEnabled={!navLocked}
-            sidebarCollapsed={collapsed}
+            sidebarCollapsed={sidebarCollapsed}
             onToggleSidebar={toggleSidebar}
             onOpenMenu={() => {
               setDrawerOpen(true);
@@ -331,7 +347,7 @@ function AppHeader({
 }) {
   const ToggleIcon = sidebarCollapsed ? ChevronRightIcon : ChevronLeftIcon;
   return (
-    <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border/50 bg-card px-3 md:gap-4 md:px-5">
+    <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border/50 bg-header px-3 md:gap-4 md:px-5">
       <button
         type="button"
         aria-label="Open menu"
@@ -386,7 +402,7 @@ function AppHeader({
 
         <span aria-hidden="true" className="mx-1 hidden h-8 w-px bg-border sm:block" />
 
-        <ProfileMenu user={user} />
+        <ProfileMenu user={user} canManagePlan={permissions.includes('settings.billing.manage')} />
       </div>
     </header>
   );
@@ -403,9 +419,15 @@ function HeaderSettingsMenu({
   const items = visibleSettingsMenuItems(permissions);
   const hasItems = items.length > 0;
 
-  if (disabled || !hasItems) {
+  // Nothing to configure, nothing to show: a parent or a teacher has no settings, and a
+  // greyed-out gear would only ask what it is for.
+  if (!hasItems) {
+    return null;
+  }
+
+  if (disabled) {
     return (
-      <Hint label={disabled ? 'Complete setup to open settings' : 'No settings available'}>
+      <Hint label="Complete setup to open settings">
         <button type="button" disabled aria-label="Settings" className={HEADER_ICON_DISABLED}>
           <SettingsIcon className={HEADER_ICON_CLASS} aria-hidden="true" />
         </button>
@@ -468,8 +490,11 @@ function HeaderAvatar({
 
 function ProfileMenu({
   user,
+  canManagePlan,
 }: {
   user: { name: string; email?: string; roleLabel: string; avatarUrl?: string | null };
+  /** Pricing and Billing are the school's dealings with the platform: the Admin's alone. */
+  canManagePlan: boolean;
 }) {
   const tenantHref = useTenantHref();
   const [askingSignOut, setAskingSignOut] = useState(false);
@@ -514,18 +539,22 @@ function ProfileMenu({
               Profile
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild className="rounded-md px-2.5 py-2">
-            <Link href={tenantHref('/pricing')} className="cursor-pointer">
-              <TrendUpIcon aria-hidden="true" className="text-muted-foreground" />
-              Pricing
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild className="rounded-md px-2.5 py-2">
-            <Link href={tenantHref('/billing')} className="cursor-pointer">
-              <FinanceIcon aria-hidden="true" className="text-muted-foreground" />
-              Billing
-            </Link>
-          </DropdownMenuItem>
+          {canManagePlan ? (
+            <>
+              <DropdownMenuItem asChild className="rounded-md px-2.5 py-2">
+                <Link href={tenantHref('/pricing')} className="cursor-pointer">
+                  <TrendUpIcon aria-hidden="true" className="text-muted-foreground" />
+                  Pricing
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="rounded-md px-2.5 py-2">
+                <Link href={tenantHref('/billing')} className="cursor-pointer">
+                  <FinanceIcon aria-hidden="true" className="text-muted-foreground" />
+                  Billing
+                </Link>
+              </DropdownMenuItem>
+            </>
+          ) : null}
           <DropdownMenuSeparator className="mx-0" />
           <DropdownMenuItem
             destructive
@@ -567,14 +596,14 @@ function Sidebar({
   return (
     <aside
       className={cn(
-        'flex shrink-0 flex-col border-e border-border/50 bg-card transition-[width] duration-200 ease-in-out motion-reduce:transition-none md:flex',
+        'flex shrink-0 flex-col border-e border-border/50 bg-sidebar transition-[width] duration-200 ease-in-out motion-reduce:transition-none md:flex',
         collapsed ? 'w-16' : 'w-56',
         className,
       )}
     >
       <div
         className={cn(
-          'relative flex h-16 shrink-0 items-center border-b border-border/50 bg-card px-3',
+          'relative flex h-16 shrink-0 items-center border-b border-border/50 bg-sidebar px-3',
           collapsed ? 'justify-center' : 'justify-start',
         )}
       >

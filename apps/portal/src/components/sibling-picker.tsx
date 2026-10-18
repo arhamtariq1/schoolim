@@ -176,7 +176,7 @@ export function SiblingPicker({
           setOpen(true);
         }}
         onKeyDown={onKeyDown}
-        className="h-10 w-full rounded-md border border-input bg-background ps-9 pe-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50"
+        className="h-10 w-full rounded-md border border-input bg-field ps-9 pe-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50"
       />
 
       {open && term.length > 0 ? (

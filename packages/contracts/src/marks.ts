@@ -27,6 +27,19 @@ import { calendarDateSchema, idSchema, textSchema } from './primitives';
  * use and managed by `exams.setup.manage` holders.
  */
 
+/**
+ * The assessment types a school starts with. Generic starting points, not one
+ * school's list (R1): renamed or deleted freely. Both the marks screens and the
+ * timetable form read the same list, so a test is the same test in both.
+ */
+export const DEFAULT_ASSESSMENT_TYPE_NAMES = [
+  'Class test',
+  'Monthly test',
+  'Surprise test',
+  'Midterm exam',
+  'Final exam',
+] as const;
+
 export const MAX_MARKS = 1000;
 export const MAX_ASSESSMENT_ENTRIES = 500;
 
@@ -186,6 +199,8 @@ export interface ClassUsageItem {
   lastHeldOn: string | null;
   /** Mean of the tests' own averages, as a percentage; null when nobody has sat one. */
   averagePercent: number | null;
+  /** Who teaches it in this class. Subjects only; always null for an assessment type. */
+  teacher: { id: string; name: string } | null;
 }
 
 /**
@@ -202,6 +217,11 @@ export const assignToClassSchema = z
 
 export type AssignToClass = z.infer<typeof assignToClassSchema>;
 
+/** Who teaches a subject in a class; null takes the teacher off it. */
+export const setSubjectTeacherSchema = z.object({ teacherId: idSchema.nullable() }).strict();
+
+export type SetSubjectTeacher = z.infer<typeof setSubjectTeacherSchema>;
+
 export interface ClassMarksSummary {
   /** The subjects **this class** has, with how each has gone. */
   subjects: ClassUsageItem[];
@@ -210,6 +230,8 @@ export interface ClassMarksSummary {
   /** School subjects this class does not have yet — what "add existing" offers. */
   availableSubjects: { id: string; name: string }[];
   availableAssessmentTypes: { id: string; name: string }[];
+  /** Active teachers the office can choose from for a subject. */
+  teachers: { id: string; name: string }[];
   testCount: number;
   averagePercent: number | null;
 }

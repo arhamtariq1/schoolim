@@ -184,6 +184,7 @@ export function ClassDetailView({
           classLevelId={entry.id}
           items={summary?.subjects}
           available={summary?.availableSubjects ?? []}
+          teachers={summary?.teachers ?? []}
           canManage={can.manage}
           unavailable={!can.marks}
         />
@@ -202,6 +203,7 @@ export function ClassDetailView({
           classLevelId={entry.id}
           items={summary?.assessmentTypes}
           available={summary?.availableAssessmentTypes ?? []}
+          teachers={[]}
           canManage={can.manage}
           unavailable={!can.marks}
         />
@@ -553,11 +555,17 @@ function usageColumns(
   kind: 'subject' | 'assessment type',
   withActions: boolean,
   renderActions: (row: ClassUsageItem) => ReactNode,
+  renderTeacher?: (row: ClassUsageItem) => ReactNode,
 ): CardTableColumn<ClassUsageItem>[] {
   const label = kind === 'subject' ? 'Subject' : 'Assessment type';
-  const width = withActions
-    ? ['w-[28%]', 'w-[20%]', 'w-[18%]', 'w-[20%]']
-    : ['w-[34%]', 'w-[22%]', 'w-[20%]', 'w-[24%]'];
+  const width =
+    renderTeacher === undefined
+      ? withActions
+        ? ['w-[28%]', 'w-[20%]', 'w-[18%]', 'w-[20%]']
+        : ['w-[34%]', 'w-[22%]', 'w-[20%]', 'w-[24%]']
+      : withActions
+        ? ['w-[18%]', 'w-[14%]', 'w-[12%]', 'w-[16%]']
+        : ['w-[24%]', 'w-[16%]', 'w-[14%]', 'w-[20%]'];
   return [
     {
       key: 'name',
@@ -567,6 +575,18 @@ function usageColumns(
       headerCell: feeListTableHeader(label),
       render: (row) => <span className="text-sm font-medium">{row.name}</span>,
     },
+    ...(renderTeacher === undefined
+      ? []
+      : [
+          {
+            key: 'teacher',
+            label: 'Teacher',
+            ...FEE_LIST_TABLE_CELL,
+            width: 'w-[26%]',
+            headerCell: feeListTableHeader('Teacher'),
+            render: renderTeacher,
+          } satisfies CardTableColumn<ClassUsageItem>,
+        ]),
     {
       key: 'tests',
       label: 'Tests in this class',
@@ -650,6 +670,7 @@ function ClassSetupCard({
   classLevelId,
   items,
   available,
+  teachers,
   canManage,
   unavailable,
 }: {
@@ -657,6 +678,8 @@ function ClassSetupCard({
   classLevelId: string;
   items: readonly ClassUsageItem[] | undefined;
   available: readonly { id: string; name: string }[];
+  /** Active teachers a subject can be given to. Unused for assessment types. */
+  teachers: readonly { id: string; name: string }[];
   canManage: boolean;
   unavailable: boolean;
 }) {
@@ -699,7 +722,22 @@ function ClassSetupCard({
     router.refresh();
   }
 
-  const columns = usageColumns(kind, canManage, (row) =>
+  async function setTeacher(row: ClassUsageItem, teacherId: string): Promise<void> {
+    const result = await mutate(ROUTES.marks.classSubjectTeacher(classLevelId, row.id), 'PUT', {
+      teacherId: teacherId === '' ? null : teacherId,
+    });
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+    toast.success(teacherId === '' ? `Teacher removed from ${row.name}` : `Teacher set for ${row.name}`);
+    router.refresh();
+  }
+
+  const columns = usageColumns(
+    kind,
+    canManage,
+    (row) =>
     row.testCount > 0 ? (
       <span className="text-sm text-muted-foreground">In use</span>
     ) : (
@@ -715,6 +753,26 @@ function ClassSetupCard({
         <DeleteIcon className="size-4" aria-hidden="true" />
       </Button>
     ),
+    kind !== 'subject'
+      ? undefined
+      : (row) =>
+          canManage ? (
+            <SimpleSelect
+              className="w-full max-w-56"
+              ariaLabel={`Teacher for ${row.name}`}
+              value={row.teacher?.id ?? ''}
+              placeholder="Not assigned"
+              emptyOption={{ value: '', label: 'Not assigned' }}
+              options={teachers.map((teacher) => ({ value: teacher.id, label: teacher.name }))}
+              onValueChange={(value) => {
+                void setTeacher(row, value);
+              }}
+            />
+          ) : (
+            <span className={row.teacher === null ? 'text-sm text-muted-foreground' : 'text-sm'}>
+              {row.teacher?.name ?? 'Not assigned'}
+            </span>
+          ),
   );
 
   const plural = kind === 'subject' ? 'subjects' : 'assessment types';
@@ -797,7 +855,13 @@ function ClassSetupCard({
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             <TwoLineCell
               primary={<span className="font-medium">{row.name}</span>}
-              secondary={row.testCount === 0 ? 'Not used yet' : `${String(row.testCount)} tests`}
+              secondary={
+                kind === 'subject'
+                  ? (row.teacher?.name ?? 'No teacher assigned')
+                  : row.testCount === 0
+                    ? 'Not used yet'
+                    : `${String(row.testCount)} tests`
+              }
             />
             <span className="text-sm tabular-nums">
               {row.averagePercent === null ? '—' : `${String(row.averagePercent)}%`}

@@ -21,6 +21,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
 
 import {
@@ -65,7 +66,10 @@ import {
 export class VoucherGenerationService {
   private readonly logger = new Logger(VoucherGenerationService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   private async assertNumberingConfigured(): Promise<void> {
     const rows = await this.prisma.tenant((tx) =>
@@ -583,6 +587,12 @@ export class VoucherGenerationService {
           });
         }
 
+        // 7. Tell each family about their own child's voucher. Inside this transaction,
+        //    so a notification exists exactly when its voucher does: nothing for a voucher
+        //    that won no periods or a chunk that rolled back, and a re-sent run (same
+        //    idempotency key) never reaches this line twice.
+        await this.announce(tx, kept, drafts, input);
+
         const netPayableMinor = kept.reduce(
           (sum, entry) => sum + payableOf(entry.lines) + entry.plan.arrearsMinor,
           0,
@@ -598,6 +608,49 @@ export class VoucherGenerationService {
       // rows. A chunk here writes two hundred vouchers and their lines, and
       // timing out part-way is how a run half-bills a school.
       { timeout: BATCH_TIMEOUT_MS, maxWait: BATCH_MAX_WAIT_MS },
+    );
+  }
+
+  /** One notification per linked guardian with a portal login, per voucher. */
+  private async announce(
+    tx: TransactionClient,
+    kept: readonly { id: string; plan: StudentPlan; lines: PlannedLine[] }[],
+    drafts: readonly { id: string; voucherNo: string }[],
+    input: GenerateVouchers,
+  ): Promise<void> {
+    if (kept.length === 0) {
+      return;
+    }
+    const links = await tx.studentGuardian.findMany({
+      where: { studentId: { in: [...new Set(kept.map((entry) => entry.plan.studentId))] }, guardian: { userId: { not: null }, deletedAt: null } },
+      select: { studentId: true, guardian: { select: { userId: true } } },
+    });
+    const guardiansOf = new Map<string, string[]>();
+    for (const link of links) {
+      if (link.guardian.userId === null) continue;
+      guardiansOf.set(link.studentId, [...(guardiansOf.get(link.studentId) ?? []), link.guardian.userId]);
+    }
+    const numbers = new Map(drafts.map((draft) => [draft.id, draft.voucherNo]));
+
+    await this.notifications.notifyMany(
+      tx,
+      kept.flatMap((entry) => {
+        const recipientIds = guardiansOf.get(entry.plan.studentId) ?? [];
+        if (recipientIds.length === 0) return [];
+        const months = monthsOf(entry.lines);
+        const month = months.length === 0 ? monthLabel(new Date(input.issueDate)) : months.map(monthLabel).join(', ');
+        const totalMinor = payableOf(entry.lines) + entry.plan.arrearsMinor;
+        return [
+          {
+            recipientIds,
+            kind: 'voucher.generated' as const,
+            title: `New fee voucher for ${entry.plan.studentName}`,
+            body: `${month} · ${moneyLabel(totalMinor)} · Due ${dateLabel(new Date(input.dueDate))} · ${numbers.get(entry.id) ?? ''}`.trim(),
+            entityType: 'voucher' as const,
+            entityId: entry.id,
+          },
+        ];
+      }),
     );
   }
 
@@ -701,6 +754,24 @@ const BATCH_MAX_WAIT_MS = 10_000;
 /** Payable before arrears — gross less the discounts agreed per child. */
 function payableOf(lines: readonly PlannedLine[]): number {
   return lines.reduce((sum, line) => sum + line.amountMinor - line.discountMinor, 0);
+}
+
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as const;
+
+function monthLabel(date: Date): string {
+  return `${MONTH_NAMES[date.getUTCMonth()] ?? ''} ${String(date.getUTCFullYear())}`;
+}
+
+function dateLabel(date: Date): string {
+  return `${String(date.getUTCDate()).padStart(2, '0')}-${(MONTH_NAMES[date.getUTCMonth()] ?? '').slice(0, 3)}-${String(date.getUTCFullYear())}`;
+}
+
+/** Whole rupees with grouping, paisa only when there are some — integer maths throughout. */
+function moneyLabel(minor: number): string {
+  const whole = Math.trunc(minor / 100);
+  const paisa = minor % 100;
+  const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return paisa === 0 ? `Rs ${grouped}` : `Rs ${grouped}.${String(paisa).padStart(2, '0')}`;
 }
 
 function monthsOf(lines: readonly PlannedLine[]): Date[] {

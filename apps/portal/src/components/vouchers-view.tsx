@@ -616,7 +616,7 @@ export function VouchersView({
                 }}
                 placeholder="Search by student name, GR number or voucher no…"
                 aria-label="Search vouchers"
-                className="h-10 w-full rounded-md border border-border bg-background ps-9 pe-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="h-10 w-full rounded-md border border-border bg-field ps-9 pe-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               />
             </div>
             <div className="flex flex-wrap items-center gap-2 xl:ms-auto xl:justify-end">

@@ -81,7 +81,7 @@ describe('role matrix — segregation of duties', () => {
     for (const role of ['PRINCIPAL', 'RECEPTION'] as const) {
       for (const permission of Object.keys(ROLE_PERMISSIONS.OWNER)) {
         expect(hasPermission([role], permission as Permission)).toBe(
-          permission !== 'finance.revenue.read',
+          permission !== 'finance.revenue.read' && permission !== 'settings.billing.manage',
         );
       }
     }
@@ -90,6 +90,12 @@ describe('role matrix — segregation of duties', () => {
   it('reserves revenue for the Admin alone', () => {
     for (const role of SCHOOL_ROLES) {
       expect(hasPermission([role], 'finance.revenue.read')).toBe(role === 'OWNER');
+    }
+  });
+
+  it('reserves Pricing and Billing for the Admin alone', () => {
+    for (const role of SCHOOL_ROLES) {
+      expect(hasPermission([role], 'settings.billing.manage')).toBe(role === 'OWNER');
     }
   });
 
@@ -115,7 +121,7 @@ describe('role matrix — segregation of duties', () => {
     //
     // `attendance.own.read` is likewise withheld: the owner tracks the staff's
     // attendance, not their own, so My attendance stays out of their menu.
-    const withheld: string[] = ['parent.child.read', 'attendance.own.read'];
+    const withheld: string[] = ['parent.child.read', 'parent.voucher.read', 'attendance.own.read'];
     for (const permission of PERMISSIONS.filter((entry) => !withheld.includes(entry))) {
       expect(hasPermission(['OWNER'], permission)).toBe(true);
     }

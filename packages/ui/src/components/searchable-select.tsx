@@ -85,7 +85,7 @@ export function SearchableSelect({
           aria-haspopup="listbox"
           className={cn(
             'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input',
-            'bg-background px-3 text-sm text-start',
+            'bg-field px-3 text-sm text-start',
             'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
             'disabled:cursor-not-allowed disabled:opacity-50',
             'aria-[invalid=true]:border-danger aria-[invalid=true]:focus-visible:ring-danger',

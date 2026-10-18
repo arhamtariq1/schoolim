@@ -18,7 +18,7 @@ export function GrNumberRangeFilter({
 }: GrNumberRangeFilterProps) {
   return (
     <div
-      className="flex h-10 shrink-0 items-stretch rounded-md border border-border bg-background text-sm"
+      className="flex h-10 shrink-0 items-stretch rounded-md border border-border bg-field text-sm"
       role="group"
       aria-label="GR number range"
     >

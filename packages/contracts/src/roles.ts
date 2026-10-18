@@ -135,6 +135,7 @@ const OWNER: RoleGrants = {
   'workflow.request.manage': ALL,
   'comms.message.create': ALL,
   'settings.school.configure': ALL,
+  'settings.billing.manage': ALL,
   'settings.user.manage': ALL,
   'settings.data.export': ALL,
   'audit.log.read': ALL,
@@ -150,8 +151,11 @@ const OWNER: RoleGrants = {
  * them without a second edit, and `finance.revenue.read` can never leak by
  * being copied across.
  */
+/** Kept for the Admin alone: the figures, and the school's dealings with the platform. */
+const ADMIN_ONLY: ReadonlySet<string> = new Set(['finance.revenue.read', 'settings.billing.manage']);
+
 const WITHOUT_REVENUE: RoleGrants = Object.fromEntries(
-  Object.entries(OWNER).filter(([permission]) => permission !== 'finance.revenue.read'),
+  Object.entries(OWNER).filter(([permission]) => !ADMIN_ONLY.has(permission)),
 ) as RoleGrants;
 
 /** The principal: the Admin's access without revenue, plus their own attendance record. */
@@ -304,6 +308,11 @@ const STUDENT: RoleGrants = {
  */
 const PARENT: RoleGrants = {
   'parent.child.read': ALL,
+  // Their children's fee vouchers, through endpoints that start at the guardian's own account.
+  'parent.voucher.read': ALL,
+  // The timetable of the class their child is in — narrowed by the service to
+  // exactly that, and only once it is published (ADR-0017).
+  'academics.timetable.read': SCOPED,
   'workflow.request.create': ALL,
 };
 

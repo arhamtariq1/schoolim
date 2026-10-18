@@ -62,6 +62,7 @@ export function ChallanPrintView({
     }
     started.current = true;
 
+
     const ids = readPrintSelection(new URLSearchParams(window.location.search).get('h'));
 
     if (ids.length === 0) {

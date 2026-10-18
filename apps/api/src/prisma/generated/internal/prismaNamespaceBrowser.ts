@@ -107,7 +107,9 @@ export const ModelName = {
   Request: 'Request',
   RequestEvent: 'RequestEvent',
   RequestAttachment: 'RequestAttachment',
-  Notification: 'Notification'
+  Notification: 'Notification',
+  Timetable: 'Timetable',
+  TimetableEntry: 'TimetableEntry'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1014,6 +1016,7 @@ export const ClassSubjectScalarFieldEnum = {
   schoolId: 'schoolId',
   classLevelId: 'classLevelId',
   subjectId: 'subjectId',
+  teacherId: 'teacherId',
   createdAt: 'createdAt'
 } as const
 
@@ -1105,6 +1108,47 @@ export const NotificationScalarFieldEnum = {
 } as const
 
 export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
+export const TimetableScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  sessionId: 'sessionId',
+  classLevelId: 'classLevelId',
+  sectionId: 'sectionId',
+  kind: 'kind',
+  assessmentTypeId: 'assessmentTypeId',
+  title: 'title',
+  description: 'description',
+  status: 'status',
+  startsOn: 'startsOn',
+  endsOn: 'endsOn',
+  publishedAt: 'publishedAt',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TimetableScalarFieldEnum = (typeof TimetableScalarFieldEnum)[keyof typeof TimetableScalarFieldEnum]
+
+
+export const TimetableEntryScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  timetableId: 'timetableId',
+  subjectId: 'subjectId',
+  teacherId: 'teacherId',
+  room: 'room',
+  dayOfWeek: 'dayOfWeek',
+  onDate: 'onDate',
+  startTime: 'startTime',
+  endTime: 'endTime',
+  notes: 'notes',
+  isBreak: 'isBreak',
+  createdAt: 'createdAt'
+} as const
+
+export type TimetableEntryScalarFieldEnum = (typeof TimetableEntryScalarFieldEnum)[keyof typeof TimetableEntryScalarFieldEnum]
 
 
 export const SortOrder = {

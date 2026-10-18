@@ -115,7 +115,7 @@ export function BankLogosCard({ logos, canConfigure, error }: BankLogosCardProps
         {logos.map((logo, index) => (
           <div
             key={logo.slot}
-            className="flex items-center gap-2 rounded-xl border border-border bg-background p-2"
+            className="flex items-center gap-2 rounded-xl border border-border bg-field p-2"
           >
             <span className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-white p-1">
               <img
@@ -163,7 +163,7 @@ export function BankLogosCard({ logos, canConfigure, error }: BankLogosCardProps
             }}
             className="flex min-h-20 items-center gap-3 rounded-xl border border-dashed border-input bg-muted/30 p-2 pe-4 text-start transition-colors hover:border-primary/50 hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <span className="flex size-16 shrink-0 items-center justify-center rounded-md border border-border bg-background text-foreground">
+            <span className="flex size-16 shrink-0 items-center justify-center rounded-md border border-border bg-field text-foreground">
               <CreateIcon className={ICON_SIZE.heading} aria-hidden />
             </span>
             <span className="min-w-0">

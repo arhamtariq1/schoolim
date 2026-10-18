@@ -1,6 +1,7 @@
 import {
   assessmentListQuerySchema,
   assignToClassSchema,
+  setSubjectTeacherSchema,
   createAssessmentSchema,
   idSchema,
   namedItemSchema,
@@ -141,6 +142,22 @@ export class MarksController {
   ): Promise<{ data: ClassMarksSummary }> {
     return {
       data: await this.marks.removeSubjectFromClass(idSchema.parse(classLevelId), idSchema.parse(subjectId)),
+    };
+  }
+
+  @Put('/api/v1/marks/classes/:classLevelId/subjects/:subjectId/teacher')
+  @RequireUnscopedPermission('exams.setup.manage')
+  async setClassSubjectTeacher(
+    @Param('classLevelId') classLevelId: string,
+    @Param('subjectId') subjectId: string,
+    @Body() body: unknown,
+  ): Promise<{ data: ClassMarksSummary }> {
+    return {
+      data: await this.marks.setSubjectTeacher(
+        idSchema.parse(classLevelId),
+        idSchema.parse(subjectId),
+        setSubjectTeacherSchema.parse(body),
+      ),
     };
   }
 

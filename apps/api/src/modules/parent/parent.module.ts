@@ -1,18 +1,30 @@
 import {
+  bankLogoSlotSchema,
+  idSchema,
   parentAttendanceQuerySchema,
+  parentVoucherListQuerySchema,
   ROUTES,
   type ParentAttendance,
+  type ParentChallan,
   type ParentChildProfile,
   type ParentChildSummary,
+  type ParentVoucherList,
   type StudentMarkResult,
 } from '@ilm/contracts';
-import { Controller, Get, Injectable, Module, Param, Query } from '@nestjs/common';
+import { Controller, Get, Injectable, Module, Param, Query, Req, Res } from '@nestjs/common';
+import { type FastifyReply, type FastifyRequest } from 'fastify';
 
 import { type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotFoundError } from '../../shared/errors/domain-error';
 import { RequirePermission } from '../../shared/rbac/rbac.guard';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
+import { clockProvider } from '../../shared/time/clock.provider';
+import { SchoolLogoService } from '../schools/school-logo.service';
+import { SchoolsModule, serveAsset } from '../schools/schools.module';
+import { VouchersService } from '../vouchers/vouchers.service';
+
+import { ParentVouchersService } from './parent-vouchers.service';
 
 /**
  * The parent portal's read side.
@@ -45,7 +57,7 @@ export class ParentService {
       const rows = await tx.student.findMany({
         where: { id: { in: ids }, deletedAt: null },
         orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
-        select: { id: true, firstName: true, lastName: true, grNo: true, photoUrl: true },
+        select: { id: true, firstName: true, lastName: true, grNo: true, photoUrl: true, status: true },
       });
       const placements = await currentPlacements(
         tx,
@@ -59,6 +71,9 @@ export class ParentService {
         photoUrl: row.photoUrl,
         className: placements.get(row.id)?.className ?? null,
         sectionName: placements.get(row.id)?.sectionName ?? null,
+        classLevelId: placements.get(row.id)?.classLevelId ?? null,
+        sectionId: placements.get(row.id)?.sectionId ?? null,
+        status: row.status,
       }));
     });
   }
@@ -99,6 +114,8 @@ export class ParentService {
         photoUrl: row.photoUrl,
         className: placement?.className ?? null,
         sectionName: placement?.sectionName ?? null,
+        classLevelId: placement?.classLevelId ?? null,
+        sectionId: placement?.sectionId ?? null,
         sessionName: placement?.sessionName ?? null,
         rollNo: placement?.rollNo ?? null,
         gender: row.gender,
@@ -245,9 +262,56 @@ export class ParentController {
   }
 }
 
+/**
+ * A parent's fee vouchers, and the two marks their challan prints under.
+ *
+ * The images have their own routes here because the staff ones are gated by
+ * `fees.voucher.read` and `dashboard.workspace.read`, and a guardian holds
+ * neither — giving them one would open the staff voucher list too.
+ */
+@Controller()
+export class ParentVouchersController {
+  constructor(
+    private readonly vouchers: ParentVouchersService,
+    private readonly logos: SchoolLogoService,
+  ) {}
+
+  @Get(ROUTES.parent.vouchers)
+  @RequirePermission('parent.voucher.read')
+  async list(@Query() rawQuery: unknown): Promise<{ data: ParentVoucherList }> {
+    return { data: await this.vouchers.list(parentVoucherListQuerySchema.parse(rawQuery)) };
+  }
+
+  @Get(ROUTES.parent.schoolLogo)
+  @RequirePermission('parent.voucher.read')
+  async schoolLogo(
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: false }) reply: FastifyReply,
+  ): Promise<void> {
+    await serveAsset(this.logos, 'SCHOOL_LOGO', request, reply);
+  }
+
+  @Get('/api/v1/parent/voucher-assets/bank-logos/:slot')
+  @RequirePermission('parent.voucher.read')
+  async bankLogo(
+    @Param('slot') slot: string,
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: false }) reply: FastifyReply,
+  ): Promise<void> {
+    await serveAsset(this.logos, 'BANK_LOGO', request, reply, bankLogoSlotSchema.parse(slot));
+  }
+
+  @Get('/api/v1/parent/vouchers/:id')
+  @RequirePermission('parent.voucher.read')
+  async detail(@Param('id') id: string): Promise<{ data: ParentChallan }> {
+    return { data: await this.vouchers.detail(idSchema.parse(id)) };
+  }
+}
+
 @Module({
-  controllers: [ParentController],
-  providers: [ParentService],
+  imports: [SchoolsModule],
+  controllers: [ParentController, ParentVouchersController],
+  providers: [ParentService, ParentVouchersService, VouchersService, clockProvider],
 })
 export class ParentModule {}
 
@@ -259,6 +323,8 @@ async function currentPlacements(tx: TransactionClient, studentIds: readonly str
     select: {
       studentId: true,
       rollNo: true,
+      classLevelId: true,
+      sectionId: true,
       classLevel: { select: { name: true } },
       section: { select: { name: true } },
       session: { select: { name: true } },
@@ -267,7 +333,14 @@ async function currentPlacements(tx: TransactionClient, studentIds: readonly str
 
   const placements = new Map<
     string,
-    { className: string; sectionName: string | null; sessionName: string; rollNo: number | null }
+    {
+      className: string;
+      sectionName: string | null;
+      sessionName: string;
+      rollNo: number | null;
+      classLevelId: string;
+      sectionId: string | null;
+    }
   >();
   for (const enrolment of enrolments) {
     if (!placements.has(enrolment.studentId)) {
@@ -276,6 +349,8 @@ async function currentPlacements(tx: TransactionClient, studentIds: readonly str
         sectionName: enrolment.section?.name ?? null,
         sessionName: enrolment.session.name,
         rollNo: enrolment.rollNo,
+        classLevelId: enrolment.classLevelId,
+        sectionId: enrolment.sectionId,
       });
     }
   }

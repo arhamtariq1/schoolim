@@ -527,3 +527,24 @@ export type RequestAttachment = Prisma.RequestAttachmentModel
  * deleted 90 days after it is read, with the user, and with the tenant.
  */
 export type Notification = Prisma.NotificationModel
+/**
+ * Model Timetable
+ * A schedule for one class (or one section of it) in one session.
+ * 
+ * `DRAFT` is visible to the office alone; `PUBLISHED` to the teachers and
+ * parents it concerns. A class timetable repeats weekly between `starts_on` and
+ * `ends_on` (either may be open); an assessment timetable lists dated papers
+ * and its dates are worked out from them.
+ * 
+ * Erasure (docs/17 s4): not personal data. Kept for the life of the school;
+ * deleted with the tenant.
+ */
+export type Timetable = Prisma.TimetableModel
+/**
+ * Model TimetableEntry
+ * One period or one paper. A class timetable's entries repeat on a weekday; an
+ * assessment timetable's are held on a date — exactly one of the two is set.
+ * Times are `HH:MM` text: a clock time has no time zone, and zero-padded 24-hour
+ * text compares and sorts correctly.
+ */
+export type TimetableEntry = Prisma.TimetableEntryModel

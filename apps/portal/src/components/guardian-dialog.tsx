@@ -244,7 +244,7 @@ export function GuardianDialog({
                   {matches.map((match) => (
                     <li
                       key={match.id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-background px-3 py-2"
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-field px-3 py-2"
                     >
                       <div className="min-w-0 text-sm">
                         <span className="font-medium">{match.name}</span>

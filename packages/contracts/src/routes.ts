@@ -341,6 +341,9 @@ export const ROUTES = {
     classSubjects: (classLevelId: string) => `${API_PREFIX}/marks/classes/${classLevelId}/subjects`,
     classSubject: (classLevelId: string, subjectId: string) =>
       `${API_PREFIX}/marks/classes/${classLevelId}/subjects/${subjectId}`,
+    /** Choose (PUT) or clear the teacher who takes a subject in a class. */
+    classSubjectTeacher: (classLevelId: string, subjectId: string) =>
+      `${API_PREFIX}/marks/classes/${classLevelId}/subjects/${subjectId}/teacher`,
     classAssessmentTypes: (classLevelId: string) =>
       `${API_PREFIX}/marks/classes/${classLevelId}/assessment-types`,
     classAssessmentType: (classLevelId: string, typeId: string) =>
@@ -351,6 +354,13 @@ export const ROUTES = {
     child: (id: string) => `${API_PREFIX}/parent/children/${id}`,
     attendance: (id: string) => `${API_PREFIX}/parent/children/${id}/attendance`,
     marks: (id: string) => `${API_PREFIX}/parent/children/${id}/marks`,
+    /** The parent's own children's vouchers, filtered and paged. */
+    vouchers: `${API_PREFIX}/parent/vouchers`,
+    /** One voucher and the letterhead its challan prints under. */
+    voucher: (id: string) => `${API_PREFIX}/parent/vouchers/${id}`,
+    /** The school's and the bank's marks for a challan, readable by a guardian. */
+    schoolLogo: `${API_PREFIX}/parent/voucher-assets/school-logo`,
+    bankLogo: (slot: number) => `${API_PREFIX}/parent/voucher-assets/bank-logos/${String(slot)}`,
   },
   /**
    * Requests and concerns (ADR-0016).
@@ -373,6 +383,18 @@ export const ROUTES = {
       `${API_PREFIX}/requests/${id}/events/${eventId}/attachments`,
     /** GET serves the picture itself, so it can be an image source. */
     attachment: (attachmentId: string) => `${API_PREFIX}/requests/attachments/${attachmentId}`,
+  },
+  /**
+   * Timetables (ADR-0017). Fixed paths are declared ahead of `:id` in the
+   * controller so none can be read as an id.
+   */
+  timetables: {
+    list: `${API_PREFIX}/timetables`,
+    options: `${API_PREFIX}/timetables/options`,
+    calendar: `${API_PREFIX}/timetables/calendar`,
+    detail: (id: string) => `${API_PREFIX}/timetables/${id}`,
+    publish: (id: string) => `${API_PREFIX}/timetables/${id}/publish`,
+    unpublish: (id: string) => `${API_PREFIX}/timetables/${id}/unpublish`,
   },
   /** The signed-in person's own notifications. */
   notifications: {

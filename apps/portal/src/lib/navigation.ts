@@ -65,6 +65,13 @@ export const NAV_ITEMS: readonly NavItem[] = [
     permission: 'parent.child.read',
   },
   {
+    // The fee vouchers of a guardian's own children: preview, and download as PDF.
+    href: '/parent/vouchers',
+    label: 'Fee vouchers',
+    icon: 'FeesIcon',
+    permission: 'parent.voucher.read',
+  },
+  {
     href: '/students/new',
     label: 'Add admission',
     icon: 'AdmissionIcon',
@@ -232,6 +239,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
         permission: 'academics.session.configure',
       },
     ],
+  },
+  {
+    // Weekly periods and dated tests and exams. The office makes them; teachers,
+    // parents and students read the published ones that concern them (ADR-0017).
+    href: '/timetables',
+    label: 'Timetables',
+    icon: 'CalendarIcon',
+    permission: 'academics.timetable.read',
   },
   {
     href: '/academics/holidays',

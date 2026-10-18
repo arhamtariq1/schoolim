@@ -641,7 +641,7 @@ function BillMonthGrid({
                     'flex w-full items-center gap-2 rounded-md border px-3 py-2.5 text-left text-sm transition-colors',
                     isOn
                       ? 'border-primary bg-primary/10 text-foreground'
-                      : 'border-border bg-background text-muted-foreground hover:border-primary/30',
+                      : 'border-border bg-field text-muted-foreground hover:border-primary/30',
                   )}
                 >
                   <span
@@ -683,7 +683,7 @@ function SettingCard({
       htmlFor={id}
       className={cn(
         'flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors',
-        checked ? 'border-primary/40 bg-primary/5' : 'border-border bg-background',
+        checked ? 'border-primary/40 bg-primary/5' : 'border-border bg-field',
       )}
     >
       <Checkbox
@@ -1100,7 +1100,7 @@ function VoucherPreviewCard({
         </Button>
       </div>
 
-      <div className="mt-3 overflow-hidden rounded-md border border-border bg-background text-[10px] leading-snug text-foreground shadow-sm">
+      <div className="mt-3 overflow-hidden rounded-md border border-border bg-field text-[10px] leading-snug text-foreground shadow-sm">
         <div className="border-b border-border bg-muted/40 px-3 py-2">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">

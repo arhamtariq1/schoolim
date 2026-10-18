@@ -44,7 +44,7 @@ export function ListPageToolbar({
           }}
           placeholder={searchPlaceholder}
           aria-label={searchAriaLabel}
-          className="h-10 w-full rounded-md border border-border bg-background ps-9 pe-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="h-10 w-full rounded-md border border-border bg-field ps-9 pe-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         />
       </div>
       {filters === undefined ? null : (

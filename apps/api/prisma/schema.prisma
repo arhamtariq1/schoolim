@@ -258,6 +258,9 @@ model School {
   notifications          Notification[]
   voucherSettings        SchoolVoucherSettings?
 
+  timetables       Timetable[]
+  timetableEntries TimetableEntry[]
+
   @@index([schoolGroupId])
   @@index([status])
   @@map("schools")
@@ -660,6 +663,8 @@ model AcademicSession {
   attendanceRecords AttendanceRecord[]
   assessments       Assessment[]
 
+  timetables Timetable[]
+
   @@unique([schoolId, name])
   @@index([schoolId, status])
   @@index([schoolId, isCurrent])
@@ -687,6 +692,8 @@ model ClassLevel {
   subjects          ClassSubject[]
   assessmentTypes   ClassAssessmentType[]
 
+  timetables Timetable[]
+
   @@unique([schoolId, name])
   @@index([schoolId, numericOrder])
   @@map("class_levels")
@@ -709,6 +716,8 @@ model Section {
   classLevel        ClassLevel         @relation(fields: [classLevelId], references: [id], onDelete: Restrict)
   enrollments       Enrollment[]
   attendanceRecords AttendanceRecord[]
+
+  timetables Timetable[]
 
   @@unique([schoolId, sessionId, classLevelId, name])
   @@index([schoolId, sessionId])
@@ -991,6 +1000,9 @@ model Staff {
   classAssignments       StaffClassAssignment[]
   salaryPayments         StaffSalaryPayment[]
   salaryPeriods          StaffSalaryPeriod[]
+
+  timetableEntries TimetableEntry[]
+  taughtSubjects   ClassSubject[]
 
   @@unique([schoolId, employeeNo])
   @@index([schoolId, status, name])
@@ -1858,6 +1870,8 @@ model Subject {
   assessments Assessment[]
   classes     ClassSubject[]
 
+  timetableEntries TimetableEntry[]
+
   @@unique([schoolId, name])
   @@index([schoolId])
   @@map("subjects")
@@ -1879,6 +1893,8 @@ model AssessmentType {
   school      School                @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   assessments Assessment[]
   classes     ClassAssessmentType[]
+
+  timetables Timetable[]
 
   @@unique([schoolId, name])
   @@index([schoolId])
@@ -2042,13 +2058,17 @@ model ClassSubject {
   schoolId     String   @map("school_id") @db.Uuid
   classLevelId String   @map("class_level_id") @db.Uuid
   subjectId    String   @map("subject_id") @db.Uuid
+  /// Who teaches this subject in this class. One teacher can hold many rows.
+  teacherId    String?  @map("teacher_id") @db.Uuid
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   school     School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   classLevel ClassLevel @relation(fields: [classLevelId], references: [id], onDelete: Cascade)
   subject    Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher    Staff?     @relation(fields: [teacherId], references: [id], onDelete: SetNull)
 
   @@unique([schoolId, classLevelId, subjectId], map: "class_subjects_one_per_class_key")
+  @@index([schoolId, teacherId])
   @@index([schoolId, classLevelId])
   @@index([schoolId, subjectId])
   @@map("class_subjects")
@@ -2254,4 +2274,101 @@ model Notification {
   @@index([schoolId, userId, createdAt])
   @@index([schoolId, userId, readAt])
   @@map("notifications")
+}
+
+// ---------------------------------------------------------------------------
+// Timetables (ADR-0017): weekly class periods and dated tests and exams.
+// The calendar reads these; it keeps no copy.
+// ---------------------------------------------------------------------------
+
+enum TimetableKind {
+  CLASS
+  ASSESSMENT
+
+  @@map("timetable_kind")
+}
+
+enum TimetableStatus {
+  DRAFT
+  PUBLISHED
+
+  @@map("timetable_status")
+}
+
+/// A schedule for one class (or one section of it) in one session.
+///
+/// `DRAFT` is visible to the office alone; `PUBLISHED` to the teachers and
+/// parents it concerns. A class timetable repeats weekly between `starts_on` and
+/// `ends_on` (either may be open); an assessment timetable lists dated papers
+/// and its dates are worked out from them.
+///
+/// Erasure (docs/17 s4): not personal data. Kept for the life of the school;
+/// deleted with the tenant.
+model Timetable {
+  id               String          @id @default(uuid(7)) @db.Uuid
+  schoolId         String          @map("school_id") @db.Uuid
+  sessionId        String          @map("session_id") @db.Uuid
+  classLevelId     String          @map("class_level_id") @db.Uuid
+  /// Null means the whole class.
+  sectionId        String?         @map("section_id") @db.Uuid
+  kind             TimetableKind
+  /// Set for an assessment timetable, and only then. Reuses the school's own
+  /// `assessment_types` — the same list the marks screens use.
+  assessmentTypeId String?         @map("assessment_type_id") @db.Uuid
+  title            String
+  description      String?
+  status           TimetableStatus @default(DRAFT)
+  startsOn         DateTime?       @map("starts_on") @db.Date
+  endsOn           DateTime?       @map("ends_on") @db.Date
+  /// Set exactly when `status` is PUBLISHED.
+  publishedAt      DateTime?       @map("published_at") @db.Timestamptz(6)
+  createdBy        String?         @map("created_by") @db.Uuid
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school         School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  session        AcademicSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  classLevel     ClassLevel       @relation(fields: [classLevelId], references: [id], onDelete: Restrict)
+  section        Section?         @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  assessmentType AssessmentType?  @relation(fields: [assessmentTypeId], references: [id], onDelete: Restrict)
+  entries        TimetableEntry[]
+
+  @@index([schoolId, sessionId, classLevelId])
+  @@index([schoolId, status, updatedAt])
+  @@index([schoolId, kind])
+  @@map("timetables")
+}
+
+/// One period or one paper. A class timetable's entries repeat on a weekday; an
+/// assessment timetable's are held on a date — exactly one of the two is set.
+/// Times are `HH:MM` text: a clock time has no time zone, and zero-padded 24-hour
+/// text compares and sorts correctly.
+model TimetableEntry {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  schoolId    String    @map("school_id") @db.Uuid
+  timetableId String    @map("timetable_id") @db.Uuid
+  subjectId   String?   @map("subject_id") @db.Uuid
+  /// A staff member. Left empty, not deleted, if the person later leaves.
+  teacherId   String?   @map("teacher_id") @db.Uuid
+  room        String?
+  /// ISO weekday, 1 = Monday .. 7 = Sunday.
+  dayOfWeek   Int?      @map("day_of_week") @db.SmallInt
+  onDate      DateTime? @map("on_date") @db.Date
+  startTime   String    @map("start_time")
+  endTime     String    @map("end_time")
+  notes       String?
+  /// A break between periods: no subject, teacher or room. `notes` may name it (Lunch).
+  isBreak     Boolean   @default(false) @map("is_break")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school    School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  timetable Timetable @relation(fields: [timetableId], references: [id], onDelete: Cascade)
+  subject   Subject?  @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  teacher   Staff?    @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+
+  @@index([schoolId, timetableId])
+  @@index([schoolId, teacherId, dayOfWeek])
+  @@index([schoolId, teacherId, onDate])
+  @@index([schoolId, onDate])
+  @@map("timetable_entries")
 }

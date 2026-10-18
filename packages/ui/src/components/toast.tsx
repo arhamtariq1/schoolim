@@ -83,6 +83,18 @@ export function ToastProvider({ children }: { children?: ReactNode }) {
           min-width: min(18rem, calc(100vw - 2rem)) !important;
           max-width: min(24rem, calc(100vw - 2rem)) !important;
         }
+        /* Sonner paints toasts from its own variables, white unless told otherwise.
+           Pointing them at the theme makes a toast a card in light and in dark mode. */
+        [data-sonner-toaster] {
+          --normal-bg: var(--card);
+          --normal-text: var(--fg);
+          --normal-border: var(--border);
+        }
+        [data-sonner-toaster] [data-close-button] svg {
+          width: 0.75rem !important;
+          height: 0.75rem !important;
+          stroke: currentColor !important;
+        }
         [data-sonner-toaster] [data-icon] {
           grid-column: 1 !important;
           grid-row: 1 !important;
@@ -126,11 +138,11 @@ export function ToastProvider({ children }: { children?: ReactNode }) {
           border-radius: 9999px !important;
           border: 1px solid var(--border) !important;
           background: var(--muted) !important;
-          color: var(--muted-foreground) !important;
+          color: var(--muted-fg) !important;
         }
         [data-sonner-toaster] [data-close-button]:hover {
           background: var(--muted) !important;
-          color: var(--foreground) !important;
+          color: var(--fg) !important;
         }
         [data-sonner-toast][data-type=success] [data-icon] {
           color: var(--success);

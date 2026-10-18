@@ -110,6 +110,32 @@ export class NotificationsService {
   }
 
   /**
+   * Many different notifications in one insert, in the caller's transaction.
+   *
+   * For a batch that tells each person something of their own — a voucher run
+   * telling each family about their own child's voucher — where calling `notify`
+   * per item would be a round trip each.
+   */
+  async notifyMany(tx: TransactionClient, inputs: readonly NotifyInput[]): Promise<void> {
+    const data = inputs.flatMap((input) =>
+      [...new Set(input.recipientIds)]
+        .filter((id) => id !== input.exceptUserId)
+        .map((userId) => ({
+          schoolId: this.context.schoolId,
+          userId,
+          kind: input.kind,
+          title: clip(input.title, TITLE_MAX),
+          body: input.body === undefined ? null : clip(input.body, BODY_MAX),
+          entityType: input.entityType,
+          entityId: input.entityId,
+        })),
+    );
+    if (data.length > 0) {
+      await tx.notification.createMany({ data });
+    }
+  }
+
+  /**
    * Tell people something happened, in the caller's transaction.
    *
    * Titles and bodies are plain text, trimmed to what the bell can show. They

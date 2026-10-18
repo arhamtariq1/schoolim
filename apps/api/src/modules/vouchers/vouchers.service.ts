@@ -1264,7 +1264,7 @@ export class VouchersService {
 
 // --- Shared shapes ----------------------------------------------------------
 
-const VOUCHER_SUMMARY_SELECT = {
+export const VOUCHER_SUMMARY_SELECT = {
   id: true,
   voucherNo: true,
   status: true,
@@ -1305,7 +1305,7 @@ const VOUCHER_SUMMARY_SELECT = {
   },
 } as const;
 
-type VoucherRow = {
+export type VoucherRow = {
   id: string;
   voucherNo: string;
   status: VoucherSummary['status'];
@@ -1333,7 +1333,7 @@ type VoucherRow = {
   };
 };
 
-function toSummary(row: VoucherRow): VoucherSummary {
+export function toSummary(row: VoucherRow): VoucherSummary {
   const net = decimalToMinor(row.netPayable);
   const paid = decimalToMinor(row.paidAmount);
   const arrears = decimalToMinor(row.arrearsAmount);
@@ -1573,7 +1573,7 @@ async function nextReceiptNo(tx: TransactionClient): Promise<string> {
  * "value.trim is not a function" and turns a list into a 500. Narrowing here
  * once is cheaper than remembering at thirty call sites.
  */
-function decimalToMinor(value: unknown): number {
+export function decimalToMinor(value: unknown): number {
   if (value === null || value === undefined) {
     return 0;
   }

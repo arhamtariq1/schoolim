@@ -83,6 +83,17 @@ export {
   CalendarOff as HolidayIcon,
   Receipt as ExpenseIcon,
 
+  // --- Timetable: one icon for a kind of subject, and for a break -------------
+  Calculator as SubjectMathIcon,
+  FlaskConical as SubjectScienceIcon,
+  Monitor as SubjectComputerIcon,
+  Languages as SubjectLanguageIcon,
+  MoonStar as SubjectIslamicIcon,
+  BookMarked as SubjectIcon,
+  Coffee as BreakIcon,
+  Clock as ClockIcon,
+  LayoutList as ListViewIcon,
+
   // --- Fees -----------------------------------------------------------------
   /** A fee's timeline: what it was, from when. */
   History as HistoryIcon,

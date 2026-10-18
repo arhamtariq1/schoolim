@@ -79,6 +79,9 @@ export const TENANT_MODELS = [
   'RequestAttachment',
   /** The header bell: a pointer to something that happened, for one user. */
   'Notification',
+  /** ADR-0017: class and assessment schedules. The calendar reads them. */
+  'Timetable',
+  'TimetableEntry',
 ] as const;
 
 export type TenantModel = (typeof TENANT_MODELS)[number];

@@ -26,7 +26,7 @@ export function SchoolSlugField({
   return (
     <div className="space-y-2">
       <Field label="Sign-in address (Web address)" error={error} hint={hint} required>
-        <div className="flex overflow-hidden rounded-lg border border-input bg-background focus-within:ring-2 focus-within:ring-ring">
+        <div className="flex overflow-hidden rounded-lg border border-input bg-field focus-within:ring-2 focus-within:ring-ring">
           {prefix === '' ? null : (
             <span className="hidden shrink-0 border-r border-input bg-muted/40 px-3 py-2 text-sm text-muted-foreground sm:inline">
               {prefix}

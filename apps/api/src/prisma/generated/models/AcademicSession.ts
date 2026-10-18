@@ -222,6 +222,7 @@ export type AcademicSessionWhereInput = {
   feeVouchers?: Prisma.FeeVoucherListRelationFilter
   attendanceRecords?: Prisma.AttendanceRecordListRelationFilter
   assessments?: Prisma.AssessmentListRelationFilter
+  timetables?: Prisma.TimetableListRelationFilter
 }
 
 export type AcademicSessionOrderByWithRelationInput = {
@@ -242,6 +243,7 @@ export type AcademicSessionOrderByWithRelationInput = {
   feeVouchers?: Prisma.FeeVoucherOrderByRelationAggregateInput
   attendanceRecords?: Prisma.AttendanceRecordOrderByRelationAggregateInput
   assessments?: Prisma.AssessmentOrderByRelationAggregateInput
+  timetables?: Prisma.TimetableOrderByRelationAggregateInput
 }
 
 export type AcademicSessionWhereUniqueInput = Prisma.AtLeast<{
@@ -266,6 +268,7 @@ export type AcademicSessionWhereUniqueInput = Prisma.AtLeast<{
   feeVouchers?: Prisma.FeeVoucherListRelationFilter
   attendanceRecords?: Prisma.AttendanceRecordListRelationFilter
   assessments?: Prisma.AssessmentListRelationFilter
+  timetables?: Prisma.TimetableListRelationFilter
 }, "id" | "schoolId_name">
 
 export type AcademicSessionOrderByWithAggregationInput = {
@@ -315,6 +318,7 @@ export type AcademicSessionCreateInput = {
   feeVouchers?: Prisma.FeeVoucherCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionUncheckedCreateInput = {
@@ -334,6 +338,7 @@ export type AcademicSessionUncheckedCreateInput = {
   feeVouchers?: Prisma.FeeVoucherUncheckedCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentUncheckedCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionUpdateInput = {
@@ -353,6 +358,7 @@ export type AcademicSessionUpdateInput = {
   feeVouchers?: Prisma.FeeVoucherUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionUncheckedUpdateInput = {
@@ -372,6 +378,7 @@ export type AcademicSessionUncheckedUpdateInput = {
   feeVouchers?: Prisma.FeeVoucherUncheckedUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUncheckedUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionCreateManyInput = {
@@ -609,6 +616,20 @@ export type AcademicSessionUpdateOneRequiredWithoutAssessmentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.AcademicSessionUpdateToOneWithWhereWithoutAssessmentsInput, Prisma.AcademicSessionUpdateWithoutAssessmentsInput>, Prisma.AcademicSessionUncheckedUpdateWithoutAssessmentsInput>
 }
 
+export type AcademicSessionCreateNestedOneWithoutTimetablesInput = {
+  create?: Prisma.XOR<Prisma.AcademicSessionCreateWithoutTimetablesInput, Prisma.AcademicSessionUncheckedCreateWithoutTimetablesInput>
+  connectOrCreate?: Prisma.AcademicSessionCreateOrConnectWithoutTimetablesInput
+  connect?: Prisma.AcademicSessionWhereUniqueInput
+}
+
+export type AcademicSessionUpdateOneRequiredWithoutTimetablesNestedInput = {
+  create?: Prisma.XOR<Prisma.AcademicSessionCreateWithoutTimetablesInput, Prisma.AcademicSessionUncheckedCreateWithoutTimetablesInput>
+  connectOrCreate?: Prisma.AcademicSessionCreateOrConnectWithoutTimetablesInput
+  upsert?: Prisma.AcademicSessionUpsertWithoutTimetablesInput
+  connect?: Prisma.AcademicSessionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AcademicSessionUpdateToOneWithWhereWithoutTimetablesInput, Prisma.AcademicSessionUpdateWithoutTimetablesInput>, Prisma.AcademicSessionUncheckedUpdateWithoutTimetablesInput>
+}
+
 export type AcademicSessionCreateWithoutSchoolInput = {
   id?: string
   name: string
@@ -625,6 +646,7 @@ export type AcademicSessionCreateWithoutSchoolInput = {
   feeVouchers?: Prisma.FeeVoucherCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionUncheckedCreateWithoutSchoolInput = {
@@ -643,6 +665,7 @@ export type AcademicSessionUncheckedCreateWithoutSchoolInput = {
   feeVouchers?: Prisma.FeeVoucherUncheckedCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentUncheckedCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionCreateOrConnectWithoutSchoolInput = {
@@ -702,6 +725,7 @@ export type AcademicSessionCreateWithoutSectionsInput = {
   feeVouchers?: Prisma.FeeVoucherCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionUncheckedCreateWithoutSectionsInput = {
@@ -720,6 +744,7 @@ export type AcademicSessionUncheckedCreateWithoutSectionsInput = {
   feeVouchers?: Prisma.FeeVoucherUncheckedCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentUncheckedCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionCreateOrConnectWithoutSectionsInput = {
@@ -754,6 +779,7 @@ export type AcademicSessionUpdateWithoutSectionsInput = {
   feeVouchers?: Prisma.FeeVoucherUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionUncheckedUpdateWithoutSectionsInput = {
@@ -772,6 +798,7 @@ export type AcademicSessionUncheckedUpdateWithoutSectionsInput = {
   feeVouchers?: Prisma.FeeVoucherUncheckedUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUncheckedUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionCreateWithoutEnrollmentsInput = {
@@ -790,6 +817,7 @@ export type AcademicSessionCreateWithoutEnrollmentsInput = {
   feeVouchers?: Prisma.FeeVoucherCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionUncheckedCreateWithoutEnrollmentsInput = {
@@ -808,6 +836,7 @@ export type AcademicSessionUncheckedCreateWithoutEnrollmentsInput = {
   feeVouchers?: Prisma.FeeVoucherUncheckedCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentUncheckedCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionCreateOrConnectWithoutEnrollmentsInput = {
@@ -842,6 +871,7 @@ export type AcademicSessionUpdateWithoutEnrollmentsInput = {
   feeVouchers?: Prisma.FeeVoucherUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionUncheckedUpdateWithoutEnrollmentsInput = {
@@ -860,6 +890,7 @@ export type AcademicSessionUncheckedUpdateWithoutEnrollmentsInput = {
   feeVouchers?: Prisma.FeeVoucherUncheckedUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUncheckedUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionCreateWithoutExpensesInput = {
@@ -878,6 +909,7 @@ export type AcademicSessionCreateWithoutExpensesInput = {
   feeVouchers?: Prisma.FeeVoucherCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionUncheckedCreateWithoutExpensesInput = {
@@ -896,6 +928,7 @@ export type AcademicSessionUncheckedCreateWithoutExpensesInput = {
   feeVouchers?: Prisma.FeeVoucherUncheckedCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentUncheckedCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionCreateOrConnectWithoutExpensesInput = {
@@ -930,6 +963,7 @@ export type AcademicSessionUpdateWithoutExpensesInput = {
   feeVouchers?: Prisma.FeeVoucherUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionUncheckedUpdateWithoutExpensesInput = {
@@ -948,6 +982,7 @@ export type AcademicSessionUncheckedUpdateWithoutExpensesInput = {
   feeVouchers?: Prisma.FeeVoucherUncheckedUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUncheckedUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionCreateWithoutHolidaysInput = {
@@ -966,6 +1001,7 @@ export type AcademicSessionCreateWithoutHolidaysInput = {
   feeVouchers?: Prisma.FeeVoucherCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionUncheckedCreateWithoutHolidaysInput = {
@@ -984,6 +1020,7 @@ export type AcademicSessionUncheckedCreateWithoutHolidaysInput = {
   feeVouchers?: Prisma.FeeVoucherUncheckedCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentUncheckedCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionCreateOrConnectWithoutHolidaysInput = {
@@ -1018,6 +1055,7 @@ export type AcademicSessionUpdateWithoutHolidaysInput = {
   feeVouchers?: Prisma.FeeVoucherUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionUncheckedUpdateWithoutHolidaysInput = {
@@ -1036,6 +1074,7 @@ export type AcademicSessionUncheckedUpdateWithoutHolidaysInput = {
   feeVouchers?: Prisma.FeeVoucherUncheckedUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUncheckedUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionCreateWithoutFeeVouchersInput = {
@@ -1054,6 +1093,7 @@ export type AcademicSessionCreateWithoutFeeVouchersInput = {
   expenses?: Prisma.ExpenseCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionUncheckedCreateWithoutFeeVouchersInput = {
@@ -1072,6 +1112,7 @@ export type AcademicSessionUncheckedCreateWithoutFeeVouchersInput = {
   expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentUncheckedCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionCreateOrConnectWithoutFeeVouchersInput = {
@@ -1106,6 +1147,7 @@ export type AcademicSessionUpdateWithoutFeeVouchersInput = {
   expenses?: Prisma.ExpenseUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionUncheckedUpdateWithoutFeeVouchersInput = {
@@ -1124,6 +1166,7 @@ export type AcademicSessionUncheckedUpdateWithoutFeeVouchersInput = {
   expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUncheckedUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionCreateWithoutAttendanceRecordsInput = {
@@ -1142,6 +1185,7 @@ export type AcademicSessionCreateWithoutAttendanceRecordsInput = {
   expenses?: Prisma.ExpenseCreateNestedManyWithoutSessionInput
   feeVouchers?: Prisma.FeeVoucherCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionUncheckedCreateWithoutAttendanceRecordsInput = {
@@ -1160,6 +1204,7 @@ export type AcademicSessionUncheckedCreateWithoutAttendanceRecordsInput = {
   expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutSessionInput
   feeVouchers?: Prisma.FeeVoucherUncheckedCreateNestedManyWithoutSessionInput
   assessments?: Prisma.AssessmentUncheckedCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionCreateOrConnectWithoutAttendanceRecordsInput = {
@@ -1194,6 +1239,7 @@ export type AcademicSessionUpdateWithoutAttendanceRecordsInput = {
   expenses?: Prisma.ExpenseUpdateManyWithoutSessionNestedInput
   feeVouchers?: Prisma.FeeVoucherUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionUncheckedUpdateWithoutAttendanceRecordsInput = {
@@ -1212,6 +1258,7 @@ export type AcademicSessionUncheckedUpdateWithoutAttendanceRecordsInput = {
   expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutSessionNestedInput
   feeVouchers?: Prisma.FeeVoucherUncheckedUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUncheckedUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionCreateWithoutAssessmentsInput = {
@@ -1230,6 +1277,7 @@ export type AcademicSessionCreateWithoutAssessmentsInput = {
   expenses?: Prisma.ExpenseCreateNestedManyWithoutSessionInput
   feeVouchers?: Prisma.FeeVoucherCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionUncheckedCreateWithoutAssessmentsInput = {
@@ -1248,6 +1296,7 @@ export type AcademicSessionUncheckedCreateWithoutAssessmentsInput = {
   expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutSessionInput
   feeVouchers?: Prisma.FeeVoucherUncheckedCreateNestedManyWithoutSessionInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutSessionInput
+  timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSessionInput
 }
 
 export type AcademicSessionCreateOrConnectWithoutAssessmentsInput = {
@@ -1282,6 +1331,7 @@ export type AcademicSessionUpdateWithoutAssessmentsInput = {
   expenses?: Prisma.ExpenseUpdateManyWithoutSessionNestedInput
   feeVouchers?: Prisma.FeeVoucherUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionUncheckedUpdateWithoutAssessmentsInput = {
@@ -1300,6 +1350,99 @@ export type AcademicSessionUncheckedUpdateWithoutAssessmentsInput = {
   expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutSessionNestedInput
   feeVouchers?: Prisma.FeeVoucherUncheckedUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSessionNestedInput
+}
+
+export type AcademicSessionCreateWithoutTimetablesInput = {
+  id?: string
+  name: string
+  startDate: Date | string
+  endDate: Date | string
+  status?: $Enums.SessionStatus
+  isCurrent?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  school: Prisma.SchoolCreateNestedOneWithoutAcademicSessionsInput
+  sections?: Prisma.SectionCreateNestedManyWithoutSessionInput
+  enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSessionInput
+  holidays?: Prisma.HolidayCreateNestedManyWithoutSessionInput
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutSessionInput
+  feeVouchers?: Prisma.FeeVoucherCreateNestedManyWithoutSessionInput
+  attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutSessionInput
+  assessments?: Prisma.AssessmentCreateNestedManyWithoutSessionInput
+}
+
+export type AcademicSessionUncheckedCreateWithoutTimetablesInput = {
+  id?: string
+  schoolId: string
+  name: string
+  startDate: Date | string
+  endDate: Date | string
+  status?: $Enums.SessionStatus
+  isCurrent?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  sections?: Prisma.SectionUncheckedCreateNestedManyWithoutSessionInput
+  enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSessionInput
+  holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSessionInput
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutSessionInput
+  feeVouchers?: Prisma.FeeVoucherUncheckedCreateNestedManyWithoutSessionInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutSessionInput
+  assessments?: Prisma.AssessmentUncheckedCreateNestedManyWithoutSessionInput
+}
+
+export type AcademicSessionCreateOrConnectWithoutTimetablesInput = {
+  where: Prisma.AcademicSessionWhereUniqueInput
+  create: Prisma.XOR<Prisma.AcademicSessionCreateWithoutTimetablesInput, Prisma.AcademicSessionUncheckedCreateWithoutTimetablesInput>
+}
+
+export type AcademicSessionUpsertWithoutTimetablesInput = {
+  update: Prisma.XOR<Prisma.AcademicSessionUpdateWithoutTimetablesInput, Prisma.AcademicSessionUncheckedUpdateWithoutTimetablesInput>
+  create: Prisma.XOR<Prisma.AcademicSessionCreateWithoutTimetablesInput, Prisma.AcademicSessionUncheckedCreateWithoutTimetablesInput>
+  where?: Prisma.AcademicSessionWhereInput
+}
+
+export type AcademicSessionUpdateToOneWithWhereWithoutTimetablesInput = {
+  where?: Prisma.AcademicSessionWhereInput
+  data: Prisma.XOR<Prisma.AcademicSessionUpdateWithoutTimetablesInput, Prisma.AcademicSessionUncheckedUpdateWithoutTimetablesInput>
+}
+
+export type AcademicSessionUpdateWithoutTimetablesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSessionStatusFieldUpdateOperationsInput | $Enums.SessionStatus
+  isCurrent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  school?: Prisma.SchoolUpdateOneRequiredWithoutAcademicSessionsNestedInput
+  sections?: Prisma.SectionUpdateManyWithoutSessionNestedInput
+  enrollments?: Prisma.EnrollmentUpdateManyWithoutSessionNestedInput
+  holidays?: Prisma.HolidayUpdateManyWithoutSessionNestedInput
+  expenses?: Prisma.ExpenseUpdateManyWithoutSessionNestedInput
+  feeVouchers?: Prisma.FeeVoucherUpdateManyWithoutSessionNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutSessionNestedInput
+  assessments?: Prisma.AssessmentUpdateManyWithoutSessionNestedInput
+}
+
+export type AcademicSessionUncheckedUpdateWithoutTimetablesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSessionStatusFieldUpdateOperationsInput | $Enums.SessionStatus
+  isCurrent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sections?: Prisma.SectionUncheckedUpdateManyWithoutSessionNestedInput
+  enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSessionNestedInput
+  holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSessionNestedInput
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutSessionNestedInput
+  feeVouchers?: Prisma.FeeVoucherUncheckedUpdateManyWithoutSessionNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutSessionNestedInput
+  assessments?: Prisma.AssessmentUncheckedUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionCreateManySchoolInput = {
@@ -1329,6 +1472,7 @@ export type AcademicSessionUpdateWithoutSchoolInput = {
   feeVouchers?: Prisma.FeeVoucherUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionUncheckedUpdateWithoutSchoolInput = {
@@ -1347,6 +1491,7 @@ export type AcademicSessionUncheckedUpdateWithoutSchoolInput = {
   feeVouchers?: Prisma.FeeVoucherUncheckedUpdateManyWithoutSessionNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutSessionNestedInput
   assessments?: Prisma.AssessmentUncheckedUpdateManyWithoutSessionNestedInput
+  timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSessionNestedInput
 }
 
 export type AcademicSessionUncheckedUpdateManyWithoutSchoolInput = {
@@ -1373,6 +1518,7 @@ export type AcademicSessionCountOutputType = {
   feeVouchers: number
   attendanceRecords: number
   assessments: number
+  timetables: number
 }
 
 export type AcademicSessionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1383,6 +1529,7 @@ export type AcademicSessionCountOutputTypeSelect<ExtArgs extends runtime.Types.E
   feeVouchers?: boolean | AcademicSessionCountOutputTypeCountFeeVouchersArgs
   attendanceRecords?: boolean | AcademicSessionCountOutputTypeCountAttendanceRecordsArgs
   assessments?: boolean | AcademicSessionCountOutputTypeCountAssessmentsArgs
+  timetables?: boolean | AcademicSessionCountOutputTypeCountTimetablesArgs
 }
 
 /**
@@ -1444,6 +1591,13 @@ export type AcademicSessionCountOutputTypeCountAssessmentsArgs<ExtArgs extends r
   where?: Prisma.AssessmentWhereInput
 }
 
+/**
+ * AcademicSessionCountOutputType without action
+ */
+export type AcademicSessionCountOutputTypeCountTimetablesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TimetableWhereInput
+}
+
 
 export type AcademicSessionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1463,6 +1617,7 @@ export type AcademicSessionSelect<ExtArgs extends runtime.Types.Extensions.Inter
   feeVouchers?: boolean | Prisma.AcademicSession$feeVouchersArgs<ExtArgs>
   attendanceRecords?: boolean | Prisma.AcademicSession$attendanceRecordsArgs<ExtArgs>
   assessments?: boolean | Prisma.AcademicSession$assessmentsArgs<ExtArgs>
+  timetables?: boolean | Prisma.AcademicSession$timetablesArgs<ExtArgs>
   _count?: boolean | Prisma.AcademicSessionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["academicSession"]>
 
@@ -1514,6 +1669,7 @@ export type AcademicSessionInclude<ExtArgs extends runtime.Types.Extensions.Inte
   feeVouchers?: boolean | Prisma.AcademicSession$feeVouchersArgs<ExtArgs>
   attendanceRecords?: boolean | Prisma.AcademicSession$attendanceRecordsArgs<ExtArgs>
   assessments?: boolean | Prisma.AcademicSession$assessmentsArgs<ExtArgs>
+  timetables?: boolean | Prisma.AcademicSession$timetablesArgs<ExtArgs>
   _count?: boolean | Prisma.AcademicSessionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AcademicSessionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1534,6 +1690,7 @@ export type $AcademicSessionPayload<ExtArgs extends runtime.Types.Extensions.Int
     feeVouchers: Prisma.$FeeVoucherPayload<ExtArgs>[]
     attendanceRecords: Prisma.$AttendanceRecordPayload<ExtArgs>[]
     assessments: Prisma.$AssessmentPayload<ExtArgs>[]
+    timetables: Prisma.$TimetablePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1951,6 +2108,7 @@ export interface Prisma__AcademicSessionClient<T, Null = never, ExtArgs extends 
   feeVouchers<T extends Prisma.AcademicSession$feeVouchersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AcademicSession$feeVouchersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FeeVoucherPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   attendanceRecords<T extends Prisma.AcademicSession$attendanceRecordsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AcademicSession$attendanceRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AttendanceRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   assessments<T extends Prisma.AcademicSession$assessmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AcademicSession$assessmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AssessmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  timetables<T extends Prisma.AcademicSession$timetablesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AcademicSession$timetablesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TimetablePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2555,6 +2713,30 @@ export type AcademicSession$assessmentsArgs<ExtArgs extends runtime.Types.Extens
   take?: number
   skip?: number
   distinct?: Prisma.AssessmentScalarFieldEnum | Prisma.AssessmentScalarFieldEnum[]
+}
+
+/**
+ * AcademicSession.timetables
+ */
+export type AcademicSession$timetablesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Timetable
+   */
+  select?: Prisma.TimetableSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Timetable
+   */
+  omit?: Prisma.TimetableOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TimetableInclude<ExtArgs> | null
+  where?: Prisma.TimetableWhereInput
+  orderBy?: Prisma.TimetableOrderByWithRelationInput | Prisma.TimetableOrderByWithRelationInput[]
+  cursor?: Prisma.TimetableWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.TimetableScalarFieldEnum | Prisma.TimetableScalarFieldEnum[]
 }
 
 /**

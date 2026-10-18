@@ -25,6 +25,10 @@ export const parentChildSummarySchema = z.object({
   photoUrl: z.string().nullable(),
   className: z.string().nullable(),
   sectionName: z.string().nullable(),
+  /** For asking the timetable about this child's own class and section. */
+  classLevelId: idSchema.nullable(),
+  sectionId: idSchema.nullable(),
+  status: z.string(),
 });
 
 export type ParentChildSummary = z.infer<typeof parentChildSummarySchema>;

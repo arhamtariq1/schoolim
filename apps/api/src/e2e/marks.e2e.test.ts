@@ -233,7 +233,7 @@ beforeAll(async () => {
     await as('teacher', 'GET', ROUTES.marks.assessmentTypes)
   ).json<{ data: { id: string; name: string }[] }>().data;
   monthlyTypeId = types.find((entry) => entry.name === 'Monthly test')?.id ?? '';
-  examTypeId = types.find((entry) => entry.name === 'Exam')?.id ?? '';
+  examTypeId = types.find((entry) => entry.name === 'Midterm exam')?.id ?? '';
 
   for (const classLevelId of [GRADE_1, GRADE_2]) {
     await as('owner', 'POST', ROUTES.marks.classSubjects(classLevelId), { itemId: subjectId });
@@ -260,7 +260,7 @@ describe('subjects', () => {
     const response = await as('teacher', 'GET', ROUTES.marks.assessmentTypes);
     expect(response.statusCode).toBe(200);
     const names = response.json<{ data: { name: string }[] }>().data.map((entry) => entry.name);
-    expect(names).toEqual(expect.arrayContaining(['Class test', 'Monthly test', 'Surprise test', 'Exam']));
+    expect(names).toEqual(expect.arrayContaining(['Class test', 'Monthly test', 'Surprise test', 'Midterm exam', 'Final exam']));
   });
 });
 
@@ -301,7 +301,7 @@ describe('configuring subjects and assessment types', () => {
     expect(renamed.statusCode).toBe(200);
     expect(renamed.json<{ data: { name: string } }>().data.name).toBe('Pre-board exam');
 
-    expect((await as('owner', 'PATCH', ROUTES.marks.assessmentType(id), { name: 'Exam' })).statusCode).toBe(409);
+    expect((await as('owner', 'PATCH', ROUTES.marks.assessmentType(id), { name: 'Midterm exam' })).statusCode).toBe(409);
   });
 
   it('deletes an unused one, and refuses one that real results depend on', async () => {
@@ -760,5 +760,45 @@ describe('entering marks against a class’s own configuration', () => {
       assessment({ subjectId: id, heldOn: '2026-08-21' }),
     );
     expect(response.statusCode).toBe(201);
+  });
+});
+
+describe('who teaches a subject in a class', () => {
+  const teacherRoute = (classLevelId: string): string => ROUTES.marks.classSubjectTeacher(classLevelId, subjectId);
+  type Summary = { data: { subjects: { id: string; teacher: { id: string } | null }[]; teachers: { id: string }[] } };
+
+  it('lets the office choose a teacher, for many classes and subjects at once', async () => {
+    for (const classLevelId of [GRADE_1, GRADE_2]) {
+      const response = await as('owner', 'PUT', teacherRoute(classLevelId), { teacherId: teacherStaffId });
+      expect(response.statusCode).toBe(200);
+      const row = response.json<Summary>().data.subjects.find((item) => item.id === subjectId);
+      expect(row?.teacher?.id).toBe(teacherStaffId);
+      expect(response.json<Summary>().data.teachers.map((teacher) => teacher.id)).toContain(teacherStaffId);
+    }
+  });
+
+  it('shows the choice to a teacher reading the class, and the timetable form', async () => {
+    const summary = await as('teacher', 'GET', ROUTES.marks.classSummary(GRADE_1));
+    const row = summary.json<Summary>().data.subjects.find((item) => item.id === subjectId);
+    expect(row?.teacher?.id).toBe(teacherStaffId);
+  });
+
+  it('takes the teacher off again', async () => {
+    const response = await as('owner', 'PUT', teacherRoute(GRADE_2), { teacherId: null });
+    expect(response.statusCode).toBe(200);
+    expect(response.json<Summary>().data.subjects.find((item) => item.id === subjectId)?.teacher).toBeNull();
+  });
+
+  it('refuses someone who is not an active teacher, and a subject the class does not have', async () => {
+    expect((await as('owner', 'PUT', teacherRoute(GRADE_1), { teacherId: AASIA })).statusCode).toBe(400);
+    expect(
+      (await as('owner', 'PUT', ROUTES.marks.classSubject(GRADE_1, AASIA) + '/teacher', { teacherId: null })).statusCode,
+    ).toBe(404);
+  });
+
+  it('is the office’s to change, not a teacher’s or a parent’s', async () => {
+    for (const who of ['teacher', 'parent'] as const) {
+      expect((await as(who, 'PUT', teacherRoute(GRADE_1), { teacherId: null })).statusCode).toBe(403);
+    }
   });
 });

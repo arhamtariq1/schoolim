@@ -2,27 +2,21 @@ import { Card, Skeleton } from '@ilm/ui';
 
 import { ListTableScreenSkeleton, WorkspacePageHeaderSkeleton } from '@/components/page-skeletons';
 
-/** `/requests` — header, the four summary cards, then the list. */
+/**
+ * `/requests` — header, then the list with its "New request" button in the table's
+ * own header. The office's four summary cards are not drawn: a skeleton cannot know
+ * who is looking without waiting for the session, and the page most people open is
+ * My Requests, which has none.
+ */
 export function RequestsPageSkeleton() {
   return (
     <div className="w-full space-y-6" role="status" aria-label="Loading requests">
-      <WorkspacePageHeaderSkeleton withActions />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }, (_, index) => (
-          <Card key={index} className="space-y-3 p-4">
-            <div className="flex items-start justify-between gap-2">
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="size-10 rounded-lg" />
-            </div>
-            <Skeleton className="h-8 w-14" />
-          </Card>
-        ))}
-      </div>
+      <WorkspacePageHeaderSkeleton />
       <ListTableScreenSkeleton
         ariaLabel="Loading requests"
         filterCount={3}
         showPrimaryButton={false}
-        showHeaderAction={false}
+        showHeaderAction
         tableRows={8}
         showSelectColumn={false}
       />

@@ -22,7 +22,7 @@ export function Checkbox({ className, ...props }: ComponentProps<typeof Checkbox
   return (
     <CheckboxPrimitive.Root
       className={cn(
-        'peer size-4 shrink-0 rounded border border-input bg-background transition-colors',
+        'peer size-4 shrink-0 rounded border border-input bg-field transition-colors',
         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
         'data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground',

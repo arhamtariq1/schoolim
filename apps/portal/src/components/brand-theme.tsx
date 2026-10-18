@@ -11,7 +11,7 @@ import { brandRamp, brandThemeCss } from '@ilm/ui';
  * two steels, redefined on the root element.
  *
  * It renders on the server, inside the shell, so the school's colour is in the
- * first byte of HTML. Doing it in an effect would paint the product's teal,
+ * first byte of HTML, and it re-renders in place when the colour is changed. Doing it in an effect would paint the product's teal,
  * hydrate, and then repaint — a flash of the wrong brand on every navigation,
  * which is exactly the thing a school notices about their own colour.
  *
@@ -44,14 +44,10 @@ export function BrandTheme({ color }: { readonly color?: string | undefined }) {
     return null;
   }
 
-  return (
-    <style
-      // `precedence` opts this into React 19's stylesheet handling, which
-      // hoists it to <head> and — the part that matters — keeps one copy no
-      // matter how many times the shell renders.
-      precedence="high"
-      href="brand-theme"
-      dangerouslySetInnerHTML={{ __html: brandThemeCss(ramp) }}
-    />
-  );
+  // A plain <style>, not a hoisted stylesheet resource. React 19 keeps one copy of a
+  // resource per `href` and never rewrites its text, so the school's colour painted on
+  // load but a changed colour — saved from the profile screen — stayed the old one until
+  // a reload. An ordinary element is updated in place, and `html:root` already outranks
+  // the theme's own `:root` wherever the browser puts the two.
+  return <style data-brand-theme dangerouslySetInnerHTML={{ __html: brandThemeCss(ramp) }} />;
 }

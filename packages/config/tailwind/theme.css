@@ -103,6 +103,11 @@
 
   /* --- Semantic tokens: the ONLY thing components may reference. ---------- */
   --color-background: var(--bg);
+  /* Inputs, selects, outline buttons and dialogs: white on the slate page, and
+     the page colour in dark mode, where the page is the darkest layer. */
+  --color-field: var(--field);
+  --color-header: var(--header);
+  --color-sidebar: var(--sidebar);
   --color-foreground: var(--fg);
   --color-card: var(--card);
   --color-card-foreground: var(--fg);
@@ -138,13 +143,18 @@
 }
 
 :root {
-  /* Workspace canvas and cards both white; depth comes from borders, not tint. */
-  --canvas-from: oklch(1 0 0);
-  --canvas-mid: oklch(1 0 0);
-  --canvas-to: oklch(1 0 0);
-  --bg: oklch(1 0 0);
+  /* The page is a soft slate (#f8fafc) and cards sit on it in white (#ffffff), so a
+     card reads as a card without a heavy border or shadow. */
+  --canvas-from: #f8fafc;
+  --canvas-mid: #f8fafc;
+  --canvas-to: #f8fafc;
+  --bg: #f8fafc;
+  --field: #ffffff;
   --surface: oklch(1 0 0);
   --card: oklch(1 0 0);
+  /* The header and the sidebar are cards in light mode; dark gives each its own layer. */
+  --header: var(--card);
+  --sidebar: var(--card);
 
   /* ~Tailwind gray-800 (#1f2937) — softer than near-black on white. */
   --fg: oklch(0.278 0.033 257);
@@ -175,22 +185,34 @@
 }
 
 .dark {
-  --canvas-from: oklch(0.162 0.006 285);
-  --canvas-mid: oklch(0.155 0.005 285);
-  --canvas-to: oklch(0.148 0.005 285);
-  /* Same relationship inverted: the page is the darkest layer, cards sit
-     above it, chrome sits between. Three steps, not one flat sheet. */
-  --bg: var(--canvas-to);
-  --surface: oklch(0.185 0.005 285);
-  --card: oklch(0.205 0.006 285);
+  /*
+   * The default dark theme — a deep navy, with the product's teal on it.
+   *
+   *   page #0b1624 · header and sidebar #0e1a29 (one layer) · cards #111e2d
+   *   borders #263647 · primary #14b8a6 · text #f8fafc
+   *
+   * These are for a school that has not chosen a colour of its own. A school that
+   * has gets the same layers in its own hue instead: BrandTheme appends
+   * `html.dark{…}` rules that derive each of these from the brand ramp, so the
+   * navy is the default and not a fixed property of dark mode.
+   */
+  --canvas-from: #0b1624;
+  --canvas-mid: #0b1624;
+  --canvas-to: #0b1624;
+  --bg: #0b1624;
+  --field: #0b1624;
+  --surface: #0e1a29;
+  --header: #0e1a29;
+  --sidebar: var(--header);
+  --card: #111e2d;
 
-  --fg: oklch(0.96 0.001 286);
-  --muted: oklch(0.265 0.006 286);
-  --muted-fg: oklch(0.712 0.013 286);
-  --border: oklch(1 0 0 / 10%);
-  --input-border: oklch(1 0 0 / 16%);
-  --ring: var(--color-brand-400);
-  --primary: var(--color-brand-400);
+  --fg: #f8fafc;
+  --muted: #172637;
+  --muted-fg: #94a3b8;
+  --border: #263647;
+  --input-border: #30435a;
+  --ring: #14b8a6;
+  --primary: #14b8a6;
   --primary-fg: oklch(0.278 0.033 257);
 
   --success: oklch(0.7 0.15 150);
@@ -207,6 +229,23 @@
 
   --shadow-tint: oklch(0 0 0 / 32%);
   --shadow-tint-strong: oklch(0 0 0 / 45%);
+}
+
+/*
+ * The My children screen's own palette, in light mode.
+ *
+ * It is the same tokens with different values, scoped to the screen, so every
+ * component on it keeps using `bg-card`, `border-border`, `text-foreground` and
+ * `text-primary` — no colour is written into a component. The page colour
+ * (#f8fafc) is no longer scoped here: it is the platform's own, set on :root.
+ *
+ *   cards #ffffff · borders #e5e7eb · primary #147f8a · text #0f172a
+ */
+:root:not(.dark) .parent-portal {
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --primary: #147f8a;
+  --fg: #0f172a;
 }
 
 /* Must precede @layer base — used in JSX as `bg-workspace-canvas`. */

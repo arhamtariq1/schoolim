@@ -1,6 +1,12 @@
 'use client';
 
-import { type AcademicSession, type Holiday } from '@ilm/contracts';
+import {
+  formatTimeOfDay,
+  TIMETABLE_EVENT_KIND_LABELS,
+  type AcademicSession,
+  type Holiday,
+  type TimetableCalendarEvent,
+} from '@ilm/contracts';
 import {
   Button,
   Card,
@@ -28,6 +34,7 @@ import {
   MoreIcon,
   StudentsIcon,
 } from '@ilm/ui/icons';
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 import {
@@ -36,7 +43,6 @@ import {
   calendarStats,
   eventCategory,
   eventCellBackgroundClass,
-  eventPillClass,
   formatCompactDate,
   formatEventWhen,
   formatLongDate,
@@ -53,9 +59,17 @@ import {
   type CalendarViewMode,
 } from '@/components/academic-calendar/academic-calendar-utils';
 import { holidayColorTheme, holidayTypeIcon } from '@/components/academic-calendar/calendar-holiday-colors';
+import { TimetableEventBadge } from '@/components/timetable-badges';
+import { TIMETABLE_EVENT_DOT_CLASSES } from '@/lib/timetable-ui';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
 export type AcademicCalendarViewProps = {
   holidays: Holiday[];
+  /**
+   * Class periods, tests and exams from the timetables, already limited to what
+   * this person may see. The calendar draws them; it keeps no copy (ADR-0017).
+   */
+  scheduled?: readonly TimetableCalendarEvent[];
   sessions: AcademicSession[];
   activeSessionId: string | undefined;
   activeSession: AcademicSession | undefined;
@@ -70,6 +84,7 @@ export type AcademicCalendarViewProps = {
 
 export function AcademicCalendarView({
   holidays,
+  scheduled = [],
   sessions,
   activeSessionId,
   activeSession,
@@ -91,6 +106,14 @@ export function AcademicCalendarView({
   const monthLabel = formatMonthYear(year, month);
   const grid = useMemo(() => buildMonthGrid(year, month), [month, year]);
   const selectedEvents = useMemo(() => holidaysOnDay(holidays, selectedDate), [holidays, selectedDate]);
+  const scheduledByDate = useMemo(() => {
+    const byDate = new Map<string, TimetableCalendarEvent[]>();
+    for (const event of scheduled) {
+      byDate.set(event.date, [...(byDate.get(event.date) ?? []), event]);
+    }
+    return byDate;
+  }, [scheduled]);
+  const selectedScheduled = scheduledByDate.get(selectedDate) ?? [];
   const upcoming = useMemo(() => upcomingHolidays(holidays, today), [holidays, today]);
   const weekDays = useMemo(() => weekContaining(selectedDate), [selectedDate]);
 
@@ -330,6 +353,9 @@ export function AcademicCalendarView({
                         {cell.day}
                       </span>
                       <div className="mt-auto space-y-1 pt-2">
+                        {(scheduledByDate.get(cell.iso) ?? []).length === 0 ? null : (
+                          <ScheduledDots events={scheduledByDate.get(cell.iso) ?? []} />
+                        )}
                         {dayEvents.slice(0, 2).map((entry) => {
                           const EventIcon = holidayTypeIcon(entry);
                           const colors = holidayColorTheme(entry);
@@ -450,7 +476,9 @@ export function AcademicCalendarView({
             </div>
             <div className="space-y-3 px-3 pb-4 sm:px-4">
               {selectedEvents.length === 0 ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">No events on this day.</p>
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  {selectedScheduled.length === 0 ? 'No events on this day.' : 'No holidays or school events.'}
+                </p>
               ) : (
                 selectedEvents.map((entry) => (
                   <SelectedDayEventCard
@@ -462,6 +490,16 @@ export function AcademicCalendarView({
                     onDelete={onDeleteEvent}
                   />
                 ))
+              )}
+              {selectedScheduled.length === 0 ? null : (
+                <div className="space-y-2 pt-1">
+                  <h3 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                    Scheduled
+                  </h3>
+                  {selectedScheduled.map((event) => (
+                    <ScheduledEventCard key={event.key} event={event} />
+                  ))}
+                </div>
               )}
             </div>
 
@@ -688,5 +726,46 @@ function eventActions(
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/** A few small dots in a calendar cell: what kinds of thing are scheduled that day. */
+function ScheduledDots({ events }: { events: readonly TimetableCalendarEvent[] }) {
+  const kinds = [...new Set(events.map((event) => event.kind))];
+  return (
+    <span className="flex items-center gap-1" aria-label={`${String(events.length)} scheduled`}>
+      {kinds.map((kind) => (
+        <span key={kind} aria-hidden="true" className={cn('size-2 rounded-full', TIMETABLE_EVENT_DOT_CLASSES[kind])} />
+      ))}
+      <span className="text-[10px] font-medium text-muted-foreground tabular-nums">{events.length}</span>
+    </span>
+  );
+}
+
+/** A timetable entry on the selected day. It is a link: the timetable is where it is kept. */
+function ScheduledEventCard({ event }: { event: TimetableCalendarEvent }) {
+  const tenantHref = useTenantHref();
+  return (
+    <Link
+      href={tenantHref(`/timetables/${event.timetableId}`)}
+      className="flex items-start gap-3 rounded-md border border-border/70 bg-card p-3 transition-colors hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+    >
+      <span aria-hidden="true" className={cn('mt-1.5 size-2.5 shrink-0 rounded-full', TIMETABLE_EVENT_DOT_CLASSES[event.kind])} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-semibold text-foreground">
+          {event.subject ?? event.title}
+        </span>
+        <span className="block truncate text-xs text-muted-foreground">
+          {formatTimeOfDay(event.startTime)} – {formatTimeOfDay(event.endTime)} · {event.classLevel}
+          {event.section === null ? '' : ` ${event.section}`}
+          {event.room === null ? '' : ` · Room ${event.room}`}
+        </span>
+        <span className="block truncate text-xs text-muted-foreground">
+          {event.subject === null ? '' : `${event.title} · `}
+          {event.status === 'DRAFT' ? 'Draft' : TIMETABLE_EVENT_KIND_LABELS[event.kind]}
+        </span>
+      </span>
+      <TimetableEventBadge kind={event.kind} />
+    </Link>
   );
 }

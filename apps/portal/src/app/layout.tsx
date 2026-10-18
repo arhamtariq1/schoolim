@@ -9,8 +9,8 @@ import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
 
 import { DashboardChrome } from '@/components/dashboard-chrome';
-import { readThemeChoiceFromCookie, type ThemeChoice } from '@/lib/theme-preference';
 import { sansFont } from '@/lib/fonts';
+import { readThemeChoiceFromCookie, type ThemeChoice } from '@/lib/theme-preference';
 
 export const metadata: Metadata = {
   title: BRAND.name,

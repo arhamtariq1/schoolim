@@ -29,7 +29,7 @@ const button = cva(
       tone: {
         primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
         secondary: 'bg-muted text-foreground hover:bg-muted/80',
-        outline: 'border border-border bg-background hover:bg-muted',
+        outline: 'border border-border bg-field hover:bg-muted',
         ghost: 'hover:bg-muted',
         danger: 'bg-danger text-primary-foreground hover:bg-danger/90',
       },

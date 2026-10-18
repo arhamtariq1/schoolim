@@ -54,6 +54,13 @@ export interface ChallanProps {
     bankLogos?: readonly BankLogo[] | undefined;
     /** The school's brand colour, `#rrggbb`. Absent means the default ink. */
     accentColor?: string | undefined;
+    /**
+     * Where the marks are fetched from. Staff read them from the school's own
+     * routes; a parent, who may not, reads the same images from the parent
+     * routes. Absent means the staff ones. A name rather than URLs so the
+     * props stay plain data across the server/client boundary.
+     */
+    assets?: 'staff' | 'parent' | undefined;
   };
   settings: VoucherSettings;
   /**
@@ -118,7 +125,7 @@ function ChallanCopy({
   const gap = tight ? 'mt-1.5' : 'mt-3';
   const rowPad = tight ? 'py-1' : 'py-2';
   const bankLogos = (settings.showBankLogos ? (school.bankLogos ?? []) : []).map(
-    (logo) => `${ROUTES.bankLogo.slot(logo.slot)}?v=${logo.version}`,
+    (logo) => `${(school.assets === 'parent' ? ROUTES.parent.bankLogo : ROUTES.bankLogo.slot)(logo.slot)}?v=${logo.version}`,
   );
 
   return (
@@ -140,6 +147,7 @@ function ChallanCopy({
           <ChallanMark
             showSchoolLogo={settings.showLogo && school.logoVersion !== undefined}
             logoVersion={school.logoVersion}
+            logoRoute={school.assets === 'parent' ? ROUTES.parent.schoolLogo : ROUTES.schoolLogo.image}
             preview={dense}
           />
           <div className="min-w-0">
@@ -363,10 +371,12 @@ function ChallanCopy({
 function ChallanMark({
   showSchoolLogo,
   logoVersion,
+  logoRoute,
   preview,
 }: {
   showSchoolLogo: boolean;
   logoVersion: string | undefined;
+  logoRoute: string;
   preview: boolean;
 }) {
   const size = preview ? 'h-8 max-w-28' : 'h-10 max-w-36';
@@ -374,7 +384,7 @@ function ChallanMark({
   if (showSchoolLogo && logoVersion !== undefined) {
     return (
       <img
-        src={`${ROUTES.schoolLogo.image}?v=${logoVersion}`}
+        src={`${logoRoute}?v=${logoVersion}`}
         alt=""
         className={`${size} object-contain object-center`}
       />

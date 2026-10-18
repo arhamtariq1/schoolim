@@ -78,8 +78,14 @@ export function NotificationsMenu() {
     if (item.readAt === null) {
       void markRead([item.id]);
     }
-    if (item.entityType === 'request' && item.entityId !== null) {
-      router.push(tenantHref(`/requests/${item.entityId}`));
+    if (item.entityId !== null) {
+      if (item.entityType === 'request') {
+        router.push(tenantHref(`/requests/${item.entityId}`));
+      } else if (item.entityType === 'timetable') {
+        router.push(tenantHref(`/timetables/${item.entityId}`));
+      } else if (item.entityType === 'voucher') {
+        router.push(tenantHref(`/parent/vouchers?open=${item.entityId}`));
+      }
     }
   }
 

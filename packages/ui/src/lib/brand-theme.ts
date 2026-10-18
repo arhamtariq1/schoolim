@@ -315,5 +315,35 @@ export function brandThemeCss(ramp: BrandRamp): string {
     `--color-steel-600:${css(ramp.steel600)}`,
   );
 
-  return `html:root{${declarations.join(';')}}`;
+  return `html:root{${declarations.join(';')}}${DARK_SURFACES}`;
 }
+
+/**
+ * A school's night: the page, chrome and cards as the brand's hue at a fixed low
+ * lightness and a fraction of its chroma, so a violet school gets a violet dark
+ * theme and an orange one an orange. Relative colour syntax over the ramp's own
+ * steps — the runtime swap above is what these follow, so there is no second set
+ * of numbers per school.
+ *
+ * Only ever emitted for a school that chose a colour. Without one, theme.css's
+ * default navy stands. `html.dark` outranks the `.dark` it overrides.
+ */
+const DARK_SURFACES =
+  'html.dark{' +
+  [
+    '--canvas-from:oklch(from var(--color-brand-950) 0.175 calc(c * 0.55) h)',
+    '--canvas-mid:oklch(from var(--color-brand-950) 0.165 calc(c * 0.55) h)',
+    '--canvas-to:oklch(from var(--color-brand-950) 0.155 calc(c * 0.55) h)',
+    '--bg:var(--canvas-to)',
+    '--field:var(--canvas-to)',
+    '--surface:oklch(from var(--color-brand-950) 0.19 calc(c * 0.65) h)',
+    '--header:var(--surface)',
+    '--sidebar:var(--header)',
+    '--card:oklch(from var(--color-brand-950) 0.215 calc(c * 0.7) h)',
+    '--muted:oklch(from var(--color-brand-950) 0.27 calc(c * 0.7) h)',
+    '--border:oklch(from var(--color-brand-300) l c h / 16%)',
+    '--input-border:oklch(from var(--color-brand-300) l c h / 24%)',
+    '--primary:var(--color-brand-400)',
+    '--ring:var(--color-brand-400)',
+  ].join(';') +
+  '}';

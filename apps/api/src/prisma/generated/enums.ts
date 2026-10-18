@@ -316,3 +316,19 @@ export const RequestEventKind = {
 } as const
 
 export type RequestEventKind = (typeof RequestEventKind)[keyof typeof RequestEventKind]
+
+
+export const TimetableKind = {
+  CLASS: 'CLASS',
+  ASSESSMENT: 'ASSESSMENT'
+} as const
+
+export type TimetableKind = (typeof TimetableKind)[keyof typeof TimetableKind]
+
+
+export const TimetableStatus = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED'
+} as const
+
+export type TimetableStatus = (typeof TimetableStatus)[keyof typeof TimetableStatus]

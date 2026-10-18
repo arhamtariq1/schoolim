@@ -281,7 +281,7 @@ export function PaySalaryDialog({
                     </FieldIconWrap>
                   </Field>
                   <Field label="Total amount to pay">
-                    <div className="flex h-10 items-center justify-between rounded-md border border-primary/30 bg-background px-3 text-sm font-semibold tabular-nums">
+                    <div className="flex h-10 items-center justify-between rounded-md border border-primary/30 bg-field px-3 text-sm font-semibold tabular-nums">
                       <Money valueMinor={minorUnits(totalPayableMinor)} withSymbol />
                     </div>
                   </Field>

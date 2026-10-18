@@ -18,6 +18,7 @@ import { MarksModule } from './modules/marks/marks.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ParentModule } from './modules/parent/parent.module';
 import { RequestsModule } from './modules/requests/requests.module';
+import { TimetablesModule } from './modules/timetables/timetables.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { StudentsModule } from './modules/students/students.module';
 import { VouchersModule } from './modules/vouchers/vouchers.module';
@@ -74,6 +75,7 @@ import { TenantGuard } from './shared/tenancy/tenant.guard';
     ParentModule,
     NotificationsModule,
     RequestsModule,
+    TimetablesModule,
   ],
   providers: [
     // Registered here rather than only in main.ts, so the same error contract
