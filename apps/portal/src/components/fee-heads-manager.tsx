@@ -266,7 +266,7 @@ export function FeeHeadsManager({
   const columns = useMemo((): CardTableColumn<FeeHead & { index: number }>[] => {
     const selectColumn = canConfigure
       ? [
-          listTableSelectColumn({
+          listTableSelectColumn<FeeHead & { index: number }>({
             selected,
             allOnPageSelected,
             someOnPageSelected,

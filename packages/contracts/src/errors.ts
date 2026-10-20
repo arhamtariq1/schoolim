@@ -81,6 +81,7 @@ export const ERROR_CODES = [
   'FEES_GENERATION_ALREADY_RUN',
   'FEES_GENERATION_IN_PROGRESS',
   'FEES_RUN_NOT_REVERSIBLE',
+  'FEES_CLASS_UNKNOWN',
   'FEES_NO_FEE_PLAN',
   'FEES_PERIOD_CLOSED',
   /** No active tuition head, so there is nothing an increment could raise. */
@@ -195,6 +196,8 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, number>> = {
   FEES_GENERATION_ALREADY_RUN: 409,
   FEES_GENERATION_IN_PROGRESS: 409,
   FEES_RUN_NOT_REVERSIBLE: 422,
+  /** A class on a fee head that no longer exists — refresh and choose again. */
+  FEES_CLASS_UNKNOWN: 422,
   FEES_NO_FEE_PLAN: 422,
   FEES_PERIOD_CLOSED: 422,
   FEES_NO_TUITION_HEAD: 422,

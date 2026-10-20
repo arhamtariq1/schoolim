@@ -2,6 +2,7 @@ import { type CreateFeeHead, type FeeHead, type UpdateFeeHead } from '@ilm/contr
 import { fromDecimalString, minorUnits, toDecimalString, type MinorUnits } from '@ilm/utils';
 import { Injectable } from '@nestjs/common';
 
+import { type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   BusinessRuleError,
@@ -257,7 +258,7 @@ function toFeeHead(row: FeeHeadRow): FeeHead {
 }
 
 async function assertClassLevelsExist(
-  tx: { classLevel: { findMany: (args: unknown) => Promise<{ id: string }[]> } },
+  tx: TransactionClient,
   classLevelIds: readonly string[],
 ): Promise<void> {
   if (classLevelIds.length === 0) {
@@ -277,12 +278,7 @@ async function assertClassLevelsExist(
 }
 
 async function syncClassLevels(
-  tx: {
-    feeHeadClassLevel: {
-      deleteMany: (args: unknown) => Promise<unknown>;
-      createMany: (args: unknown) => Promise<unknown>;
-    };
-  },
+  tx: TransactionClient,
   feeHeadId: string,
   classLevelIds: readonly string[],
 ): Promise<void> {
@@ -306,19 +302,7 @@ async function syncClassLevels(
  * the admission's class is on that list.
  */
 export async function defaultFeeLinesDetailed(
-  tx: {
-    feeHead: {
-      findMany: (args: unknown) => Promise<
-        {
-          id: string;
-          name: string;
-          type: FeeHead['type'];
-          defaultAmount: { toFixed: (digits: number) => string };
-          classLevels: { classLevelId: string }[];
-        }[]
-      >;
-    };
-  },
+  tx: TransactionClient,
   classLevelId?: string,
 ): Promise<{ feeHeadId: string; name: string; type: FeeHead['type']; amountMinor: MinorUnits }[]> {
   const rows = await tx.feeHead.findMany({
