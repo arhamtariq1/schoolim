@@ -20,6 +20,7 @@ import { NotFoundError } from '../../shared/errors/domain-error';
 import { RequirePermission } from '../../shared/rbac/rbac.guard';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
 import { clockProvider } from '../../shared/time/clock.provider';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { SchoolLogoService } from '../schools/school-logo.service';
 import { SchoolsModule, serveAsset } from '../schools/schools.module';
 import { VouchersService } from '../vouchers/vouchers.service';
@@ -309,7 +310,7 @@ export class ParentVouchersController {
 }
 
 @Module({
-  imports: [SchoolsModule],
+  imports: [SchoolsModule, NotificationsModule],
   controllers: [ParentController, ParentVouchersController],
   providers: [ParentService, ParentVouchersService, VouchersService, clockProvider],
 })

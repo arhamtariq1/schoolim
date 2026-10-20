@@ -1,4 +1,5 @@
 import {
+  STAFF_ROLE_LABELS,
   STAFF_ROLE_TO_SCHOOL_ROLE,
   staffRoleCanSignIn,
   type CreateStaff,
@@ -16,6 +17,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/errors/domain-error';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
+import { NotificationsService } from '../notifications/notifications.service';
 
 import { StaffInviteService } from './staff-invite.service';
 import { StaffSalaryService } from './staff-salary.service';
@@ -78,6 +80,7 @@ export class StaffService {
     private readonly invites: StaffInviteService,
     private readonly salary: StaffSalaryService,
     private readonly context: TenantContextService,
+    private readonly notifications: NotificationsService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -198,6 +201,18 @@ export class StaffService {
           staffRoleCanSignIn(input.role) && input.email !== undefined
             ? await this.invites.issue(tx, created.id, this.clock.now())
             : undefined;
+
+        // The people who manage staff hear about the new colleague, in this
+        // transaction, so there is no notification for a hire that rolled back.
+        await this.notifications.notify(tx, {
+          recipientIds: await this.notifications.userIdsWithPermission(tx, 'staff.record.update'),
+          exceptUserId: this.context.userId,
+          kind: 'staff.added',
+          title: `New staff member: ${input.name}`,
+          body: `${STAFF_ROLE_LABELS[input.role]} · ${employeeNo}`,
+          entityType: 'staff',
+          entityId: created.id,
+        });
 
         return { id: created.id, invitation };
       })

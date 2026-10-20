@@ -30,6 +30,7 @@ import {
 
 import { RequirePermission, RequireUnscopedPermission } from '../../shared/rbac/rbac.guard';
 import { clockProvider } from '../../shared/time/clock.provider';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 import { MarksService } from './marks.service';
 
@@ -222,6 +223,7 @@ export class MarksController {
 }
 
 @Module({
+  imports: [NotificationsModule],
   controllers: [MarksController],
   providers: [clockProvider, MarksService],
 })

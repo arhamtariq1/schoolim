@@ -27,6 +27,7 @@ import {
   readStructure,
   toRow as toFeeRow,
 } from '../fees/student-fees.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 import { ParentInviteService } from './parent-invite.service';
 import { StudentsRepository, type StudentRow, type StudentScope } from './students.repository';
@@ -50,6 +51,7 @@ export class StudentsService {
     private readonly students: StudentsRepository,
     private readonly parents: ParentInviteService,
     private readonly classScope: ClassScopeService,
+    private readonly notifications: NotificationsService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -361,6 +363,24 @@ export class StudentsService {
         });
       }
 
+      // Tell the office, in this transaction: a notification exists exactly when
+      // the admission does. The person who admitted the child already knows.
+      await this.notifications.notify(tx, {
+        recipientIds: [
+          ...(await this.notifications.userIdsWithPermission(tx, 'students.student.create')),
+          // The class teachers meet the new child on their register.
+          ...(input.enrollment === undefined
+            ? []
+            : await this.notifications.teacherUserIdsOfClass(tx, input.enrollment.classLevelId)),
+        ],
+        exceptUserId: this.context.userId,
+        kind: 'student.admitted',
+        title: `New admission: ${input.firstName} ${input.lastName}`,
+        body: `GR ${grNo} · Student ID ${studentCode}`,
+        entityType: 'student',
+        entityId: student.id,
+      });
+
       return { result: { id: student.id, grNo, studentCode }, invitation };
     });
 
@@ -448,6 +468,8 @@ export class StudentsService {
       input.effectiveOn === undefined ? this.clock.now() : new Date(input.effectiveOn);
 
     await this.prisma.tenant(async (tx) => {
+      // Read before the enrolment is closed below, or leaving would hide the class.
+      const classLevelId = await this.notifications.currentClassOf(tx, id);
       await tx.student.update({
         where: { id },
         data: {
@@ -475,6 +497,23 @@ export class StudentsService {
           },
         });
       }
+
+      const guardians = await this.notifications.guardianUserIdsByStudent(tx, [id]);
+      await this.notifications.notify(tx, {
+        recipientIds: [
+          ...(await this.notifications.userIdsWithPermission(tx, 'students.student.update')),
+          ...(guardians.get(id) ?? []),
+          ...(classLevelId === null
+            ? []
+            : await this.notifications.teacherUserIdsOfClass(tx, classLevelId)),
+        ],
+        exceptUserId: this.context.userId,
+        kind: 'student.status_changed',
+        title: `${current.firstName} ${current.lastName} is now ${input.status.toLowerCase().replace('_', ' ')}`,
+        ...(input.reason === undefined ? {} : { body: input.reason }),
+        entityType: 'student',
+        entityId: id,
+      });
     });
 
     return this.findOne(id);

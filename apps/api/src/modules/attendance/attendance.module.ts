@@ -18,6 +18,7 @@ import { type FastifyRequest } from 'fastify';
 
 import { RequirePermission } from '../../shared/rbac/rbac.guard';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 import { AttendanceService } from './attendance.service';
 import { StaffAttendanceService } from './staff-attendance.service';
@@ -138,6 +139,7 @@ export class AttendanceController {
 }
 
 @Module({
+  imports: [NotificationsModule],
   controllers: [AttendanceController],
   providers: [AttendanceService, StaffAttendanceService],
 })

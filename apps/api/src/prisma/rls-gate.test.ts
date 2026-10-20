@@ -77,6 +77,7 @@ const MODEL_TO_TABLE: Readonly<Record<string, string>> = {
   RequestEvent: 'request_events',
   RequestAttachment: 'request_attachments',
   Notification: 'notifications',
+  DeviceToken: 'device_tokens',
   Timetable: 'timetables',
   TimetableEntry: 'timetable_entries',
 };

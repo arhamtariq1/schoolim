@@ -23,6 +23,8 @@ import { Injectable } from '@nestjs/common';
 import { type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
+import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 import { computeLateFee, lateFeeBaseMinor } from './voucher-generation.service';
 import { firstOfMonth, monthLabel } from './voucher-planner';
@@ -59,7 +61,11 @@ import { firstOfMonth, monthLabel } from './voucher-planner';
  */
 @Injectable()
 export class VouchersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly context: TenantContextService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   // --- Reading --------------------------------------------------------------
 
@@ -399,6 +405,8 @@ export class VouchersService {
             : {}),
         },
       });
+
+      await this.announceChange(tx, id, 'was updated', 'Check the new amount and due date before you pay.');
     });
 
     return this.detail(id);
@@ -677,7 +685,7 @@ export class VouchersService {
     return this.prisma.tenant(async (tx) => {
       const vouchers = await tx.feeVoucher.findMany({
         where: { id: { in: unique } },
-        select: { id: true, voucherNo: true, paidAmount: true },
+        select: { id: true, voucherNo: true, paidAmount: true, studentId: true },
       });
 
       const found = new Set(vouchers.map((voucher) => voucher.id));
@@ -789,6 +797,33 @@ export class VouchersService {
       // ever and can never be generated again.
       await tx.feeVoucherPeriod.deleteMany({ where: { voucherId: { in: deletable } } });
       const removed = await tx.feeVoucher.deleteMany({ where: { id: { in: deletable } } });
+
+      // Tell each family their voucher is gone, so the one in their bell does not
+      // lead nowhere. Same transaction: nothing is announced that did not happen.
+      const gone = candidates.filter((voucher) => removing.has(voucher.id));
+      const guardians = await this.notifications.guardianUserIdsByStudent(
+        tx,
+        gone.map((voucher) => voucher.studentId),
+      );
+      await this.notifications.notifyMany(
+        tx,
+        gone.flatMap((voucher) => {
+          const recipientIds = guardians.get(voucher.studentId) ?? [];
+          return recipientIds.length === 0
+            ? []
+            : [
+                {
+                  recipientIds,
+                  exceptUserId: this.context.userId,
+                  kind: 'voucher.cancelled' as const,
+                  title: `Fee voucher ${voucher.voucherNo} was cancelled`,
+                  body: 'Nothing is owed on it. A corrected voucher may follow.',
+                  entityType: 'voucher' as const,
+                  entityId: voucher.id,
+                },
+              ];
+        }),
+      );
 
       return { deleted: removed.count, skipped };
     });
@@ -1140,7 +1175,74 @@ export class VouchersService {
       await this.applyToVoucher(tx, payment.id, id, Math.min(remaining, ownBalance));
     }
 
+    await this.announcePayment(tx, id, voucher.studentId, amount, receiptNo, actorId);
+
     return amount;
+  }
+
+  /** The family hears that their voucher changed — never about a change nobody can see. */
+  private async announceChange(
+    tx: TransactionClient,
+    voucherId: string,
+    what: string,
+    detail: string,
+  ): Promise<void> {
+    const voucher = await tx.feeVoucher.findUnique({
+      where: { id: voucherId },
+      select: { voucherNo: true, studentId: true },
+    });
+    if (voucher === null) {
+      return;
+    }
+    const guardians = await this.notifications.guardianUserIdsByStudent(tx, [voucher.studentId]);
+    await this.notifications.notify(tx, {
+      recipientIds: guardians.get(voucher.studentId) ?? [],
+      exceptUserId: this.context.userId,
+      kind: 'voucher.updated',
+      title: `Fee voucher ${voucher.voucherNo} ${what}`,
+      body: detail,
+      entityType: 'voucher',
+      entityId: voucherId,
+    });
+  }
+
+  /** The family hears that money was received, with the receipt number. */
+  private async announcePayment(
+    tx: TransactionClient,
+    voucherId: string,
+    studentId: string,
+    amountMinor: number,
+    receiptNo: string,
+    actorId: string | undefined,
+  ): Promise<void> {
+    const guardians = await this.notifications.guardianUserIdsByStudent(tx, [studentId]);
+    const voucher = await tx.feeVoucher.findUnique({
+      where: { id: voucherId },
+      select: { voucherNo: true, student: { select: { firstName: true, lastName: true } } },
+    });
+    const child = `${voucher?.student.firstName ?? ''} ${voucher?.student.lastName ?? ''}`.trim();
+
+    // The family, with the receipt number.
+    await this.notifications.notify(tx, {
+      recipientIds: guardians.get(studentId) ?? [],
+      exceptUserId: actorId,
+      kind: 'voucher.payment_received',
+      title: `Payment received: ${formatRupees(amountMinor)}`,
+      body: `${child} · Voucher ${voucher?.voucherNo ?? ''} · Receipt ${receiptNo}`.trim(),
+      entityType: 'voucher',
+      entityId: voucherId,
+    });
+
+    // The people who watch the school's income, when somebody else took the money.
+    await this.notifications.notify(tx, {
+      recipientIds: await this.notifications.userIdsWithPermission(tx, 'finance.revenue.read'),
+      exceptUserId: actorId,
+      kind: 'voucher.payment_recorded',
+      title: `Payment recorded: ${formatRupees(amountMinor)}`,
+      body: `${child} · Voucher ${voucher?.voucherNo ?? ''} · Receipt ${receiptNo}`.trim(),
+      entityType: 'voucher',
+      entityId: voucherId,
+    });
   }
 
   /**
@@ -1213,6 +1315,8 @@ export class VouchersService {
       });
 
       void actorId;
+
+      await this.announceChange(tx, id, 'was reduced', `A waiver of ${formatRupees(waiver)} has been applied.`);
     });
 
     return this.detail(id);

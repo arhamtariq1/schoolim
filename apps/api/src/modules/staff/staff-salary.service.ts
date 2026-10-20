@@ -23,6 +23,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /** Three years of months is more than any payroll question is about. */
 const HISTORY_MONTHS = 36;
@@ -67,6 +68,7 @@ export class StaffSalaryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly context: TenantContextService,
+    private readonly notifications: NotificationsService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -351,6 +353,24 @@ export class StaffSalaryService {
           at: this.clock.now(),
         },
       });
+
+      // The member of staff hears that they have been paid — only if they have a
+      // login, and never about a payment they recorded themselves.
+      const paid = await tx.staff.findFirst({
+        where: { id: staffId },
+        select: { userId: true },
+      });
+      if (paid?.userId !== null && paid?.userId !== undefined) {
+        await this.notifications.notify(tx, {
+          recipientIds: [paid.userId],
+          exceptUserId: this.context.userId,
+          kind: 'salary.paid',
+          title: `Salary paid: ${rupees(amountMinor)}`,
+          body: `For ${input.month}${remaining - amountMinor > 0 ? ` · ${rupees(remaining - amountMinor)} still to come` : ''}`,
+          entityType: 'staff',
+          entityId: staffId,
+        });
+      }
 
       return this.readDetail(tx, staffId);
     });

@@ -108,6 +108,7 @@ export const ModelName = {
   RequestEvent: 'RequestEvent',
   RequestAttachment: 'RequestAttachment',
   Notification: 'Notification',
+  DeviceToken: 'DeviceToken',
   Timetable: 'Timetable',
   TimetableEntry: 'TimetableEntry'
 } as const
@@ -1108,6 +1109,20 @@ export const NotificationScalarFieldEnum = {
 } as const
 
 export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
+export const DeviceTokenScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  userId: 'userId',
+  token: 'token',
+  platform: 'platform',
+  userAgent: 'userAgent',
+  lastSeenAt: 'lastSeenAt',
+  createdAt: 'createdAt'
+} as const
+
+export type DeviceTokenScalarFieldEnum = (typeof DeviceTokenScalarFieldEnum)[keyof typeof DeviceTokenScalarFieldEnum]
 
 
 export const TimetableScalarFieldEnum = {

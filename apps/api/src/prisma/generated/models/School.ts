@@ -452,6 +452,7 @@ export type SchoolWhereInput = {
   requestEvents?: Prisma.RequestEventListRelationFilter
   requestAttachments?: Prisma.RequestAttachmentListRelationFilter
   notifications?: Prisma.NotificationListRelationFilter
+  deviceTokens?: Prisma.DeviceTokenListRelationFilter
   voucherSettings?: Prisma.XOR<Prisma.SchoolVoucherSettingsNullableScalarRelationFilter, Prisma.SchoolVoucherSettingsWhereInput> | null
   timetables?: Prisma.TimetableListRelationFilter
   timetableEntries?: Prisma.TimetableEntryListRelationFilter
@@ -537,6 +538,7 @@ export type SchoolOrderByWithRelationInput = {
   requestEvents?: Prisma.RequestEventOrderByRelationAggregateInput
   requestAttachments?: Prisma.RequestAttachmentOrderByRelationAggregateInput
   notifications?: Prisma.NotificationOrderByRelationAggregateInput
+  deviceTokens?: Prisma.DeviceTokenOrderByRelationAggregateInput
   voucherSettings?: Prisma.SchoolVoucherSettingsOrderByWithRelationInput
   timetables?: Prisma.TimetableOrderByRelationAggregateInput
   timetableEntries?: Prisma.TimetableEntryOrderByRelationAggregateInput
@@ -625,6 +627,7 @@ export type SchoolWhereUniqueInput = Prisma.AtLeast<{
   requestEvents?: Prisma.RequestEventListRelationFilter
   requestAttachments?: Prisma.RequestAttachmentListRelationFilter
   notifications?: Prisma.NotificationListRelationFilter
+  deviceTokens?: Prisma.DeviceTokenListRelationFilter
   voucherSettings?: Prisma.XOR<Prisma.SchoolVoucherSettingsNullableScalarRelationFilter, Prisma.SchoolVoucherSettingsWhereInput> | null
   timetables?: Prisma.TimetableListRelationFilter
   timetableEntries?: Prisma.TimetableEntryListRelationFilter
@@ -779,6 +782,7 @@ export type SchoolCreateInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -863,6 +867,7 @@ export type SchoolUncheckedCreateInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -947,6 +952,7 @@ export type SchoolUpdateInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -1031,6 +1037,7 @@ export type SchoolUncheckedUpdateInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -2060,6 +2067,20 @@ export type SchoolUpdateOneRequiredWithoutNotificationsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.SchoolUpdateToOneWithWhereWithoutNotificationsInput, Prisma.SchoolUpdateWithoutNotificationsInput>, Prisma.SchoolUncheckedUpdateWithoutNotificationsInput>
 }
 
+export type SchoolCreateNestedOneWithoutDeviceTokensInput = {
+  create?: Prisma.XOR<Prisma.SchoolCreateWithoutDeviceTokensInput, Prisma.SchoolUncheckedCreateWithoutDeviceTokensInput>
+  connectOrCreate?: Prisma.SchoolCreateOrConnectWithoutDeviceTokensInput
+  connect?: Prisma.SchoolWhereUniqueInput
+}
+
+export type SchoolUpdateOneRequiredWithoutDeviceTokensNestedInput = {
+  create?: Prisma.XOR<Prisma.SchoolCreateWithoutDeviceTokensInput, Prisma.SchoolUncheckedCreateWithoutDeviceTokensInput>
+  connectOrCreate?: Prisma.SchoolCreateOrConnectWithoutDeviceTokensInput
+  upsert?: Prisma.SchoolUpsertWithoutDeviceTokensInput
+  connect?: Prisma.SchoolWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.SchoolUpdateToOneWithWhereWithoutDeviceTokensInput, Prisma.SchoolUpdateWithoutDeviceTokensInput>, Prisma.SchoolUncheckedUpdateWithoutDeviceTokensInput>
+}
+
 export type SchoolCreateNestedOneWithoutTimetablesInput = {
   create?: Prisma.XOR<Prisma.SchoolCreateWithoutTimetablesInput, Prisma.SchoolUncheckedCreateWithoutTimetablesInput>
   connectOrCreate?: Prisma.SchoolCreateOrConnectWithoutTimetablesInput
@@ -2166,6 +2187,7 @@ export type SchoolCreateWithoutSchoolGroupInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -2249,6 +2271,7 @@ export type SchoolUncheckedCreateWithoutSchoolGroupInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -2392,6 +2415,7 @@ export type SchoolCreateWithoutDomainsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -2475,6 +2499,7 @@ export type SchoolUncheckedCreateWithoutDomainsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -2574,6 +2599,7 @@ export type SchoolUpdateWithoutDomainsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -2657,6 +2683,7 @@ export type SchoolUncheckedUpdateWithoutDomainsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -2740,6 +2767,7 @@ export type SchoolCreateWithoutUsersInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -2823,6 +2851,7 @@ export type SchoolUncheckedCreateWithoutUsersInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -2922,6 +2951,7 @@ export type SchoolUpdateWithoutUsersInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -3005,6 +3035,7 @@ export type SchoolUncheckedUpdateWithoutUsersInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -3088,6 +3119,7 @@ export type SchoolCreateWithoutUserRolesInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -3171,6 +3203,7 @@ export type SchoolUncheckedCreateWithoutUserRolesInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -3270,6 +3303,7 @@ export type SchoolUpdateWithoutUserRolesInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -3353,6 +3387,7 @@ export type SchoolUncheckedUpdateWithoutUserRolesInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -3436,6 +3471,7 @@ export type SchoolCreateWithoutSessionsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -3519,6 +3555,7 @@ export type SchoolUncheckedCreateWithoutSessionsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -3618,6 +3655,7 @@ export type SchoolUpdateWithoutSessionsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -3701,6 +3739,7 @@ export type SchoolUncheckedUpdateWithoutSessionsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -3784,6 +3823,7 @@ export type SchoolCreateWithoutInvitationsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -3867,6 +3907,7 @@ export type SchoolUncheckedCreateWithoutInvitationsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -3966,6 +4007,7 @@ export type SchoolUpdateWithoutInvitationsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -4049,6 +4091,7 @@ export type SchoolUncheckedUpdateWithoutInvitationsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -4132,6 +4175,7 @@ export type SchoolCreateWithoutPasswordResetsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -4215,6 +4259,7 @@ export type SchoolUncheckedCreateWithoutPasswordResetsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -4314,6 +4359,7 @@ export type SchoolUpdateWithoutPasswordResetsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -4397,6 +4443,7 @@ export type SchoolUncheckedUpdateWithoutPasswordResetsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -4480,6 +4527,7 @@ export type SchoolCreateWithoutAuthHandoffsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -4563,6 +4611,7 @@ export type SchoolUncheckedCreateWithoutAuthHandoffsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -4662,6 +4711,7 @@ export type SchoolUpdateWithoutAuthHandoffsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -4745,6 +4795,7 @@ export type SchoolUncheckedUpdateWithoutAuthHandoffsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -4828,6 +4879,7 @@ export type SchoolCreateWithoutEmailVerificationsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -4911,6 +4963,7 @@ export type SchoolUncheckedCreateWithoutEmailVerificationsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -5010,6 +5063,7 @@ export type SchoolUpdateWithoutEmailVerificationsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -5093,6 +5147,7 @@ export type SchoolUncheckedUpdateWithoutEmailVerificationsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -5176,6 +5231,7 @@ export type SchoolCreateWithoutAgreementsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -5259,6 +5315,7 @@ export type SchoolUncheckedCreateWithoutAgreementsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -5358,6 +5415,7 @@ export type SchoolUpdateWithoutAgreementsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -5441,6 +5499,7 @@ export type SchoolUncheckedUpdateWithoutAgreementsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -5524,6 +5583,7 @@ export type SchoolCreateWithoutAcademicSessionsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -5607,6 +5667,7 @@ export type SchoolUncheckedCreateWithoutAcademicSessionsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -5706,6 +5767,7 @@ export type SchoolUpdateWithoutAcademicSessionsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -5789,6 +5851,7 @@ export type SchoolUncheckedUpdateWithoutAcademicSessionsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -5872,6 +5935,7 @@ export type SchoolCreateWithoutClassLevelsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -5955,6 +6019,7 @@ export type SchoolUncheckedCreateWithoutClassLevelsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -6054,6 +6119,7 @@ export type SchoolUpdateWithoutClassLevelsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -6137,6 +6203,7 @@ export type SchoolUncheckedUpdateWithoutClassLevelsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -6220,6 +6287,7 @@ export type SchoolCreateWithoutSchoolSectionsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -6303,6 +6371,7 @@ export type SchoolUncheckedCreateWithoutSchoolSectionsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -6402,6 +6471,7 @@ export type SchoolUpdateWithoutSchoolSectionsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -6485,6 +6555,7 @@ export type SchoolUncheckedUpdateWithoutSchoolSectionsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -6568,6 +6639,7 @@ export type SchoolCreateWithoutStudentsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -6651,6 +6723,7 @@ export type SchoolUncheckedCreateWithoutStudentsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -6750,6 +6823,7 @@ export type SchoolUpdateWithoutStudentsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -6833,6 +6907,7 @@ export type SchoolUncheckedUpdateWithoutStudentsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -6916,6 +6991,7 @@ export type SchoolCreateWithoutGuardiansInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -6999,6 +7075,7 @@ export type SchoolUncheckedCreateWithoutGuardiansInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -7098,6 +7175,7 @@ export type SchoolUpdateWithoutGuardiansInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -7181,6 +7259,7 @@ export type SchoolUncheckedUpdateWithoutGuardiansInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -7264,6 +7343,7 @@ export type SchoolCreateWithoutStudentGuardiansInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -7347,6 +7427,7 @@ export type SchoolUncheckedCreateWithoutStudentGuardiansInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -7446,6 +7527,7 @@ export type SchoolUpdateWithoutStudentGuardiansInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -7529,6 +7611,7 @@ export type SchoolUncheckedUpdateWithoutStudentGuardiansInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -7612,6 +7695,7 @@ export type SchoolCreateWithoutEnrollmentsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -7695,6 +7779,7 @@ export type SchoolUncheckedCreateWithoutEnrollmentsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -7794,6 +7879,7 @@ export type SchoolUpdateWithoutEnrollmentsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -7877,6 +7963,7 @@ export type SchoolUncheckedUpdateWithoutEnrollmentsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -7960,6 +8047,7 @@ export type SchoolCreateWithoutStaffInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -8043,6 +8131,7 @@ export type SchoolUncheckedCreateWithoutStaffInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -8142,6 +8231,7 @@ export type SchoolUpdateWithoutStaffInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -8225,6 +8315,7 @@ export type SchoolUncheckedUpdateWithoutStaffInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -8308,6 +8399,7 @@ export type SchoolCreateWithoutStaffClassAssignmentsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -8391,6 +8483,7 @@ export type SchoolUncheckedCreateWithoutStaffClassAssignmentsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -8490,6 +8583,7 @@ export type SchoolUpdateWithoutStaffClassAssignmentsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -8573,6 +8667,7 @@ export type SchoolUncheckedUpdateWithoutStaffClassAssignmentsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -8656,6 +8751,7 @@ export type SchoolCreateWithoutExpenseCategoriesInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -8739,6 +8835,7 @@ export type SchoolUncheckedCreateWithoutExpenseCategoriesInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -8838,6 +8935,7 @@ export type SchoolUpdateWithoutExpenseCategoriesInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -8921,6 +9019,7 @@ export type SchoolUncheckedUpdateWithoutExpenseCategoriesInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -9004,6 +9103,7 @@ export type SchoolCreateWithoutExpensesInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -9087,6 +9187,7 @@ export type SchoolUncheckedCreateWithoutExpensesInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -9186,6 +9287,7 @@ export type SchoolUpdateWithoutExpensesInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -9269,6 +9371,7 @@ export type SchoolUncheckedUpdateWithoutExpensesInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -9352,6 +9455,7 @@ export type SchoolCreateWithoutHolidaysInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -9435,6 +9539,7 @@ export type SchoolUncheckedCreateWithoutHolidaysInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -9534,6 +9639,7 @@ export type SchoolUpdateWithoutHolidaysInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -9617,6 +9723,7 @@ export type SchoolUncheckedUpdateWithoutHolidaysInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -9700,6 +9807,7 @@ export type SchoolCreateWithoutFeeHeadsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -9783,6 +9891,7 @@ export type SchoolUncheckedCreateWithoutFeeHeadsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -9882,6 +9991,7 @@ export type SchoolUpdateWithoutFeeHeadsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -9965,6 +10075,7 @@ export type SchoolUncheckedUpdateWithoutFeeHeadsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -10048,6 +10159,7 @@ export type SchoolCreateWithoutFeeHeadClassLevelsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -10131,6 +10243,7 @@ export type SchoolUncheckedCreateWithoutFeeHeadClassLevelsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -10230,6 +10343,7 @@ export type SchoolUpdateWithoutFeeHeadClassLevelsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -10313,6 +10427,7 @@ export type SchoolUncheckedUpdateWithoutFeeHeadClassLevelsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -10396,6 +10511,7 @@ export type SchoolCreateWithoutStudentFeesInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -10479,6 +10595,7 @@ export type SchoolUncheckedCreateWithoutStudentFeesInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -10578,6 +10695,7 @@ export type SchoolUpdateWithoutStudentFeesInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -10661,6 +10779,7 @@ export type SchoolUncheckedUpdateWithoutStudentFeesInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -10744,6 +10863,7 @@ export type SchoolCreateWithoutNumberSequencesInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -10827,6 +10947,7 @@ export type SchoolUncheckedCreateWithoutNumberSequencesInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -10926,6 +11047,7 @@ export type SchoolUpdateWithoutNumberSequencesInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -11009,6 +11131,7 @@ export type SchoolUncheckedUpdateWithoutNumberSequencesInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -11092,6 +11215,7 @@ export type SchoolCreateWithoutJobRunsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -11175,6 +11299,7 @@ export type SchoolUncheckedCreateWithoutJobRunsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -11274,6 +11399,7 @@ export type SchoolUpdateWithoutJobRunsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -11357,6 +11483,7 @@ export type SchoolUncheckedUpdateWithoutJobRunsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -11440,6 +11567,7 @@ export type SchoolCreateWithoutFeeVouchersInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -11523,6 +11651,7 @@ export type SchoolUncheckedCreateWithoutFeeVouchersInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -11622,6 +11751,7 @@ export type SchoolUpdateWithoutFeeVouchersInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -11705,6 +11835,7 @@ export type SchoolUncheckedUpdateWithoutFeeVouchersInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -11788,6 +11919,7 @@ export type SchoolCreateWithoutFeeVoucherLinesInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -11871,6 +12003,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherLinesInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -11970,6 +12103,7 @@ export type SchoolUpdateWithoutFeeVoucherLinesInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -12053,6 +12187,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherLinesInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -12136,6 +12271,7 @@ export type SchoolCreateWithoutFeeVoucherPeriodsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -12219,6 +12355,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherPeriodsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -12318,6 +12455,7 @@ export type SchoolUpdateWithoutFeeVoucherPeriodsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -12401,6 +12539,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherPeriodsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -12484,6 +12623,7 @@ export type SchoolCreateWithoutFeeVoucherArrearsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -12567,6 +12707,7 @@ export type SchoolUncheckedCreateWithoutFeeVoucherArrearsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -12666,6 +12807,7 @@ export type SchoolUpdateWithoutFeeVoucherArrearsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -12749,6 +12891,7 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherArrearsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -12832,6 +12975,7 @@ export type SchoolCreateWithoutFeePaymentsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -12915,6 +13059,7 @@ export type SchoolUncheckedCreateWithoutFeePaymentsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -13014,6 +13159,7 @@ export type SchoolUpdateWithoutFeePaymentsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -13097,6 +13243,7 @@ export type SchoolUncheckedUpdateWithoutFeePaymentsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -13180,6 +13327,7 @@ export type SchoolCreateWithoutFeePaymentAllocationsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -13263,6 +13411,7 @@ export type SchoolUncheckedCreateWithoutFeePaymentAllocationsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -13362,6 +13511,7 @@ export type SchoolUpdateWithoutFeePaymentAllocationsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -13445,6 +13595,7 @@ export type SchoolUncheckedUpdateWithoutFeePaymentAllocationsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -13528,6 +13679,7 @@ export type SchoolCreateWithoutAttendanceRecordsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -13611,6 +13763,7 @@ export type SchoolUncheckedCreateWithoutAttendanceRecordsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -13710,6 +13863,7 @@ export type SchoolUpdateWithoutAttendanceRecordsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -13793,6 +13947,7 @@ export type SchoolUncheckedUpdateWithoutAttendanceRecordsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -13876,6 +14031,7 @@ export type SchoolCreateWithoutStaffAttendanceInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -13959,6 +14115,7 @@ export type SchoolUncheckedCreateWithoutStaffAttendanceInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -14058,6 +14215,7 @@ export type SchoolUpdateWithoutStaffAttendanceInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -14141,6 +14299,7 @@ export type SchoolUncheckedUpdateWithoutStaffAttendanceInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -14224,6 +14383,7 @@ export type SchoolCreateWithoutSecurityDepositsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -14307,6 +14467,7 @@ export type SchoolUncheckedCreateWithoutSecurityDepositsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -14406,6 +14567,7 @@ export type SchoolUpdateWithoutSecurityDepositsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -14489,6 +14651,7 @@ export type SchoolUncheckedUpdateWithoutSecurityDepositsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -14572,6 +14735,7 @@ export type SchoolCreateWithoutSecurityDepositRefundsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -14655,6 +14819,7 @@ export type SchoolUncheckedCreateWithoutSecurityDepositRefundsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -14754,6 +14919,7 @@ export type SchoolUpdateWithoutSecurityDepositRefundsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -14837,6 +15003,7 @@ export type SchoolUncheckedUpdateWithoutSecurityDepositRefundsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -14920,6 +15087,7 @@ export type SchoolCreateWithoutImagesInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -15003,6 +15171,7 @@ export type SchoolUncheckedCreateWithoutImagesInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -15102,6 +15271,7 @@ export type SchoolUpdateWithoutImagesInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -15185,6 +15355,7 @@ export type SchoolUncheckedUpdateWithoutImagesInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -15269,6 +15440,7 @@ export type SchoolCreateWithoutVoucherSettingsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
 }
@@ -15352,6 +15524,7 @@ export type SchoolUncheckedCreateWithoutVoucherSettingsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
 }
@@ -15451,6 +15624,7 @@ export type SchoolUpdateWithoutVoucherSettingsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
 }
@@ -15534,6 +15708,7 @@ export type SchoolUncheckedUpdateWithoutVoucherSettingsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
 }
@@ -15616,6 +15791,7 @@ export type SchoolCreateWithoutSubjectsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -15699,6 +15875,7 @@ export type SchoolUncheckedCreateWithoutSubjectsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -15798,6 +15975,7 @@ export type SchoolUpdateWithoutSubjectsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -15881,6 +16059,7 @@ export type SchoolUncheckedUpdateWithoutSubjectsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -15964,6 +16143,7 @@ export type SchoolCreateWithoutAssessmentTypesInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -16047,6 +16227,7 @@ export type SchoolUncheckedCreateWithoutAssessmentTypesInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -16146,6 +16327,7 @@ export type SchoolUpdateWithoutAssessmentTypesInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -16229,6 +16411,7 @@ export type SchoolUncheckedUpdateWithoutAssessmentTypesInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -16312,6 +16495,7 @@ export type SchoolCreateWithoutAssessmentsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -16395,6 +16579,7 @@ export type SchoolUncheckedCreateWithoutAssessmentsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -16494,6 +16679,7 @@ export type SchoolUpdateWithoutAssessmentsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -16577,6 +16763,7 @@ export type SchoolUncheckedUpdateWithoutAssessmentsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -16660,6 +16847,7 @@ export type SchoolCreateWithoutMarkEntriesInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -16743,6 +16931,7 @@ export type SchoolUncheckedCreateWithoutMarkEntriesInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -16842,6 +17031,7 @@ export type SchoolUpdateWithoutMarkEntriesInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -16925,6 +17115,7 @@ export type SchoolUncheckedUpdateWithoutMarkEntriesInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -17008,6 +17199,7 @@ export type SchoolCreateWithoutStaffSalaryPeriodsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -17091,6 +17283,7 @@ export type SchoolUncheckedCreateWithoutStaffSalaryPeriodsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -17190,6 +17383,7 @@ export type SchoolUpdateWithoutStaffSalaryPeriodsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -17273,6 +17467,7 @@ export type SchoolUncheckedUpdateWithoutStaffSalaryPeriodsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -17356,6 +17551,7 @@ export type SchoolCreateWithoutStaffSalaryAdjustmentsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -17439,6 +17635,7 @@ export type SchoolUncheckedCreateWithoutStaffSalaryAdjustmentsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -17538,6 +17735,7 @@ export type SchoolUpdateWithoutStaffSalaryAdjustmentsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -17621,6 +17819,7 @@ export type SchoolUncheckedUpdateWithoutStaffSalaryAdjustmentsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -17704,6 +17903,7 @@ export type SchoolCreateWithoutStaffSalaryPaymentsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -17787,6 +17987,7 @@ export type SchoolUncheckedCreateWithoutStaffSalaryPaymentsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -17886,6 +18087,7 @@ export type SchoolUpdateWithoutStaffSalaryPaymentsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -17969,6 +18171,7 @@ export type SchoolUncheckedUpdateWithoutStaffSalaryPaymentsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -18052,6 +18255,7 @@ export type SchoolCreateWithoutClassSubjectsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -18135,6 +18339,7 @@ export type SchoolUncheckedCreateWithoutClassSubjectsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -18234,6 +18439,7 @@ export type SchoolUpdateWithoutClassSubjectsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -18317,6 +18523,7 @@ export type SchoolUncheckedUpdateWithoutClassSubjectsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -18400,6 +18607,7 @@ export type SchoolCreateWithoutClassAssessmentTypesInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -18483,6 +18691,7 @@ export type SchoolUncheckedCreateWithoutClassAssessmentTypesInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -18582,6 +18791,7 @@ export type SchoolUpdateWithoutClassAssessmentTypesInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -18665,6 +18875,7 @@ export type SchoolUncheckedUpdateWithoutClassAssessmentTypesInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -18748,6 +18959,7 @@ export type SchoolCreateWithoutRequestsInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -18831,6 +19043,7 @@ export type SchoolUncheckedCreateWithoutRequestsInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -18930,6 +19143,7 @@ export type SchoolUpdateWithoutRequestsInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -19013,6 +19227,7 @@ export type SchoolUncheckedUpdateWithoutRequestsInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -19096,6 +19311,7 @@ export type SchoolCreateWithoutRequestEventsInput = {
   requests?: Prisma.RequestCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -19179,6 +19395,7 @@ export type SchoolUncheckedCreateWithoutRequestEventsInput = {
   requests?: Prisma.RequestUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -19278,6 +19495,7 @@ export type SchoolUpdateWithoutRequestEventsInput = {
   requests?: Prisma.RequestUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -19361,6 +19579,7 @@ export type SchoolUncheckedUpdateWithoutRequestEventsInput = {
   requests?: Prisma.RequestUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -19444,6 +19663,7 @@ export type SchoolCreateWithoutRequestAttachmentsInput = {
   requests?: Prisma.RequestCreateNestedManyWithoutSchoolInput
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -19527,6 +19747,7 @@ export type SchoolUncheckedCreateWithoutRequestAttachmentsInput = {
   requests?: Prisma.RequestUncheckedCreateNestedManyWithoutSchoolInput
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -19626,6 +19847,7 @@ export type SchoolUpdateWithoutRequestAttachmentsInput = {
   requests?: Prisma.RequestUpdateManyWithoutSchoolNestedInput
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -19709,6 +19931,7 @@ export type SchoolUncheckedUpdateWithoutRequestAttachmentsInput = {
   requests?: Prisma.RequestUncheckedUpdateManyWithoutSchoolNestedInput
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -19792,6 +20015,7 @@ export type SchoolCreateWithoutNotificationsInput = {
   requests?: Prisma.RequestCreateNestedManyWithoutSchoolInput
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
@@ -19875,6 +20099,7 @@ export type SchoolUncheckedCreateWithoutNotificationsInput = {
   requests?: Prisma.RequestUncheckedCreateNestedManyWithoutSchoolInput
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
@@ -19974,6 +20199,7 @@ export type SchoolUpdateWithoutNotificationsInput = {
   requests?: Prisma.RequestUpdateManyWithoutSchoolNestedInput
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -20057,6 +20283,359 @@ export type SchoolUncheckedUpdateWithoutNotificationsInput = {
   requests?: Prisma.RequestUncheckedUpdateManyWithoutSchoolNestedInput
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
+  timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
+  timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
+}
+
+export type SchoolCreateWithoutDeviceTokensInput = {
+  id?: string
+  name: string
+  slug: string
+  legalName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  timezone?: string
+  locale?: string
+  currency?: string
+  country?: string
+  city?: string | null
+  address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolCreateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolCreateaLevelClassNamesInput | string[]
+  phone?: string | null
+  email?: string | null
+  status?: $Enums.SchoolStatus
+  lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
+  workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
+  attendanceBackdateDays?: number
+  onboardedAt?: Date | string | null
+  trialEndsAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  schoolGroup?: Prisma.SchoolGroupCreateNestedOneWithoutSchoolsInput
+  domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
+  users?: Prisma.UserCreateNestedManyWithoutSchoolInput
+  userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
+  passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
+  authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutSchoolInput
+  emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutSchoolInput
+  agreements?: Prisma.SchoolAgreementCreateNestedManyWithoutSchoolInput
+  academicSessions?: Prisma.AcademicSessionCreateNestedManyWithoutSchoolInput
+  classLevels?: Prisma.ClassLevelCreateNestedManyWithoutSchoolInput
+  schoolSections?: Prisma.SectionCreateNestedManyWithoutSchoolInput
+  students?: Prisma.StudentCreateNestedManyWithoutSchoolInput
+  guardians?: Prisma.GuardianCreateNestedManyWithoutSchoolInput
+  studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
+  enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
+  feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
+  staffClassAssignments?: Prisma.StaffClassAssignmentCreateNestedManyWithoutSchoolInput
+  subjects?: Prisma.SubjectCreateNestedManyWithoutSchoolInput
+  assessmentTypes?: Prisma.AssessmentTypeCreateNestedManyWithoutSchoolInput
+  classSubjects?: Prisma.ClassSubjectCreateNestedManyWithoutSchoolInput
+  classAssessmentTypes?: Prisma.ClassAssessmentTypeCreateNestedManyWithoutSchoolInput
+  staffSalaryPayments?: Prisma.StaffSalaryPaymentCreateNestedManyWithoutSchoolInput
+  staffSalaryPeriods?: Prisma.StaffSalaryPeriodCreateNestedManyWithoutSchoolInput
+  staffSalaryAdjustments?: Prisma.StaffSalaryAdjustmentCreateNestedManyWithoutSchoolInput
+  assessments?: Prisma.AssessmentCreateNestedManyWithoutSchoolInput
+  markEntries?: Prisma.MarkEntryCreateNestedManyWithoutSchoolInput
+  holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
+  staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
+  expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutSchoolInput
+  jobRuns?: Prisma.JobRunCreateNestedManyWithoutSchoolInput
+  feeVouchers?: Prisma.FeeVoucherCreateNestedManyWithoutSchoolInput
+  feeVoucherLines?: Prisma.FeeVoucherLineCreateNestedManyWithoutSchoolInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodCreateNestedManyWithoutSchoolInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSchoolInput
+  feePayments?: Prisma.FeePaymentCreateNestedManyWithoutSchoolInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutSchoolInput
+  attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutSchoolInput
+  staffAttendance?: Prisma.StaffAttendanceRecordCreateNestedManyWithoutSchoolInput
+  studentFees?: Prisma.StudentFeeCreateNestedManyWithoutSchoolInput
+  numberSequences?: Prisma.NumberSequenceCreateNestedManyWithoutSchoolInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
+  images?: Prisma.SchoolLogoCreateNestedManyWithoutSchoolInput
+  requests?: Prisma.RequestCreateNestedManyWithoutSchoolInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
+  timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
+  timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
+}
+
+export type SchoolUncheckedCreateWithoutDeviceTokensInput = {
+  id?: string
+  schoolGroupId?: string | null
+  name: string
+  slug: string
+  legalName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  timezone?: string
+  locale?: string
+  currency?: string
+  country?: string
+  city?: string | null
+  address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolCreateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolCreateaLevelClassNamesInput | string[]
+  phone?: string | null
+  email?: string | null
+  status?: $Enums.SchoolStatus
+  lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
+  workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
+  attendanceBackdateDays?: number
+  onboardedAt?: Date | string | null
+  trialEndsAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
+  userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
+  passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutSchoolInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutSchoolInput
+  agreements?: Prisma.SchoolAgreementUncheckedCreateNestedManyWithoutSchoolInput
+  academicSessions?: Prisma.AcademicSessionUncheckedCreateNestedManyWithoutSchoolInput
+  classLevels?: Prisma.ClassLevelUncheckedCreateNestedManyWithoutSchoolInput
+  schoolSections?: Prisma.SectionUncheckedCreateNestedManyWithoutSchoolInput
+  students?: Prisma.StudentUncheckedCreateNestedManyWithoutSchoolInput
+  guardians?: Prisma.GuardianUncheckedCreateNestedManyWithoutSchoolInput
+  studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
+  enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
+  staffClassAssignments?: Prisma.StaffClassAssignmentUncheckedCreateNestedManyWithoutSchoolInput
+  subjects?: Prisma.SubjectUncheckedCreateNestedManyWithoutSchoolInput
+  assessmentTypes?: Prisma.AssessmentTypeUncheckedCreateNestedManyWithoutSchoolInput
+  classSubjects?: Prisma.ClassSubjectUncheckedCreateNestedManyWithoutSchoolInput
+  classAssessmentTypes?: Prisma.ClassAssessmentTypeUncheckedCreateNestedManyWithoutSchoolInput
+  staffSalaryPayments?: Prisma.StaffSalaryPaymentUncheckedCreateNestedManyWithoutSchoolInput
+  staffSalaryPeriods?: Prisma.StaffSalaryPeriodUncheckedCreateNestedManyWithoutSchoolInput
+  staffSalaryAdjustments?: Prisma.StaffSalaryAdjustmentUncheckedCreateNestedManyWithoutSchoolInput
+  assessments?: Prisma.AssessmentUncheckedCreateNestedManyWithoutSchoolInput
+  markEntries?: Prisma.MarkEntryUncheckedCreateNestedManyWithoutSchoolInput
+  holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
+  staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
+  expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutSchoolInput
+  jobRuns?: Prisma.JobRunUncheckedCreateNestedManyWithoutSchoolInput
+  feeVouchers?: Prisma.FeeVoucherUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSchoolInput
+  feePayments?: Prisma.FeePaymentUncheckedCreateNestedManyWithoutSchoolInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutSchoolInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutSchoolInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUncheckedCreateNestedManyWithoutSchoolInput
+  studentFees?: Prisma.StudentFeeUncheckedCreateNestedManyWithoutSchoolInput
+  numberSequences?: Prisma.NumberSequenceUncheckedCreateNestedManyWithoutSchoolInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
+  images?: Prisma.SchoolLogoUncheckedCreateNestedManyWithoutSchoolInput
+  requests?: Prisma.RequestUncheckedCreateNestedManyWithoutSchoolInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
+  timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
+  timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
+}
+
+export type SchoolCreateOrConnectWithoutDeviceTokensInput = {
+  where: Prisma.SchoolWhereUniqueInput
+  create: Prisma.XOR<Prisma.SchoolCreateWithoutDeviceTokensInput, Prisma.SchoolUncheckedCreateWithoutDeviceTokensInput>
+}
+
+export type SchoolUpsertWithoutDeviceTokensInput = {
+  update: Prisma.XOR<Prisma.SchoolUpdateWithoutDeviceTokensInput, Prisma.SchoolUncheckedUpdateWithoutDeviceTokensInput>
+  create: Prisma.XOR<Prisma.SchoolCreateWithoutDeviceTokensInput, Prisma.SchoolUncheckedCreateWithoutDeviceTokensInput>
+  where?: Prisma.SchoolWhereInput
+}
+
+export type SchoolUpdateToOneWithWhereWithoutDeviceTokensInput = {
+  where?: Prisma.SchoolWhereInput
+  data: Prisma.XOR<Prisma.SchoolUpdateWithoutDeviceTokensInput, Prisma.SchoolUncheckedUpdateWithoutDeviceTokensInput>
+}
+
+export type SchoolUpdateWithoutDeviceTokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  legalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  country?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolUpdateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolUpdateaLevelClassNamesInput | string[]
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
+  lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
+  attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
+  onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  trialEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  schoolGroup?: Prisma.SchoolGroupUpdateOneWithoutSchoolsNestedInput
+  domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
+  users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
+  userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
+  passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
+  authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutSchoolNestedInput
+  emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutSchoolNestedInput
+  agreements?: Prisma.SchoolAgreementUpdateManyWithoutSchoolNestedInput
+  academicSessions?: Prisma.AcademicSessionUpdateManyWithoutSchoolNestedInput
+  classLevels?: Prisma.ClassLevelUpdateManyWithoutSchoolNestedInput
+  schoolSections?: Prisma.SectionUpdateManyWithoutSchoolNestedInput
+  students?: Prisma.StudentUpdateManyWithoutSchoolNestedInput
+  guardians?: Prisma.GuardianUpdateManyWithoutSchoolNestedInput
+  studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
+  enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
+  feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
+  staffClassAssignments?: Prisma.StaffClassAssignmentUpdateManyWithoutSchoolNestedInput
+  subjects?: Prisma.SubjectUpdateManyWithoutSchoolNestedInput
+  assessmentTypes?: Prisma.AssessmentTypeUpdateManyWithoutSchoolNestedInput
+  classSubjects?: Prisma.ClassSubjectUpdateManyWithoutSchoolNestedInput
+  classAssessmentTypes?: Prisma.ClassAssessmentTypeUpdateManyWithoutSchoolNestedInput
+  staffSalaryPayments?: Prisma.StaffSalaryPaymentUpdateManyWithoutSchoolNestedInput
+  staffSalaryPeriods?: Prisma.StaffSalaryPeriodUpdateManyWithoutSchoolNestedInput
+  staffSalaryAdjustments?: Prisma.StaffSalaryAdjustmentUpdateManyWithoutSchoolNestedInput
+  assessments?: Prisma.AssessmentUpdateManyWithoutSchoolNestedInput
+  markEntries?: Prisma.MarkEntryUpdateManyWithoutSchoolNestedInput
+  holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
+  staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
+  expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
+  expenses?: Prisma.ExpenseUpdateManyWithoutSchoolNestedInput
+  jobRuns?: Prisma.JobRunUpdateManyWithoutSchoolNestedInput
+  feeVouchers?: Prisma.FeeVoucherUpdateManyWithoutSchoolNestedInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUpdateManyWithoutSchoolNestedInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUpdateManyWithoutSchoolNestedInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUpdateManyWithoutSchoolNestedInput
+  feePayments?: Prisma.FeePaymentUpdateManyWithoutSchoolNestedInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUpdateManyWithoutSchoolNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutSchoolNestedInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUpdateManyWithoutSchoolNestedInput
+  studentFees?: Prisma.StudentFeeUpdateManyWithoutSchoolNestedInput
+  numberSequences?: Prisma.NumberSequenceUpdateManyWithoutSchoolNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
+  images?: Prisma.SchoolLogoUpdateManyWithoutSchoolNestedInput
+  requests?: Prisma.RequestUpdateManyWithoutSchoolNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
+  timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
+  timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
+}
+
+export type SchoolUncheckedUpdateWithoutDeviceTokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  legalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  country?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolUpdateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolUpdateaLevelClassNamesInput | string[]
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
+  lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
+  attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
+  onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  trialEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
+  userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
+  passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutSchoolNestedInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutSchoolNestedInput
+  agreements?: Prisma.SchoolAgreementUncheckedUpdateManyWithoutSchoolNestedInput
+  academicSessions?: Prisma.AcademicSessionUncheckedUpdateManyWithoutSchoolNestedInput
+  classLevels?: Prisma.ClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
+  schoolSections?: Prisma.SectionUncheckedUpdateManyWithoutSchoolNestedInput
+  students?: Prisma.StudentUncheckedUpdateManyWithoutSchoolNestedInput
+  guardians?: Prisma.GuardianUncheckedUpdateManyWithoutSchoolNestedInput
+  studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
+  enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
+  staffClassAssignments?: Prisma.StaffClassAssignmentUncheckedUpdateManyWithoutSchoolNestedInput
+  subjects?: Prisma.SubjectUncheckedUpdateManyWithoutSchoolNestedInput
+  assessmentTypes?: Prisma.AssessmentTypeUncheckedUpdateManyWithoutSchoolNestedInput
+  classSubjects?: Prisma.ClassSubjectUncheckedUpdateManyWithoutSchoolNestedInput
+  classAssessmentTypes?: Prisma.ClassAssessmentTypeUncheckedUpdateManyWithoutSchoolNestedInput
+  staffSalaryPayments?: Prisma.StaffSalaryPaymentUncheckedUpdateManyWithoutSchoolNestedInput
+  staffSalaryPeriods?: Prisma.StaffSalaryPeriodUncheckedUpdateManyWithoutSchoolNestedInput
+  staffSalaryAdjustments?: Prisma.StaffSalaryAdjustmentUncheckedUpdateManyWithoutSchoolNestedInput
+  assessments?: Prisma.AssessmentUncheckedUpdateManyWithoutSchoolNestedInput
+  markEntries?: Prisma.MarkEntryUncheckedUpdateManyWithoutSchoolNestedInput
+  holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
+  staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
+  expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutSchoolNestedInput
+  jobRuns?: Prisma.JobRunUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVouchers?: Prisma.FeeVoucherUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSchoolNestedInput
+  feePayments?: Prisma.FeePaymentUncheckedUpdateManyWithoutSchoolNestedInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutSchoolNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutSchoolNestedInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUncheckedUpdateManyWithoutSchoolNestedInput
+  studentFees?: Prisma.StudentFeeUncheckedUpdateManyWithoutSchoolNestedInput
+  numberSequences?: Prisma.NumberSequenceUncheckedUpdateManyWithoutSchoolNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
+  images?: Prisma.SchoolLogoUncheckedUpdateManyWithoutSchoolNestedInput
+  requests?: Prisma.RequestUncheckedUpdateManyWithoutSchoolNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -20141,6 +20720,7 @@ export type SchoolCreateWithoutTimetablesInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
 }
@@ -20224,6 +20804,7 @@ export type SchoolUncheckedCreateWithoutTimetablesInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
 }
@@ -20323,6 +20904,7 @@ export type SchoolUpdateWithoutTimetablesInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
 }
@@ -20406,6 +20988,7 @@ export type SchoolUncheckedUpdateWithoutTimetablesInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
 }
@@ -20489,6 +21072,7 @@ export type SchoolCreateWithoutTimetableEntriesInput = {
   requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
 }
@@ -20572,6 +21156,7 @@ export type SchoolUncheckedCreateWithoutTimetableEntriesInput = {
   requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
   timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
 }
@@ -20671,6 +21256,7 @@ export type SchoolUpdateWithoutTimetableEntriesInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
 }
@@ -20754,6 +21340,7 @@ export type SchoolUncheckedUpdateWithoutTimetableEntriesInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
 }
@@ -20866,6 +21453,7 @@ export type SchoolUpdateWithoutSchoolGroupInput = {
   requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
@@ -20949,6 +21537,7 @@ export type SchoolUncheckedUpdateWithoutSchoolGroupInput = {
   requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
   requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
   voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
   timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
   timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
@@ -21040,6 +21629,7 @@ export type SchoolCountOutputType = {
   requestEvents: number
   requestAttachments: number
   notifications: number
+  deviceTokens: number
   timetables: number
   timetableEntries: number
 }
@@ -21095,6 +21685,7 @@ export type SchoolCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   requestEvents?: boolean | SchoolCountOutputTypeCountRequestEventsArgs
   requestAttachments?: boolean | SchoolCountOutputTypeCountRequestAttachmentsArgs
   notifications?: boolean | SchoolCountOutputTypeCountNotificationsArgs
+  deviceTokens?: boolean | SchoolCountOutputTypeCountDeviceTokensArgs
   timetables?: boolean | SchoolCountOutputTypeCountTimetablesArgs
   timetableEntries?: boolean | SchoolCountOutputTypeCountTimetableEntriesArgs
 }
@@ -21462,6 +22053,13 @@ export type SchoolCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.
 /**
  * SchoolCountOutputType without action
  */
+export type SchoolCountOutputTypeCountDeviceTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeviceTokenWhereInput
+}
+
+/**
+ * SchoolCountOutputType without action
+ */
 export type SchoolCountOutputTypeCountTimetablesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.TimetableWhereInput
 }
@@ -21554,6 +22152,7 @@ export type SchoolSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   requestEvents?: boolean | Prisma.School$requestEventsArgs<ExtArgs>
   requestAttachments?: boolean | Prisma.School$requestAttachmentsArgs<ExtArgs>
   notifications?: boolean | Prisma.School$notificationsArgs<ExtArgs>
+  deviceTokens?: boolean | Prisma.School$deviceTokensArgs<ExtArgs>
   voucherSettings?: boolean | Prisma.School$voucherSettingsArgs<ExtArgs>
   timetables?: boolean | Prisma.School$timetablesArgs<ExtArgs>
   timetableEntries?: boolean | Prisma.School$timetableEntriesArgs<ExtArgs>
@@ -21708,6 +22307,7 @@ export type SchoolInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   requestEvents?: boolean | Prisma.School$requestEventsArgs<ExtArgs>
   requestAttachments?: boolean | Prisma.School$requestAttachmentsArgs<ExtArgs>
   notifications?: boolean | Prisma.School$notificationsArgs<ExtArgs>
+  deviceTokens?: boolean | Prisma.School$deviceTokensArgs<ExtArgs>
   voucherSettings?: boolean | Prisma.School$voucherSettingsArgs<ExtArgs>
   timetables?: boolean | Prisma.School$timetablesArgs<ExtArgs>
   timetableEntries?: boolean | Prisma.School$timetableEntriesArgs<ExtArgs>
@@ -21777,6 +22377,7 @@ export type $SchoolPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     requestEvents: Prisma.$RequestEventPayload<ExtArgs>[]
     requestAttachments: Prisma.$RequestAttachmentPayload<ExtArgs>[]
     notifications: Prisma.$NotificationPayload<ExtArgs>[]
+    deviceTokens: Prisma.$DeviceTokenPayload<ExtArgs>[]
     voucherSettings: Prisma.$SchoolVoucherSettingsPayload<ExtArgs> | null
     timetables: Prisma.$TimetablePayload<ExtArgs>[]
     timetableEntries: Prisma.$TimetableEntryPayload<ExtArgs>[]
@@ -22284,6 +22885,7 @@ export interface Prisma__SchoolClient<T, Null = never, ExtArgs extends runtime.T
   requestEvents<T extends Prisma.School$requestEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$requestEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RequestEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   requestAttachments<T extends Prisma.School$requestAttachmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$requestAttachmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RequestAttachmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   notifications<T extends Prisma.School$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  deviceTokens<T extends Prisma.School$deviceTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$deviceTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeviceTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   voucherSettings<T extends Prisma.School$voucherSettingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$voucherSettingsArgs<ExtArgs>>): Prisma.Prisma__SchoolVoucherSettingsClient<runtime.Types.Result.GetResult<Prisma.$SchoolVoucherSettingsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   timetables<T extends Prisma.School$timetablesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$timetablesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TimetablePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   timetableEntries<T extends Prisma.School$timetableEntriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$timetableEntriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TimetableEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -23961,6 +24563,30 @@ export type School$notificationsArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
+}
+
+/**
+ * School.deviceTokens
+ */
+export type School$deviceTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeviceToken
+   */
+  select?: Prisma.DeviceTokenSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeviceToken
+   */
+  omit?: Prisma.DeviceTokenOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeviceTokenInclude<ExtArgs> | null
+  where?: Prisma.DeviceTokenWhereInput
+  orderBy?: Prisma.DeviceTokenOrderByWithRelationInput | Prisma.DeviceTokenOrderByWithRelationInput[]
+  cursor?: Prisma.DeviceTokenWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeviceTokenScalarFieldEnum | Prisma.DeviceTokenScalarFieldEnum[]
 }
 
 /**

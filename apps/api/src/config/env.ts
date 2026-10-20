@@ -151,6 +151,18 @@ const envSchema = z.object({
    */
   CLOUDINARY_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).default(15_000),
 
+  // --- Push -----------------------------------------------------------------
+  /**
+   * The Firebase service-account key, as one line of JSON (Firebase console →
+   * Project settings → Service accounts → Generate new private key).
+   *
+   * Unset means the `log` push driver: the in-app bell still works and no push
+   * is sent. That is the safe default for the same reason `MAIL_DRIVER` is
+   * `log`. Server-side only — it signs as the Firebase project, so it is never
+   * sent to a browser and never logged.
+   */
+  FIREBASE_SERVICE_ACCOUNT_JSON: z.string().min(1).optional(),
+
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 })
   .superRefine((env, ctx) => {

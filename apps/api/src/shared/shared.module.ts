@@ -9,6 +9,9 @@ import { TokenService } from './auth/token.service';
 import { LogMailer } from './mail/log.mailer';
 import { MAIL, type MailPort } from './mail/mail.port';
 import { SmtpMailer } from './mail/smtp.mailer';
+import { FcmPusher, parseServiceAccount } from './push/fcm.pusher';
+import { LogPusher } from './push/log.pusher';
+import { PUSH, type PushPort } from './push/push.port';
 import { ClassScopeService } from './rbac/class-scope.service';
 import { CloudinaryStore } from './storage/cloudinary.store';
 import { DatabaseStore } from './storage/database.store';
@@ -93,6 +96,17 @@ function remoteStore(env: Env): StoragePort | undefined {
         env.MAIL_DRIVER === 'smtp' ? new SmtpMailer(env) : new LogMailer(),
       inject: [ENV],
     },
+    {
+      provide: PUSH,
+      // Chosen once, at boot, like MAIL: no credential means no push, and the
+      // bell carries on. A credential that does not parse fails the boot here
+      // rather than the first time somebody pays a fee.
+      useFactory: (env: Env): PushPort =>
+        env.FIREBASE_SERVICE_ACCOUNT_JSON === undefined
+          ? new LogPusher()
+          : new FcmPusher(parseServiceAccount(env.FIREBASE_SERVICE_ACCOUNT_JSON)),
+      inject: [ENV],
+    },
   ],
   exports: [
     ENV,
@@ -103,6 +117,7 @@ function remoteStore(env: Env): StoragePort | undefined {
     PasswordService,
     ClassScopeService,
     MAIL,
+    PUSH,
     STORAGE,
   ],
 })

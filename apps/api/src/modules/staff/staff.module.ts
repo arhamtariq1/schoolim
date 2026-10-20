@@ -33,6 +33,7 @@ import { type FastifyRequest } from 'fastify';
 
 import { RequirePermission } from '../../shared/rbac/rbac.guard';
 import { CLOCK, clockProvider, type Clock } from '../../shared/time/clock.provider';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 import { StaffInviteService } from './staff-invite.service';
 import { StaffSalaryService } from './staff-salary.service';
@@ -184,6 +185,7 @@ export class StaffController {
 }
 
 @Module({
+  imports: [NotificationsModule],
   controllers: [StaffController],
   providers: [clockProvider, StaffService, StaffInviteService, StaffSalaryService],
   exports: [StaffInviteService],

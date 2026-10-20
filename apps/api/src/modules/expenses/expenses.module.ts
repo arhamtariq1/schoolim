@@ -24,6 +24,7 @@ import {
 import { type FastifyRequest } from 'fastify';
 
 import { RequirePermission } from '../../shared/rbac/rbac.guard';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 import { ExpensesService } from './expenses.service';
 
@@ -126,6 +127,7 @@ export class ExpensesController {
 }
 
 @Module({
+  imports: [NotificationsModule],
   controllers: [ExpensesController],
   providers: [ExpensesService],
 })
