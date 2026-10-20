@@ -1560,7 +1560,9 @@ function orderFor(sort: string, order: 'asc' | 'desc'): Record<string, unknown>[
     }
   })();
 
-  return [...primary, { id: 'asc' }];
+  // The id is UUIDv7, so it sorts by creation: within one issue date the voucher
+  // generated last comes first when newest-first, and a page boundary never splits ties.
+  return [...primary, { id: order }];
 }
 
 /**

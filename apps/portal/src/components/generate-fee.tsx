@@ -510,7 +510,11 @@ export function GenerateFee({
               }}
             >
               <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-              {preview === undefined || preview.willCreate === 0
+              {preview !== undefined &&
+              preview.willCreate === 0 &&
+              preview.warnings.some((warning) => warning.includes('already billed'))
+                ? 'Already generated for these months'
+                : preview === undefined || preview.willCreate === 0
                 ? 'Generate vouchers'
                 : `Generate ${String(preview.willCreate)} ${preview.willCreate === 1 ? 'voucher' : 'vouchers'}`}
             </Button>
