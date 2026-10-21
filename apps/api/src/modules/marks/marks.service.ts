@@ -23,6 +23,7 @@ import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/er
 import { classInScope, ClassScopeService } from '../../shared/rbac/class-scope.service';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /**
  * Subjects a school starts with when it has configured none.
@@ -66,6 +67,7 @@ export class MarksService {
     private readonly prisma: PrismaService,
     private readonly classScope: ClassScopeService,
     private readonly context: TenantContextService,
+    private readonly notifications: NotificationsService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -647,6 +649,8 @@ export class MarksService {
           entries: input.entries.length,
         });
 
+        await this.announceResults(tx, created.id, input);
+
         return created.id;
       })
       .catch((error: unknown) => {
@@ -659,6 +663,49 @@ export class MarksService {
       });
 
     return this.get(id);
+  }
+
+  /**
+   * Each family hears their own child's mark — not the class's, so one parent
+   * is never told how another child did.
+   */
+  private async announceResults(
+    tx: TransactionClient,
+    assessmentId: string,
+    input: CreateAssessment,
+  ): Promise<void> {
+    const [subject, kind, students, guardians] = await Promise.all([
+      tx.subject.findUnique({ where: { id: input.subjectId }, select: { name: true } }),
+      tx.assessmentType.findUnique({ where: { id: input.assessmentTypeId }, select: { name: true } }),
+      tx.student.findMany({
+        where: { id: { in: input.entries.map((entry) => entry.studentId) } },
+        select: { id: true, firstName: true, lastName: true },
+      }),
+      this.notifications.guardianUserIdsByStudent(
+        tx,
+        input.entries.map((entry) => entry.studentId),
+      ),
+    ]);
+    const names = new Map(students.map((student) => [student.id, `${student.firstName} ${student.lastName}`]));
+
+    await this.notifications.notifyMany(
+      tx,
+      input.entries.flatMap((entry) => {
+        const recipientIds = guardians.get(entry.studentId) ?? [];
+        if (recipientIds.length === 0) return [];
+        return [
+          {
+            recipientIds,
+            exceptUserId: this.context.userId,
+            kind: 'assessment.recorded' as const,
+            title: `${subject?.name ?? 'Test'} result: ${names.get(entry.studentId) ?? 'your child'}`,
+            body: `${kind?.name ?? 'Test'} · ${entry.obtained ?? 'Absent'} / ${input.totalMarks} · ${input.heldOn}`,
+            entityType: 'assessment' as const,
+            entityId: assessmentId,
+          },
+        ];
+      }),
+    );
   }
 
   async update(id: string, input: UpdateAssessment): Promise<AssessmentDetail> {

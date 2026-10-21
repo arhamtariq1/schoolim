@@ -1,4 +1,5 @@
 import {
+  SCHOOL_ROLES,
   HOLIDAY_COLOR_KEYS,
   type CreateHoliday,
   type Holiday,
@@ -10,6 +11,8 @@ import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
+import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /**
  * The school calendar.
@@ -20,7 +23,11 @@ import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-err
  */
 @Injectable()
 export class HolidaysService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly context: TenantContextService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /**
    * The calendar for one session, earliest first.
@@ -97,6 +104,28 @@ export class HolidaysService {
           colorKey: true,
           notes: true,
         },
+      });
+
+      const audience =
+        input.appliesTo === 'STUDENTS'
+          ? await this.notifications.userIdsWithRoles(tx, ['PARENT', 'STUDENT'])
+          : input.appliesTo === 'STAFF'
+            ? await this.notifications.userIdsWithRoles(
+                tx,
+                SCHOOL_ROLES.filter((role) => role !== 'PARENT' && role !== 'STUDENT'),
+              )
+            : await this.notifications.allActiveUserIds(tx);
+      await this.notifications.notify(tx, {
+        recipientIds: audience,
+        exceptUserId: this.context.userId,
+        kind: 'holiday.announced',
+        title: `Holiday: ${input.name}`,
+        body:
+          input.endDate === undefined || input.endDate === input.startDate
+            ? input.startDate
+            : `${input.startDate} to ${input.endDate}`,
+        entityType: 'holiday',
+        entityId: created.id,
       });
 
       return toHoliday(created);

@@ -43,7 +43,13 @@ export default async function StudentsPage({
   const limit = clampInt(params['limit'], PAGE_LIMIT, 1, MAX_PAGE_LIMIT);
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
   const sort = parseSort(params['sort']);
-  const order = params['order'] === 'desc' ? 'desc' : 'asc';
+  // Newest admission first until somebody picks a column.
+  const order =
+    params['order'] === undefined && params['sort'] === undefined
+      ? 'desc'
+      : params['order'] === 'desc'
+        ? 'desc'
+        : 'asc';
 
   const query = new URLSearchParams({
     limit: String(limit),
@@ -140,7 +146,7 @@ function parseSort(raw: string | string[] | undefined): StudentListQuery['sort']
   const value = typeof raw === 'string' ? raw : '';
   return SORTABLE.includes(value as StudentListQuery['sort'])
     ? (value as StudentListQuery['sort'])
-    : 'name';
+    : 'createdAt';
 }
 
 /**

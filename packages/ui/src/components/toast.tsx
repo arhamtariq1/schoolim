@@ -85,10 +85,30 @@ export function ToastProvider({ children }: { children?: ReactNode }) {
         }
         /* Sonner paints toasts from its own variables, white unless told otherwise.
            Pointing them at the theme makes a toast a card in light and in dark mode. */
-        [data-sonner-toaster] {
+        /* Sonner's own per-theme rules (data-sonner-theme="light") are more specific
+           than a bare attribute selector, and its theme defaults to light — so the
+           bare rule lost and dark mode got a white toast. Prefixing with :root and
+           the theme attribute outranks them, and the background is stated on the
+           toast itself as well, which no variable can be out-voted on. */
+        :root [data-sonner-toaster][data-sonner-theme],
+        :root [data-sonner-toaster] {
           --normal-bg: var(--card);
           --normal-text: var(--fg);
           --normal-border: var(--border);
+          --success-bg: var(--card);
+          --success-text: var(--fg);
+          --success-border: var(--border);
+          --error-bg: var(--card);
+          --error-text: var(--fg);
+          --error-border: var(--border);
+          --warning-bg: var(--card);
+          --warning-text: var(--fg);
+          --warning-border: var(--border);
+        }
+        :root [data-sonner-toast] {
+          background: var(--card) !important;
+          color: var(--fg) !important;
+          border-color: var(--border) !important;
         }
         [data-sonner-toaster] [data-close-button] svg {
           width: 0.75rem !important;

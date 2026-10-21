@@ -256,6 +256,7 @@ model School {
   requestEvents          RequestEvent[]
   requestAttachments     RequestAttachment[]
   notifications          Notification[]
+  deviceTokens           DeviceToken[]
   voucherSettings        SchoolVoucherSettings?
 
   timetables       Timetable[]
@@ -368,6 +369,7 @@ model User {
   requestEventsAssigned RequestEvent[]      @relation("RequestEventAssignee")
   requestAttachments    RequestAttachment[] @relation("RequestAttachmentUploader")
   notifications         Notification[]
+  deviceTokens          DeviceToken[]
 
   /// Email is unique per school, not globally: the same person may hold an
   /// account at two schools with the same address. That is precisely why
@@ -2274,6 +2276,28 @@ model Notification {
   @@index([schoolId, userId, createdAt])
   @@index([schoolId, userId, readAt])
   @@map("notifications")
+}
+
+/// A browser or phone that has agreed to receive push notifications for one user.
+/// The token is what Firebase Cloud Messaging addresses; it is a credential to
+/// push to that device, so it never leaves the API.
+model DeviceToken {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  schoolId   String   @map("school_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  token      String
+  /// `web` today; `android` / `ios` when there is a native app.
+  platform   String   @default("web")
+  userAgent  String?  @map("user_agent")
+  lastSeenAt DateTime @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, token])
+  @@index([schoolId, userId])
+  @@map("device_tokens")
 }
 
 // ---------------------------------------------------------------------------

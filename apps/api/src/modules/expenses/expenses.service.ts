@@ -13,6 +13,7 @@ import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/errors/domain-error';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /**
  * Expenses and the categories they are booked against.
@@ -31,7 +32,10 @@ import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/er
  */
 @Injectable()
 export class ExpensesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   // --- Categories -----------------------------------------------------------
 
@@ -312,6 +316,18 @@ export class ExpensesService {
         },
       });
 
+      // The people who sign off spending hear about it, in this transaction. The
+      // person who recorded it already knows.
+      await this.notifications.notify(tx, {
+        recipientIds: await this.notifications.userIdsWithPermission(tx, 'finance.expense.approve'),
+        exceptUserId: createdBy,
+        kind: 'expense.recorded',
+        title: `Expense recorded: ${input.description}`,
+        body: `${category.name} · ${formatRupees(input.amountMinor)} · ${created.voucherNo}`,
+        entityType: 'expense',
+        entityId: created.id,
+      });
+
       return toExpense(created);
     });
   }
@@ -448,4 +464,9 @@ function isUniqueViolation(error: unknown): boolean {
     'code' in error &&
     (error as { code?: string }).code === 'P2002'
   );
+}
+
+/** Money for a notification line, which is plain text and so cannot use `<Money>`. */
+function formatRupees(minor: number): string {
+  return `PKR ${(minor / 100).toLocaleString('en-PK', { minimumFractionDigits: 0 })}`;
 }

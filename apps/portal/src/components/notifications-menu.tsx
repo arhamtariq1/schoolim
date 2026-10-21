@@ -13,15 +13,50 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@ilm/ui';
-import { NotificationsIcon, RequestsIcon } from '@ilm/ui/icons';
+import {
+  AttendanceIcon,
+  CalendarIcon,
+  ExpenseIcon,
+  FeesIcon,
+  HolidayIcon,
+  NotificationsIcon,
+  RequestsIcon,
+  SalaryIcon,
+  StudentsIcon,
+  SubjectIcon,
+} from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { fetchJson, mutate } from '@/lib/mutate';
+import { currentPushState, enablePush, onForegroundPush, syncPushToken, type PushState } from '@/lib/push';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 /** How often the bell looks for something new while the page is open. */
 const POLL_MS = 60_000;
+
+/** One icon per kind of thing, so the list reads at a glance. */
+function iconFor(item: NotificationItem) {
+  if (item.kind === 'attendance.absent') return AttendanceIcon;
+  switch (item.entityType) {
+    case 'student':
+      return StudentsIcon;
+    case 'staff':
+      return SalaryIcon;
+    case 'voucher':
+      return FeesIcon;
+    case 'assessment':
+      return SubjectIcon;
+    case 'timetable':
+      return CalendarIcon;
+    case 'expense':
+      return ExpenseIcon;
+    case 'holiday':
+      return HolidayIcon;
+    default:
+      return RequestsIcon;
+  }
+}
 
 /** Same size and focus ring as the other header buttons, which this sits among. */
 const HEADER_ICON_CLASS = 'size-5 shrink-0';
@@ -42,16 +77,55 @@ const HEADER_ACTION_CLASS =
 export function NotificationsMenu() {
   const router = useRouter();
   const tenantHref = useTenantHref();
-  const [list, setList] = useState<NotificationList>({ items: [], unreadCount: 0 });
+  const [list, setList] = useState<NotificationList>({ items: [], unreadCount: 0, nextCursor: null });
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const pushState = useRef<PushState>('unconfigured');
+  // "/beacon" in path mode, "" otherwise — the service worker needs it to route a click.
+  const tenantBase = tenantHref('/').replace(/\/+$/, '');
 
   const load = useCallback(async () => {
     const result = await fetchJson<{ data: NotificationList }>(ROUTES.notifications.list);
     if (result.ok) {
-      setList(result.data.data);
+      const fresh = result.data.data;
+      // The newest page replaces what it covers and leaves older pages the
+      // person has already scrolled to, so the minute poll never throws away
+      // their place.
+      setList((previous) => {
+        const freshIds = new Set(fresh.items.map((item) => item.id));
+        const oldest = fresh.items[fresh.items.length - 1];
+        const older = previous.items.filter(
+          (item) => !freshIds.has(item.id) && (oldest === undefined || item.createdAt <= oldest.createdAt),
+        );
+        return {
+          items: [...fresh.items, ...older],
+          unreadCount: fresh.unreadCount,
+          nextCursor: older.length > 0 ? previous.nextCursor : fresh.nextCursor,
+        };
+      });
     }
     setIsLoaded(true);
   }, []);
+
+  const loadMore = useCallback(async () => {
+    if (list.nextCursor === null || isLoadingMore) return;
+    setIsLoadingMore(true);
+    const result = await fetchJson<{ data: NotificationList }>(
+      `${ROUTES.notifications.list}?cursor=${encodeURIComponent(list.nextCursor)}`,
+    );
+    if (result.ok) {
+      const page = result.data.data;
+      setList((previous) => {
+        const known = new Set(previous.items.map((item) => item.id));
+        return {
+          items: [...previous.items, ...page.items.filter((item) => !known.has(item.id))],
+          unreadCount: page.unreadCount,
+          nextCursor: page.nextCursor,
+        };
+      });
+    }
+    setIsLoadingMore(false);
+  }, [list.nextCursor, isLoadingMore]);
 
   useEffect(() => {
     void load();
@@ -63,14 +137,59 @@ export function NotificationsMenu() {
     };
   }, [load]);
 
+  // A browser that already said yes just refreshes its token (they rotate, and a
+  // different person may have signed in on it). One that has not is asked once,
+  // the first time the bell is opened — a click, which is what browsers require
+  // of a permission prompt; one that fires out of nowhere is refused.
+  useEffect(() => {
+    let cancelled = false;
+    void currentPushState().then(async (state) => {
+      if (cancelled) return;
+      pushState.current =
+        state === 'on' ? await syncPushToken(tenantBase).catch(() => 'off' as const) : state;
+    });
+    const stop = onForegroundPush(() => {
+      void load();
+    });
+    return () => {
+      cancelled = true;
+      stop();
+    };
+  }, [load, tenantBase]);
+
+  function askForPushOnce(): void {
+    if (pushState.current !== 'off') return;
+    // Set first so a second open while the prompt is showing does not ask again.
+    pushState.current = 'blocked';
+    void enablePush(tenantBase)
+      .then((state) => {
+        pushState.current = state;
+      })
+      .catch(() => {
+        pushState.current = 'unsupported';
+      });
+  }
+
   async function markRead(ids?: readonly string[]): Promise<void> {
-    const result = await mutate<{ unreadCount: number }>(
+    const result = await mutate<{ data: { unreadCount: number } }>(
       ROUTES.notifications.read,
       'POST',
       ids === undefined ? {} : { ids },
     );
     if (result.ok) {
-      await load();
+      // Updated in place rather than refetched: a refetch would only bring back
+      // the newest page, and older ones the person has scrolled to would keep
+      // showing as unread.
+      setList((previous) => ({
+        ...previous,
+        unreadCount: result.data.data.unreadCount,
+        items: previous.items.map((item) =>
+          item.readAt === null && (ids === undefined || ids.includes(item.id))
+            // Only the null check reads this; the real time is on the server.
+            ? { ...item, readAt: item.createdAt }
+            : item,
+        ),
+      }));
     }
   }
 
@@ -83,8 +202,22 @@ export function NotificationsMenu() {
         router.push(tenantHref(`/requests/${item.entityId}`));
       } else if (item.entityType === 'timetable') {
         router.push(tenantHref(`/timetables/${item.entityId}`));
+      } else if (item.kind === 'voucher.payment_recorded') {
+        // Staff, not the family: the office's voucher list, not the parent page.
+        router.push(tenantHref('/fees/vouchers'));
       } else if (item.entityType === 'voucher') {
         router.push(tenantHref(`/parent/vouchers?open=${item.entityId}`));
+      } else if (item.entityType === 'student') {
+        router.push(tenantHref(`/students/${item.entityId}`));
+      } else if (item.entityType === 'staff') {
+        // Your own pay is on your profile; a new colleague is on the staff page.
+        router.push(tenantHref(item.kind === 'salary.paid' ? '/profile' : `/staff/${item.entityId}`));
+      } else if (item.entityType === 'assessment') {
+        router.push(tenantHref(`/marks/${item.entityId}`));
+      } else if (item.entityType === 'expense') {
+        router.push(tenantHref('/finance/expenses'));
+      } else if (item.entityType === 'holiday') {
+        router.push(tenantHref('/academics/holidays'));
       }
     }
   }
@@ -95,6 +228,7 @@ export function NotificationsMenu() {
     <DropdownMenu
       onOpenChange={(isOpen) => {
         if (isOpen) {
+          askForPushOnce();
           void load();
         }
       }}
@@ -139,11 +273,19 @@ export function NotificationsMenu() {
           </p>
         ) : (
           <ul
+            onScroll={(event) => {
+              const el = event.currentTarget;
+              // Within a screen of the bottom: fetch the next page before they hit it.
+              if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+                void loadMore();
+              }
+            }}
             className="scrollbar-hidden max-h-[min(24rem,70vh)] divide-y divide-border overflow-y-auto overscroll-y-contain"
             aria-label="Recent notifications"
           >
             {list.items.map((item) => {
               const isUnread = item.readAt === null;
+              const ItemIcon = iconFor(item);
               return (
                 <li key={item.id}>
                   <button
@@ -157,7 +299,7 @@ export function NotificationsMenu() {
                     )}
                   >
                     <span className="relative flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <RequestsIcon className="size-4 shrink-0" aria-hidden="true" />
+                      <ItemIcon className="size-4 shrink-0" aria-hidden="true" />
                       {isUnread ? (
                         <span
                           aria-hidden="true"
@@ -184,6 +326,11 @@ export function NotificationsMenu() {
                 </li>
               );
             })}
+            {list.nextCursor === null ? null : (
+              <li className="px-4 py-3 text-center text-xs text-muted-foreground" aria-live="polite">
+                {isLoadingMore ? 'Loading more…' : 'Scroll for more'}
+              </li>
+            )}
           </ul>
         )}
       </DropdownMenuContent>

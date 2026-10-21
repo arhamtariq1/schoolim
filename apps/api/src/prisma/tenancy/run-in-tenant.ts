@@ -1,5 +1,6 @@
 import { type PrismaClient } from '../generated/client';
 
+import { runAfterCommit } from './after-commit';
 import { type TenantResolver } from './tenant-context';
 import { tenantExtension } from './tenant-extension';
 
@@ -49,10 +50,14 @@ export async function runInTenantUnscoped<T>(
   schoolId: string,
   fn: (tx: TransactionClient) => Promise<T>,
 ): Promise<T> {
-  return prisma.$transaction(async (tx) => {
+  let handle: object | undefined;
+  const result = await prisma.$transaction(async (tx) => {
+    handle = tx;
     await tx.$executeRaw`SELECT set_config('app.school_id', ${schoolId}, true)`;
     return fn(tx);
   });
+  runAfterCommit(handle);
+  return result;
 }
 
 /**
@@ -73,13 +78,18 @@ export async function runInTenant<T>(
   options?: TenantTransactionOptions,
 ): Promise<T> {
   const scoped = tenantClient(prisma, () => scopeTenant);
-  return scoped.$transaction(
+  let handle: object | undefined;
+  const result = await scoped.$transaction(
     async (tx) => {
+      handle = tx;
       await tx.$executeRaw`SELECT set_config('app.school_id', ${schoolId}, true)`;
       return fn(tx as unknown as TransactionClient);
     },
     { maxWait: DEFAULT_MAX_WAIT_MS, timeout: DEFAULT_TIMEOUT_MS, ...options },
   );
+  // Only reached on commit: a rollback throws out of the line above.
+  runAfterCommit(handle);
+  return result;
 }
 
 /**

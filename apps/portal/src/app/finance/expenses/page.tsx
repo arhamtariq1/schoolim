@@ -16,8 +16,8 @@ import {
 } from '@/lib/expense-date-range';
 import {
   DEFAULT_LIST_PAGE_SIZE,
+  parseNewestFirstOrder,
   parseSortField,
-  parseSortOrder,
 } from '@/lib/list-page';
 import { getSession } from '@/lib/session';
 
@@ -52,7 +52,7 @@ export default async function ExpensesPage({
     ['paidOn', 'amount', 'voucherNo', 'createdAt'] as const,
     'paidOn',
   );
-  const order = parseSortOrder(params['order']);
+  const order = parseNewestFirstOrder(params);
 
   const listQuery = new URLSearchParams({
     limit: String(limit),

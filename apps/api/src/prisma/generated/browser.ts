@@ -506,6 +506,13 @@ export type RequestAttachment = Prisma.RequestAttachmentModel
  */
 export type Notification = Prisma.NotificationModel
 /**
+ * Model DeviceToken
+ * A browser or phone that has agreed to receive push notifications for one user.
+ * The token is what Firebase Cloud Messaging addresses; it is a credential to
+ * push to that device, so it never leaves the API.
+ */
+export type DeviceToken = Prisma.DeviceTokenModel
+/**
  * Model Timetable
  * A schedule for one class (or one section of it) in one session.
  * 

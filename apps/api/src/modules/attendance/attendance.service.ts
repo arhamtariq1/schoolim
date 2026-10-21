@@ -16,6 +16,7 @@ import { type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
 import { classInScope, ClassScopeService } from '../../shared/rbac/class-scope.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 import {
   attendanceBasisPoints,
@@ -59,6 +60,7 @@ export class AttendanceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly classScope: ClassScopeService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // --- Reading --------------------------------------------------------------
@@ -278,6 +280,20 @@ export class AttendanceService {
         return { saved: 0, skipped: input.entries.length };
       }
 
+      // Who was already absent today, read before the upsert overwrites it: saving
+      // the same register twice must tell a family once, not twice.
+      const before = await tx.attendanceRecord.findMany({
+        where: {
+          studentId: { in: writable.map((entry) => entry.studentId) },
+          date: new Date(input.date),
+          period: 0,
+        },
+        select: { studentId: true, status: true },
+      });
+      const alreadyAbsent = new Set(
+        before.filter((row) => row.status === 'ABSENT').map((row) => row.studentId),
+      );
+
       await upsertAttendance(tx, {
         entries: writable.map((entry) => ({
           studentId: entry.studentId,
@@ -291,8 +307,53 @@ export class AttendanceService {
         markedBy: actorId ?? null,
       });
 
+      await this.announceAbsences(
+        tx,
+        writable.filter((entry) => entry.status === 'ABSENT' && !alreadyAbsent.has(entry.studentId)).map((entry) => entry.studentId),
+        input.date,
+        actorId,
+      );
+
       return { saved: writable.length, skipped: input.entries.length - writable.length };
     });
+  }
+
+  /** Each family hears that their own child was marked absent. */
+  private async announceAbsences(
+    tx: TransactionClient,
+    studentIds: readonly string[],
+    date: string,
+    actorId: string | undefined,
+  ): Promise<void> {
+    if (studentIds.length === 0) {
+      return;
+    }
+    const [students, guardians] = await Promise.all([
+      tx.student.findMany({
+        where: { id: { in: [...studentIds] } },
+        select: { id: true, firstName: true, lastName: true },
+      }),
+      this.notifications.guardianUserIdsByStudent(tx, studentIds),
+    ]);
+    await this.notifications.notifyMany(
+      tx,
+      students.flatMap((student) => {
+        const recipientIds = guardians.get(student.id) ?? [];
+        return recipientIds.length === 0
+          ? []
+          : [
+              {
+                recipientIds,
+                exceptUserId: actorId,
+                kind: 'attendance.absent' as const,
+                title: `${student.firstName} ${student.lastName} was marked absent`,
+                body: date,
+                entityType: 'student' as const,
+                entityId: student.id,
+              },
+            ];
+      }),
+    );
   }
 
   // --- The monthly grid -----------------------------------------------------

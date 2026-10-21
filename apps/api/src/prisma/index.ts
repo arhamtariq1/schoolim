@@ -1,5 +1,6 @@
 export * from './load-env';
 export * from './client';
+export * from './tenancy/after-commit';
 export * from './tenancy/run-in-tenant';
 export * from './tenancy/tenant-context';
 export * from './tenancy/tenant-extension';

@@ -400,6 +400,8 @@ export const ROUTES = {
   notifications: {
     list: `${API_PREFIX}/notifications`,
     read: `${API_PREFIX}/notifications/read`,
+    /** Register (POST) or remove (DELETE) this browser for push. */
+    devices: `${API_PREFIX}/notifications/devices`,
   },
   health: `${API_PREFIX}/health`,
 

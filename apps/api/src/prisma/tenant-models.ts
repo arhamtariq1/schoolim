@@ -79,6 +79,8 @@ export const TENANT_MODELS = [
   'RequestAttachment',
   /** The header bell: a pointer to something that happened, for one user. */
   'Notification',
+  /** Push devices (FCM). The token is a credential and is never returned. */
+  'DeviceToken',
   /** ADR-0017: class and assessment schedules. The calendar reads them. */
   'Timetable',
   'TimetableEntry',

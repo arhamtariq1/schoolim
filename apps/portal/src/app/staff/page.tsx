@@ -4,8 +4,8 @@ import { StaffTable } from '@/components/staff-table';
 import { apiFetch } from '@/lib/api';
 import {
   DEFAULT_LIST_PAGE_SIZE,
+  parseNewestFirstOrder,
   parseSortField,
-  parseSortOrder,
 } from '@/lib/list-page';
 import { clampInt } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
@@ -26,9 +26,9 @@ export default async function StaffPage({
   const sort = parseSortField(
     params['sort'],
     ['name', 'employeeNo', 'role', 'createdAt'] as const,
-    'name',
+    'createdAt',
   );
-  const order = parseSortOrder(params['order']);
+  const order = parseNewestFirstOrder(params);
 
   const query = new URLSearchParams({
     limit: String(limit),

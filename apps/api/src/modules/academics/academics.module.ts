@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 
+import { NotificationsModule } from '../notifications/notifications.module';
+
 import { AcademicsController } from './academics.controller';
 import { AcademicsService } from './academics.service';
 import { HolidaysService } from './holidays.service';
@@ -15,6 +17,7 @@ import { StructureService } from './structure.service';
  * needs it without needing anything about students.
  */
 @Module({
+  imports: [NotificationsModule],
   controllers: [AcademicsController],
   providers: [AcademicsService, StructureService, HolidaysService, PromotionService, SchoolLevelClassSyncService],
   exports: [AcademicsService, SchoolLevelClassSyncService],

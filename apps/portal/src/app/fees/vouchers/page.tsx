@@ -18,8 +18,8 @@ import { VouchersView } from '@/components/vouchers-view';
 import { apiFetch } from '@/lib/api';
 import {
   DEFAULT_LIST_PAGE_SIZE,
+  parseNewestFirstOrder,
   parseSortField,
-  parseSortOrder,
 } from '@/lib/list-page';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
@@ -57,7 +57,7 @@ export default async function VouchersPage({
     ['issueDate', 'dueDate', 'voucherNo', 'amount', 'studentName', 'status'] as const,
     'issueDate',
   );
-  const order = parseSortOrder(params['order']);
+  const order = parseNewestFirstOrder(params);
 
   const query = new URLSearchParams({
     limit: String(limit),

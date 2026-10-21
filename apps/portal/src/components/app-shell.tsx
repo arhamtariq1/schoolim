@@ -42,6 +42,7 @@ import { SidebarBrandMark } from '@/components/sidebar-brand-mark';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { VerifyEmailBanner } from '@/components/verify-email-banner';
 import { NAV_ITEMS, visibleNavItems, visibleSettingsMenuItems, type NavItem } from '@/lib/navigation';
+import { disablePush } from '@/lib/push';
 import { SCHOOL_COLOUR_UPDATED_EVENT, SCHOOL_LOGO_UPDATED_EVENT } from '@/lib/school-logo-shell';
 import { useCanonicalPathname, useTenantHref } from '@/lib/use-tenant-href';
 
@@ -664,8 +665,11 @@ function SignOutConfirm({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const tenantHref = useTenantHref();
 
   async function signOut() {
+    // Before the session ends, while the API can still tell who is asking.
+    await disablePush(tenantHref('/').replace(/\/+$/, ''));
     try {
       const response = await fetch(ROUTES.auth.logout, {
         method: 'POST',

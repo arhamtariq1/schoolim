@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { clockProvider } from '../../shared/time/clock.provider';
-
+import { NotificationsModule } from '../notifications/notifications.module';
 import { StaffModule } from '../staff/staff.module';
 
 import { GrNumberController, GrNumberService } from './gr-number.service';
@@ -17,7 +17,7 @@ import { StudentsService } from './students.service';
  * makes both testable at a fixed date (docs/12 — no bare `new Date()`).
  */
 @Module({
-  imports: [StaffModule],
+  imports: [StaffModule, NotificationsModule],
   controllers: [StudentsController, GrNumberController],
   providers: [
     clockProvider,
