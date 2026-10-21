@@ -5,6 +5,7 @@ import {
   type ParentVoucherListQuery,
   type ParentVoucherStatus,
 } from '@ilm/contracts';
+import { DEFAULT_TIMEZONE, today as todayIn } from '@ilm/utils';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { type TransactionClient } from '../../prisma';
@@ -47,9 +48,8 @@ export class ParentVouchersService {
   ) {}
 
   async list(query: ParentVoucherListQuery): Promise<ParentVoucherList> {
-    const today = this.today();
-
     return this.prisma.tenant(async (tx) => {
+      const today = await this.today(tx);
       const linked = await this.linkedChildIds(tx);
       const kids = await tx.student.findMany({
         where: { id: { in: linked }, deletedAt: null },
@@ -117,18 +117,18 @@ export class ParentVouchersService {
   }
 
   async detail(id: string): Promise<ParentChallan> {
-    const today = this.today();
-
     const owned = await this.prisma.tenant(async (tx) => {
       const linked = await this.linkedChildIds(tx);
-      return tx.feeVoucher.findFirst({
+      const voucher = await tx.feeVoucher.findFirst({
         where: { id, studentId: { in: linked }, status: { not: 'CANCELLED' } },
         select: { id: true },
       });
+      return voucher === null ? null : { id: voucher.id, today: await this.today(tx) };
     });
     if (owned === null) {
       throw new NotFoundError('voucher');
     }
+    const today = owned.today;
 
     const [challans, school, logo, bankLogos, settings] = await Promise.all([
       this.vouchers.challans([id]),
@@ -157,8 +157,16 @@ export class ParentVouchersService {
     };
   }
 
-  private today(): string {
-    return this.clock.now().toISOString().slice(0, 10);
+  /**
+   * The school's own date, which is what "overdue" is decided by.
+   *
+   * Taken from UTC, a voucher due today reads as already late to a parent in
+   * Karachi opening the app before 05:00 — a red badge and a late fee on a
+   * challan nobody is late for. Same rule as the defaulters screen.
+   */
+  private async today(tx: TransactionClient): Promise<string> {
+    const school = await tx.school.findFirst({ select: { timezone: true } });
+    return todayIn(this.clock, school?.timezone ?? DEFAULT_TIMEZONE);
   }
 
   private async linkedChildIds(tx: TransactionClient): Promise<string[]> {
