@@ -2,7 +2,7 @@ import { MAX_PAGE_LIMIT, ROUTES, type StudentListItem, type StudentListQuery } f
 
 import { StudentsTable } from '@/components/students-table';
 import { apiFetch } from '@/lib/api';
-import { DEFAULT_LIST_PAGE_SIZE } from '@/lib/list-page';
+import { DEFAULT_LIST_PAGE_SIZE, parseNewestFirstOrder } from '@/lib/list-page';
 import { getSession } from '@/lib/session';
 
 /**
@@ -43,13 +43,9 @@ export default async function StudentsPage({
   const limit = clampInt(params['limit'], PAGE_LIMIT, 1, MAX_PAGE_LIMIT);
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
   const sort = parseSort(params['sort']);
-  // Newest admission first until somebody picks a column.
-  const order =
-    params['order'] === undefined && params['sort'] === undefined
-      ? 'desc'
-      : params['order'] === 'desc'
-        ? 'desc'
-        : 'asc';
+  // Newest admission first until somebody picks a column — the same rule the
+  // voucher list uses, from the one place that states it.
+  const order = parseNewestFirstOrder(params);
 
   const query = new URLSearchParams({
     limit: String(limit),

@@ -491,7 +491,6 @@ export function GenerateFee({
           {showPreviewDetails ? (
             <PreviewDetails
               preview={preview}
-              ready={ready}
               singleStudent={scopeKind === 'STUDENT'}
               issueDate={issueDate}
               error={previewError}
@@ -510,9 +509,7 @@ export function GenerateFee({
               }}
             >
               <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-              {preview !== undefined &&
-              preview.willCreate === 0 &&
-              preview.warnings.some((warning) => warning.includes('already billed'))
+              {preview !== undefined && preview.willCreate === 0 && isAllAlreadyBilled(preview)
                 ? 'Already generated for these months'
                 : preview === undefined || preview.willCreate === 0
                 ? 'Generate vouchers'
@@ -527,6 +524,23 @@ export function GenerateFee({
       </div>
     </div>
   );
+}
+
+/**
+ * Would this run create nothing purely because the months are already billed?
+ *
+ * Only then does the button say so. The claim is read from `skipsByReason`,
+ * which is a closed set the API and this screen share, rather than from the
+ * prose in `warnings` — a reworded sentence on the server must not silently
+ * turn the button's label back into a generic "Generate vouchers".
+ *
+ * Deliberately strict: if anyone in the scope was skipped for another reason
+ * (no agreed fee, not enrolled), "already generated" would be a half-truth, so
+ * the panel's skip breakdown is left to explain it instead.
+ */
+function isAllAlreadyBilled(preview: VoucherPreview): boolean {
+  const counted = preview.skipsByReason.filter((skip) => skip.count > 0);
+  return counted.length > 0 && counted.every((skip) => skip.reason === 'ALREADY_BILLED');
 }
 
 function ScopePicker({
@@ -1210,14 +1224,12 @@ function PreviewDetails({
   preview,
   error,
   isLoading,
-  ready,
   singleStudent,
   issueDate,
 }: {
   preview: VoucherPreview | undefined;
   error: string | undefined;
   isLoading: boolean;
-  ready: boolean;
   singleStudent: boolean;
   /** The day arrears are measured against — see the note beside the total. */
   issueDate: string;

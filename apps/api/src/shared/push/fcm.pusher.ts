@@ -37,8 +37,20 @@ export function parseServiceAccount(raw: string): FirebaseServiceAccount {
   return {
     project_id: record['project_id'] ?? '',
     client_email: record['client_email'] ?? '',
-    // `.env` files flatten the key's newlines to a literal backslash-n.
-    private_key: (record['private_key'] ?? '').replace(/\n/g, '\n'),
+    /**
+     * A PEM key pasted into `.env` usually arrives double-escaped.
+     *
+     * `JSON.parse` already turns a single `\n` inside the JSON string into a
+     * real newline, so a correctly-escaped credential needs nothing here. What
+     * this handles is the common paste mistake — `\\n` in the file, which
+     * survives parsing as a literal backslash and an `n`, and makes the PEM
+     * unreadable to `crypto` with an error that names neither the file nor the
+     * variable.
+     *
+     * This read `/\n/g` — a newline replaced by a newline, which is a no-op
+     * that left the case the comment described still broken.
+     */
+    private_key: (record['private_key'] ?? '').replace(/\\n/g, '\n'),
   };
 }
 
