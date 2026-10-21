@@ -907,8 +907,15 @@ function asUtc(date: string): Date {
   return new Date(`${date}T00:00:00.000Z`);
 }
 
+/**
+ * Whole days between two `YYYY-MM-DD` dates.
+ *
+ * Both sides are UTC midnight, so the difference is always an exact multiple of
+ * a day and the division is exact — the `Math.round` that used to wrap it was a
+ * no-op, and one the lint rule (ADR-0007) rightly asks about.
+ */
 function daysBetween(from: string, to: string): number {
-  return Math.round((asUtc(to).getTime() - asUtc(from).getTime()) / 86_400_000);
+  return (asUtc(to).getTime() - asUtc(from).getTime()) / 86_400_000;
 }
 
 function maxDate(...dates: string[]): string {

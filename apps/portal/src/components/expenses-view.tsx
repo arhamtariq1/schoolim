@@ -13,7 +13,6 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  CardTable,
   ConfirmDialog,
   DateDisplay,
   DatePicker,
@@ -39,7 +38,6 @@ import {
   SimpleSelect,
   StatusBadge,
   TwoLineCell,
-  cn,
   useToast,
   type CardTableColumn,
   type StatusBadgeProps,
@@ -63,12 +61,6 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactElement } from 
 
 import { DASHBOARD_STAT_NUMBER_CLASS } from '@/components/dashboard/dashboard-stat-card';
 import { ExpenseWorkspaceShell } from '@/components/expense-workspace-shell';
-import { ListPageToolbar } from '@/components/list-page-toolbar';
-import { ListDataTable } from '@/components/list-data-table';
-import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
-import { ListTableScreen } from '@/components/list-table-screen';
-import { TableSelectionBar } from '@/components/table-selection-bar';
-import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
 import {
   FEE_LIST_TABLE_CELL,
   afterMenuAction,
@@ -76,9 +68,16 @@ import {
   feeListTableHeader,
   useDebouncedSearchFilter,
 } from '@/components/fees/fee-list-shared';
+import { ListDataTable } from '@/components/list-data-table';
+import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
+import { ListTableScreen } from '@/components/list-table-screen';
+import { TableSelectionBar } from '@/components/table-selection-bar';
 import { formatInclusiveDateRange } from '@/lib/expense-date-range';
 import { nextSortParams } from '@/lib/list-page';
+import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
+import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 const METHOD_OPTIONS = (
@@ -671,8 +670,11 @@ function ExpenseDialog({
     setFieldErrors({});
     setFormError(undefined);
 
-    const rupees = Number(amount);
-    if (!Number.isFinite(rupees) || rupees < 0) {
+    // Through the shared parser, not `Number(amount) * 100`: that routes money
+    // through a float (ADR-0007), and `Number('')` is 0, so an untouched amount
+    // box passed the check and recorded a zero-rupee expense.
+    const amountMinor = rupeesToMinor(amount);
+    if (amountMinor === undefined || amountMinor <= 0) {
       setFieldErrors({ amountMinor: 'Enter an amount, for example 8000.' });
       return;
     }
@@ -681,7 +683,7 @@ function ExpenseDialog({
       sessionId,
       categoryId,
       description,
-      amountMinor: Math.trunc(rupees * 100 + 0.5),
+      amountMinor,
       method,
       paidOn,
       ...(payee.trim() === '' ? {} : { payee }),

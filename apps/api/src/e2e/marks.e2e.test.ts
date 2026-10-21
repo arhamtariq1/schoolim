@@ -485,10 +485,27 @@ describe('who can see marks', () => {
     expect((await as(who, 'GET', ROUTES.marks.assessment(grade2Id))).statusCode).toBe(200);
   });
 
-  it('keeps principal and office staff read-only', async () => {
-    for (const who of ['principal', 'office'] as const) {
-      expect((await as(who, 'POST', ROUTES.marks.assessments, assessment({ heldOn: '2026-08-20' }))).statusCode).toBe(403);
-    }
+  /**
+   * The principal and the office desk may enter marks, not only read them.
+   *
+   * This test asserted the opposite until the role matrix was rewritten: both
+   * roles are now "the Admin's access without revenue" (`roles.ts`), which
+   * carries `exams.mark.create` with everything else. A head teacher entering a
+   * class's marks while a colleague is away is the ordinary case, so the grant
+   * is the intent and this is the assertion that matches it.
+   *
+   * The read-only line is drawn at `exams.result.read` instead: an accountant
+   * and a parent reach none of this, and a teacher reaches their own classes
+   * alone — covered by the scope tests above and the parent test below.
+   */
+  it.each([
+    ['principal', '2026-08-20'],
+    // A different day: one assessment per subject, class, type and date, so
+    // reusing the date would have the second role fail on a conflict rather
+    // than on permission — which is not what this test is about.
+    ['office', '2026-08-21'],
+  ] as const)('lets %s enter marks, not only read them', async (who, heldOn) => {
+    expect((await as(who, 'POST', ROUTES.marks.assessments, assessment({ heldOn }))).statusCode).toBe(201);
   });
 
   it('shows a parent their own child, and nobody else’s', async () => {

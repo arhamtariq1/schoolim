@@ -15,7 +15,15 @@ import {
   type StaffSalaryReceipt,
   type StaffSalarySummary,
 } from '@ilm/contracts';
-import { fromDecimalString, minorUnits, toDecimalString } from '@ilm/utils';
+import {
+  DEFAULT_TIMEZONE,
+  fromDecimalString,
+  minorUnits,
+  monthKey,
+  today,
+  toDecimalString,
+  type CalendarDate,
+} from '@ilm/utils';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { type TransactionClient } from '../../prisma';
@@ -75,10 +83,11 @@ export class StaffSalaryService {
   // ---- reads ---------------------------------------------------------------
 
   async list(query: StaffSalaryListQuery): Promise<StaffSalaryList> {
-    const month = query.month ?? this.currentMonth();
-
     return this.prisma.tenant(async (tx) => {
-      if (month <= this.currentMonth()) {
+      const current = await this.currentMonth(tx);
+      const month = query.month ?? current;
+
+      if (month <= current) {
         await this.ensurePeriods(tx, { fromMonth: month, toMonth: month });
       }
 
@@ -201,10 +210,11 @@ export class StaffSalaryService {
 
   async detail(staffId: string): Promise<StaffSalaryDetail> {
     return this.prisma.tenant(async (tx) => {
+      const current = await this.currentMonth(tx);
       await this.ensurePeriods(tx, {
         staffId,
-        fromMonth: shiftMonth(this.currentMonth(), -(HISTORY_MONTHS - 1)),
-        toMonth: this.currentMonth(),
+        fromMonth: shiftMonth(current, -(HISTORY_MONTHS - 1)),
+        toMonth: current,
       });
       return this.readDetail(tx, staffId);
     });
@@ -258,7 +268,7 @@ export class StaffSalaryService {
           id: staff.id,
           name: staff.name,
           employeeNo: staff.employeeNo,
-          role: staff.role as StaffRole,
+          role: staff.role,
         },
         month: payment.month.toISOString().slice(0, 7),
         amountMinor: decimalToMinor(payment.amount),
@@ -276,8 +286,8 @@ export class StaffSalaryService {
 
   async record(staffId: string, input: RecordSalaryPayment): Promise<StaffSalaryDetail> {
     return this.prisma.tenant(async (tx) => {
-      this.assertPayableMonth(input.month);
-      if (input.paidOn > this.clock.now().toISOString().slice(0, 10)) {
+      await this.assertPayableMonth(tx, input.month);
+      if (input.paidOn > (await this.schoolToday(tx))) {
         throw new BusinessRuleError(
           'BUSINESS_RULE_VIOLATION',
           'The payment date cannot be in the future.',
@@ -378,7 +388,7 @@ export class StaffSalaryService {
 
   async adjust(staffId: string, input: AddSalaryAdjustment): Promise<StaffSalaryDetail> {
     return this.prisma.tenant(async (tx) => {
-      this.assertPayableMonth(input.month);
+      await this.assertPayableMonth(tx, input.month);
 
       if (input.kind === 'ADJUSTMENT' && input.direction === undefined) {
         throw new BusinessRuleError(
@@ -453,10 +463,11 @@ export class StaffSalaryService {
    * running at; only months made afterwards use the new one.
    */
   async snapshotBeforeSalaryChange(tx: TransactionClient, staffId: string): Promise<void> {
+    const current = await this.currentMonth(tx);
     await this.ensurePeriods(tx, {
       staffId,
-      fromMonth: shiftMonth(this.currentMonth(), -(HISTORY_MONTHS - 1)),
-      toMonth: this.currentMonth(),
+      fromMonth: shiftMonth(current, -(HISTORY_MONTHS - 1)),
+      toMonth: current,
     });
   }
 
@@ -475,7 +486,7 @@ export class StaffSalaryService {
     tx: TransactionClient,
     range: { fromMonth: string; toMonth: string; staffId?: string },
   ): Promise<void> {
-    const current = this.currentMonth();
+    const current = await this.currentMonth(tx);
     const toMonth = range.toMonth > current ? current : range.toMonth;
     if (range.fromMonth > toMonth) {
       return;
@@ -687,7 +698,9 @@ export class StaffSalaryService {
       createdAt: row.createdAt.toISOString(),
     }));
 
-    const year = this.clock.now().toISOString().slice(0, 4);
+    // The school's year: on 1 January, "paid this year" must turn over with the
+    // calendar on their wall, not five hours later.
+    const year = (await this.schoolToday(tx)).slice(0, 4);
     const paidThisYearMinor = payments
       .filter((payment) => payment.paidOn.startsWith(year))
       .reduce((sum, payment) => sum + payment.amountMinor, 0);
@@ -698,7 +711,7 @@ export class StaffSalaryService {
         id: staff.id,
         name: staff.name,
         employeeNo: staff.employeeNo,
-        role: staff.role as StaffRole,
+        role: staff.role,
         photoUrl: staff.photoUrl,
         email: staff.email,
         phone: staff.phone,
@@ -742,8 +755,8 @@ export class StaffSalaryService {
     return new Map(users.map((user) => [user.id, user.name]));
   }
 
-  private assertPayableMonth(month: string): void {
-    if (month > this.currentMonth()) {
+  private async assertPayableMonth(tx: TransactionClient, month: string): Promise<void> {
+    if (month > (await this.currentMonth(tx))) {
       throw new BusinessRuleError(
         'BUSINESS_RULE_VIOLATION',
         'That month has not started yet, so there is no salary to pay or adjust for it.',
@@ -751,8 +764,22 @@ export class StaffSalaryService {
     }
   }
 
-  private currentMonth(): string {
-    return this.clock.now().toISOString().slice(0, 7);
+  /**
+   * Today and this month on the school's own calendar, not the server's.
+   *
+   * Payroll is read against a wall calendar in Karachi. Taken from UTC, a
+   * school opening Salaries at 01:00 on the 1st is shown last month, the new
+   * month's records are not made, and recording a payment dated today is
+   * refused as "in the future" — for the five hours every zone east of
+   * Greenwich spends on tomorrow's date before UTC gets there.
+   */
+  private async schoolToday(tx: TransactionClient): Promise<CalendarDate> {
+    const school = await tx.school.findFirst({ select: { timezone: true } });
+    return today(this.clock, school?.timezone ?? DEFAULT_TIMEZONE);
+  }
+
+  private async currentMonth(tx: TransactionClient): Promise<string> {
+    return monthKey(await this.schoolToday(tx));
   }
 }
 

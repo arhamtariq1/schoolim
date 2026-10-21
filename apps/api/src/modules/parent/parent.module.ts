@@ -11,7 +11,8 @@ import {
   type ParentVoucherList,
   type StudentMarkResult,
 } from '@ilm/contracts';
-import { Controller, Get, Injectable, Module, Param, Query, Req, Res } from '@nestjs/common';
+import { DEFAULT_TIMEZONE, monthKey, today } from '@ilm/utils';
+import { Controller, Get, Inject, Injectable, Module, Param, Query, Req, Res } from '@nestjs/common';
 import { type FastifyReply, type FastifyRequest } from 'fastify';
 
 import { type TransactionClient } from '../../prisma';
@@ -19,7 +20,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { NotFoundError } from '../../shared/errors/domain-error';
 import { RequirePermission } from '../../shared/rbac/rbac.guard';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
-import { clockProvider } from '../../shared/time/clock.provider';
+import { CLOCK, clockProvider, type Clock } from '../../shared/time/clock.provider';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { SchoolLogoService } from '../schools/school-logo.service';
 import { SchoolsModule, serveAsset } from '../schools/schools.module';
@@ -46,6 +47,7 @@ export class ParentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly context: TenantContextService,
+    @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
   async children(): Promise<ParentChildSummary[]> {
@@ -134,13 +136,15 @@ export class ParentService {
     return this.prisma.tenant(async (tx) => {
       await this.assertLinked(tx, studentId);
 
-      const now = new Date();
-      const [year, monthIndex] =
-        month === undefined
-          ? [now.getUTCFullYear(), now.getUTCMonth()]
-          : [Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1];
-      const from = new Date(Date.UTC(year ?? now.getUTCFullYear(), monthIndex ?? 0, 1));
-      const to = new Date(Date.UTC(year ?? now.getUTCFullYear(), (monthIndex ?? 0) + 1, 1));
+      // "This month" is the month on the school's wall, not the server's. A
+      // parent in Karachi opening this at 01:00 on the 1st is still on last
+      // month in UTC, and would be shown a finished month's attendance with
+      // today's absence missing from it.
+      const asked = month ?? (await this.schoolMonth(tx));
+      const year = Number(asked.slice(0, 4));
+      const monthIndex = Number(asked.slice(5, 7)) - 1;
+      const from = new Date(Date.UTC(year, monthIndex, 1));
+      const to = new Date(Date.UTC(year, monthIndex + 1, 1));
 
       const records = await tx.attendanceRecord.findMany({
         where: { studentId, date: { gte: from, lt: to } },
@@ -159,7 +163,7 @@ export class ParentService {
         markedDays: records.length,
         counts,
         attendancePercent:
-          records.length === 0 ? null : Math.round((attended / records.length) * 1000) / 10,
+          records.length === 0 ? null : percentToOneDecimal(attended, records.length),
         recent: records.slice(0, 10).map((record) => ({
           date: isoDate(record.date),
           status: record.status,
@@ -204,10 +208,16 @@ export class ParentService {
           heldOn: isoDate(row.assessment.heldOn),
           totalMarks: total,
           obtained,
-          percent: obtained === null ? null : Math.trunc((obtained / total) * 1000 + 0.5) / 10,
+          percent: obtained === null ? null : percentToOneDecimal(obtained, total),
         };
       });
     });
+  }
+
+  /** `YYYY-MM` on the school's own calendar. See the note in `attendance`. */
+  private async schoolMonth(tx: TransactionClient): Promise<string> {
+    const school = await tx.school.findFirst({ select: { timezone: true } });
+    return monthKey(today(this.clock, school?.timezone ?? DEFAULT_TIMEZONE));
   }
 
   private async linkedChildIds(tx: TransactionClient): Promise<string[]> {
@@ -360,4 +370,15 @@ async function currentPlacements(tx: TransactionClient, studentIds: readonly str
 
 function isoDate(value: Date): string {
   return value.toISOString().slice(0, 10);
+}
+
+/**
+ * A display percentage to one decimal place, rounded half up.
+ *
+ * `Math.round` is banned (ADR-0007) because it is the wrong tool for money;
+ * this is a percentage shown on a card, and half-up is what a parent reading
+ * "92.5%" expects. `trunc(x + 0.5)` is that, without the banned call.
+ */
+function percentToOneDecimal(part: number, whole: number): number {
+  return Math.trunc((part / whole) * 1000 + 0.5) / 10;
 }

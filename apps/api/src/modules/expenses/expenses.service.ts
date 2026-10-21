@@ -11,6 +11,7 @@ import {
 import { fromDecimalString, minorUnits, toDecimalString } from '@ilm/utils';
 import { Injectable } from '@nestjs/common';
 
+import { type Prisma } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/errors/domain-error';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -334,9 +335,47 @@ export class ExpensesService {
 
   async update(id: string, input: UpdateExpense): Promise<Expense> {
     return this.prisma.tenant(async (tx) => {
-      const existing = await tx.expense.findUnique({ where: { id }, select: { id: true } });
+      const existing = await tx.expense.findUnique({
+        where: { id },
+        select: { id: true, categoryId: true },
+      });
       if (existing === null) {
         throw new NotFoundError('expense');
+      }
+
+      // The same two checks `create` makes. Without them an id that does not
+      // exist reaches the foreign key and comes back as a 500 for what is
+      // plainly a 404, and an expense can be moved into a category that new
+      // entries are refused.
+      //
+      // One deliberate exception: a category that has since been turned off is
+      // still accepted while it is the one the entry already has. The edit
+      // dialog posts the whole entry, so refusing it would make last year's
+      // expenses uneditable the moment their category is retired — including
+      // the correction somebody opened the dialog to make.
+      if (input.sessionId !== undefined) {
+        const session = await tx.academicSession.findUnique({
+          where: { id: input.sessionId },
+          select: { id: true },
+        });
+        if (session === null) {
+          throw new NotFoundError('session');
+        }
+      }
+      if (input.categoryId !== undefined) {
+        const category = await tx.expenseCategory.findUnique({
+          where: { id: input.categoryId },
+          select: { name: true, isActive: true },
+        });
+        if (category === null) {
+          throw new NotFoundError('category');
+        }
+        if (!category.isActive && input.categoryId !== existing.categoryId) {
+          throw new BusinessRuleError(
+            'BUSINESS_RULE_VIOLATION',
+            `"${category.name}" has been turned off. Pick another category, or turn it back on first.`,
+          );
+        }
       }
 
       const updated = await tx.expense.update({
@@ -443,17 +482,34 @@ function toExpense(row: {
   };
 }
 
-function orderFor(sort: string, order: 'asc' | 'desc') {
+/**
+ * Sorting, with a tiebreaker that makes paging trustworthy.
+ *
+ * Every sortable column here repeats: `paid_on` is a `date`, so a day of
+ * spending shares one value, and two entries for the same amount are ordinary.
+ * Postgres gives no guaranteed order among equal rows, so `LIMIT/OFFSET` over a
+ * non-unique sort can hand page 2 a row that was already on page 1 and skip
+ * another entirely — a list that quietly loses an expense while its total,
+ * summed over the whole set, keeps counting it.
+ *
+ * `id` breaks every tie. It is a UUIDv7, so it sorts by the order the entries
+ * were created, which is the reading everybody expects of two expenses paid the
+ * same day.
+ */
+function orderFor(
+  sort: string,
+  order: 'asc' | 'desc',
+): Prisma.ExpenseOrderByWithRelationInput[] {
   switch (sort) {
     case 'amount':
-      return { amount: order } as const;
+      return [{ amount: order }, { id: order }];
     case 'voucherNo':
-      return { voucherNo: order } as const;
+      return [{ voucherNo: order }, { id: order }];
     case 'createdAt':
-      return { createdAt: order } as const;
+      return [{ createdAt: order }, { id: order }];
     default:
       // Newest spending first by default — the list is read that way.
-      return { paidOn: order === 'asc' ? ('asc' as const) : ('desc' as const) } as const;
+      return [{ paidOn: order }, { id: order }];
   }
 }
 
@@ -466,7 +522,13 @@ function isUniqueViolation(error: unknown): boolean {
   );
 }
 
-/** Money for a notification line, which is plain text and so cannot use `<Money>`. */
+/**
+ * Money for a notification line, which is plain text and so cannot use `<Money>`.
+ *
+ * Through the money helpers, not `minor / 100`: that divides through a float,
+ * which ADR-0007 forbids, and `minimumFractionDigits: 0` then dropped the
+ * paisa it produced — Rs 1,500.50 was announced as "1,500.5".
+ */
 function formatRupees(minor: number): string {
-  return `PKR ${(minor / 100).toLocaleString('en-PK', { minimumFractionDigits: 0 })}`;
+  return `Rs ${toDecimalString(minorUnits(minor))}`;
 }

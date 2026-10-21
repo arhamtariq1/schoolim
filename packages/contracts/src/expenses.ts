@@ -1,7 +1,13 @@
 import { z } from 'zod';
 
 import { listQuery } from './pagination';
-import { calendarDateSchema, idSchema, positiveMinorUnitsSchema, textSchema } from './primitives';
+import {
+  calendarDateSchema,
+  idSchema,
+  nonZeroMinorUnitsSchema,
+  positiveMinorUnitsSchema,
+  textSchema,
+} from './primitives';
 
 /**
  * Expenses — docs/07 §7, docs/modules/fees-and-finance.md.
@@ -101,7 +107,10 @@ export const createExpenseSchema = z
     categoryId: idSchema,
     description: textSchema(200),
     payee: z.string().trim().max(120).optional(),
-    amountMinor: positiveMinorUnitsSchema,
+    // Strictly above zero: a zero-rupee expense is not a small one, it is a
+    // half-filled form. `positiveMinorUnitsSchema` permits zero — right for the
+    // totals below, wrong for an amount somebody types.
+    amountMinor: nonZeroMinorUnitsSchema,
     method: paymentMethodSchema.default('CASH'),
     paidOn: calendarDateSchema,
     reference: z.string().trim().max(80).optional(),
