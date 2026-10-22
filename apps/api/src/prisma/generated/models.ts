@@ -10,6 +10,8 @@
  */
 export type * from './models/PlatformUser.js'
 export type * from './models/PlatformSession.js'
+export type * from './models/Plan.js'
+export type * from './models/PlatformAuditLog.js'
 export type * from './models/SignupIntent.js'
 export type * from './models/SchoolGroup.js'
 export type * from './models/School.js'

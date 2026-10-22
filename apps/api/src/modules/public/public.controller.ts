@@ -4,6 +4,7 @@ import {
   signupCompleteRequestSchema,
   signupStartRequestSchema,
   signupVerifyOtpRequestSchema,
+  type PublicPlan,
   type SignupCompleteRequest,
   type SignupResendOtpResult,
   type SignupResult,
@@ -21,6 +22,7 @@ import { Public } from '../../shared/auth/auth.guard';
 import { RateLimit } from '../../shared/http/rate-limit.guard';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
 
+import { PublicPlansService } from './public-plans.service';
 import { SignupService } from './signup.service';
 
 /**
@@ -33,6 +35,7 @@ import { SignupService } from './signup.service';
 export class PublicController {
   constructor(
     private readonly signups: SignupService,
+    private readonly plans: PublicPlansService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ENV) private readonly env: Env,
   ) {}
@@ -132,6 +135,13 @@ export class PublicController {
 
     this.clearSignupCookie(reply);
     return { data: result };
+  }
+
+  @Public()
+  @RateLimit({ limit: 120, windowSeconds: 60 })
+  @Get(ROUTES.public.plans)
+  async publicPlans(): Promise<{ data: PublicPlan[] }> {
+    return { data: await this.plans.list() };
   }
 
   @Public()

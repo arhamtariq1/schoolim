@@ -25,6 +25,7 @@ import { MarketingRevealGuard } from '@/components/marketing/marketing-reveal-gu
 import { MarketingSmoothScroll } from '@/components/marketing/marketing-smooth-scroll';
 import { MarketingStatus } from '@/components/marketing/marketing-status';
 import { displayFont } from '@/lib/marketing-fonts';
+import { getPublicPlans, PLANS_REVALIDATE_SECONDS } from '@/lib/public-plans';
 
 /**
  * The public landing page, served at the apex — ADR-0010, art-directed per
@@ -69,61 +70,12 @@ export const metadata: Metadata = {
 };
 
 /**
- * The packages.
- *
- * ⚠️ **Pricing is decision D2 and is still open** (docs/15). These figures are
- * placeholders with a defensible shape — per-student, three tiers, annual
- * discount implied — and they are in one constant precisely so that resolving
- * D2 is an edit here rather than a hunt through JSX. They must not go in front
- * of a real customer before D2 closes; docs/19 §5 has the cost floor that has
- * to be cleared first.
- *
- * Money is minor units, as everywhere else (ADR-0007). A landing page is not an
- * excuse to write "Rs 4,000" into a string.
+ * Plans are data, not code: prices and plan details come from the platform
+ * console (`getPublicPlans`) and are cached for a short window. Pricing is
+ * decision D2 (docs/15) and still open, which is exactly why it must be
+ * editable without a deploy.
  */
-const PACKAGES = [
-  {
-    code: 'starter',
-    name: 'Starter',
-    forWhom: 'A single campus finding its feet',
-    priceMinor: 400_000,
-    studentCap: 300,
-    features: [
-      'Students, admissions and guardians',
-      'Fee heads, plans and monthly vouchers',
-      'Attendance and daily registers',
-      'Up to 10 staff accounts',
-    ],
-  },
-  {
-    code: 'standard',
-    name: 'Standard',
-    forWhom: 'An established school running its own accounts',
-    priceMinor: 900_000,
-    studentCap: 1000,
-    features: [
-      'Everything in Starter',
-      'Full finance: ledgers, expenses, day book',
-      'Exams, marks and result cards',
-      'SMS and WhatsApp notices',
-      'Unlimited staff accounts',
-    ],
-    recommended: true,
-  },
-  {
-    code: 'group',
-    name: 'Group',
-    forWhom: 'Several campuses under one administration',
-    priceMinor: 2_000_000,
-    studentCap: undefined,
-    features: [
-      'Everything in Standard',
-      'Every campus, one login',
-      'Consolidated reporting across campuses',
-      'Priority support',
-    ],
-  },
-] as const;
+export const revalidate = PLANS_REVALIDATE_SECONDS;
 
 /**
  * The deck.
@@ -271,7 +223,8 @@ function indexVar(name: '--stack-index', value: number): CSSProperties {
 /** Two digits, so `01` and `04` occupy the same width down a column. */
 const pad = (value: number) => String(value).padStart(2, '0');
 
-export default function WelcomePage() {
+export default async function WelcomePage() {
+  const plans = await getPublicPlans();
   return (
     <div
       id="top"
@@ -585,68 +538,86 @@ export default function WelcomePage() {
             <Reveal index={1} className="lg:col-span-6 lg:self-end">
               <p className="text-sm leading-relaxed text-muted-foreground">
                 Every package starts with the same {TRIAL_DAYS}-day trial, and you can change or
-                cancel at any time. Monthly, in Pakistani rupees, with nothing to sign.
+                cancel at any time. Billed in Pakistani rupees, with nothing to sign.
               </p>
             </Reveal>
           </div>
 
-          <div className="mt-16 grid gap-12 lg:grid-cols-3 lg:gap-0">
-            {PACKAGES.map((plan, position) => {
-              const isRecommended = 'recommended' in plan;
-              return (
-                <Reveal
-                  key={plan.code}
-                  index={position}
-                  className={`flex h-full flex-col ${position === 0 ? 'lg:pe-12' : 'lg:border-s lg:border-border lg:px-12'}`}
-                >
-                  <Rule index={position} className={isRecommended ? 'bg-primary' : undefined} />
+          {plans === undefined || plans.length === 0 ? (
+            // No plans to show: either none are published or the list could
+            // not be loaded. Say so and offer the way forward, never an empty
+            // gap where the prices should be.
+            <Reveal className="mt-16 border-t border-border pt-8">
+              <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+                {plans === undefined
+                  ? 'Pricing is unavailable right now. Please check back shortly, or start your free trial and we will confirm the price with you.'
+                  : 'Pricing is shared when you start. Begin your free trial and we will confirm the right package for your school.'}
+              </p>
+              <Button asChild size="touch" className="mt-6 rounded-full">
+                <Link href="/signup">Start free trial</Link>
+              </Button>
+            </Reveal>
+          ) : (
+            <div className="mt-16 grid gap-12 lg:grid-cols-3 lg:gap-0">
+              {plans.map((plan, position) => {
+                const isRecommended = plan.isRecommended;
+                return (
+                  <Reveal
+                    key={plan.code}
+                    index={position}
+                    className={`flex h-full flex-col ${position % 3 === 0 ? 'lg:pe-12' : 'lg:border-s lg:border-border lg:px-12'}`}
+                  >
+                    <Rule index={position} className={isRecommended ? 'bg-primary' : undefined} />
 
-                  <div className="mt-6 flex items-baseline justify-between gap-3">
-                    <h3 className="text-display-xs font-semibold">{plan.name}</h3>
-                    {isRecommended ? <Label className="text-primary">Most schools</Label> : null}
-                  </div>
+                    <div className="mt-6 flex items-baseline justify-between gap-3">
+                      <h3 className="text-display-xs font-semibold">{plan.name}</h3>
+                      {isRecommended ? <Label className="text-primary">Most schools</Label> : null}
+                    </div>
 
-                  <p className="mt-2 text-sm text-muted-foreground">{plan.forWhom}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{plan.tagline}</p>
 
-                  <p className="mt-8 flex items-baseline gap-2">
-                    <Money
-                      valueMinor={minorUnits(plan.priceMinor)}
-                      withSymbol
-                      className="text-display-xs font-semibold"
-                    />
-                    <span className="text-xs text-muted-foreground">/ month</span>
-                  </p>
+                    <p className="mt-8 flex items-baseline gap-2">
+                      <Money
+                        valueMinor={minorUnits(plan.priceMinor)}
+                        withSymbol
+                        className="text-display-xs font-semibold"
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        / {plan.billingCycle === 'YEARLY' ? 'year' : 'month'}
+                      </span>
+                    </p>
 
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {plan.studentCap === undefined
-                      ? 'No student limit'
-                      : `Up to ${plan.studentCap.toLocaleString('en-PK')} students`}
-                  </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {plan.studentCap === null
+                        ? 'No student limit'
+                        : `Up to ${plan.studentCap.toLocaleString('en-PK')} students`}
+                    </p>
 
-                  {/* `flex-1` so the button sits on the bottom edge of every
+                    {/* `flex-1` so the button sits on the bottom edge of every
                       column regardless of how many features are listed — three
                       buttons at three heights is the detail that makes a
                       pricing row look unfinished. */}
-                  <ul className="mt-8 flex-1 space-y-3 border-t border-border pt-8">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="text-sm leading-relaxed text-muted-foreground">
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
+                    <ul className="mt-8 flex-1 space-y-3 border-t border-border pt-8">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="text-sm leading-relaxed text-muted-foreground">
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
 
-                  <Button
-                    asChild
-                    size="touch"
-                    tone={isRecommended ? 'primary' : 'outline'}
-                    className="mt-8 w-full rounded-full"
-                  >
-                    <Link href="/signup">Start free trial</Link>
-                  </Button>
-                </Reveal>
-              );
-            })}
-          </div>
+                    <Button
+                      asChild
+                      size="touch"
+                      tone={isRecommended ? 'primary' : 'outline'}
+                      className="mt-8 w-full rounded-full"
+                    >
+                      <Link href="/signup">Start free trial</Link>
+                    </Button>
+                  </Reveal>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* ------------------------------------------------------------------

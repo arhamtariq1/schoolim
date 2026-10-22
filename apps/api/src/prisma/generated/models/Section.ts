@@ -613,14 +613,6 @@ export type SectionUncheckedUpdateManyWithoutClassLevelNestedInput = {
   deleteMany?: Prisma.SectionScalarWhereInput | Prisma.SectionScalarWhereInput[]
 }
 
-export type NullableIntFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type SectionCreateNestedOneWithoutEnrollmentsInput = {
   create?: Prisma.XOR<Prisma.SectionCreateWithoutEnrollmentsInput, Prisma.SectionUncheckedCreateWithoutEnrollmentsInput>
   connectOrCreate?: Prisma.SectionCreateOrConnectWithoutEnrollmentsInput

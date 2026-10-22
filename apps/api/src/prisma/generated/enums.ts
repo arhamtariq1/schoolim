@@ -18,6 +18,14 @@ export const PlatformRole = {
 export type PlatformRole = (typeof PlatformRole)[keyof typeof PlatformRole]
 
 
+export const BillingCycle = {
+  MONTHLY: 'MONTHLY',
+  YEARLY: 'YEARLY'
+} as const
+
+export type BillingCycle = (typeof BillingCycle)[keyof typeof BillingCycle]
+
+
 export const SchoolStatus = {
   TRIAL: 'TRIAL',
   ACTIVE: 'ACTIVE',

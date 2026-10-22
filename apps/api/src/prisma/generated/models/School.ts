@@ -1145,14 +1145,6 @@ export type SchoolOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type StringNullableListFilter<$PrismaModel = never> = {
-  equals?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel> | null
-  has?: string | Prisma.StringFieldRefInput<$PrismaModel> | null
-  hasEvery?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
-  hasSome?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
-  isEmpty?: boolean
-}
-
 export type IntNullableListFilter<$PrismaModel = never> = {
   equals?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel> | null
   has?: number | Prisma.IntFieldRefInput<$PrismaModel> | null
@@ -1338,14 +1330,6 @@ export type SchoolUpdateoLevelClassNamesInput = {
 export type SchoolUpdateaLevelClassNamesInput = {
   set?: string[]
   push?: string | string[]
-}
-
-export type DecimalFieldUpdateOperationsInput = {
-  set?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
 export type SchoolUpdateworkingDaysInput = {

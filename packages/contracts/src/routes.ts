@@ -59,6 +59,8 @@ export const ROUTES = {
    */
   public: {
     signup: `${API_PREFIX}/public/signup`,
+    /** The plans shown on the landing page. Read-only, no session. */
+    plans: `${API_PREFIX}/public/plans`,
     signupStart: `${API_PREFIX}/public/signup/start`,
     signupVerifyOtp: `${API_PREFIX}/public/signup/verify-otp`,
     signupResendOtp: `${API_PREFIX}/public/signup/resend-otp`,
@@ -429,6 +431,14 @@ export const ROUTES = {
       login: `${PLATFORM_PREFIX}/auth/login`,
       logout: `${PLATFORM_PREFIX}/auth/logout`,
       session: `${PLATFORM_PREFIX}/auth/session`,
+    },
+    overview: `${PLATFORM_PREFIX}/overview`,
+    plans: {
+      list: `${PLATFORM_PREFIX}/plans`,
+      create: `${PLATFORM_PREFIX}/plans`,
+      update: (id: string) => `${PLATFORM_PREFIX}/plans/${id}`,
+      archive: (id: string) => `${PLATFORM_PREFIX}/plans/${id}/archive`,
+      restore: (id: string) => `${PLATFORM_PREFIX}/plans/${id}/restore`,
     },
     schools: {
       list: `${PLATFORM_PREFIX}/schools`,
