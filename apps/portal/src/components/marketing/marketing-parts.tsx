@@ -183,23 +183,33 @@ export function WordReveal({
   className?: string;
 }) {
   const words = text.split(' ');
+  // `*word*` marks the accent word (ADR-0021): set in the italic serif, and
+  // stripped of its asterisks everywhere it is read or announced.
+  const plain = text.replaceAll('*', '');
 
   return (
     <Tag
       id={id}
       data-reveal-words
       suppressHydrationWarning
-      aria-label={text}
+      aria-label={plain}
       className={cn('font-display text-balance', className)}
     >
-      {words.map((word, position) => (
-        <Fragment key={`${position}-${word}`}>
-          {position === 0 ? null : ' '}
-          <span data-word aria-hidden style={indexStyle('--word-index', startIndex + position)}>
-            {word}
-          </span>
-        </Fragment>
-      ))}
+      {words.map((word, position) => {
+        const accent = word.startsWith('*') && word.lastIndexOf('*') > 0;
+        const [lead, tail] = accent
+          ? [word.slice(1, word.lastIndexOf('*')), word.slice(word.lastIndexOf('*') + 1)]
+          : [word, ''];
+        return (
+          <Fragment key={`${position}-${word}`}>
+            {position === 0 ? null : ' '}
+            <span data-word aria-hidden style={indexStyle('--word-index', startIndex + position)}>
+              {accent ? <span data-accent>{lead}</span> : lead}
+              {tail}
+            </span>
+          </Fragment>
+        );
+      })}
     </Tag>
   );
 }

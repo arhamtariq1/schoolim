@@ -88,10 +88,17 @@ function money(minor: number, dashOnZero = false) {
 export function SalariesView({
   canPay,
   today,
+  preview,
 }: {
   canPay: boolean;
   /** `YYYY-MM-DD`. */
   today: string;
+  /**
+   * Fixed data instead of a request — for the landing page's product preview
+   * only (ADR-0022), where there is no session to fetch with. Never set inside
+   * a school.
+   */
+  preview?: StaffSalaryList | undefined;
 }) {
   const router = useRouter();
   const tenantHref = useTenantHref();
@@ -109,8 +116,8 @@ export function SalariesView({
   const [limit, setLimit] = useState(PAGE_SIZE);
   const [offset, setOffset] = useState(0);
 
-  const [data, setData] = useState<StaffSalaryList | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<StaffSalaryList | undefined>(preview);
+  const [loading, setLoading] = useState(preview === undefined);
   const [error, setError] = useState<string | undefined>(undefined);
   const [paying, setPaying] = useState<PaySalaryTarget | undefined>(undefined);
   const [bulkPaying, setBulkPaying] = useState(false);
@@ -155,8 +162,11 @@ export function SalariesView({
   }, [month, sort, order, limit, offset, debouncedSearch, status]);
 
   useEffect(() => {
+    if (preview !== undefined) {
+      return;
+    }
     void load();
-  }, [load]);
+  }, [load, preview]);
 
   const yearOptions = useMemo(
     () =>

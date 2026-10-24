@@ -198,6 +198,16 @@
   --text-display-lg--line-height: 1.06;
   --text-display-lg--letter-spacing: -0.034em;
 
+  /* ADR-0021: the hero line and the footer wordmark. A grotesk this large
+     needs tracking past -0.04em or the counters open up into gaps. */
+  --text-display-xl: clamp(3rem, 1.4rem + 6.8vw, 8rem);
+  --text-display-xl--line-height: 0.96;
+  --text-display-xl--letter-spacing: -0.045em;
+
+  --text-display-2xl: clamp(5rem, 0.6rem + 19vw, 19rem);
+  --text-display-2xl--line-height: 0.82;
+  --text-display-2xl--letter-spacing: -0.06em;
+
   /* The small uppercase label that marks a section. Uppercase at `text-xs`
      needs the extra tracking to stay legible; this is that one value, named,
      so it is not written as an arbitrary bracket value at nine call sites. */
@@ -270,45 +280,97 @@
    replaces the foreground as well as the ground — see the ratios in the
    comment on each block.
 --------------------------------------------------------------------------- */
-.marketing {
-  /* Cream, not white. A pure white ground under pastel tiles makes the tiles
-     look pasted on; a warm off-white at the same hue as the tints lets them
-     sit in it. This is the single value that most decides whether the page
-     reads as soft or as clinical. */
-  --color-background: oklch(0.972 0.014 85);
+/* ADR-0022: paper and ink, after the Awwwards startup references.
+
+   A near-white, faintly cool ground with white cards and hairline frames, near-
+   black ink text, and the brand teal #147f8a as the one colour: actions,
+   numerals, ticks. `.marketing-paper` re-declares the same light values so a
+   product screen placed inside a dark `.marketing-ink` band renders as the
+   light app it is — custom properties are matched per element, so the nearer
+   class wins regardless of nesting.
+
+   Measured: text 16.9:1 on the ground; muted copy 6.2:1 on the ground, 5.7:1 on
+   `muted` panels and 6.5:1 on cards; white on the primary 4.77:1; the primary
+   as text on the ground 4.57:1. All above docs/16 §6's 4.5:1. */
+.marketing,
+.marketing-paper {
+  /* The page's ground, named so the hero's glow can end on exactly it. */
+  --marketing-ground: oklch(0.985 0.003 200);
+  --color-background: var(--marketing-ground);
   --color-card: oklch(1 0 0);
-  --color-muted: oklch(0.952 0.016 85);
-  --color-border: oklch(0.906 0.014 85);
-
-  /* Deep green-teal rather than the application's blue-slate. It is the
-     darkest step of the brand ramp, so a school's own palette still flows
-     through it, and on cream it measures 13.0:1. Near-black text on a warm
-     ground reads as harsh; a very dark tint of the brand hue does not. */
-  --color-foreground: var(--color-brand-950);
-  --color-muted-foreground: oklch(0.505 0.025 200);
-
-  /* One step darker than the app's brand-600 button. On cream, brand-600
-     carries 4.77:1 against white — above the line but close to it, and this
-     page's buttons are large and frequently screenshotted. brand-700 takes
-     the same label to 6.58:1 for nothing. */
-  --color-primary: var(--color-brand-700);
+  --color-muted: oklch(0.955 0.007 200);
+  --color-border: oklch(0.9 0.01 200);
+  --color-foreground: oklch(0.21 0.02 215);
+  --color-muted-foreground: oklch(0.48 0.018 215);
+  --color-ring: var(--color-brand-600);
+  --color-primary: var(--color-brand-600);
   --color-primary-foreground: oklch(1 0 0);
 
+  /* Shadows in the ink's hue, not grey, so they read as depth on paper. */
+  --shadow-tile:
+    0 1px 2px 0 oklch(0.21 0.02 215 / 6%), 0 24px 48px -24px oklch(0.21 0.02 215 / 24%);
+}
+
+.marketing {
   /* Resolved here rather than in `@theme`, on the same element that carries
      `next/font`'s variable class — see the note on `--font-display` above. */
-  --font-display: var(--font-urbanist), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-lato), ui-sans-serif, system-ui, sans-serif;
 
-  /* The whole surface, not just its headings. The application keeps Open Sans;
-     this page is Urbanist throughout, which is why `font-family` is set here
-     rather than a `font-display` class being hung on thirty elements. */
+  /* The whole surface, not just its headings — the product's own Lato. */
   font-family: var(--font-display);
 }
 
-.dark .marketing {
+/* A paper island inside an ink band must also reset the *inherited* text
+   colour: tokens are re-declared above, but `color` was already computed as
+   cream on the ink ancestor and would carry straight into the light cards. */
+.marketing-paper {
+  color: var(--color-foreground);
+}
+
+/* The dark bands — portals, the recommended plan, the closing call and the
+   footer. A deep teal-black, so the bands belong to the brand without the
+   teal itself becoming a surface; the action on it moves up the ramp.
+   Measured: text 16.8:1, muted copy 9.1:1 (8.1:1 on cards), button label
+   8.5:1, teal as text 10.8:1. */
+.marketing-ink {
+  --color-background: oklch(0.2 0.03 205);
+  --color-card: oklch(0.245 0.033 205);
+  --color-muted: oklch(0.27 0.035 205);
+  --color-border: oklch(0.33 0.035 205);
+  --color-foreground: oklch(0.975 0.005 200);
+  --color-muted-foreground: oklch(0.78 0.02 200);
+  --color-primary: var(--color-brand-300);
+  --color-primary-foreground: var(--color-brand-950);
+  --color-ring: var(--color-brand-300);
+  color: var(--color-foreground);
+}
+
+/* The one word per headline set in the italic serif. Marked `*word*` in a
+   `WordReveal`'s text; see `marketing-parts.tsx`. */
+.marketing [data-accent] {
+  font-family: var(--font-marketing-serif), ui-serif, Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* Horizontal tracks scroll natively with snap; the bar is hidden because the
+   counter and the arrows are the visible control, and both work by keyboard. */
+.marketing [data-track] {
+  scrollbar-width: none;
+}
+
+.marketing [data-track]::-webkit-scrollbar {
+  display: none;
+}
+
+.dark .marketing,
+.dark .marketing-paper {
   /* A deep teal-slate rather than the app's blue-black, carrying the same hue
      as the light ground so the page is recognisably one page in either theme.
      Measured: body 16.2:1, muted copy 8.3:1. */
-  --color-background: oklch(0.21 0.025 200);
+  --marketing-ground: oklch(0.21 0.025 200);
+  --color-background: var(--marketing-ground);
   --color-card: oklch(0.26 0.028 200);
   --color-muted: oklch(0.29 0.03 200);
   --color-border: oklch(0.36 0.03 200);
@@ -424,9 +486,15 @@
   --stack-step: 1.25rem;
 }
 
-.marketing [data-stack-item] {
-  position: sticky;
-  top: calc(5.5rem + var(--stack-index, 0) * var(--stack-step));
+/* Large screens only (ADR-0020). Each panel now carries a product screen, and
+   below `lg` the text and the screen stack vertically into a panel taller than
+   the viewport — sticky would let the next panel slide over the screen before
+   anybody had seen it. On a phone they are simply a column of panels. */
+@media (min-width: 64rem) {
+  .marketing [data-stack-item] {
+    position: sticky;
+    top: calc(5.5rem + var(--stack-index, 0) * var(--stack-step));
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -593,13 +661,248 @@ html[data-marketing-motion='on'] .marketing {
     animation: marketing-pulse 2.4s ease-in-out infinite;
   }
 
-  /* The single blurred ground behind the hero, drifting slowly so the warmth
-     at the top of the page never settles into a fixed shape. There were two;
-     the second washed the right-hand side lavender and read as a bruise over
-     the headline, so it is gone. */
-  [data-blob] {
-    animation: marketing-drift 22s ease-in-out infinite alternate;
+  /* -------------------------------------------------------------------------
+     Parallax — ADR-0020.
+
+     `--parallax` (0 → 1) is written on the `[data-parallax]` wrapper by
+     `MarketingSmoothScroll`; the layers inside it move. At 0.5 — the wrapper
+     centred in the viewport, and also the fallback when nothing has written
+     the property — every offset below computes to zero, so the resting state
+     is the layout as authored.
+
+     No `transition` on purpose: Lenis already eases the scroll position, and
+     easing the transform as well makes the layer trail the page like it is on
+     a spring.
+     ------------------------------------------------------------------------- */
+  [data-parallax-layer] {
+    --parallax-depth: 2rem;
+    transform: translate3d(0, calc((var(--parallax, 0.5) - 0.5) * var(--parallax-depth) * -1), 0);
   }
+
+  [data-parallax-layer='deep'] {
+    --parallax-depth: 4rem;
+  }
+
+  /* The hero's screen starts tipped back and lies flat by the time it reaches
+     the middle of the viewport. `--lean` is how far short of the middle it
+     still is, clamped so it never tips forward past flat. */
+  [data-parallax-layer='tilt'] {
+    --lean: clamp(0, calc(0.5 - var(--parallax, 0.5)), 0.5);
+    transform: perspective(2400px) rotateX(calc(var(--lean) * 28deg))
+      scale(calc(1 - var(--lean) * 0.1));
+    transform-origin: 50% 0%;
+  }
+
+  /* A portal's panel arrives rather than snapping in when its tab is chosen.
+     Radix sets `data-state` on both; only the newly active one plays. */
+  [data-role-panel][data-state='active'] {
+    animation: marketing-rise 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* -------------------------------------------------------------------------
+     ADR-0022: the module ticker and the hub's spokes.
+
+     Hovering or focusing the ticker pauses it; reduced motion turns both off.
+     The page carries no separate pause control (removed at the product
+     owner's request, see ADR-0022).
+     ------------------------------------------------------------------------- */
+  [data-marquee] {
+    animation: marketing-marquee 48s linear infinite;
+  }
+
+  [data-marquee-wrap]:hover [data-marquee],
+  [data-marquee-wrap]:focus-within [data-marquee] {
+    animation-play-state: paused;
+  }
+
+  [data-spoke] {
+    stroke-dasharray: 4 8;
+    animation: marketing-spoke 1.6s linear infinite;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The hero's admin portal — `marketing-admin-dashboard.tsx` (ADR-0022).
+
+   It renders the product's real screens, so inside it the product's own
+   tokens must apply, not this page's. `.marketing`, `.marketing-ink` and
+   `.marketing-paper` all re-declare `--color-*`; `.marketing-app` puts back
+   the values `theme.css` maps them to, so a card, a badge or a chart in the
+   preview is coloured exactly as it is inside a school — in either theme,
+   because `--bg`, `--card` and the rest are themselves switched by `.dark`.
+--------------------------------------------------------------------------- */
+.marketing-app {
+  --color-background: var(--bg);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-foreground: var(--fg);
+  --color-muted-foreground: var(--muted-fg);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-fg);
+
+  font-family: var(--font-sans);
+  color: var(--color-foreground);
+  letter-spacing: normal;
+}
+
+/* The scale before the preview has measured its frame — on the server, and
+   until its script loads. The component then sets the exact value inline,
+   which wins. Without this the app would paint at full size and visibly
+   shrink a moment later. Under standardised `zoom` a percentage is not
+   scaled, so `100% / zoom` lays the app out wider and the zoom brings it back
+   to the frame's width. */
+.marketing-app-stage {
+  --stage-zoom: 0.5;
+  zoom: var(--stage-zoom);
+  width: calc(100% / var(--stage-zoom));
+  height: calc(100% / var(--stage-zoom));
+}
+
+@media (min-width: 64rem) {
+  .marketing-app-stage {
+    --stage-zoom: 0.69;
+  }
+}
+
+html[data-marketing-motion='on'] .marketing {
+  /* A chosen page rises into place, as the hero's own blocks do. The real
+     screens bring their own motion from there — charts draw, bars grow. */
+  [data-dash-page] {
+    animation: marketing-rise 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* The unread dot on the bell. */
+  [data-dash-pulse] {
+    animation: marketing-pulse 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes marketing-marquee {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes marketing-spoke {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+/* The FAQ's plus turns into a cross when its answer is open. Not gated on
+   motion: it is a state, and under reduced motion it simply changes without
+   the turn (theme.css shortens the transition to nothing). */
+.marketing details [data-faq-mark] {
+  transition: transform 200ms ease-out;
+}
+
+.marketing details[open] [data-faq-mark] {
+  transform: rotate(45deg);
+}
+
+/* ---------------------------------------------------------------------------
+   The hero's atmosphere — after the product owner's reference: soft vertical
+   folds of light on a dark ground, brightening into a glow at the foot.
+
+   Five layers, top first:
+     1. a veil that keeps the top third ink, so the nav and headline sit on a
+        flat, measurable ground (text ratios are the `.marketing-ink` ones);
+     2. a fade along the whole foot into `--marketing-ground`, the page's own
+        ground in either theme, so the band ends without a seam;
+     3. and 4. two repeating bands of teal at different periods — 7rem and
+        11rem — so the folds interfere into an irregular rhythm instead of a
+        barcode;
+     5. a wide elliptical glow rising from the middle of the foot, starting
+        from the same ground colour.
+
+   One static background: no canvas, no blur filter, nothing animated, and
+   every colour a step of the brand ramp, so a school's own primary colour
+   would carry through it.
+--------------------------------------------------------------------------- */
+.marketing-aurora {
+  background-image:
+    linear-gradient(to bottom, var(--color-background) 0%, transparent 45%),
+    linear-gradient(to bottom, transparent 72%, var(--marketing-ground) 100%),
+    repeating-linear-gradient(
+      to right,
+      transparent 0rem,
+      color-mix(in oklch, var(--color-brand-400) 18%, transparent) 2rem,
+      transparent 4rem,
+      transparent 7rem
+    ),
+    repeating-linear-gradient(
+      to right,
+      transparent 0rem,
+      color-mix(in oklch, var(--color-brand-200) 14%, transparent) 3rem,
+      transparent 6rem,
+      color-mix(in oklch, var(--color-brand-500) 10%, transparent) 8.5rem,
+      transparent 11rem
+    ),
+    radial-gradient(
+      ellipse 90% 55% at 50% 100%,
+      var(--marketing-ground) 0%,
+      color-mix(in oklch, var(--color-brand-200) 70%, transparent) 30%,
+      color-mix(in oklch, var(--color-brand-500) 30%, transparent) 60%,
+      transparent 100%
+    );
+}
+
+/* The product screen dissolves into the page instead of ending on an edge. */
+.marketing-fade-bottom {
+  mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+}
+
+/* The preview screen does not scroll: what lies below its fold stays readable
+   and only softens at the very foot, a light blur and a thin wash of canvas. */
+.marketing-screen-veil {
+  background-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in oklch, var(--canvas-to) 25%, transparent) 70%,
+    color-mix(in oklch, var(--canvas-to) 60%, transparent) 100%
+  );
+  backdrop-filter: blur(2px);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 70%);
+}
+
+/* A gap card's product screen, drawn at a reduced scale so a whole screen
+   reads inside a third of the page. Its width is left to fill the frame. */
+.marketing-peek {
+  --peek-zoom: 0.72;
+  zoom: var(--peek-zoom);
+}
+
+/* The peek dissolves into the card instead of being cut off by its edge. */
+.marketing-peek-fade {
+  mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+
+/* On the ink bar the logo is drawn white, as in the reference. The asset is a
+   navy wordmark for light grounds, so it is recoloured rather than redrawn;
+   the later rule also cancels the white chip dark mode gives it elsewhere. */
+.marketing-ink [data-logo],
+.dark .marketing .marketing-ink [data-logo] {
+  filter: brightness(0) invert(1);
+  background-color: transparent;
+  padding: 0;
+}
+
+/* A plan's price at display size. `<Money>` sets `text-sm` itself, and
+   tailwind-merge does not know `text-display-sm` is a font size, so a class
+   passed in loses to it. One attribute and a more specific rule, scoped here,
+   rather than teaching the shared `cn()` about a marketing-only scale. */
+.marketing [data-plan-price] {
+  font-size: var(--text-display-sm);
+  line-height: var(--text-display-sm--line-height);
+  letter-spacing: var(--text-display-sm--letter-spacing);
+}
+
+/* The ticker's two copies sit side by side on one line, and the edges fade so
+   names arrive rather than being cut by the frame. */
+.marketing [data-marquee-wrap] {
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
 }
 
 @keyframes marketing-pulse {
@@ -609,53 +912,38 @@ html[data-marketing-motion='on'] .marketing {
   }
 }
 
-@keyframes marketing-drift {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-
-  to {
-    transform: translate3d(2rem, -1.5rem, 0) scale(1.12);
-  }
-}
-
 /* ---------------------------------------------------------------------------
-   The blurred pastel grounds behind the hero.
+   The hero's backdrop: a hairline grid that fades out toward the edges.
 
-   A heavy `blur()` on a large element is expensive to rasterise, so these are
-   declared once, never animated *through* the filter (only transformed), and
-   there are two of them rather than five. `pointer-events: none` because an
-   invisible 24rem circle floating over the headline would otherwise eat every
-   click that lands on it.
-
-   They are drawn behind everything in the hero by `isolation` on the section
-   and a negative z-index here; without the isolation they would sit behind the
-   page background instead and vanish entirely.
+   It replaced a drifting blurred blob (ADR-0020). A grid says "ruled paper",
+   which is what this product replaces, and it costs no filter and no loop —
+   one static background, masked, painted once.
 --------------------------------------------------------------------------- */
-.marketing-blob {
-  position: absolute;
-  z-index: -1;
-  border-radius: 9999px;
-  filter: blur(72px);
-  opacity: 0.55;
+.marketing-grid {
+  background-image:
+    linear-gradient(to right, var(--color-border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-border) 1px, transparent 1px);
+  background-size: 4rem 4rem;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 30%, transparent 75%);
   pointer-events: none;
 }
 
-.dark .marketing-blob {
-  /* The same shapes at full strength on a dark ground are light sources, and
-     the headline sitting on top of one stops being readable. */
-  opacity: 0.3;
+/* The feature grid's cells. A hairline lattice made by a 1px gap over a
+   border-coloured ground, rather than a border per cell — borders per cell
+   double up where they meet, a gap cannot. */
+.marketing [data-feature] [data-feature-mark] {
+  transition:
+    background-color 200ms ease-out,
+    color 200ms ease-out,
+    transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Size and placement live here rather than as Tailwind utilities because the
-   values are off the spacing scale docs/16 §4.3 fixes — a 26rem circle is not
-   a layout measurement, it is the shape of a smudge. Logical properties, so it
-   mirrors correctly if the page is ever set right-to-left. */
-.marketing-blob-a {
-  inset-block-start: -6rem;
-  inset-inline-start: -8rem;
-  inline-size: 26rem;
-  block-size: 26rem;
+@media (hover: hover) {
+  .marketing [data-feature]:hover [data-feature-mark] {
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+    transform: translate3d(0, -0.125rem, 0);
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -701,12 +989,16 @@ html[data-marketing-motion='on'] .marketing {
   padding-block: 0.375rem;
 }
 
-/* The scroll indicator: a 1px hairline across the top, scaled from Lenis's own
-   progress. Hidden until the engine reports once, so it is not a stray line
-   across the page when there is no JavaScript. */
-.marketing-progress {
-  transform: scaleX(var(--scroll-progress, 0));
-  transform-origin: left center;
+/* No visible scrollbar on the landing page, at the owner's request (ADR-0022).
+   Scrolling itself is untouched — wheel, touch, keys and Lenis all work — and
+   the corner percentage stands in as the position read-out. Scoped with
+   `:has()` so no screen inside the application loses its scrollbar. */
+html:has(.marketing) {
+  scrollbar-width: none;
+}
+
+html:has(.marketing)::-webkit-scrollbar {
+  display: none;
 }
 
 /* Lenis's own two requirements. The third rule it ships —

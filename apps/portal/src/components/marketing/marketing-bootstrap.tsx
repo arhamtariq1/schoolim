@@ -69,6 +69,15 @@ const SWEEP_AFTER_MS = 2500;
  */
 const BOOTSTRAP = `(function () {
   var root = document.documentElement;
+
+  // The phone menu is a native <details> inside a sticky header, so following
+  // one of its links would leave it open over the section it jumped to. Close
+  // it on the way. Above the motion checks: this is behaviour, not motion.
+  document.addEventListener('click', function (event) {
+    var link = event.target && event.target.closest ? event.target.closest('[data-menu] a') : null;
+    if (link) { link.closest('[data-menu]').removeAttribute('open'); }
+  });
+
   try {
     var query = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (query.matches || !('IntersectionObserver' in window)) { return; }
