@@ -10,7 +10,7 @@
  */
 export const BRAND = {
   /** Display name, used in UI copy, emails and PDF headers. */
-  name: 'Ilm',
+  name: 'Lemma',
   /** Legal entity name, used on invoices. Set when the company is registered (docs/19). */
   legalName: 'Ilm',
   /** Apex domain. Set when D4 is decided. */
