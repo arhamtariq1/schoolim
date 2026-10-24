@@ -29,6 +29,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { ListDataTable } from './list-data-table';
 import { ListTablePaginationFooter } from './list-table-pagination-footer';
 import { ListTableScreen } from './list-table-screen';
+import { ScrollToHash } from './scroll-to-hash';
 
 import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
 import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
@@ -101,6 +102,7 @@ export function ClassDetailView({
 
   return (
     <div className="w-full space-y-8">
+      <ScrollToHash />
       <Card className="shadow-raised">
         <CardContent className="flex flex-wrap items-start justify-between gap-4 p-6">
           <div className="flex min-w-0 flex-1 gap-4">
@@ -222,6 +224,11 @@ export function ClassDetailView({
   );
 }
 
+/** `Assessment types` becomes `assessment-types`: the anchor the search palette links to. */
+function sectionId(title: string): string {
+  return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 function Section({
   title,
   description,
@@ -232,7 +239,7 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section aria-label={title} className="space-y-3">
+    <section id={sectionId(title)} aria-label={title} className="scroll-mt-24 space-y-3">
       <div>
         <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
         {description === undefined ? null : (

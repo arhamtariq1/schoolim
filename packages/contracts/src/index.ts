@@ -13,6 +13,7 @@ export * from './parent-vouchers';
 export * from './pagination';
 export * from './permissions';
 export * from './platform';
+export * from './plans';
 export * from './primitives';
 export * from './profile';
 export * from './roles';

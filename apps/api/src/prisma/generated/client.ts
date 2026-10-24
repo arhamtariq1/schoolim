@@ -57,6 +57,22 @@ export type PlatformUser = Prisma.PlatformUserModel
  */
 export type PlatformSession = Prisma.PlatformSessionModel
 /**
+ * Model Plan
+ * A subscription plan a school can buy. Platform data, not tenant data: no
+ * `school_id`, no RLS, and the application role holds no grant. Prices are
+ * configuration (docs/15 D2), edited from the console and read by the public
+ * landing page. Archived, never deleted, so a future subscription can always
+ * point at the plan it was sold under.
+ */
+export type Plan = Prisma.PlanModel
+/**
+ * Model PlatformAuditLog
+ * Every change a platform user makes: actor, action, entity, before, after.
+ * Append-only. Separate from `audit_logs`, which is tenant-scoped and cannot
+ * hold an action that belongs to no school.
+ */
+export type PlatformAuditLog = Prisma.PlatformAuditLogModel
+/**
  * Model SignupIntent
  * In-progress self-serve signup: credentials → email OTP → school details.
  * 

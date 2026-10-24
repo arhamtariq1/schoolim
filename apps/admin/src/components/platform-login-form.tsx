@@ -11,7 +11,7 @@ import {
   showNetworkErrorToast,
   useToast,
 } from '@ilm/ui';
-import { EmailIcon, ICON_SIZE, LockedIcon } from '@ilm/ui/icons';
+import { EmailIcon, LockedIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 

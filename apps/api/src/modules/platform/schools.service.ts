@@ -2,8 +2,11 @@ import { randomBytes } from 'node:crypto';
 
 import {
   RESERVED_SLUGS,
+  SCHOOL_STATUSES,
+  TRIAL_WARNING_DAYS,
   type CreateSchool,
   type CreateSchoolResult,
+  type PlatformOverview,
   type SchoolListItem,
   type SchoolListQuery,
 } from '@ilm/contracts';
@@ -41,7 +44,18 @@ export class SchoolsService {
   ) {}
 
   async list(query: SchoolListQuery): Promise<{ rows: SchoolListItem[]; total: number }> {
-    const where = query.status === undefined ? {} : { status: query.status };
+    const search = query.q;
+    const where = {
+      ...(query.status === undefined ? {} : { status: query.status }),
+      ...(search === undefined
+        ? {}
+        : {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' as const } },
+              { slug: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }),
+    };
 
     const [rows, total] = await Promise.all([
       this.prisma.admin.school.findMany({
@@ -49,31 +63,54 @@ export class SchoolsService {
         orderBy: orderFor(query.sort, query.order),
         skip: query.offset,
         take: query.limit,
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          city: true,
-          status: true,
-          createdAt: true,
-          _count: { select: { students: true, users: true } },
-        },
+        select: LIST_SELECT,
       }),
       this.prisma.admin.school.count({ where }),
     ]);
 
+    return { total, rows: rows.map(toListItem) };
+  }
+
+  /**
+   * The landing numbers. Counts of students and staff exclude soft-deleted
+   * rows, so the headline never includes people a school has already removed.
+   */
+  async overview(now: Date): Promise<PlatformOverview> {
+    const horizon = new Date(now.getTime() + TRIAL_WARNING_DAYS * 24 * 60 * 60 * 1000);
+
+    const [grouped, totalStudents, totalStaff, ending, recent] = await Promise.all([
+      this.prisma.admin.school.groupBy({ by: ['status'], _count: { _all: true } }),
+      this.prisma.admin.student.count({ where: { deletedAt: null } }),
+      this.prisma.admin.staff.count({ where: { deletedAt: null } }),
+      this.prisma.admin.school.findMany({
+        // A lapsed trial (end date already past) is still shown: it is the most
+        // urgent row on the page, not one to drop for being late.
+        where: { status: 'TRIAL', trialEndsAt: { lte: horizon } },
+        orderBy: { trialEndsAt: 'asc' },
+        take: 10,
+        select: LIST_SELECT,
+      }),
+      this.prisma.admin.school.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: LIST_SELECT,
+      }),
+    ]);
+
+    const schoolsByStatus = Object.fromEntries(
+      SCHOOL_STATUSES.map((status) => [
+        status,
+        grouped.find((row) => row.status === status)?._count._all ?? 0,
+      ]),
+    ) as PlatformOverview['schoolsByStatus'];
+
     return {
-      total,
-      rows: rows.map((school) => ({
-        id: school.id,
-        name: school.name,
-        slug: school.slug,
-        city: school.city,
-        status: school.status,
-        studentCount: school._count.students,
-        userCount: school._count.users,
-        createdAt: school.createdAt.toISOString(),
-      })),
+      schoolsByStatus,
+      totalSchools: grouped.reduce((sum, row) => sum + row._count._all, 0),
+      totalStudents,
+      totalStaff,
+      trialsEndingSoon: ending.map(toListItem),
+      recentSignups: recent.map(toListItem),
     };
   }
 
@@ -167,6 +204,7 @@ export class SchoolsService {
         status: school.status,
         studentCount: 0,
         userCount: 1,
+        trialEndsAt: null,
         createdAt: school.createdAt.toISOString(),
       },
       loginUrl: `${schoolOrigin(school.slug, this.env.APP_DOMAIN, this.env.WEB_URL, this.env.PORTAL_TENANT_MODE)}/login`,
@@ -182,15 +220,7 @@ export class SchoolsService {
     const updated = await this.prisma.admin.school.update({
       where: { id },
       data: { status, ...(status === 'ACTIVE' ? { onboardedAt: now } : {}) },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        city: true,
-        status: true,
-        createdAt: true,
-        _count: { select: { students: true, users: true } },
-      },
+      select: LIST_SELECT,
     });
 
     // Suspension and churn are what the guard reads on every request, so the
@@ -199,17 +229,42 @@ export class SchoolsService {
     // school-directory.service.ts on why both are needed.
     this.schools.forget(updated.slug);
 
-    return {
-      id: updated.id,
-      name: updated.name,
-      slug: updated.slug,
-      city: updated.city,
-      status: updated.status,
-      studentCount: updated._count.students,
-      userCount: updated._count.users,
-      createdAt: updated.createdAt.toISOString(),
-    };
+    return toListItem(updated);
   }
+}
+
+const LIST_SELECT = {
+  id: true,
+  name: true,
+  slug: true,
+  city: true,
+  status: true,
+  trialEndsAt: true,
+  createdAt: true,
+  _count: { select: { students: true, users: true } },
+} as const;
+
+function toListItem(school: {
+  id: string;
+  name: string;
+  slug: string;
+  city: string | null;
+  status: SchoolListItem['status'];
+  trialEndsAt: Date | null;
+  createdAt: Date;
+  _count: { students: number; users: number };
+}): SchoolListItem {
+  return {
+    id: school.id,
+    name: school.name,
+    slug: school.slug,
+    city: school.city,
+    status: school.status,
+    studentCount: school._count.students,
+    userCount: school._count.users,
+    trialEndsAt: school.trialEndsAt === null ? null : school.trialEndsAt.toISOString(),
+    createdAt: school.createdAt.toISOString(),
+  };
 }
 
 /** Sort is an allow-list from the contract, so this maps rather than interpolates. */

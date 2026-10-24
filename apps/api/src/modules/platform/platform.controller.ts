@@ -1,15 +1,32 @@
 import {
   COOKIES,
+  idSchema,
+  createPlanSchema,
   createSchoolSchema,
   platformLoginSchema,
   ROUTES,
   schoolListQuerySchema,
   slugSchema,
+  updatePlanSchema,
   type CreateSchoolResult,
+  type Plan,
+  type PlatformOverview,
   type PlatformSession,
   type SchoolListItem,
 } from '@ilm/contracts';
-import { Body, Controller, Get, Inject, Post, Query, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { type FastifyReply, type FastifyRequest } from 'fastify';
 
 import { ENV, type Env } from '../../config/env';
@@ -18,6 +35,7 @@ import { PlatformRoute, RequiresPlatform } from '../../shared/auth/platform.guar
 import { BusinessRuleError } from '../../shared/errors/domain-error';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
 
+import { PlansService } from './plans.service';
 import { PlatformAuthService, type PlatformLoginResult } from './platform-auth.service';
 import { SchoolsService } from './schools.service';
 
@@ -40,6 +58,7 @@ export class PlatformController {
   constructor(
     private readonly auth: PlatformAuthService,
     private readonly schools: SchoolsService,
+    private readonly plans: PlansService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ENV) private readonly env: Env,
   ) {}
@@ -89,6 +108,12 @@ export class PlatformController {
     return { data: user };
   }
 
+  @Get(ROUTES.platform.overview)
+  @RequiresPlatform('schools.read')
+  async overview(): Promise<{ data: PlatformOverview }> {
+    return { data: await this.schools.overview(this.clock.now()) };
+  }
+
   @Get(ROUTES.platform.schools.list)
   @RequiresPlatform('schools.read')
   async listSchools(
@@ -127,6 +152,52 @@ export class PlatformController {
     return { data: await this.schools.create(input, this.clock.now()) };
   }
 
+  @Get(ROUTES.platform.plans.list)
+  @RequiresPlatform('plans.read')
+  async listPlans(): Promise<{ data: Plan[] }> {
+    return { data: await this.plans.list() };
+  }
+
+  @Post(ROUTES.platform.plans.create)
+  @RequiresPlatform('plans.write')
+  async createPlan(@Body() body: unknown, @Req() request: FastifyRequest): Promise<{ data: Plan }> {
+    const input = createPlanSchema.parse(body);
+    return { data: await this.plans.create(input, actorOf(request)) };
+  }
+
+  @Patch(ROUTES.platform.plans.update(':id'))
+  @RequiresPlatform('plans.write')
+  async updatePlan(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+  ): Promise<{ data: Plan }> {
+    const input = updatePlanSchema.parse(body);
+    return { data: await this.plans.update(idSchema.parse(id), input, actorOf(request)) };
+  }
+
+  @Post(ROUTES.platform.plans.archive(':id'))
+  @HttpCode(200)
+  @RequiresPlatform('plans.write')
+  async archivePlan(
+    @Param('id') id: string,
+    @Req() request: FastifyRequest,
+  ): Promise<{ data: Plan }> {
+    return {
+      data: await this.plans.archive(idSchema.parse(id), this.clock.now(), actorOf(request)),
+    };
+  }
+
+  @Post(ROUTES.platform.plans.restore(':id'))
+  @HttpCode(200)
+  @RequiresPlatform('plans.write')
+  async restorePlan(
+    @Param('id') id: string,
+    @Req() request: FastifyRequest,
+  ): Promise<{ data: Plan }> {
+    return { data: await this.plans.restore(idSchema.parse(id), actorOf(request)) };
+  }
+
   private cookieScope(): { domain?: string } {
     return this.env.COOKIE_DOMAIN === undefined ? {} : { domain: this.env.COOKIE_DOMAIN };
   }
@@ -158,4 +229,13 @@ export class PlatformController {
     void reply.clearCookie(COOKIES.platformAccessToken, { path: '/', ...this.cookieScope() });
     void reply.clearCookie(COOKIES.platformRefreshToken, { path: '/', ...this.cookieScope() });
   }
+}
+
+/** The signed-in platform user and the address they are acting from. */
+function actorOf(request: FastifyRequest): { id: string; ip: string } {
+  const user = request.platformUser;
+  if (user === undefined) {
+    throw new BusinessRuleError('AUTH_TOKEN_INVALID', 'Sign in to continue.');
+  }
+  return { id: user.id, ip: request.ip };
 }

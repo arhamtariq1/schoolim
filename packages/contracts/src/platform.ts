@@ -27,9 +27,16 @@ export const platformRoleSchema = z.enum(PLATFORM_ROLES);
  * school. Only SUPER_ADMIN creates or suspends a tenant.
  */
 export const PLATFORM_CAPABILITIES = {
-  SUPER_ADMIN: ['schools.read', 'schools.create', 'schools.update', 'schools.changeStatus'],
-  SUPPORT: ['schools.read'],
-  BILLING: ['schools.read', 'schools.changeStatus'],
+  SUPER_ADMIN: [
+    'schools.read',
+    'schools.create',
+    'schools.update',
+    'schools.changeStatus',
+    'plans.read',
+    'plans.write',
+  ],
+  SUPPORT: ['schools.read', 'plans.read'],
+  BILLING: ['schools.read', 'schools.changeStatus', 'plans.read', 'plans.write'],
 } as const satisfies Record<PlatformRole, readonly string[]>;
 
 export function platformCan(role: PlatformRole, capability: string): boolean {
@@ -72,6 +79,8 @@ export const schoolListItemSchema = z.object({
   /** What the console is actually for: is anyone using this school yet? */
   studentCount: z.int().min(0),
   userCount: z.int().min(0),
+  /** Null once the school is past its trial. Drives the "ending soon" views. */
+  trialEndsAt: instantSchema.nullable(),
   createdAt: instantSchema,
 });
 
@@ -160,3 +169,24 @@ export const changeSchoolStatusSchema = z
   .strict();
 
 export type ChangeSchoolStatus = z.infer<typeof changeSchoolStatusSchema>;
+
+/**
+ * The console's landing numbers.
+ *
+ * Counts and names only, the same rule as the school list. `trialsEndingSoon`
+ * is the one actionable list: a trial that lapses unnoticed is a school lost
+ * without anyone deciding to lose it.
+ */
+export const platformOverviewSchema = z.object({
+  schoolsByStatus: z.record(schoolStatusSchema, z.int().min(0)),
+  totalSchools: z.int().min(0),
+  totalStudents: z.int().min(0),
+  totalStaff: z.int().min(0),
+  trialsEndingSoon: z.array(schoolListItemSchema),
+  recentSignups: z.array(schoolListItemSchema),
+});
+
+export type PlatformOverview = z.infer<typeof platformOverviewSchema>;
+
+/** How far ahead "ending soon" looks. */
+export const TRIAL_WARNING_DAYS = 7;
