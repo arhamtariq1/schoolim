@@ -12,7 +12,7 @@ import {
 } from '@/components/dashboard/dashboard-header-band';
 import { DashboardMonthCalendar } from '@/components/dashboard/dashboard-month-calendar';
 import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
-import { formatMinorCompact } from '@/components/dashboard/dashboard-chart-theme';
+import { formatMinorExact } from '@/components/dashboard/dashboard-chart-theme';
 import { withTenantPrefix } from '@/lib/tenant-mode';
 
 /**
@@ -73,7 +73,7 @@ export function TeacherDashboard({
         />
         <DashboardStatCard
           label="Monthly salary"
-          value={data.monthlySalaryMinor === null ? '—' : formatMinorCompact(data.monthlySalaryMinor)}
+          value={data.monthlySalaryMinor === null ? '—' : formatMinorExact(data.monthlySalaryMinor)}
           description={
             data.lastSalaryPaidOn === null ? 'No salary paid yet' : `Last paid ${data.lastSalaryPaidOn}`
           }

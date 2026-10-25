@@ -7,6 +7,8 @@ import { FeeIncrementsController } from './fee-increments.controller';
 import { FeeIncrementsService } from './fee-increments.service';
 import { FeesController } from './fees.controller';
 import { LateFeePolicyService } from './late-fee-policy.service';
+import { RevenueController } from './revenue.controller';
+import { RevenueService } from './revenue.service';
 import { SecurityDepositsController } from './security-deposits.controller';
 import { SecurityDepositsService } from './security-deposits.service';
 import { StudentFeesService } from './student-fees.service';
@@ -31,6 +33,7 @@ import { StudentFeesService } from './student-fees.service';
     FeeIncrementsController,
     DefaultersController,
     SecurityDepositsController,
+    RevenueController,
   ],
   providers: [
     FeeHeadsService,
@@ -39,6 +42,7 @@ import { StudentFeesService } from './student-fees.service';
     LateFeePolicyService,
     DefaultersService,
     SecurityDepositsService,
+    RevenueService,
   ],
   exports: [FeeHeadsService],
 })

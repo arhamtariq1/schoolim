@@ -24,6 +24,7 @@ export * from './school-logo';
 export * from './school-settings';
 export * from './promotions';
 export * from './requests';
+export * from './revenue';
 export * from './security-deposits';
 export * from './signup';
 export * from './gr-number';

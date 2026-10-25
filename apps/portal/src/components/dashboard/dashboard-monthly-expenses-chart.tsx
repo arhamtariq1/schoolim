@@ -12,7 +12,7 @@ import { useMemo } from 'react';
 import {
   DASHBOARD_FINANCE_CHART_HEIGHT,
   dashboardChartAxisPadding,
-  formatMinorCompact,
+  formatMinorExact,
   formatRupeesCompact,
   minorToRupees,
   roundToNearest,
@@ -156,7 +156,7 @@ export function DashboardMonthlyExpensesChart({ monthly }: DashboardMonthlyExpen
             This month
           </p>
           <p className="text-sm font-semibold tabular-nums text-foreground">
-            {formatMinorCompact(latestMinor)}
+            {formatMinorExact(latestMinor)}
           </p>
         </div>
       </CardHeader>
@@ -186,7 +186,7 @@ function formatMonthChange(
   }
   const down = delta < 0;
   return {
-    label: down ? `${pct}% vs last month` : `+${pct}% vs last month`,
+    label: down ? `−${pct}% vs last month` : `+${pct}% vs last month`,
     positive: down,
   };
 }

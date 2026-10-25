@@ -1099,8 +1099,13 @@ function CollectDialog({
     setFormError(undefined);
     setIsPending(true);
 
+    const entered = rupeesToMinor(amount) ?? 0;
     const result = await mutate(ROUTES.vouchers.pay(voucher.id), 'POST', {
-      amountMinor: rupeesToMinor(amount) ?? 0,
+      // Left at the full outstanding figure, the amount is not sent: the server
+      // then settles exactly what it computes is owed — arrears, this voucher,
+      // and the late fee if the payment date is past due. Sending the figure
+      // shown here would leave the surcharge behind as a small open balance.
+      ...(entered === due ? {} : { amountMinor: entered }),
       method,
       paidOn,
       ...(reference.trim() === '' ? {} : { reference: reference.trim() }),
@@ -1153,11 +1158,16 @@ function CollectDialog({
               <Field
                 label="Amount"
                 required
-                hint={
+                hint={[
                   voucher.arrearsMinor > 0
                     ? 'Arrears are settled first, oldest voucher before newest.'
-                    : undefined
-                }
+                    : '',
+                  voucher.lateFeeMinor > 0 && paidOn > voucher.dueDate
+                    ? `Paid after the due date: a late fee of ${formatCurrency(voucher.lateFeeMinor)} applies if it has not been charged yet, and is included when the full amount is collected.`
+                    : '',
+                ]
+                  .filter((part) => part !== '')
+                  .join(' ') || undefined}
               >
                 <Input
                   type="number"

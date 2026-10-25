@@ -275,6 +275,36 @@ describe('the expense list', () => {
     ]);
   });
 
+  it('goes by the dates when next year’s session is already marked current', async () => {
+    // A school that switches "current" to the coming session early. Every
+    // expense so far belongs to this session; a dated range must still find
+    // them, as the dashboard (which goes by date) does.
+    const NEXT = '55555555-5555-4555-8555-555555555579';
+    await admin.$executeRawUnsafe(
+      `UPDATE academic_sessions SET is_current = false WHERE id = $1::uuid`,
+      SESSION_A,
+    );
+    await admin.$executeRawUnsafe(
+      `INSERT INTO academic_sessions (id, school_id, name, start_date, end_date, status, is_current, created_at, updated_at)
+       VALUES ($1::uuid, $2::uuid, '2027-2028', '2027-04-01', '2028-03-31', 'ACTIVE', true, now(), now())`,
+      NEXT,
+      SCHOOL_A,
+    );
+    try {
+      const { body } = await list('?from=2026-08-01&to=2026-09-30');
+      expect(body.data.length).toBeGreaterThan(0);
+      expect(body.meta.totals.count).toBe(body.data.length);
+      // Asked for a session explicitly, it is still honoured.
+      expect((await list(`?from=2026-08-01&to=2026-09-30&sessionId=${NEXT}`)).body.data).toEqual([]);
+    } finally {
+      await admin.$executeRawUnsafe(`DELETE FROM academic_sessions WHERE id = $1::uuid`, NEXT);
+      await admin.$executeRawUnsafe(
+        `UPDATE academic_sessions SET is_current = true WHERE id = $1::uuid`,
+        SESSION_A,
+      );
+    }
+  });
+
   it('searches description, payee and voucher number', async () => {
     const byDescription = await list('?q=diesel');
     expect(byDescription.body.data).toHaveLength(1);

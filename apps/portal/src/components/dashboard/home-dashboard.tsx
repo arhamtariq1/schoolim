@@ -4,7 +4,7 @@ import type { Route } from 'next';
 import type { ReactNode } from 'react';
 
 import { DashboardAttendanceWeekChart } from '@/components/dashboard/dashboard-attendance-week-chart';
-import { formatMinorCompact } from '@/components/dashboard/dashboard-chart-theme';
+import { formatMinorExact } from '@/components/dashboard/dashboard-chart-theme';
 import { DashboardDefaulterCard } from '@/components/dashboard/dashboard-defaulter-card';
 import { DashboardExpenseBreakdownChart } from '@/components/dashboard/dashboard-expense-breakdown-chart';
 import { DashboardFeesCollectionCard } from '@/components/dashboard/dashboard-fees-collection-card';
@@ -279,18 +279,21 @@ function buildStatCards(
     });
   }
 
-  const latestNetMinor = snapshot.revenueTrend.at(-1)?.netRevenueMinor;
+  // Revenue this month — fees earned, deposits excluded — the same figure as
+  // Finance › Revenue. Not net of expenses: that is a profit figure, and it
+  // reads as "revenue" going negative in any month of heavy spending.
+  const latestRevenueMinor = snapshot.revenueTrend.at(-1)?.collectedMinor;
   if (
-    latestNetMinor !== undefined &&
+    latestRevenueMinor !== undefined &&
     can(permissions, 'finance.revenue.read') &&
     snapshot.revenueTrend.length > 0
   ) {
     cards.push({
       key: 'revenue',
       label: 'Total revenue',
-      value: formatMinorCompact(latestNetMinor),
-      description: 'Net after operating expenses this month',
-      href: href('/finance', tenantSlug),
+      value: formatMinorExact(latestRevenueMinor),
+      description: 'Fees earned this month, deposits excluded',
+      href: href('/finance/revenue', tenantSlug),
       icon: 'FinanceIcon',
       trend: trends.revenue,
     });

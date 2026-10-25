@@ -102,10 +102,16 @@ export class SecurityDepositsService {
            GROUP BY deposit_id
         ) r ON r.deposit_id = d.id
         LEFT JOIN fee_vouchers v ON v.id = d.voucher_id
-        LEFT JOIN enrollments e
-          ON e.student_id = s.id
-         AND e.status = 'ENROLLED'
-         AND e.session_id = COALESCE(${sessionExpr}, e.session_id)
+        -- At most one enrolment per child, or a child enrolled in two sessions
+        -- (no session marked current) would be listed twice.
+        LEFT JOIN LATERAL (
+          SELECT en.* FROM enrollments en
+           WHERE en.student_id = s.id
+             AND en.status = 'ENROLLED'
+             AND en.session_id = COALESCE(${sessionExpr}, en.session_id)
+           ORDER BY en.created_at DESC
+           LIMIT 1
+        ) e ON true
         LEFT JOIN class_levels cl ON cl.id = e.class_level_id
         WHERE ${where.join(' AND ')}
       `;

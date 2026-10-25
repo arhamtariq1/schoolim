@@ -398,6 +398,33 @@ export function EntityProfilePageSkeleton({ ariaLabel = 'Loading profile' }: { a
   );
 }
 
+/** `/finance/revenue` — four cards and the receipts table. */
+export function RevenuePageSkeleton() {
+  return (
+    <div className="w-full space-y-6" role="status" aria-label="Loading revenue">
+      <WorkspacePageHeaderSkeleton />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <Card key={index} className="p-4">
+            <div className="flex items-start justify-between gap-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="size-10 rounded-lg" />
+            </div>
+            <Skeleton className="mt-3 h-8 w-28" />
+            <Skeleton className="mt-2 h-3 w-32" />
+          </Card>
+        ))}
+      </div>
+      <ListTableScreenSkeleton
+        ariaLabel="Loading receipts table"
+        filterCount={3}
+        showPrimaryButton={false}
+        tableRows={6}
+      />
+    </div>
+  );
+}
+
 /** `/finance/expenses` — stats, tabs, list, sidebar. */
 export function ExpensesPageSkeleton() {
   return (

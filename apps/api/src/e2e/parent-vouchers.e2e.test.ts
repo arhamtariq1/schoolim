@@ -376,7 +376,7 @@ describe('a parent with more than one child', () => {
     await call('POST', ROUTES.vouchers.pay(voucherId), owner, {
       amountMinor: 200_000,
       method: 'CASH',
-      paidOn: '2026-12-05',
+      paidOn: '2026-10-05',
       idempotencyKey: `pay-part-${String(Date.now())}`,
     });
     expect((await vouchersFor(cookie)).items[0]?.paymentStatus).toBe('PARTIALLY_PAID');
@@ -385,7 +385,7 @@ describe('a parent with more than one child', () => {
 
     await call('POST', ROUTES.vouchers.pay(voucherId), owner, {
       method: 'CASH',
-      paidOn: '2026-12-06',
+      paidOn: '2026-10-06',
       idempotencyKey: `pay-rest-${String(Date.now())}`,
     });
     const after = await vouchersFor(cookie);

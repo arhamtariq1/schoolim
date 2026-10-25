@@ -12,7 +12,7 @@ import { useMemo } from 'react';
 import {
   DASHBOARD_FINANCE_CHART_HEIGHT,
   dashboardChartAxisPadding,
-  formatMinorCompact,
+  formatMinorExact,
   formatRupeesCompact,
   minorToRupees,
   roundToNearest,
@@ -30,29 +30,31 @@ type DashboardRevenueChartProps = {
   trend: DashboardRevenueMonth[];
 };
 
-/** Monthly net revenue (fees collected − expenses) — demo until summary API. */
+/**
+ * Revenue by month: fees earned, security deposits excluded — the figure
+ * Finance › Revenue shows. Never net of expenses: spending has its own chart
+ * beside this one, and a "revenue" line that dives below zero in a month of
+ * heavy spending reads as money the school lost from its fees.
+ */
 export function DashboardRevenueChart({ trend }: DashboardRevenueChartProps) {
   const theme = useDashboardChartTheme();
 
   const latest = trend.at(-1);
   const previous = trend.at(-2);
-  const latestNet = latest?.netRevenueMinor ?? 0;
+  const latestRevenue = latest?.collectedMinor ?? 0;
   const trendLabel =
-    previous !== undefined && previous.netRevenueMinor > 0
-      ? formatMonthChange(latestNet, previous.netRevenueMinor)
+    previous !== undefined && previous.collectedMinor > 0
+      ? formatMonthChange(latestRevenue, previous.collectedMinor)
       : null;
 
   const { options, series } = useMemo(() => {
     const categories = trend.map((entry) => entry.label);
-    const net = trend.map((entry) => minorToRupees(entry.netRevenueMinor));
+    const revenue = trend.map((entry) => minorToRupees(entry.collectedMinor));
 
-    const minNet = net.length === 0 ? 0 : Math.min(...net);
-    const maxNet = net.length === 0 ? 0 : Math.max(...net);
-    const yPadding =
-      maxNet > minNet ? roundToNearest((maxNet - minNet) * 0.12) : roundToNearest(maxNet * 0.05);
+    const axis = niceAxis(0, revenue.length === 0 ? 0 : Math.max(...revenue), 4);
 
     return {
-      series: [{ name: 'Net revenue', data: net }],
+      series: [{ name: 'Revenue', data: revenue }],
       options: {
         chart: {
           type: 'line',
@@ -96,9 +98,11 @@ export function DashboardRevenueChart({ trend }: DashboardRevenueChartProps) {
           },
         },
         yaxis: {
-          tickAmount: 4,
-          min: Math.max(0, minNet - yPadding),
-          max: maxNet + yPadding,
+          // Round multiples of the step, so the ticks read 0, 2k, 4k… rather
+          // than the raw maximum.
+          tickAmount: axis.ticks,
+          min: axis.min,
+          max: axis.max,
           labels: {
             style: { colors: theme.mutedForeground, fontSize: '11px' },
             formatter: (value: number) => formatRupeesCompact(value),
@@ -119,7 +123,7 @@ export function DashboardRevenueChart({ trend }: DashboardRevenueChartProps) {
               if (opts === undefined) {
                 return '';
               }
-              const minor = trend[opts.dataPointIndex]?.netRevenueMinor ?? 0;
+              const minor = trend[opts.dataPointIndex]?.collectedMinor ?? 0;
               return formatMoney(minorUnits(minor), { withSymbol: true });
             },
           },
@@ -138,7 +142,7 @@ export function DashboardRevenueChart({ trend }: DashboardRevenueChartProps) {
           <div className="min-w-0">
             <CardTitle className="text-base font-semibold">Revenue</CardTitle>
             <CardDescription className="text-xs leading-snug">
-              Monthly net after operating expenses
+              Fees earned each month, deposits excluded
             </CardDescription>
           </div>
         </div>
@@ -158,7 +162,7 @@ export function DashboardRevenueChart({ trend }: DashboardRevenueChartProps) {
             This month
           </p>
           <p className="text-sm font-semibold tabular-nums text-foreground">
-            {formatMinorCompact(latestNet)}
+            {formatMinorExact(latestRevenue)}
           </p>
         </div>
       </CardHeader>
@@ -189,7 +193,25 @@ function formatMonthChange(
   }
   const up = delta > 0;
   return {
-    label: up ? `+${pct}% vs last month` : `${pct}% vs last month`,
+    label: up ? `+${pct}% vs last month` : `−${pct}% vs last month`,
     positive: up,
   };
+}
+
+/**
+ * Round axis bounds: a step of 1, 2 or 5 × 10^n, and min/max on multiples of it.
+ * Zero is always inside, so the axis starts from nothing.
+ */
+function niceAxis(low: number, high: number, targetTicks: number): { min: number; max: number; ticks: number } {
+  const lo = Math.min(0, low);
+  const hi = Math.max(0, high);
+  if (hi - lo === 0) {
+    return { min: 0, max: 1000, ticks: targetTicks };
+  }
+  const raw = (hi - lo) / targetTicks;
+  const magnitude = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 5, 10].map((m) => m * magnitude).find((candidate) => candidate >= raw) ?? 10 * magnitude;
+  const min = Math.floor(lo / step) * step;
+  const max = Math.ceil(hi / step) * step;
+  return { min, max, ticks: (max - min) / step };
 }

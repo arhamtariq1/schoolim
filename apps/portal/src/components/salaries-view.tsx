@@ -40,7 +40,7 @@ import { SalaryAvatar, SalaryStatusBadge, salaryMonthLabel } from './salary-ui';
 import { SalariesPageSkeleton } from './salary-skeletons';
 
 import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
-import { formatMinorCompact } from '@/components/dashboard/dashboard-chart-theme';
+import { formatMinorExact } from '@/components/dashboard/dashboard-chart-theme';
 import { afterMenuAction } from '@/components/fees/fee-list-shared';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
 import { TableSelectionBar } from '@/components/table-selection-bar';
@@ -375,19 +375,19 @@ export function SalariesView({
       >
         <DashboardStatCard
           label="Total monthly payroll"
-          value={formatMinorCompact(summary?.totalPayrollMinor ?? 0)}
+          value={formatMinorExact(summary?.totalPayrollMinor ?? 0)}
           description={salaryMonthLabel(month)}
           icon="FinanceIcon"
         />
         <DashboardStatCard
           label="Total paid"
-          value={formatMinorCompact(summary?.totalPaidMinor ?? 0)}
+          value={formatMinorExact(summary?.totalPaidMinor ?? 0)}
           description="Paid out for the month"
           icon="FeesIcon"
         />
         <DashboardStatCard
           label="Total pending"
-          value={formatMinorCompact(summary?.totalPendingMinor ?? 0)}
+          value={formatMinorExact(summary?.totalPendingMinor ?? 0)}
           description="Still to be paid"
           icon="OverdueIcon"
         />
