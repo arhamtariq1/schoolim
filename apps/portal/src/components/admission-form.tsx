@@ -455,13 +455,13 @@ export function AdmissionForm({
       })),
     });
 
-    // The guardian's email is where their portal invitation goes, so the form
-    // asks for it even though the API tolerates records that predate the field.
-    const emailMissing = guardianEmail.trim() === '';
-
+    // The guardian's email is optional: many guardians have none and never use
+    // the parent portal. Left blank, the guardian is saved without a portal
+    // login and no invitation is sent; a typed email is still validated by the
+    // schema above.
     const phoneError = phoneInputError(guardianPhone);
 
-    if (!parsed.success || emailMissing || phoneError !== undefined) {
+    if (!parsed.success || phoneError !== undefined) {
       const next: Record<string, string> = {};
       if (!parsed.success) {
         for (const issue of parsed.error.issues) {
@@ -470,9 +470,6 @@ export function AdmissionForm({
       }
       if (phoneError !== undefined) {
         next['guardian.phone'] = phoneError;
-      }
-      if (emailMissing) {
-        next['guardian.email'] = 'Enter an email — the parent portal invitation is sent here.';
       }
       setFieldErrors(next);
       setFormError('Check the highlighted fields.');
@@ -813,12 +810,16 @@ export function AdmissionForm({
                 />
               </FieldIconWrap>
             </Field>
-            <Field label="Email" error={fieldErrors['guardian.email']} required>
+            <Field
+              label="Email"
+              error={fieldErrors['guardian.email']}
+              hint="Optional. Only needed for the parent portal; an invitation is sent here."
+            >
               <FieldIconWrap icon={EmailIcon}>
                 <Input
                   type="email"
                   autoComplete="email"
-                  placeholder="Enter guardian email"
+                  placeholder="Enter guardian email (optional)"
                   value={guardianEmail}
                   onChange={(event) => {
                     setGuardianEmail(event.target.value);

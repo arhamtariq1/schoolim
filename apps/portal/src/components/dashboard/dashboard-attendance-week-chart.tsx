@@ -42,6 +42,15 @@ function resolveCssColor(varName: string, fallback: string): string {
   return resolved !== '' ? resolved : fallback;
 }
 
+/** Same on server and client for the first render; see `SERVER_CHART_THEME`. */
+const SERVER_COLORS: ChartThemeColors = {
+  present: 'rgb(20, 127, 138)',
+  absent: 'rgb(16, 100, 109)',
+  leave: 'rgb(72, 160, 170)',
+  border: 'rgb(226, 232, 240)',
+  mutedForeground: 'rgb(100, 116, 139)',
+};
+
 function readChartThemeColors(): ChartThemeColors {
   const fallbackPresent = 'rgb(20, 127, 138)';
   const fallbackAbsent = 'rgb(16, 100, 109)';
@@ -96,7 +105,7 @@ const LEGEND = [
  * @see https://apexcharts.com/javascript-chart-demos/column-charts/basic-column/
  */
 export function DashboardAttendanceWeekChart({ weekly }: DashboardAttendanceWeekChartProps) {
-  const [theme, setTheme] = useState<ChartThemeColors>(() => readChartThemeColors());
+  const [theme, setTheme] = useState<ChartThemeColors>(SERVER_COLORS);
 
   useEffect(() => {
     setTheme(readChartThemeColors());
