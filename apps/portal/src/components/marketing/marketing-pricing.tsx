@@ -60,7 +60,7 @@ export function MarketingPricing() {
             className={cn(
               'rounded-tile flex flex-col border p-6 sm:p-8',
               plan.recommended
-                ? 'marketing-ink shadow-tile border-transparent bg-background text-foreground'
+                ? 'shadow-tile border-primary bg-card ring-1 ring-primary'
                 : 'border-border bg-card',
             )}
           >

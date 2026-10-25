@@ -1,6 +1,8 @@
 import { cn } from '@ilm/ui';
 import { BRAND } from '@ilm/utils';
 
+import lemmaLogo from '../../../public/auth/lemma-logo.png';
+
 import { ROLES } from './marketing-content';
 
 /**
@@ -25,6 +27,9 @@ const CENTRE = SIZE / 2;
 const RADIUS = 236;
 const NODE_W = 168;
 const NODE_H = 52;
+/** The wordmark is 866 × 288; this keeps its proportions inside the 168-wide disc. */
+const LOGO_W = 136;
+const LOGO_H = (LOGO_W * 288) / 866;
 
 /** Six points on a hexagon, starting at twelve o'clock. */
 const NODES = ROLES.map((role, index) => {
@@ -74,23 +79,33 @@ export function MarketingHub({ className }: { className?: string }) {
         />
       ))}
 
-      <circle cx={CENTRE} cy={CENTRE} r={84} className="fill-primary" />
-      <text
-        x={CENTRE}
-        y={CENTRE - 6}
-        textAnchor="middle"
-        className="font-display fill-primary-foreground text-3xl font-semibold"
-      >
-        {BRAND.name}
-      </text>
-      <text
-        x={CENTRE}
-        y={CENTRE + 22}
-        textAnchor="middle"
-        className="fill-primary-foreground text-sm"
-      >
-        one school record
-      </text>
+      {/* The real wordmark on a light disc — `.marketing-paper` makes `card`
+          white even inside the dark band, so the navy logo reads as drawn. */}
+      <g className="marketing-paper">
+        <circle
+          cx={CENTRE}
+          cy={CENTRE}
+          r={84}
+          className="fill-card stroke-primary"
+          strokeWidth={3}
+        />
+        <image
+          href={lemmaLogo.src}
+          x={CENTRE - LOGO_W / 2}
+          y={CENTRE - LOGO_H / 2 - 10}
+          width={LOGO_W}
+          height={LOGO_H}
+          preserveAspectRatio="xMidYMid meet"
+        />
+        <text
+          x={CENTRE}
+          y={CENTRE + 36}
+          textAnchor="middle"
+          className="fill-muted-foreground text-sm"
+        >
+          one school record
+        </text>
+      </g>
 
       {NODES.map((node) => (
         <g key={node.id}>

@@ -295,10 +295,10 @@
 .marketing,
 .marketing-paper {
   /* The page's ground, named so the hero's glow can end on exactly it. */
-  --marketing-ground: oklch(0.985 0.003 200);
+  --marketing-ground: oklch(1 0 0);
   --color-background: var(--marketing-ground);
   --color-card: oklch(1 0 0);
-  --color-muted: oklch(0.955 0.007 200);
+  --color-muted: oklch(0.97 0.006 200);
   --color-border: oklch(0.9 0.01 200);
   --color-foreground: oklch(0.21 0.02 215);
   --color-muted-foreground: oklch(0.48 0.018 215);
@@ -327,7 +327,7 @@
   color: var(--color-foreground);
 }
 
-/* The dark bands — portals, the recommended plan, the closing call and the
+/* The dark bands — the recommended plan, the closing call and the
    footer. A deep teal-black, so the bands belong to the brand without the
    teal itself becoming a surface; the action on it moves up the ramp.
    Measured: text 16.8:1, muted copy 9.1:1 (8.1:1 on cards), button label
@@ -345,13 +345,16 @@
   color: var(--color-foreground);
 }
 
-/* The one word per headline set in the italic serif. Marked `*word*` in a
-   `WordReveal`'s text; see `marketing-parts.tsx`. */
-.marketing [data-accent] {
-  font-family: var(--font-marketing-serif), ui-serif, Georgia, serif;
-  font-style: italic;
-  font-weight: 400;
-  letter-spacing: -0.01em;
+/* ADR-0024: the closing words of a headline, marked `*word*` in a
+   `WordReveal`'s text (see `marketing-parts.tsx`), fade from a deep teal into
+   the brand teal. Only ever used at display size, where docs/16 asks 3:1;
+   the lighter end should be checked against that whenever the ramp changes. */
+.marketing [data-accent],
+.marketing-fade-text {
+  background-image: linear-gradient(90deg, var(--color-brand-700) 0%, var(--color-brand-500) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
 }
 
 /* Horizontal tracks scroll natively with snap; the bar is hidden because the
@@ -875,6 +878,15 @@ html[data-marketing-motion='on'] .marketing {
 }
 
 /* The peek dissolves into the card instead of being cut off by its edge. */
+/* The portals stage: a soft teal light from above, behind the chosen screen. */
+.marketing-stage-glow {
+  background-image: radial-gradient(
+    ellipse 70% 55% at 50% 0%,
+    color-mix(in oklch, var(--color-brand-500) 35%, transparent) 0%,
+    transparent 100%
+  );
+}
+
 .marketing-peek-fade {
   mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
 }
