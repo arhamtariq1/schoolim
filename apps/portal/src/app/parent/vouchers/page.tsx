@@ -10,6 +10,7 @@ import { redirect } from 'next/navigation';
 import { ParentVouchersView } from '@/components/parent-vouchers-view';
 import { apiFetch } from '@/lib/api';
 import { parseSortField, parseSortOrder } from '@/lib/list-page';
+import { loadParentChildren } from '@/lib/parent-children';
 import { requireSchoolSession } from '@/lib/require-session';
 import { clampInt, readParam } from '@/lib/search-params';
 
@@ -18,9 +19,11 @@ export const metadata: Metadata = { title: 'Fee vouchers' };
 /**
  * A parent's fee vouchers, filtered by child, fee month and payment status.
  *
- * Filters live in the query string, so "Hamza, October, unpaid" is a link. The
- * API starts every query at the signed-in guardian; a child that is not theirs
- * answers 404 and the list is shown empty with the error.
+ * The child is the one chosen in the header (`loadParentChildren`), which holds
+ * on every parent page; month, status and search live in the query string, so
+ * "October, unpaid" is a link. The API starts every query at the signed-in
+ * guardian; a child that is not theirs answers 404 and the list is shown empty
+ * with the error.
  */
 export default async function ParentVouchersPage({
   searchParams,
@@ -32,10 +35,10 @@ export default async function ParentVouchersPage({
     redirect('/');
   }
 
-  const params = await searchParams;
+  const [params, family] = await Promise.all([searchParams, loadParentChildren()]);
   const filters = {
     q: readParam(params, 'q'),
-    studentId: readParam(params, 'studentId'),
+    studentId: family.selected?.id ?? '',
     month: readParam(params, 'month'),
     status: readParam(params, 'status'),
   };
@@ -53,14 +56,15 @@ export default async function ParentVouchersPage({
     }
   }
 
-  const result = await apiFetch<{ data: ParentVoucherList }>(`${ROUTES.parent.vouchers}?${query.toString()}`);
+  const result = await apiFetch<{ data: ParentVoucherList }>(
+    `${ROUTES.parent.vouchers}?${query.toString()}`,
+  );
   const data = result.ok ? result.data.data : undefined;
 
   return (
     <ParentVouchersView
       rows={data?.items ?? []}
       total={data?.total ?? 0}
-      kids={data?.children ?? []}
       months={data?.months ?? []}
       filters={filters}
       limit={limit}

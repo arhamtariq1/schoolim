@@ -31,17 +31,23 @@ import {
 } from '@ilm/ui/icons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { AppSearch } from '@/components/app-search';
 import { BrandTheme } from '@/components/brand-theme';
 import { FEE_SETTINGS_ITEMS } from '@/components/fee-settings-nav';
 import { NAV_ICONS } from '@/components/nav-icons';
 import { NotificationsMenu } from '@/components/notifications-menu';
+import { ParentChildFilter } from '@/components/parent-child-filter';
 import { SidebarBrandMark } from '@/components/sidebar-brand-mark';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { VerifyEmailBanner } from '@/components/verify-email-banner';
-import { NAV_ITEMS, visibleNavItems, visibleSettingsMenuItems, type NavItem } from '@/lib/navigation';
+import {
+  NAV_ITEMS,
+  visibleNavItems,
+  visibleSettingsMenuItems,
+  type NavItem,
+} from '@/lib/navigation';
 import { disablePush } from '@/lib/push';
 import { SCHOOL_COLOUR_UPDATED_EVENT, SCHOOL_LOGO_UPDATED_EVENT } from '@/lib/school-logo-shell';
 import { useCanonicalPathname, useTenantHref } from '@/lib/use-tenant-href';
@@ -94,6 +100,10 @@ const SIDEBAR_COLLAPSED_KEY = 'ilm:sidebar-collapsed';
 
 const CONTENT_PADDING = 'px-3 pt-3 pb-20 md:px-4 md:pt-4 md:pb-5';
 
+export interface ParentChildrenProp {
+  kids: readonly { id: string; name: string }[];
+  selectedId: string | undefined;
+}
 
 export interface AppShellProps {
   user: { name: string; email?: string; roleLabel: string; avatarUrl?: string | null };
@@ -123,6 +133,12 @@ export interface AppShellProps {
   brandColor?: string | undefined;
   /** Latest school logo metadata — loaded with the shell, updated in place on upload. */
   schoolLogo?: SchoolLogoInfo | undefined;
+  /**
+   * A parent's linked children and the one the header filter has chosen
+   * (undefined: all). Undefined for anybody who is not a parent, and the filter
+   * is not drawn.
+   */
+  parentChildren?: ParentChildrenProp | undefined;
   children: ReactNode;
 }
 
@@ -138,6 +154,7 @@ export function AppShell({
   unverifiedEmail,
   brandColor: serverBrandColor,
   schoolLogo: initialSchoolLogo,
+  parentChildren,
   children,
 }: AppShellProps) {
   const items = visibleNavItems(permissions);
@@ -294,6 +311,7 @@ export function AppShell({
             user={user}
             permissions={permissions}
             settingsEnabled={!navLocked}
+            parentChildren={parentChildren}
             sidebarCollapsed={sidebarCollapsed}
             onToggleSidebar={toggleSidebar}
             onOpenMenu={() => {
@@ -334,6 +352,7 @@ function AppHeader({
   user,
   permissions,
   settingsEnabled = false,
+  parentChildren,
   sidebarCollapsed,
   onToggleSidebar,
   onOpenMenu,
@@ -342,6 +361,7 @@ function AppHeader({
   user: { name: string; email?: string; roleLabel: string; avatarUrl?: string | null };
   permissions: readonly string[];
   settingsEnabled?: boolean;
+  parentChildren?: ParentChildrenProp | undefined;
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
   onOpenMenu: () => void;
@@ -391,6 +411,16 @@ function AppHeader({
       </div>
 
       <div className="ms-auto flex items-center gap-1 md:gap-2">
+        {parentChildren === undefined ? null : (
+          <Suspense fallback={null}>
+            <ParentChildFilter
+              kids={parentChildren.kids}
+              selectedId={parentChildren.selectedId}
+              className="me-1"
+            />
+          </Suspense>
+        )}
+
         <StatusBadge tone="success" className="me-1 hidden shrink-0 md:inline-flex">
           {user.roleLabel}
         </StatusBadge>
@@ -526,7 +556,9 @@ function ProfileMenu({
             <span className="flex items-center gap-3">
               <HeaderAvatar user={user} className="size-9" />
               <span className="min-w-0 flex-1 text-start">
-                <span className="block truncate text-sm font-medium text-foreground">{user.name}</span>
+                <span className="block truncate text-sm font-medium text-foreground">
+                  {user.name}
+                </span>
                 {user.email === undefined || user.email === '' ? null : (
                   <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
                 )}
@@ -612,7 +644,9 @@ function Sidebar({
           href={tenantHref('/')}
           className={cn(
             'inline-flex items-center rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-            collapsed ? 'size-10 justify-center overflow-hidden' : 'max-w-[148px] justify-start ps-3',
+            collapsed
+              ? 'size-10 justify-center overflow-hidden'
+              : 'max-w-[148px] justify-start ps-3',
           )}
           aria-label="Home"
         >
@@ -760,7 +794,10 @@ function NavLink({
         )}
       >
         {Icon === undefined ? null : (
-          <Icon className={cn('shrink-0 opacity-60', nested ? 'size-4' : ICON_SIZE.nav)} aria-hidden />
+          <Icon
+            className={cn('shrink-0 opacity-60', nested ? 'size-4' : ICON_SIZE.nav)}
+            aria-hidden
+          />
         )}
         <span className={cn('truncate', nested ? 'text-xs' : undefined, collapsed && 'sr-only')}>
           {item.label}

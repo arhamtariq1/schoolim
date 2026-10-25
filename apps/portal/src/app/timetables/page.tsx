@@ -10,6 +10,7 @@ import type { Metadata } from 'next';
 import { TimetablesView } from '@/components/timetables-view';
 import { apiFetch } from '@/lib/api';
 import { DEFAULT_LIST_PAGE_SIZE, parseSortField, parseSortOrder } from '@/lib/list-page';
+import { loadParentChildren } from '@/lib/parent-children';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
 
@@ -24,6 +25,7 @@ export const metadata: Metadata = { title: 'Timetables' };
  * decides which — this only reads the same permission to decide what to draw.
  *
  * Filters, sort and paging live in the query string, so "Class 5 exams" is a link.
+ * A parent who has chosen one child in the header sees that child's class only.
  */
 export default async function TimetablesPage({
   searchParams,
@@ -53,12 +55,21 @@ export default async function TimetablesPage({
       query.set(key, value);
     }
   }
+  // The header's child filter: narrow to that child's class unless the address already names one.
+  if (session?.permissions.includes('parent.child.read') === true && filters.classLevelId === '') {
+    const { selected } = await loadParentChildren();
+    if (selected?.classLevelId !== null && selected?.classLevelId !== undefined) {
+      query.set('classLevelId', selected.classLevelId);
+    }
+  }
 
   const [listResult, optionsResult] = await Promise.all([
     apiFetch<{ data: TimetableListItem[]; meta: { page: { total: number } } }>(
       `${ROUTES.timetables.list}?${query.toString()}`,
     ),
-    canManage ? apiFetch<{ data: TimetableOptions }>(ROUTES.timetables.options) : Promise.resolve(undefined),
+    canManage
+      ? apiFetch<{ data: TimetableOptions }>(ROUTES.timetables.options)
+      : Promise.resolve(undefined),
   ]);
 
   return (

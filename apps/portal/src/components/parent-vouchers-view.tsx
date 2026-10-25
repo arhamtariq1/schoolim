@@ -5,8 +5,22 @@ import {
   PARENT_VOUCHER_STATUSES,
   type ParentVoucherItem,
 } from '@ilm/contracts';
-import { Button, DateDisplay, Money, SimpleSelect, StatusBadge, type CardTableColumn } from '@ilm/ui';
-import { CalendarIcon, ExportIcon, FilterIcon, ICON_SIZE, StudentsIcon, ViewIcon } from '@ilm/ui/icons';
+import {
+  Button,
+  DateDisplay,
+  Money,
+  SimpleSelect,
+  StatusBadge,
+  type CardTableColumn,
+} from '@ilm/ui';
+import {
+  CalendarIcon,
+  ExportIcon,
+  FilterIcon,
+  ICON_SIZE,
+  StudentsIcon,
+  ViewIcon,
+} from '@ilm/ui/icons';
 import { minorUnits } from '@ilm/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -23,7 +37,11 @@ import { ListTableScreen } from '@/components/list-table-screen';
 import { PageHeader } from '@/components/page-header';
 import { ParentVoucherDialog, ParentVoucherPdfJob } from '@/components/parent-voucher-viewer';
 import { nextSortParams } from '@/lib/list-page';
-import { feeMonthLabel, PARENT_VOUCHER_STATUS_TONES, voucherMonthsLabel } from '@/lib/parent-vouchers-ui';
+import {
+  feeMonthLabel,
+  PARENT_VOUCHER_STATUS_TONES,
+  voucherMonthsLabel,
+} from '@/lib/parent-vouchers-ui';
 
 export interface ParentVouchersFilters {
   readonly q: string;
@@ -47,7 +65,6 @@ const REFRESH_MS = 60_000;
 export function ParentVouchersView({
   rows,
   total,
-  kids,
   months,
   filters,
   limit,
@@ -59,7 +76,6 @@ export function ParentVouchersView({
 }: {
   readonly rows: readonly ParentVoucherItem[];
   readonly total: number;
-  readonly kids: readonly { id: string; name: string }[];
   readonly months: readonly string[];
   readonly filters: ParentVouchersFilters;
   readonly limit: number;
@@ -124,8 +140,9 @@ export function ParentVouchersView({
     pushFilters({ q: value });
   });
 
-  const isFiltered = Object.values(filters).some((value) => value !== '');
-  const showStudent = kids.length > 1;
+  // The child comes from the header's filter, which this page's "Clear filters" does not
+  // reach — so only the filters this page owns count here.
+  const isFiltered = [filters.q, filters.month, filters.status].some((value) => value !== '');
 
   const columns = useMemo((): CardTableColumn<ParentVoucherItem>[] => {
     const sortState = { key: sort, direction: order };
@@ -136,14 +153,22 @@ export function ParentVouchersView({
         ...FEE_LIST_TABLE_CELL,
         sortable: true,
         headerCell: feeListSortableTableHeader('Voucher', 'voucherNo', sortState, toggleSort),
-        render: (row) => <span className="text-sm font-medium text-foreground">{row.voucherNo}</span>,
+        render: (row) => (
+          <span className="text-sm font-medium text-foreground">{row.voucherNo}</span>
+        ),
       },
       {
         key: 'studentName',
         label: 'Student',
         ...FEE_LIST_TABLE_CELL,
         sortable: true,
-        headerCell: feeListSortableTableHeader('Student', 'studentName', sortState, toggleSort, StudentsIcon),
+        headerCell: feeListSortableTableHeader(
+          'Student',
+          'studentName',
+          sortState,
+          toggleSort,
+          StudentsIcon,
+        ),
         render: (row) => (
           <div className="min-w-0">
             <p className="truncate text-sm text-foreground">{row.studentName}</p>
@@ -159,8 +184,16 @@ export function ParentVouchersView({
         label: 'Fee month',
         ...FEE_LIST_TABLE_CELL,
         sortable: true,
-        headerCell: feeListSortableTableHeader('Fee month', 'issueDate', sortState, toggleSort, CalendarIcon),
-        render: (row) => <span className="text-sm">{voucherMonthsLabel(row.billMonths, row.issueDate)}</span>,
+        headerCell: feeListSortableTableHeader(
+          'Fee month',
+          'issueDate',
+          sortState,
+          toggleSort,
+          CalendarIcon,
+        ),
+        render: (row) => (
+          <span className="text-sm">{voucherMonthsLabel(row.billMonths, row.issueDate)}</span>
+        ),
       },
       {
         key: 'amount',
@@ -170,7 +203,11 @@ export function ParentVouchersView({
         headerCell: feeListSortableTableHeader('Total amount', 'amount', sortState, toggleSort),
         render: (row) => (
           <div>
-            <Money valueMinor={minorUnits(row.totalPayableMinor)} withSymbol className="text-sm font-medium" />
+            <Money
+              valueMinor={minorUnits(row.totalPayableMinor)}
+              withSymbol
+              className="text-sm font-medium"
+            />
             {row.paidMinor > 0 && row.balanceMinor > 0 ? (
               <p className="text-xs text-muted-foreground">
                 <Money valueMinor={minorUnits(row.balanceMinor)} withSymbol /> left
@@ -256,20 +293,6 @@ export function ParentVouchersView({
             searchClassName="md:max-w-xs lg:max-w-sm"
             filters={
               <>
-                {showStudent ? (
-                  <SimpleSelect
-                    className="w-full min-w-40 sm:w-48"
-                    ariaLabel="Filter by student"
-                    value={filters.studentId}
-                    triggerIcon={StudentsIcon}
-                    emptyOption={{ value: '', label: 'All children' }}
-                    placeholder="All children"
-                    options={kids.map((child) => ({ value: child.id, label: child.name }))}
-                    onValueChange={(next) => {
-                      pushFilters({ studentId: next });
-                    }}
-                  />
-                ) : null}
                 <SimpleSelect
                   className="w-full min-w-40 sm:w-48"
                   ariaLabel="Filter by fee month"
@@ -345,7 +368,8 @@ export function ParentVouchersView({
                 {row.className === null ? '' : ` · ${row.className}`}
               </p>
               <p className="text-xs text-muted-foreground">
-                {voucherMonthsLabel(row.billMonths, row.issueDate)} · Due <DateDisplay value={row.dueDate} />
+                {voucherMonthsLabel(row.billMonths, row.issueDate)} · Due{' '}
+                <DateDisplay value={row.dueDate} />
               </p>
               <p className="text-sm font-medium text-foreground">
                 <Money valueMinor={minorUnits(row.totalPayableMinor)} withSymbol />
@@ -360,7 +384,9 @@ export function ParentVouchersView({
         />
       </ListTableScreen>
 
-      {viewing === undefined ? null : <ParentVoucherDialog key={viewing} id={viewing} onClose={closeViewer} />}
+      {viewing === undefined ? null : (
+        <ParentVoucherDialog key={viewing} id={viewing} onClose={closeViewer} />
+      )}
       {downloading === undefined ? null : (
         <ParentVoucherPdfJob
           key={downloading}

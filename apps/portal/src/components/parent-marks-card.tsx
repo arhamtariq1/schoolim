@@ -47,14 +47,28 @@ function PercentBar({ percent }: { percent: number | null }) {
 /** How many of the latest results the card itself shows; the rest are one click away. */
 const LATEST = 5;
 
-const COLUMNS: CardTableColumn<StudentMarkResult>[] = [
+/** A result, with whose it is when several children's are listed together. */
+type Row = StudentMarkResult & { studentName?: string };
+
+const STUDENT_COLUMN: CardTableColumn<Row> = {
+  key: 'student',
+  label: 'Child',
+  ...FEE_LIST_TABLE_CELL,
+  headerCell: feeListTableHeader('Child'),
+  render: (row) => <span className="text-sm font-medium">{row.studentName}</span>,
+};
+
+const COLUMNS: CardTableColumn<Row>[] = [
   {
     key: 'subject',
     label: 'Subject',
     ...FEE_LIST_TABLE_CELL,
     headerCell: feeListTableHeader('Subject'),
     render: (row) => (
-      <TwoLineCell primary={<span className="font-medium">{row.subjectName}</span>} secondary={row.typeName} />
+      <TwoLineCell
+        primary={<span className="font-medium">{row.subjectName}</span>}
+        secondary={row.typeName}
+      />
     ),
   },
   {
@@ -89,14 +103,16 @@ const COLUMNS: CardTableColumn<StudentMarkResult>[] = [
   },
 ];
 
-function ResultsTable({ rows }: { readonly rows: readonly StudentMarkResult[] }) {
+function ResultsTable({ rows }: { readonly rows: readonly Row[] }) {
+  const showStudent = rows.some((row) => row.studentName !== undefined);
   return (
     <ListDataTable
       title="Results"
       caption="Results"
       rows={rows}
-      columns={COLUMNS}
-      rowKey={(row) => row.assessmentId}
+      columns={showStudent ? [STUDENT_COLUMN, ...COLUMNS] : COLUMNS}
+      // Twins in one class sit the same assessment: the name keeps their rows apart.
+      rowKey={(row) => `${row.assessmentId}-${row.studentName ?? ''}`}
       minWidthClass="min-w-[28rem]"
       empty={{
         title: 'No results yet',
@@ -104,9 +120,16 @@ function ResultsTable({ rows }: { readonly rows: readonly StudentMarkResult[] })
       }}
       renderMobileRow={(row) => (
         <div className="flex items-center justify-between gap-3 px-4 py-3">
-          <TwoLineCell primary={<span className="font-medium">{row.subjectName}</span>} secondary={row.typeName} />
+          <TwoLineCell
+            primary={<span className="font-medium">{row.subjectName}</span>}
+            secondary={
+              row.studentName === undefined ? row.typeName : `${row.studentName} · ${row.typeName}`
+            }
+          />
           <span className="text-sm tabular-nums">
-            {row.obtained === null ? 'Absent' : `${String(row.obtained)} / ${String(row.totalMarks)}`}
+            {row.obtained === null
+              ? 'Absent'
+              : `${String(row.obtained)} / ${String(row.totalMarks)}`}
           </span>
         </div>
       )}
@@ -125,7 +148,7 @@ function ResultsTable({ rows }: { readonly rows: readonly StudentMarkResult[] })
  * "View all" opens the full list in a dialog — so the dashboard stays a glance
  * and the whole history is still one click away.
  */
-export function ParentMarksCard({ marks }: { marks: readonly StudentMarkResult[] | undefined }) {
+export function ParentMarksCard({ marks }: { marks: readonly Row[] | undefined }) {
   const [open, setOpen] = useState(false);
   const all = useMemo(() => marks ?? [], [marks]);
 
@@ -158,7 +181,9 @@ export function ParentMarksCard({ marks }: { marks: readonly StudentMarkResult[]
         <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Tests and exams</DialogTitle>
-            <DialogDescription>Every result entered by your child’s teachers, newest first.</DialogDescription>
+            <DialogDescription>
+              Every result entered by your child’s teachers, newest first.
+            </DialogDescription>
           </DialogHeader>
           <DialogBody>
             <ResultsTable rows={all} />
