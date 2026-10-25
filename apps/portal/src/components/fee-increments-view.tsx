@@ -56,7 +56,7 @@ import {
 } from '@ilm/ui/icons';
 import { systemClock } from '@ilm/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useMemo, useState, type ReactElement } from 'react';
+import { useMemo, useRef, useState, type ReactElement } from 'react';
 
 import {
   FEE_LIST_TABLE_CELL,
@@ -171,6 +171,7 @@ export function FeeIncrementsView({
   const [history, setHistory] = useState<FeeHistory | undefined>(undefined);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [removingId, setRemovingId] = useState<string | undefined>(undefined);
+  const historyRequest = useRef(0);
 
   const chosen = rows.filter((row) => selected.has(row.studentId));
   const amountMinor = rupeesToMinor(amount);
@@ -206,21 +207,50 @@ export function FeeIncrementsView({
   }
 
   async function openHistory(row: FeeIncrementRow): Promise<void> {
+    // Only the latest request may write: opening a second student before the
+    // first reply lands must not show the first student's amounts under the
+    // second one's name.
+    const request = ++historyRequest.current;
     setHistoryFor(row);
     setHistory(undefined);
     setIsLoadingHistory(true);
-    const response = await fetch(ROUTES.feeIncrements.history(row.studentId), {
-      credentials: 'include',
-    });
+
+    let loaded: FeeHistory | undefined;
+    try {
+      const response = await fetch(ROUTES.feeIncrements.history(row.studentId), {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        loaded = ((await response.json()) as { data: FeeHistory }).data;
+      }
+    } catch {
+      // Offline or the API is down: handled below like any failed load.
+    }
+
+    if (request !== historyRequest.current) {
+      return;
+    }
     setIsLoadingHistory(false);
-    if (response.ok) {
-      const body = (await response.json()) as { data: FeeHistory };
-      setHistory(body.data);
-    } else {
+    if (loaded === undefined) {
       toast.error('Could not load that fee history.');
       setHistoryFor(undefined);
+      return;
     }
+    setHistory(loaded);
   }
+
+  function closeHistory(): void {
+    historyRequest.current += 1;
+    setHistoryFor(undefined);
+    setHistory(undefined);
+    setIsLoadingHistory(false);
+  }
+
+  // The increment screen changes one fee (tuition unless another head was
+  // chosen), so its history shows that fee alone. Every other head the child
+  // pays is unaffected by anything done here.
+  const historyEntries =
+    history?.entries.filter((entry) => entry.feeHeadId === page.feeHead.id) ?? [];
 
   async function removeHistoryEntry(entryId: string): Promise<void> {
     setRemovingId(entryId);
@@ -725,88 +755,111 @@ export function FeeIncrementsView({
         open={historyFor !== undefined}
         onOpenChange={(open) => {
           if (!open) {
-            setHistoryFor(undefined);
-            setHistory(undefined);
+            closeHistory();
           }
         }}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Fee history of {historyFor?.name ?? ''}</DialogTitle>
             <DialogDescription>
-              Every amount agreed for this student, and the day it started. Vouchers already issued
-              keep the amount they were billed at.
+              Every {page.feeHead.name} amount agreed for this student, and the day it started.
+              Vouchers already issued keep the amount they were billed at.
             </DialogDescription>
           </DialogHeader>
 
           <DialogBody>
             {isLoadingHistory ? (
               <p className="py-6 text-center text-sm text-muted-foreground">Loading…</p>
-            ) : history === undefined || history.entries.length === 0 ? (
+            ) : historyEntries.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">
-                No fees agreed for this student yet.
+                No {page.feeHead.name} agreed for this student yet.
               </p>
             ) : (
-              <ul className="divide-y divide-border rounded-xl border border-border">
-                {history.entries.map((entry) => (
-                  <li key={entry.id} className="flex items-center gap-3 px-3 py-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="flex flex-wrap items-center gap-2 text-sm">
-                        <DateDisplay value={entry.effectiveFrom} />
-                        <StatusBadge tone="neutral">{entry.feeHeadType}</StatusBadge>
-                        {entry.isScheduled ? (
-                          <StatusBadge tone="warning">Scheduled</StatusBadge>
-                        ) : entry.isCurrent ? (
-                          <StatusBadge tone="success">Current</StatusBadge>
-                        ) : null}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {entry.feeHeadName}
-                        {entry.discountReason === null ? '' : ` · ${entry.discountReason}`}
-                      </p>
-                    </div>
-
-                    <span className="font-mono text-sm tabular-nums whitespace-nowrap">
-                      <Money valueMinor={entry.payableMinor} />
-                      {entry.payableMinor === entry.amountMinor ? null : (
-                        <span className="block text-xs font-normal text-muted-foreground">
-                          of <Money valueMinor={entry.amountMinor} withSymbol={false} />
-                        </span>
-                      )}
-                    </span>
-
-                    <Button
-                      tone="ghost"
-                      size="sm"
-                      aria-label={`Remove the amount starting ${entry.effectiveFrom}`}
-                      disabled={removingId !== undefined}
-                      onClick={() => {
-                        void removeHistoryEntry(entry.id);
-                      }}
-                    >
-                      {removingId === entry.id ? (
-                        <SpinnerIcon className={`${ICON_SIZE.inline} animate-spin`} aria-hidden />
-                      ) : (
-                        <DeleteIcon className={`${ICON_SIZE.inline} text-danger`} aria-hidden />
-                      )}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
+              <div className="max-h-96 overflow-y-auto rounded-md border border-border">
+                <table className="w-full text-sm">
+                  <caption className="sr-only">
+                    {page.feeHead.name} history of {historyFor?.name ?? ''}
+                  </caption>
+                  <thead className="sticky top-0 bg-muted text-xs text-muted-foreground">
+                    <tr>
+                      <th scope="col" className="px-3 py-2 text-start font-medium">
+                        Start date
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-end font-medium">
+                        Amount
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-start font-medium">
+                        Type
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-end font-medium">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyEntries.map((entry) => (
+                      <tr key={entry.id} className="border-t border-border">
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <DateDisplay value={entry.effectiveFrom} />
+                          {entry.isScheduled ? (
+                            <span className="block text-xs text-warning">Scheduled</span>
+                          ) : entry.isCurrent ? (
+                            <span className="block text-xs text-success">Current</span>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2 text-end tabular-nums whitespace-nowrap">
+                          <Money valueMinor={entry.payableMinor} withSymbol />
+                          {entry.payableMinor === entry.amountMinor ? null : (
+                            <span className="block text-xs text-muted-foreground">
+                              of <Money valueMinor={entry.amountMinor} withSymbol={false} />
+                              {entry.discountReason === null ? '' : ` · ${entry.discountReason}`}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          <StatusBadge tone="success">{entry.feeHeadType}</StatusBadge>
+                        </td>
+                        <td className="px-3 py-2 text-end">
+                          {/* The last amount cannot be removed (the server refuses
+                              it too): a fee with no amount is never billed. */}
+                          {historyEntries.length <= 1 ? null : (
+                            <Button
+                              tone="ghost"
+                              size="sm"
+                              aria-label={`Remove the amount starting ${entry.effectiveFrom}`}
+                              disabled={removingId !== undefined}
+                              onClick={() => {
+                                void removeHistoryEntry(entry.id);
+                              }}
+                            >
+                              {removingId === entry.id ? (
+                                <SpinnerIcon
+                                  className={`${ICON_SIZE.inline} animate-spin`}
+                                  aria-hidden
+                                />
+                              ) : (
+                                <DeleteIcon
+                                  className={`${ICON_SIZE.inline} text-danger`}
+                                  aria-hidden
+                                />
+                              )}
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </DialogBody>
 
           <DialogFooter>
             <p className="me-auto text-xs text-muted-foreground">
-              Total records: {history?.entries.length ?? 0}
+              Total records: {historyEntries.length}
             </p>
-            <Button
-              tone="ghost"
-              onClick={() => {
-                setHistoryFor(undefined);
-                setHistory(undefined);
-              }}
-            >
+            <Button tone="ghost" onClick={closeHistory}>
               Close
             </Button>
           </DialogFooter>
