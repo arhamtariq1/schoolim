@@ -81,6 +81,37 @@ describe('the fees section', () => {
   });
 });
 
+describe('the finance section', () => {
+  it('gives the owner revenue, expense and salaries, in that order', () => {
+    const finance = find(
+      visibleNavItems(['finance.expense.read', 'finance.revenue.read', 'staff.salary.read']),
+      'Finance',
+    );
+
+    expect(finance?.href).toBe('/finance');
+    expect(labels(finance?.children ?? [])).toEqual(['Revenue', 'Expense', 'Salaries']);
+    expect(finance?.children?.[0]?.href).toBe('/finance/revenue');
+  });
+
+  it('keeps revenue from anybody without finance.revenue.read', () => {
+    // The principal and the accountant: expenses and salaries, never earnings.
+    const finance = find(visibleNavItems(['finance.expense.read', 'staff.salary.read']), 'Finance');
+
+    expect(labels(finance?.children ?? [])).toEqual(['Expense', 'Salaries']);
+  });
+
+  it('no longer lists salaries or expense at the top level', () => {
+    const items = visibleNavItems(['finance.expense.read', 'staff.salary.read']);
+
+    expect(labels(items)).not.toContain('Salaries');
+    expect(labels(items)).not.toContain('Expense');
+  });
+
+  it('is absent for somebody with no finance permission', () => {
+    expect(labels(visibleNavItems(['attendance.record.read']))).not.toContain('Finance');
+  });
+});
+
 describe('calendar', () => {
   it('is its own top-level item, not a child of Academics', () => {
     const items = visibleNavItems(['academics.structure.read']);

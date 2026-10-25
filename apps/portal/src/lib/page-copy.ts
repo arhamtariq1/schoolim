@@ -13,6 +13,7 @@ export const PAGE_INTRO: Partial<Record<Route, string>> = {
   '/fees/defaulters': 'Families with overdue balances and open vouchers.',
   '/fees/increments': 'Scheduled fee changes and discounts by student or class.',
   '/fees/security-deposits': 'Deposits held, refunded, or adjusted on withdrawal.',
+  '/finance/revenue': 'Fees received, with security deposits kept apart from what the school earned.',
   '/finance/expenses': 'Operating costs, categories, and month-to-date totals.',
   '/finance/expense-types': 'Expense categories used when recording payments.',
   '/attendance/mark/students': 'Daily student register by class and section.',

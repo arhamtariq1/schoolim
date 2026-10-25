@@ -298,6 +298,10 @@ export const ROUTES = {
     holidays: `${API_PREFIX}/academics/holidays`,
     holiday: (id: string) => `${API_PREFIX}/academics/holidays/${id}`,
   },
+  /** Fee payments received, with deposits held taken out — Finance › Revenue. */
+  revenue: {
+    list: `${API_PREFIX}/finance/revenue`,
+  },
   expenses: {
     list: `${API_PREFIX}/expenses`,
     create: `${API_PREFIX}/expenses`,

@@ -261,16 +261,35 @@ export const NAV_ITEMS: readonly NavItem[] = [
     permission: 'staff.record.read',
   },
   {
-    href: '/salaries',
-    label: 'Salaries',
-    icon: 'SalaryIcon',
-    permission: 'staff.salary.read',
-  },
-  {
     href: '/finance',
-    label: 'Expense',
+    label: 'Finance',
     icon: 'FinanceIcon',
+    // The lowest bar of its children: every role that sees Revenue or
+    // Salaries can read expenses too, so nobody loses a child to the parent.
     permission: 'finance.expense.read',
+    // Money in, money out, and the largest part of money out. Three separate
+    // errands: what the school earned, what it spent, and who it paid.
+    children: [
+      {
+        href: '/finance/revenue',
+        label: 'Revenue',
+        icon: 'TrendUpIcon',
+        // The school's earnings are the owner's alone (roles.ts).
+        permission: 'finance.revenue.read',
+      },
+      {
+        href: '/finance/expenses',
+        label: 'Expense',
+        icon: 'ExpenseIcon',
+        permission: 'finance.expense.read',
+      },
+      {
+        href: '/salaries',
+        label: 'Salaries',
+        icon: 'SalaryIcon',
+        permission: 'staff.salary.read',
+      },
+    ],
   },
   {
     href: '/requests',
@@ -347,4 +366,9 @@ function hasOnlyChildren(item: NavItem): boolean {
   return CONTAINER_ONLY.has(item.href);
 }
 
-const CONTAINER_ONLY: ReadonlySet<string> = new Set(['/attendance', '/fees', '/academics']);
+const CONTAINER_ONLY: ReadonlySet<string> = new Set([
+  '/attendance',
+  '/fees',
+  '/academics',
+  '/finance',
+]);

@@ -24,6 +24,7 @@ import { ClassScopeService } from '../../shared/rbac/class-scope.service';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
 import { toHoliday } from '../academics/holidays.service';
+import { PAYMENT_DEPOSIT_CTE } from '../fees/payment-deposits';
 
 /** Roles that see the whole school; a teacher with none of these sees only their classes. */
 const SCHOOL_WIDE_ROLES: readonly string[] = [
@@ -160,11 +161,20 @@ export class DashboardService {
 
     if (this.can('fees.defaulter.read')) {
       const rows = await tx.$queryRawUnsafe<{ families: number; owed: string; students: number }[]>(
-        `SELECT COUNT(DISTINCT COALESCE(sg.guardian_id, v.student_id))::int AS families,
+        // One guardian per student by subquery, not a join: a child with two
+        // guardians marked primary would otherwise put every voucher in twice
+        // and double the amount owed.
+        `SELECT COUNT(DISTINCT COALESCE(
+                  (SELECT sg.guardian_id FROM student_guardians sg
+                    WHERE sg.student_id = v.student_id AND sg.is_primary
+                    ORDER BY sg.guardian_id LIMIT 1),
+                  v.student_id))::int AS families,
                 COALESCE(SUM(GREATEST(v.net_payable - v.paid_amount, 0)), 0)::numeric(14,2)::text AS owed,
                 (SELECT COUNT(*)::int FROM students WHERE deleted_at IS NULL AND status = 'ACTIVE') AS students
            FROM fee_vouchers v
-           LEFT JOIN student_guardians sg ON sg.student_id = v.student_id AND sg.is_primary
+           -- Same population as the Defaulters list: a removed student's
+           -- vouchers are not on it, so they are not on this card either.
+           JOIN students s ON s.id = v.student_id AND s.deleted_at IS NULL
           WHERE v.status IN ('UNPAID', 'PARTIALLY_PAID') AND v.due_date < $1::date`,
         todayDate,
       );
@@ -186,9 +196,14 @@ export class DashboardService {
       dashboard.revenueTrend = await this.revenueTrend(tx, monthStart);
       const last = dashboard.revenueTrend.at(-1);
       const before = dashboard.revenueTrend.at(-2);
-      if (last !== undefined && before !== undefined && before.netRevenueMinor !== 0) {
+      // Revenue against last month's revenue — fees earned, deposits excluded,
+      // as the card shows. Not net of expenses: a heavy month of spending made
+      // that negative, and a percentage across a change of sign means nothing
+      // (a loss followed by 6,200 earned read "+100%"). No badge when last
+      // month earned nothing to compare with.
+      if (last !== undefined && before !== undefined && before.collectedMinor > 0) {
         const change = Math.round(
-          ((last.netRevenueMinor - before.netRevenueMinor) / Math.abs(before.netRevenueMinor)) * 100,
+          ((last.collectedMinor - before.collectedMinor) / before.collectedMinor) * 100,
         );
         dashboard.statTrends.revenue = {
           label: `${change >= 0 ? '+' : ''}${String(change)}%`,
@@ -477,10 +492,19 @@ export class DashboardService {
       paidPercent: monthTotal === 0 ? 0 : Math.min(100, Math.round((monthPaid / monthTotal) * 100)),
     };
 
+    // Income, so security deposits come out of it: they are held for the
+    // family, not earned (fees-and-finance §10). The deposit share of each
+    // receipt is the one Finance › Revenue shows, so the two agree.
     const collected = await tx.$queryRawUnsafe<{ this_month: string; last_month: string }[]>(
-      `SELECT COALESCE(SUM(amount) FILTER (WHERE paid_on >= $1::date AND paid_on < ($1::date + interval '1 month')), 0)::numeric(14,2)::text AS this_month,
-              COALESCE(SUM(amount) FILTER (WHERE paid_on >= ($1::date - interval '1 month') AND paid_on < $1::date), 0)::numeric(14,2)::text AS last_month
-         FROM fee_payments WHERE status = 'CONFIRMED'`,
+      `WITH ${PAYMENT_DEPOSIT_CTE}
+       SELECT COALESCE(SUM(on_amount) FILTER (WHERE on_day >= $1::date AND on_day < ($1::date + interval '1 month')), 0)::numeric(14,2)::text AS this_month,
+              COALESCE(SUM(on_amount) FILTER (WHERE on_day >= ($1::date - interval '1 month') AND on_day < $1::date), 0)::numeric(14,2)::text AS last_month
+         FROM (
+           SELECT p.paid_on AS on_day, p.amount - COALESCE(pd.deposit, 0) AS on_amount
+             FROM fee_payments p
+             LEFT JOIN payment_deposit pd ON pd.payment_id = p.id
+            WHERE p.status = 'CONFIRMED'
+         ) AS income`,
       monthStart,
     );
     const thisMonth = fromDecimalString(collected[0]?.this_month ?? '0.00');
@@ -534,9 +558,16 @@ export class DashboardService {
     monthStart: string,
   ): Promise<DashboardRevenueMonth[]> {
     const collected = await tx.$queryRawUnsafe<{ month: Date; total: string }[]>(
-      `SELECT date_trunc('month', paid_on)::date AS month, SUM(amount)::numeric(14,2)::text AS total
-         FROM fee_payments
-        WHERE status = 'CONFIRMED' AND paid_on >= ($1::date - interval '5 months') AND paid_on < ($1::date + interval '1 month')
+      // Deposits are held, not earned — see fees() above.
+      `WITH ${PAYMENT_DEPOSIT_CTE}
+       SELECT date_trunc('month', on_day)::date AS month, SUM(on_amount)::numeric(14,2)::text AS total
+         FROM (
+           SELECT p.paid_on AS on_day, p.amount - COALESCE(pd.deposit, 0) AS on_amount
+             FROM fee_payments p
+             LEFT JOIN payment_deposit pd ON pd.payment_id = p.id
+            WHERE p.status = 'CONFIRMED'
+         ) AS income
+        WHERE on_day >= ($1::date - interval '5 months') AND on_day < ($1::date + interval '1 month')
         GROUP BY 1`,
       monthStart,
     );

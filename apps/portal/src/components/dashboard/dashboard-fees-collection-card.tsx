@@ -2,7 +2,7 @@ import { CardContent, CardHeader, CardTitle, cn } from '@ilm/ui';
 
 import { DashboardCard } from '@/components/dashboard/dashboard-card';
 
-import { formatMinorCompact } from '@/components/dashboard/dashboard-chart-theme';
+import { formatMinorExact } from '@/components/dashboard/dashboard-chart-theme';
 import type { DashboardFeeCollection } from '@/lib/dashboard-data';
 
 type DashboardFeesCollectionCardProps = {
@@ -22,7 +22,7 @@ export function DashboardFeesCollectionCard({ collection }: DashboardFeesCollect
         <div>
           <p className="text-xs font-medium text-muted-foreground">Collected this month</p>
           <p className="mt-0.5 text-xl font-semibold tracking-tight text-foreground">
-            {formatMinorCompact(collection.collectedMinor)}
+            {formatMinorExact(collection.collectedMinor)}
           </p>
         </div>
 
@@ -42,17 +42,17 @@ export function DashboardFeesCollectionCard({ collection }: DashboardFeesCollect
         <dl className="space-y-1.5 border-t border-border pt-3 text-xs">
           <FeeStat
             label="Collected"
-            value={formatMinorCompact(collection.collectedMinor)}
+            value={formatMinorExact(collection.collectedMinor)}
             emphasis="primary"
           />
           <FeeStat
             label="Pending"
-            value={formatMinorCompact(collection.pendingMinor)}
+            value={formatMinorExact(collection.pendingMinor)}
             emphasis="muted"
           />
           <FeeStat
             label="Total due"
-            value={formatMinorCompact(collection.totalDueMinor)}
+            value={formatMinorExact(collection.totalDueMinor)}
             emphasis="foreground"
           />
         </dl>

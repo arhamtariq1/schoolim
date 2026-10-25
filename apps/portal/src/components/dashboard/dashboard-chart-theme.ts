@@ -1,4 +1,4 @@
-import { divideRoundHalfToEven } from '@ilm/utils';
+import { divideRoundHalfToEven, formatMoney, minorUnits } from '@ilm/utils';
 
 export type DashboardChartTheme = {
   primary: string;
@@ -72,7 +72,19 @@ export function formatRupeesCompact(rupees: number): string {
   return String(toNearest(rupees));
 }
 
-/** Paisa → compact label with optional Rs prefix. */
+/**
+ * Paisa → the exact figure, "Rs 6,200".
+ *
+ * For every amount a person reads as a number — a card, a headline, a total.
+ * The compact form rounds to whole thousands (6,200 → "6k", 6,600 → "7k"),
+ * which is right for a chart axis tick and wrong anywhere somebody compares
+ * the figure against a receipt.
+ */
+export function formatMinorExact(amountMinor: number): string {
+  return formatMoney(minorUnits(amountMinor));
+}
+
+/** Paisa → compact label with optional Rs prefix. Axis ticks only — see `formatMinorExact`. */
 export function formatMinorCompact(amountMinor: number, withSymbol = true): string {
   const label = formatRupeesCompact(minorToRupees(amountMinor));
   return withSymbol ? `Rs ${label}` : label;
