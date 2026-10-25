@@ -25,7 +25,7 @@ import { MarketingRevealGuard } from '@/components/marketing/marketing-reveal-gu
 import { MarketingSmoothScroll } from '@/components/marketing/marketing-smooth-scroll';
 import { MarketingStatus } from '@/components/marketing/marketing-status';
 import { displayFont } from '@/lib/marketing-fonts';
-import { getPublicPlans, PLANS_REVALIDATE_SECONDS } from '@/lib/public-plans';
+import { getPublicPlans } from '@/lib/public-plans';
 
 /**
  * The public landing page, served at the apex — ADR-0010, art-directed per
@@ -75,7 +75,10 @@ export const metadata: Metadata = {
  * decision D2 (docs/15) and still open, which is exactly why it must be
  * editable without a deploy.
  */
-export const revalidate = PLANS_REVALIDATE_SECONDS;
+// A literal, not an imported constant: Next reads route-segment config statically
+// and rejects anything it cannot evaluate at build time. Keep it equal to
+// PLANS_REVALIDATE_SECONDS in lib/public-plans.ts.
+export const revalidate = 30;
 
 /**
  * The deck.

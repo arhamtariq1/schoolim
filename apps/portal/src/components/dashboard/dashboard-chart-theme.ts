@@ -88,6 +88,23 @@ export function dashboardChartAxisPadding() {
   return { left: 4, right: 16, top: 4, bottom: 0 };
 }
 
+/**
+ * The theme a chart renders with before the browser has been asked.
+ *
+ * Used as the initial state on both server and client. Reading the real CSS
+ * colours during the first client render made it differ from the server's HTML
+ * (computed `oklch(...)` against the fallback `rgb(...)`), so React reported a
+ * hydration mismatch on every dashboard load. Charts now start here and swap in
+ * the real colours in an effect, after hydration.
+ */
+export const SERVER_CHART_THEME: DashboardChartTheme = {
+  primary: 'rgb(20, 127, 138)',
+  primaryMid: 'rgb(16, 100, 109)',
+  primaryLight: 'rgb(72, 160, 170)',
+  border: 'rgb(226, 232, 240)',
+  mutedForeground: 'rgb(100, 116, 139)',
+};
+
 export function readDashboardChartTheme(): DashboardChartTheme {
   const fallbackPrimary = 'rgb(20, 127, 138)';
   const fallbackMid = 'rgb(16, 100, 109)';

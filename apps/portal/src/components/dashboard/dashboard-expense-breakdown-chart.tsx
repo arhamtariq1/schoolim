@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   formatRupeesCompact,
   readDashboardChartTheme,
+  SERVER_CHART_THEME,
   resolveCssColor,
   type DashboardChartTheme,
   type ApexSeriesTotals,
@@ -28,7 +29,7 @@ type DashboardExpenseBreakdownChartProps = {
 };
 
 export function DashboardExpenseBreakdownChart({ segments }: DashboardExpenseBreakdownChartProps) {
-  const [theme, setTheme] = useState<DashboardChartTheme>(() => readDashboardChartTheme());
+  const [theme, setTheme] = useState<DashboardChartTheme>(SERVER_CHART_THEME);
 
   useEffect(() => {
     setTheme(readDashboardChartTheme());

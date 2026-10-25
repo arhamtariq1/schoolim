@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { DashboardCardViewLink } from '@/components/dashboard/dashboard-card-view-link';
 import {
   readDashboardChartTheme,
+  SERVER_CHART_THEME,
   type DashboardChartTheme,
   roundToNearest,
 } from '@/components/dashboard/dashboard-chart-theme';
@@ -27,7 +28,7 @@ type DashboardDefaulterCardProps = {
 };
 
 export function DashboardDefaulterCard({ defaulters, detailsHref }: DashboardDefaulterCardProps) {
-  const [theme, setTheme] = useState<DashboardChartTheme>(() => readDashboardChartTheme());
+  const [theme, setTheme] = useState<DashboardChartTheme>(SERVER_CHART_THEME);
 
   useEffect(() => {
     setTheme(readDashboardChartTheme());
