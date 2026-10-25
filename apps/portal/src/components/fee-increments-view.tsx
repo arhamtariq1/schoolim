@@ -12,7 +12,7 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  DataTable,
+  CardTable,
   DateDisplay,
   DatePicker,
   Dialog,
@@ -22,30 +22,59 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Field,
   Input,
   Money,
-  Pagination,
   SimpleSelect,
   StatusBadge,
+  TwoLineCell,
   useToast,
-  type Column,
+  type CardTableColumn,
 } from '@ilm/ui';
 import {
+  AccountIcon,
+  CalendarIcon,
+  ClassIcon,
   DeleteIcon,
+  FeesIcon,
+  SessionIcon,
+  SuccessIcon,
   HistoryIcon,
   ICON_SIZE,
-  SearchIcon,
+  MoreIcon,
+  PhoneIcon,
   SpinnerIcon,
+  StudentsIcon,
   TrendDownIcon,
   TrendUpIcon,
 } from '@ilm/ui/icons';
 import { systemClock } from '@ilm/utils';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useMemo, useRef, useState, type ReactElement } from 'react';
 
+import {
+  FEE_LIST_TABLE_CELL,
+  afterMenuAction,
+  feeListTableHeader,
+  useDebouncedSearchFilter,
+} from '@/components/fees/fee-list-shared';
+import { ListDataTable } from '@/components/list-data-table';
+import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
+import { ListTableScreen } from '@/components/list-table-screen';
+import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { TableSelectionBar } from '@/components/table-selection-bar';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
+import { pageIntro } from '@/lib/page-copy';
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
+import { nextSortParams } from '@/lib/list-page';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -84,14 +113,14 @@ export interface FeeIncrementsViewProps {
   readonly total: number;
   readonly limit: number;
   readonly offset: number;
+  readonly sort: 'name' | 'grNo' | 'className' | 'currentFee';
+  readonly order: 'asc' | 'desc';
   readonly filters: {
     q: string;
     classLevelId: string;
     sessionId: string;
     status: string;
     gender: string;
-    grFrom: string;
-    grTo: string;
   };
   readonly error?: string | undefined;
   readonly canApply: boolean;
@@ -104,17 +133,34 @@ export function FeeIncrementsView({
   total,
   limit,
   offset,
+  sort,
+  order,
   filters,
   error,
   canApply,
 }: FeeIncrementsViewProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const params = useSearchParams();
   const tenantHref = useTenantHref();
   const toast = useToast();
 
-  const [draft, setDraft] = useState(filters);
-  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const { searchQuery, onSearchQueryChange } = useDebouncedSearchFilter(filters.q, (value) => {
+    pushFilters({ q: value });
+  });
+
+  const rows = page.rows;
+
+  const {
+    selected,
+    setSelected,
+    clearSelection,
+    allOnPageSelected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  } = useRowSelection(rows, (row) => row.studentId);
+
   const [direction, setDirection] = useState<'INCREASE' | 'DECREASE' | undefined>(undefined);
   const [amount, setAmount] = useState('');
   const [startDate, setStartDate] = useState(firstOfNextMonth());
@@ -125,56 +171,86 @@ export function FeeIncrementsView({
   const [history, setHistory] = useState<FeeHistory | undefined>(undefined);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [removingId, setRemovingId] = useState<string | undefined>(undefined);
+  const historyRequest = useRef(0);
 
-  const rows = page.rows;
   const chosen = rows.filter((row) => selected.has(row.studentId));
   const amountMinor = rupeesToMinor(amount);
 
-  function apply(next: Partial<typeof filters>, resetPage = true): void {
-    const merged = { ...draft, ...next };
-    const query = new URLSearchParams();
-    for (const [key, value] of Object.entries(merged)) {
-      if (value !== '') {
+  const isFiltered = Object.values(filters).some((value) => value !== '');
+
+  function toggleSort(columnKey: string) {
+    const next = nextSortParams(sort, order, columnKey);
+    pushFilters({ sort: next.sort, order: next.order });
+  }
+
+  function pushFilters(next: Record<string, string>): void {
+    const query = new URLSearchParams(params.toString());
+    for (const [key, value] of Object.entries(next)) {
+      if (value === '') {
+        query.delete(key);
+      } else {
         query.set(key, value);
       }
     }
-    query.set('limit', String(limit));
-    if (!resetPage) {
-      query.set('offset', String(offset));
+    if (!Object.hasOwn(next, 'limit')) {
+      query.set('limit', String(limit));
     }
-    router.push(tenantHref(`/fees/increments?${query.toString()}`));
+    if (!Object.hasOwn(next, 'offset')) {
+      query.delete('offset');
+      clearSelection();
+    }
+    router.push(`${pathname}?${query.toString()}`);
   }
 
-  function reset(): void {
-    const cleared = {
-      q: '',
-      classLevelId: '',
-      sessionId: '',
-      status: '',
-      gender: '',
-      grFrom: '',
-      grTo: '',
-    };
-    setDraft(cleared);
+  function clearFilters(): void {
     router.push(tenantHref('/fees/increments'));
   }
 
   async function openHistory(row: FeeIncrementRow): Promise<void> {
+    // Only the latest request may write: opening a second student before the
+    // first reply lands must not show the first student's amounts under the
+    // second one's name.
+    const request = ++historyRequest.current;
     setHistoryFor(row);
     setHistory(undefined);
     setIsLoadingHistory(true);
-    const response = await fetch(ROUTES.feeIncrements.history(row.studentId), {
-      credentials: 'include',
-    });
+
+    let loaded: FeeHistory | undefined;
+    try {
+      const response = await fetch(ROUTES.feeIncrements.history(row.studentId), {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        loaded = ((await response.json()) as { data: FeeHistory }).data;
+      }
+    } catch {
+      // Offline or the API is down: handled below like any failed load.
+    }
+
+    if (request !== historyRequest.current) {
+      return;
+    }
     setIsLoadingHistory(false);
-    if (response.ok) {
-      const body = (await response.json()) as { data: FeeHistory };
-      setHistory(body.data);
-    } else {
+    if (loaded === undefined) {
       toast.error('Could not load that fee history.');
       setHistoryFor(undefined);
+      return;
     }
+    setHistory(loaded);
   }
+
+  function closeHistory(): void {
+    historyRequest.current += 1;
+    setHistoryFor(undefined);
+    setHistory(undefined);
+    setIsLoadingHistory(false);
+  }
+
+  // The increment screen changes one fee (tuition unless another head was
+  // chosen), so its history shows that fee alone. Every other head the child
+  // pays is unaffected by anything done here.
+  const historyEntries =
+    history?.entries.filter((entry) => entry.feeHeadId === page.feeHead.id) ?? [];
 
   async function removeHistoryEntry(entryId: string): Promise<void> {
     setRemovingId(entryId);
@@ -233,14 +309,14 @@ export function FeeIncrementsView({
 
     close();
     setSelected(new Set());
+    const verb = direction === 'INCREASE' ? 'Increased' : 'Decreased';
+    const appliedLine = `${verb} the fee for ${String(applied)} ${applied === 1 ? 'student' : 'students'}.`;
     toast.success(
       replayed
         ? 'That change had already been applied.'
-        : `${direction === 'INCREASE' ? 'Increased' : 'Decreased'} the fee for ${String(applied)} ${applied === 1 ? 'student' : 'students'}.`,
-      // The students a batch left alone are named in the toast, not swallowed:
-      // "raised 38 fees" when 40 were picked is the kind of silence that gets
-      // found at the counter.
-      skipped === 0 ? undefined : describeSkips(skips),
+        : skipped === 0
+          ? appliedLine
+          : `${appliedLine} ${describeSkips(skips)}`,
     );
     router.refresh();
   }
@@ -251,325 +327,303 @@ export function FeeIncrementsView({
     setFormError(undefined);
   }
 
-  const columns: Column<FeeIncrementRow>[] = [
-    {
-      key: 'grNo',
-      header: 'G.R No',
-      render: (row) => <span className="font-mono text-xs select-all">{row.grNo}</span>,
-    },
-    {
-      key: 'name',
-      header: 'Student',
-      render: (row) => (
-        <div>
-          <span className="text-balance">{row.name}</span>
-          {row.sectionName === null && row.className === null ? null : (
-            <span className="block text-xs text-muted-foreground">
-              {[row.className, row.sectionName].filter((part) => part !== null).join(' · ')}
-            </span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'fatherName',
-      header: 'Father',
-      hideOnMobile: true,
-      render: (row) => <span className="text-balance">{row.fatherName ?? '—'}</span>,
-    },
-    {
-      key: 'contact',
-      header: 'Contact',
-      hideOnMobile: true,
-      render: (row) => (
-        <span className="font-mono text-xs">{row.contact ?? '—'}</span>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      hideOnMobile: true,
-      render: (row) => (
-        <StatusBadge tone={row.status === 'ACTIVE' ? 'success' : 'neutral'}>
-          {row.status === 'ACTIVE' ? 'Active' : titleCase(row.status)}
-        </StatusBadge>
-      ),
-    },
-    {
-      key: 'currentFee',
-      header: page.feeHead.name,
-      align: 'end',
-      render: (row) => {
-        if (row.currentPayableMinor === null) {
-          return (
-            <span className="text-xs text-muted-foreground">
-              none agreed
-            </span>
-          );
-        }
-        const hasDiscount = row.currentPayableMinor !== row.currentFeeMinor;
-        return (
-          <div className="font-mono text-sm tabular-nums">
-            <Money valueMinor={row.currentPayableMinor} />
-            {/* The gross is shown beside the discounted figure rather than
-                instead of it: a parent holding a 4,500 voucher and a screen
-                reading 6,000 is how a school loses an argument it should win. */}
-            {hasDiscount && row.currentFeeMinor !== null ? (
-              <span className="block text-xs font-normal text-muted-foreground">
-                of <Money valueMinor={row.currentFeeMinor} withSymbol={false} />
-                {row.discountReason === null ? '' : ` · ${row.discountReason}`}
-              </span>
-            ) : null}
-          </div>
-        );
-      },
-    },
-    {
-      key: 'pending',
-      header: 'Scheduled',
-      align: 'end',
-      hideOnMobile: true,
-      render: (row) =>
-        row.pendingFrom === null || row.pendingPayableMinor === null ? (
-          <span className="text-xs text-muted-foreground">—</span>
-        ) : (
-          <div className="font-mono text-sm tabular-nums text-warning">
-            <Money valueMinor={row.pendingPayableMinor} />
-            <span className="block text-xs font-normal">
-              from <DateDisplay value={row.pendingFrom} />
-            </span>
-          </div>
-        ),
-    },
-    {
-      key: 'admittedOn',
-      header: 'Admitted',
-      hideOnMobile: true,
-      render: (row) =>
-        row.admittedOn === null ? (
-          <span className="text-muted-foreground">—</span>
-        ) : (
-          <DateDisplay value={row.admittedOn} />
-        ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'end',
-      render: (row) => (
-        <Button
-          tone="ghost"
-          size="sm"
-          aria-label={`Fee history of ${row.name}`}
-          onClick={() => {
-            void openHistory(row);
-          }}
-        >
-          <HistoryIcon className={ICON_SIZE.inline} aria-hidden />
-        </Button>
-      ),
-    },
-  ];
+  const feeHeadLabel = page.feeHead.name;
 
-  const isFiltered = Object.values(filters).some((value) => value !== '');
+  const columns = useMemo((): CardTableColumn<FeeIncrementRow>[] => {
+    return [
+      ...(canApply
+        ? [
+            listTableSelectColumn<FeeIncrementRow>({
+              selected,
+              allOnPageSelected,
+              someOnPageSelected,
+              toggleAllOnPage,
+              toggleRowSelected,
+              getRowId: (row) => row.studentId,
+              rowAriaLabel: (row) => row.name,
+              selectAllAriaLabel: 'Select every student on this page',
+            }),
+          ]
+        : []),
+      {
+        key: 'grNo',
+        label: 'GR No',
+        ...FEE_LIST_TABLE_CELL,
+        colStyle: { width: '5.75rem' },
+        sortable: true,
+        headerCell: feeListTableHeader('GR No', StudentsIcon),
+        render: (row) => (
+          <span className="font-mono text-sm leading-none tabular-nums">{row.grNo}</span>
+        ),
+      },
+      {
+        key: 'name',
+        label: 'Student',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[16%]',
+        sortable: true,
+        headerCell: feeListTableHeader('Student', StudentsIcon),
+        render: (row) => (
+          <TwoLineCell
+            primary={row.name}
+            secondary={
+              row.sectionName === null && row.className === null
+                ? '—'
+                : [row.className, row.sectionName].filter((part) => part !== null).join(' · ')
+            }
+          />
+        ),
+      },
+      {
+        key: 'fatherName',
+        label: 'Father',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[12%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Father', AccountIcon),
+        render: (row) => <span className="text-sm">{row.fatherName ?? '—'}</span>,
+      },
+      {
+        key: 'contact',
+        label: 'Contact',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[11%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Contact', PhoneIcon),
+        render: (row) => <span className="font-mono text-sm">{row.contact ?? '—'}</span>,
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[9%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Status'),
+        render: (row) => (
+          <StatusBadge tone={row.status === 'ACTIVE' ? 'success' : 'neutral'}>
+            {row.status === 'ACTIVE' ? 'Active' : titleCase(row.status)}
+          </StatusBadge>
+        ),
+      },
+      {
+        key: 'currentFee',
+        label: feeHeadLabel,
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[12%]',
+        sortable: true,
+        headerCell: feeListTableHeader(feeHeadLabel, FeesIcon),
+        render: (row) => {
+          if (row.currentPayableMinor === null) {
+            return <span className="text-xs text-muted-foreground">none agreed</span>;
+          }
+          const hasDiscount = row.currentPayableMinor !== row.currentFeeMinor;
+          return (
+            <div className="font-mono text-sm tabular-nums">
+              <Money valueMinor={row.currentPayableMinor} />
+              {hasDiscount && row.currentFeeMinor !== null ? (
+                <span className="block text-xs font-normal text-muted-foreground">
+                  of <Money valueMinor={row.currentFeeMinor} withSymbol={false} />
+                  {row.discountReason === null ? '' : ` · ${row.discountReason}`}
+                </span>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
+        key: 'pending',
+        label: 'Scheduled',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[11%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Scheduled', CalendarIcon),
+        render: (row) =>
+          row.pendingFrom === null || row.pendingPayableMinor === null ? (
+            <span className="text-sm text-muted-foreground">—</span>
+          ) : (
+            <div className="font-mono text-sm tabular-nums text-warning">
+              <Money valueMinor={row.pendingPayableMinor} />
+              <span className="block text-xs font-normal">
+                from <DateDisplay value={row.pendingFrom} />
+              </span>
+            </div>
+          ),
+      },
+      {
+        key: 'admittedOn',
+        label: 'Admitted',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[10%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Admitted', CalendarIcon),
+        render: (row) =>
+          row.admittedOn === null ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <DateDisplay value={row.admittedOn} />
+          ),
+      },
+      {
+        key: 'actions',
+        label: 'Actions',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[8%]',
+        headerCell: feeListTableHeader('Actions'),
+        render: (row) => (
+          <IncrementRowActions
+            row={row}
+            onHistory={() => {
+              void openHistory(row);
+            }}
+          />
+        ),
+      },
+    ];
+  }, [allOnPageSelected, canApply, feeHeadLabel, selected, someOnPageSelected]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Fee increment</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Raise or lower {page.feeHead.name.toLowerCase()} for one student or a whole class. Each
-            child keeps their own agreed amount.
-          </p>
-        </div>
-      </header>
+    <div className="w-full space-y-6">
+      <WorkspacePageHeader title="Fee increment" description={pageIntro('/fees/increments')} />
 
-      <form
-        className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
-        onSubmit={(event: FormEvent) => {
-          event.preventDefault();
-          apply({});
-        }}
-      >
-        <Field label="Search">
-          <div className="relative">
-            <Input
-              value={draft.q}
-              placeholder="Name, father, GR number"
-              onChange={(event) => {
-                setDraft({ ...draft, q: event.target.value });
+      <ListTableScreen
+        tableTitle="All students"
+        filters={
+          <ListPageToolbar
+            searchQuery={searchQuery}
+            onSearchQueryChange={onSearchQueryChange}
+            searchPlaceholder="Name, father, GR number"
+            searchAriaLabel="Search students for fee increment"
+            filters={
+          <>
+            <SimpleSelect
+              className="w-full min-w-32 sm:w-36"
+              ariaLabel="Filter by class"
+              value={filters.classLevelId}
+              triggerIcon={ClassIcon}
+              emptyOption={{ value: '', label: 'Any class' }}
+              placeholder="Any class"
+              options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
+              onValueChange={(next) => {
+                pushFilters({ classLevelId: next });
               }}
             />
-            <SearchIcon
-              className={`${ICON_SIZE.inline} pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground`}
-              aria-hidden
+            <SimpleSelect
+              className="w-full min-w-32 sm:w-36"
+              ariaLabel="Filter by session"
+              value={filters.sessionId}
+              triggerIcon={SessionIcon}
+              emptyOption={{ value: '', label: 'Any session' }}
+              placeholder="Any session"
+              options={sessions.map((entry) => ({ value: entry.id, label: entry.name }))}
+              onValueChange={(next) => {
+                pushFilters({ sessionId: next });
+              }}
             />
-          </div>
-        </Field>
-
-        <Field label="Class">
-          <SimpleSelect
-            value={draft.classLevelId}
-            emptyOption={{ value: '', label: 'Any class' }}
-            options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
-            onValueChange={(next) => {
-              setDraft({ ...draft, classLevelId: next });
-              apply({ classLevelId: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Session">
-          <SimpleSelect
-            value={draft.sessionId}
-            emptyOption={{ value: '', label: 'Any session' }}
-            options={sessions.map((entry) => ({ value: entry.id, label: entry.name }))}
-            onValueChange={(next) => {
-              setDraft({ ...draft, sessionId: next });
-              apply({ sessionId: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Status">
-          <SimpleSelect
-            value={draft.status}
-            emptyOption={{ value: '', label: 'Any status' }}
-            options={[
-              { value: 'ACTIVE', label: 'Active' },
-              { value: 'INACTIVE', label: 'Inactive' },
-              { value: 'LEFT', label: 'Left' },
-            ]}
-            onValueChange={(next) => {
-              setDraft({ ...draft, status: next });
-              apply({ status: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Gender">
-          <SimpleSelect
-            value={draft.gender}
-            emptyOption={{ value: '', label: 'Any' }}
-            options={[
-              { value: 'MALE', label: 'Male' },
-              { value: 'FEMALE', label: 'Female' },
-            ]}
-            onValueChange={(next) => {
-              setDraft({ ...draft, gender: next });
-              apply({ gender: next });
-            }}
-          />
-        </Field>
-
-        {/* A school picks "GR 1 to 200" far more often than it ticks two
-            hundred boxes. */}
-        <Field label="GR number from" hint="Inclusive range">
-          <Input
-            value={draft.grFrom}
-            placeholder="0001"
-            onChange={(event) => {
-              setDraft({ ...draft, grFrom: event.target.value });
-            }}
-          />
-        </Field>
-
-        <Field label="GR number to">
-          <Input
-            value={draft.grTo}
-            placeholder="0200"
-            onChange={(event) => {
-              setDraft({ ...draft, grTo: event.target.value });
-            }}
-          />
-        </Field>
-
-        <div className="flex items-end gap-2">
-          <Button type="submit" tone="outline" className="flex-1">
-            Apply
-          </Button>
-          <Button type="button" tone="ghost" onClick={reset}>
-            Reset
-          </Button>
-        </div>
-      </form>
-
-      {/* The bulk bar appears only when something is selected, so the buttons
-          are never offered with nothing to act on. */}
-      {canApply && selected.size > 0 ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
-          <p className="text-sm font-medium">
-            {selected.size} {selected.size === 1 ? 'student' : 'students'} selected
-          </p>
-          <div className="ms-auto flex flex-wrap gap-2">
-            <Button
-              tone="ghost"
-              size="sm"
-              onClick={() => {
-                setSelected(new Set());
+            <SimpleSelect
+              className="w-full min-w-32 sm:w-36"
+              ariaLabel="Filter by status"
+              value={filters.status}
+              triggerIcon={SuccessIcon}
+              emptyOption={{ value: '', label: 'Any status' }}
+              placeholder="Any status"
+              options={[
+                { value: 'ACTIVE', label: 'Active' },
+                { value: 'INACTIVE', label: 'Inactive' },
+                { value: 'LEFT', label: 'Left' },
+              ]}
+              onValueChange={(next) => {
+                pushFilters({ status: next });
               }}
-            >
-              Clear selection
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => {
-                setDirection('INCREASE');
+            />
+            <SimpleSelect
+              className="w-full min-w-32 sm:w-36"
+              ariaLabel="Filter by gender"
+              value={filters.gender}
+              triggerIcon={AccountIcon}
+              emptyOption={{ value: '', label: 'Any gender' }}
+              placeholder="Any gender"
+              options={[
+                { value: 'MALE', label: 'Male' },
+                { value: 'FEMALE', label: 'Female' },
+              ]}
+              onValueChange={(next) => {
+                pushFilters({ gender: next });
               }}
-            >
-              <TrendUpIcon className={ICON_SIZE.inline} aria-hidden />
-              Increase fee
-            </Button>
-            <Button
-              tone="outline"
-              size="sm"
-              onClick={() => {
-                setDirection('DECREASE');
-              }}
-            >
-              <TrendDownIcon className={ICON_SIZE.inline} aria-hidden />
-              Decrease fee
-            </Button>
-          </div>
-        </div>
-      ) : null}
-
-      <DataTable
-        rows={rows}
-        columns={columns}
-        rowKey={(row) => row.studentId}
-        error={error}
-        caption="Students and their current fee"
-        isFiltered={isFiltered}
-        onClearFilters={reset}
-        {...(canApply
-          ? { selection: { selected, onChange: setSelected, noun: 'student' } }
-          : {})}
-        empty={{
-          title: 'No students yet',
-          description:
-            'Fee increments work on the students already admitted. Admit a student first, and their agreed fee will appear here.',
-        }}
-      />
-
-      {total === 0 ? null : (
-        <Pagination
-          total={total}
-          limit={limit}
-          offset={offset}
-          label="students"
-          onChange={(next) => {
-            const query = new URLSearchParams(params.toString());
-            if (next === 0) {
-              query.delete('offset');
-            } else {
-              query.set('offset', String(next));
+            />
+              </>
             }
-            router.push(tenantHref(`/fees/increments?${query.toString()}`));
+          />
+        }
+        footer={
+          <ListTablePaginationFooter
+            total={total}
+            limit={limit}
+            offset={offset}
+            label="students"
+            onPageChange={(next) => {
+              pushFilters({ offset: next === 0 ? '' : String(next) });
+            }}
+            onLimitChange={(next) => {
+              pushFilters({ limit: next, offset: '' });
+            }}
+          />
+        }
+      >
+        <ListDataTable
+          title="All students"
+          caption="Students and their current fee"
+          rows={rows}
+          columns={columns}
+          rowKey={(row) => row.studentId}
+          minWidthClass="min-w-[56rem]"
+          error={error}
+          isFiltered={isFiltered}
+          onClearFilters={clearFilters}
+          sort={{
+            key: sort,
+            direction: order,
+            onToggle: toggleSort,
+          }}
+          empty={{
+            title: 'No students yet',
+            description:
+              'Fee increments work on the students already admitted. Admit a student first, and their agreed fee will appear here.',
           }}
         />
-      )}
+      </ListTableScreen>
+
+      {canApply ? (
+        <TableSelectionBar
+          count={selected.size}
+          noun="student"
+          onClear={clearSelection}
+          actions={
+            <>
+              <Button
+                size="sm"
+                disabled={selected.size === 0}
+                onClick={() => {
+                  setDirection('INCREASE');
+                }}
+              >
+                <TrendUpIcon className={ICON_SIZE.inline} aria-hidden />
+                Increase fee
+              </Button>
+              <Button
+                tone="outline"
+                size="sm"
+                disabled={selected.size === 0}
+                onClick={() => {
+                  setDirection('DECREASE');
+                }}
+              >
+                <TrendDownIcon className={ICON_SIZE.inline} aria-hidden />
+                Decrease fee
+              </Button>
+            </>
+          }
+        />
+      ) : null}
 
       {/* Applying a change to many rows is financial, so docs/16 §11 asks for a
           preview naming the specifics rather than "Are you sure?". Every
@@ -701,94 +755,147 @@ export function FeeIncrementsView({
         open={historyFor !== undefined}
         onOpenChange={(open) => {
           if (!open) {
-            setHistoryFor(undefined);
-            setHistory(undefined);
+            closeHistory();
           }
         }}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Fee history of {historyFor?.name ?? ''}</DialogTitle>
             <DialogDescription>
-              Every amount agreed for this student, and the day it started. Vouchers already issued
-              keep the amount they were billed at.
+              Every {page.feeHead.name} amount agreed for this student, and the day it started.
+              Vouchers already issued keep the amount they were billed at.
             </DialogDescription>
           </DialogHeader>
 
           <DialogBody>
             {isLoadingHistory ? (
               <p className="py-6 text-center text-sm text-muted-foreground">Loading…</p>
-            ) : history === undefined || history.entries.length === 0 ? (
+            ) : historyEntries.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">
-                No fees agreed for this student yet.
+                No {page.feeHead.name} agreed for this student yet.
               </p>
             ) : (
-              <ul className="divide-y divide-border rounded-xl border border-border">
-                {history.entries.map((entry) => (
-                  <li key={entry.id} className="flex items-center gap-3 px-3 py-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="flex flex-wrap items-center gap-2 text-sm">
-                        <DateDisplay value={entry.effectiveFrom} />
-                        <StatusBadge tone="neutral">{entry.feeHeadType}</StatusBadge>
-                        {entry.isScheduled ? (
-                          <StatusBadge tone="warning">Scheduled</StatusBadge>
-                        ) : entry.isCurrent ? (
-                          <StatusBadge tone="success">Current</StatusBadge>
-                        ) : null}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {entry.feeHeadName}
-                        {entry.discountReason === null ? '' : ` · ${entry.discountReason}`}
-                      </p>
-                    </div>
-
-                    <span className="font-mono text-sm tabular-nums whitespace-nowrap">
-                      <Money valueMinor={entry.payableMinor} />
-                      {entry.payableMinor === entry.amountMinor ? null : (
-                        <span className="block text-xs font-normal text-muted-foreground">
-                          of <Money valueMinor={entry.amountMinor} withSymbol={false} />
-                        </span>
-                      )}
-                    </span>
-
-                    <Button
-                      tone="ghost"
-                      size="sm"
-                      aria-label={`Remove the amount starting ${entry.effectiveFrom}`}
-                      disabled={removingId !== undefined}
-                      onClick={() => {
-                        void removeHistoryEntry(entry.id);
-                      }}
-                    >
-                      {removingId === entry.id ? (
-                        <SpinnerIcon className={`${ICON_SIZE.inline} animate-spin`} aria-hidden />
-                      ) : (
-                        <DeleteIcon className={`${ICON_SIZE.inline} text-danger`} aria-hidden />
-                      )}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
+              <div className="max-h-96 overflow-y-auto rounded-md border border-border">
+                <table className="w-full text-sm">
+                  <caption className="sr-only">
+                    {page.feeHead.name} history of {historyFor?.name ?? ''}
+                  </caption>
+                  <thead className="sticky top-0 bg-muted text-xs text-muted-foreground">
+                    <tr>
+                      <th scope="col" className="px-3 py-2 text-start font-medium">
+                        Start date
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-end font-medium">
+                        Amount
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-start font-medium">
+                        Type
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-end font-medium">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyEntries.map((entry) => (
+                      <tr key={entry.id} className="border-t border-border">
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <DateDisplay value={entry.effectiveFrom} />
+                          {entry.isScheduled ? (
+                            <span className="block text-xs text-warning">Scheduled</span>
+                          ) : entry.isCurrent ? (
+                            <span className="block text-xs text-success">Current</span>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2 text-end tabular-nums whitespace-nowrap">
+                          <Money valueMinor={entry.payableMinor} withSymbol />
+                          {entry.payableMinor === entry.amountMinor ? null : (
+                            <span className="block text-xs text-muted-foreground">
+                              of <Money valueMinor={entry.amountMinor} withSymbol={false} />
+                              {entry.discountReason === null ? '' : ` · ${entry.discountReason}`}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          <StatusBadge tone="success">{entry.feeHeadType}</StatusBadge>
+                        </td>
+                        <td className="px-3 py-2 text-end">
+                          {/* The last amount cannot be removed (the server refuses
+                              it too): a fee with no amount is never billed. */}
+                          {historyEntries.length <= 1 ? null : (
+                            <Button
+                              tone="ghost"
+                              size="sm"
+                              aria-label={`Remove the amount starting ${entry.effectiveFrom}`}
+                              disabled={removingId !== undefined}
+                              onClick={() => {
+                                void removeHistoryEntry(entry.id);
+                              }}
+                            >
+                              {removingId === entry.id ? (
+                                <SpinnerIcon
+                                  className={`${ICON_SIZE.inline} animate-spin`}
+                                  aria-hidden
+                                />
+                              ) : (
+                                <DeleteIcon
+                                  className={`${ICON_SIZE.inline} text-danger`}
+                                  aria-hidden
+                                />
+                              )}
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </DialogBody>
 
           <DialogFooter>
             <p className="me-auto text-xs text-muted-foreground">
-              Total records: {history?.entries.length ?? 0}
+              Total records: {historyEntries.length}
             </p>
-            <Button
-              tone="ghost"
-              onClick={() => {
-                setHistoryFor(undefined);
-                setHistory(undefined);
-              }}
-            >
+            <Button tone="ghost" onClick={closeHistory}>
               Close
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function IncrementRowActions({
+  row,
+  onHistory,
+}: {
+  readonly row: FeeIncrementRow;
+  readonly onHistory: () => void;
+}): ReactElement {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button tone="ghost" size="sm" aria-label={`Actions for ${row.name}`}>
+          <MoreIcon className={ICON_SIZE.inline} aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>{row.name}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={() => {
+            afterMenuAction(onHistory);
+          }}
+        >
+          <HistoryIcon className={ICON_SIZE.inline} aria-hidden />
+          Fee history
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

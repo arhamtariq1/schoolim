@@ -12,6 +12,7 @@ import {
   type ForgotPasswordVerifyOtpResult,
   type LoginOutcome,
   acceptInviteRequestSchema,
+  changePasswordRequestSchema,
   inviteCheckRequestSchema,
   verifyEmailRequestSchema,
   type LoginRequest,
@@ -279,6 +280,29 @@ export class AuthController {
     }
 
     return { data: await this.verification.resend(claims.sub, this.clock.now()) };
+  }
+
+  @RateLimit({ limit: 10, windowSeconds: 300 })
+  @HttpCode(200)
+  @Post(ROUTES.auth.changePassword)
+  async changePassword(
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+  ): Promise<{ data: { ok: true } }> {
+    const claims = request.claims;
+    if (claims === undefined) {
+      throw new BusinessRuleError('AUTH_TOKEN_INVALID', 'Sign in to continue.');
+    }
+
+    const input = changePasswordRequestSchema.parse(body);
+    return {
+      data: await this.auth.changePassword(
+        claims.sub,
+        input.currentPassword,
+        input.password,
+        this.clock.now(),
+      ),
+    };
   }
 
   /**

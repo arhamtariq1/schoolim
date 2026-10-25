@@ -3,25 +3,51 @@
 import {
   COPY_COUNTS,
   DEFAULT_COPY_LABELS,
-  DEFAULT_KUICKPAY_CHANNELS,
-  kuickpayConsumerNo,
-  onelinkConsumerNo,
   ROUTES,
+  updateVoucherNumberSettingsSchema,
   updateVoucherSettingsSchema,
+  type BankLogo,
   type Challan,
   type CopyCount,
   type VoucherSettings,
 } from '@ilm/contracts';
-import { Button, CheckboxField, Field, Input, Textarea, useToast } from '@ilm/ui';
+import { Button, cn, Field, Input, Textarea, useToast } from '@ilm/ui';
+import {
+  ApproveIcon,
+  FileIcon,
+  ICON_SIZE,
+  ImageIcon,
+  PageLayoutIcon,
+  SaveIcon,
+  TagIcon,
+  ViewIcon,
+} from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentProps,
+  type FormEvent,
+  type ReactNode,
+} from 'react';
 
 import { VoucherChallan } from './voucher-challan';
 
+import { showFormValidationToast } from '@/lib/form-validation';
 import { mutate } from '@/lib/mutate';
 
+/** Printable area of an A4 sheet in the orientation this layout uses (mm). */
+const PREVIEW_SHEET_MM: Record<CopyCount, { width: number; height: number }> = {
+  3: { width: 281, height: 194 },
+  4: { width: 194, height: 281 },
+};
+
+/** Screen height the sticky preview card's own header and padding take up. */
+const PREVIEW_CHROME_PX = 180;
+
 /**
- * Settings › Fee challan.
+ * Settings › Voucher Settings.
  *
  * ## Why the preview is the real component
  *
@@ -112,11 +138,27 @@ export interface VoucherSettingsFormProps {
     readonly address?: string | undefined;
     readonly phone?: string | undefined;
     readonly logoVersion?: string | undefined;
-    readonly bankLogoVersion?: string | undefined;
+    /** Every filled bank-logo slot, in print order. */
+    readonly bankLogos?: readonly BankLogo[] | undefined;
     readonly accentColor?: string | undefined;
   };
   readonly canConfigure: boolean;
   readonly error?: string | undefined;
+  /** The bank-logo tiles, rendered inside the form's "Bank Logos" card. */
+  readonly bankLogoSlot?: ReactNode;
+  /**
+   * Where voucher numbering stands. Absent for a viewer who cannot change it,
+   * in which case the card is not shown at all.
+   */
+  readonly numbering?: VoucherNumbering | undefined;
+  readonly numberingError?: string | undefined;
+}
+
+export interface VoucherNumbering {
+  readonly configured: boolean;
+  /** The next number as it will be printed, e.g. `WH-V-13`. */
+  readonly next: string | null;
+  readonly highestIssued: number | null;
 }
 
 export function VoucherSettingsForm({
@@ -124,33 +166,36 @@ export function VoucherSettingsForm({
   school,
   canConfigure,
   error,
+  bankLogoSlot,
+  numbering,
+  numberingError,
 }: VoucherSettingsFormProps) {
   const router = useRouter();
   const toast = useToast();
 
   const [draft, setDraft] = useState<VoucherSettings>(settings);
-  // Held as text, not as an array: mid-edit a channel list legitimately has a
-  // blank line in it, and normalising on every keystroke would delete the line
-  // somebody was about to type into.
-  const [channelText, setChannelText] = useState(() => settings.kuickpayChannels.join('\n'));
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
 
-  /** The draft exactly as the challan — and the server — will receive it. */
-  const preview: VoucherSettings = {
-    ...draft,
-    kuickpayChannels: toChannels(channelText),
-  };
+  // The next number split into the pattern a school keeps (`WH-V-`) and the
+  // counter it edits (`13`). A number with no trailing digits — or none at all
+  // yet — is edited whole.
+  const split = splitNumber(numbering?.next ?? null);
+  const [numberDigits, setNumberDigits] = useState(split?.digits ?? numbering?.next ?? '');
+  const [numberError, setNumberError] = useState<string | undefined>(undefined);
+  const nextNumber = split === undefined ? numberDigits.trim() : `${split.prefix}${numberDigits.trim()}`;
+  const numberChanged = numbering !== undefined && nextNumber !== (numbering.next ?? '');
 
-  const sampleKuickpay = kuickpayConsumerNo(preview, SAMPLE.grNo);
-  const sampleOnelink = onelinkConsumerNo(preview, SAMPLE.grNo);
-  const hasLogo = school.logoVersion !== undefined;
+  /** The draft exactly as the challan — and the server — will receive it. */
+  const preview: VoucherSettings = draft;
+
   const copyLabelError =
     fieldErrors['copyLabels'] ??
     fieldErrors['copyLabels.0'] ??
     fieldErrors['copyLabels.1'] ??
-    fieldErrors['copyLabels.2'];
+    fieldErrors['copyLabels.2'] ??
+    fieldErrors['copyLabels.3'];
 
   function set<K extends keyof VoucherSettings>(key: K, value: VoucherSettings[K]): void {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -189,6 +234,12 @@ export function VoucherSettingsForm({
 
     setFieldErrors({});
     setFormError(undefined);
+    setNumberError(undefined);
+
+    const numberProblem = numberChanged
+      ? updateVoucherNumberSettingsSchema.safeParse({ startingNumber: nextNumber }).error?.issues[0]
+          ?.message
+      : undefined;
 
     const parsed = updateVoucherSettingsSchema.safeParse({
       ...preview,
@@ -199,19 +250,34 @@ export function VoucherSettingsForm({
       onelinkInstitutionId: blankToNull(draft.onelinkInstitutionId),
     });
 
-    if (!parsed.success) {
+    if (!parsed.success || numberProblem !== undefined) {
       const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
+      for (const issue of parsed.error?.issues ?? []) {
         next[issue.path.join('.')] = issue.message;
       }
       setFieldErrors(next);
+      setNumberError(numberProblem);
       // The message lands beside the field, but that field may be under the fold
       // on a phone, so say out loud that something needs looking at.
-      toast.error('Check the highlighted fields.');
+      showFormValidationToast(toast);
       return;
     }
 
     setIsSaving(true);
+
+    // The number first: it is the one the server can still refuse (lower than
+    // one already issued), and refusing it should leave the layout unsaved too
+    // rather than half the form applied.
+    if (numberChanged) {
+      const saved = await mutate(ROUTES.school.voucherNumber, 'PUT', { startingNumber: nextNumber });
+      if (!saved.ok) {
+        setIsSaving(false);
+        setNumberError(saved.fieldErrors['startingNumber'] ?? saved.message);
+        showFormValidationToast(toast);
+        return;
+      }
+    }
+
     const result = await mutate<VoucherSettings>(ROUTES.school.voucherSettings, 'PUT', parsed.data);
     setIsSaving(false);
 
@@ -225,18 +291,19 @@ export function VoucherSettingsForm({
     // the id of a channel that was turned off, and a form that kept showing it
     // would offer to re-save what was just discarded.
     setDraft(result.data);
-    setChannelText(result.data.kuickpayChannels.join('\n'));
-    toast.success('Challan saved', 'Every challan printed from now on uses it.');
+    toast.success('Challan settings saved.');
     router.refresh();
   }
 
   return (
     <form
-      className="grid items-start gap-6 xl:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]"
+      className="grid items-start gap-6 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]"
       onSubmit={(event) => void save(event)}
       noValidate
     >
-      <div className="space-y-4">
+      {/* Denser than the app default: six cards share one column beside the
+          preview, and at base size they push the Save button off the screen. */}
+      <div className="space-y-4 text-sm [&_input]:h-9 [&_input]:text-sm [&_label]:text-xs [&_textarea]:text-sm">
         {error === undefined ? null : <Alert>{error}</Alert>}
         {formError === undefined ? null : <Alert>{formError}</Alert>}
 
@@ -244,94 +311,125 @@ export function VoucherSettingsForm({
             read-only viewer and a save in flight are the same state as far as
             the inputs are concerned. */}
         <fieldset disabled={!canConfigure || isSaving} className="space-y-4">
-          <Card title="The page">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-foreground">Copies per sheet</p>
-              <p className="text-xs text-muted-foreground">
-                A4 either way. Three stack down the page; four sit in a square.
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {COPY_COUNTS.map((count) => (
-                  <LayoutChoice
-                    key={count}
-                    count={count}
-                    checked={draft.copyCount === count}
-                    onSelect={() => {
-                      setCopyCount(count);
+          {numbering === undefined ? null : (
+            <SettingsCard
+              icon={<FileIcon className={ICON_SIZE.nav} aria-hidden />}
+              title="Voucher Numbering"
+              description="Set the starting number for new vouchers."
+            >
+              {numberingError === undefined ? null : <Alert>{numberingError}</Alert>}
+              <Field
+                label="Next voucher number"
+                required
+                error={numberError}
+                hint={
+                  numbering.highestIssued === null
+                    ? numbering.configured
+                      ? undefined
+                      : 'No vouchers are issued until this is set — for a new school, 1.'
+                    : `Highest number issued so far: ${String(numbering.highestIssued)}. Enter a higher number.`
+                }
+              >
+                {split === undefined ? (
+                  <Input
+                    autoComplete="off"
+                    maxLength={40}
+                    placeholder="e.g. FV-000001"
+                    value={numberDigits}
+                    onChange={(event) => {
+                      setNumberDigits(event.target.value);
+                      setNumberError(undefined);
                     }}
                   />
-                ))}
-              </div>
-            </div>
+                ) : (
+                  <PrefixedInput
+                    prefix={split.prefix}
+                    inputMode="numeric"
+                    autoComplete="off"
+                    maxLength={20}
+                    value={numberDigits}
+                    onChange={(event) => {
+                      setNumberDigits(event.target.value.replace(/\D/g, ''));
+                      setNumberError(undefined);
+                    }}
+                  />
+                )}
+              </Field>
+            </SettingsCard>
+          )}
 
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-foreground">Copy names</p>
-              <p className="text-xs text-muted-foreground">
-                One per copy, in order. Most schools keep School, Bank, Student.
-              </p>
-              {/* One input per copy, not a textarea of lines: the count is a
-                  setting, and a box you can delete a line from produces a
-                  payload the server has to refuse. */}
-              <div className="grid gap-2 sm:grid-cols-2">
-                {draft.copyLabels.map((label, index) => (
+          <SettingsCard
+            icon={<PageLayoutIcon className={ICON_SIZE.nav} aria-hidden />}
+            title="Page Layout"
+            description="Select how many copies to print per page."
+          >
+            <div className="flex flex-col gap-2" role="radiogroup" aria-label="Copies per page">
+              {COPY_COUNTS.map((count) => (
+                <LayoutChoice
+                  key={count}
+                  count={count}
+                  checked={draft.copyCount === count}
+                  onSelect={() => {
+                    setCopyCount(count);
+                  }}
+                />
+              ))}
+            </div>
+          </SettingsCard>
+
+          <SettingsCard
+            icon={<TagIcon className={ICON_SIZE.nav} aria-hidden />}
+            title="Copy Names"
+            description="Set the name for each copy. (Most schools use School, Bank, Student)"
+          >
+            <div
+              className={cn(
+                'grid grid-cols-1 gap-3',
+                draft.copyCount === 4 ? 'sm:grid-cols-2' : 'sm:grid-cols-3',
+              )}
+            >
+              {draft.copyLabels.map((label, index) => (
+                <Field key={index} label={COPY_FIELD_LABELS[index] ?? `Copy ${String(index + 1)} name`}>
                   <Input
-                    // The index is the identity: two copies may legitimately
-                    // share a name, and it is the position being edited.
-                    key={index}
                     value={label}
                     maxLength={40}
-                    aria-label={`Copy ${String(index + 1)} name`}
                     aria-invalid={copyLabelError !== undefined}
+                    className={cn('border-transparent', COPY_TINTS[index] ?? COPY_TINTS[3])}
                     onChange={(event) => {
                       setCopyLabel(index, event.target.value);
                     }}
                   />
-                ))}
-              </div>
-              {copyLabelError === undefined ? null : (
-                <p role="alert" className="text-xs text-danger">
-                  {copyLabelError}
-                </p>
-              )}
+                </Field>
+              ))}
             </div>
-          </Card>
+            {copyLabelError === undefined ? null : (
+              <p role="alert" className="text-xs text-danger">
+                {copyLabelError}
+              </p>
+            )}
+          </SettingsCard>
+        </fieldset>
 
-          <Card title="What it shows">
-            <CheckboxField
-              label="Print the school logo"
-              hint={
-                hasLogo ? 'Top-left of every copy.' : 'Upload one under Settings › School first.'
-              }
-              checked={draft.showLogo && hasLogo}
-              disabled={!hasLogo}
-              onCheckedChange={(next) => {
-                set('showLogo', next === true);
-              }}
-            />
+        {bankLogoSlot === undefined ? null : (
+          <SettingsCard
+            icon={<ImageIcon className={ICON_SIZE.nav} aria-hidden />}
+            title="Bank Logos"
+            description="Printed in one row at the footer of every copy."
+          >
+            {bankLogoSlot}
+          </SettingsCard>
+        )}
 
-            <Field
-              label="Bank name"
-              hint="Printed at the foot of every copy, beside the bank’s mark."
-              error={fieldErrors['bankName']}
-            >
-              <Input
-                maxLength={60}
-                placeholder="Meezan Bank Ltd."
-                value={draft.bankName ?? ''}
-                onChange={(event) => {
-                  set('bankName', event.target.value === '' ? null : event.target.value);
-                }}
-              />
-            </Field>
-
-            <Field
-              label="Note under the signature"
-              hint="Optional. A bank account, office timings, a reminder about the surcharge."
-              error={fieldErrors['footerNote']}
-            >
+        <fieldset disabled={!canConfigure || isSaving} className="space-y-4">
+          <SettingsCard
+            icon={<FileIcon className={ICON_SIZE.nav} aria-hidden />}
+            title="Note Under the Signature"
+            description="Optional note to print under the signatures."
+          >
+            <Field label="Note" error={fieldErrors['footerNote']}>
               <Textarea
                 rows={2}
-                maxLength={400}
+                maxLength={FOOTER_NOTE_MAX}
                 value={draft.footerNote ?? ''}
                 placeholder="Fees paid after the due date attract a surcharge."
                 onChange={(event) => {
@@ -339,133 +437,16 @@ export function VoucherSettingsForm({
                 }}
               />
             </Field>
-          </Card>
-
-          <Card title="Kuickpay">
-            <CheckboxField
-              label="Print a Kuickpay ID"
-              hint="Parents pay in cash at any outlet on the list below."
-              checked={draft.kuickpayEnabled}
-              onCheckedChange={(next) => {
-                const on = next === true;
-                set('kuickpayEnabled', on);
-                if (!on) {
-                  // 1LINK prints behind the Kuickpay number, so it cannot
-                  // outlive it. Turning it off here rather than letting the save
-                  // be refused is the difference between a rule and a rejection.
-                  set('onelinkEnabled', false);
-                }
-              }}
-            />
-
-            {!draft.kuickpayEnabled ? null : (
-              <>
-                <Field
-                  label="Company prefix"
-                  hint="The digits Kuickpay issued you. The child’s GR number is appended to it."
-                  error={fieldErrors['kuickpayPrefix']}
-                  required
-                >
-                  <Input
-                    inputMode="numeric"
-                    autoComplete="off"
-                    className="font-mono"
-                    placeholder="1514"
-                    maxLength={12}
-                    value={draft.kuickpayPrefix ?? ''}
-                    onChange={(event) => {
-                      // Stripped as typed: a prefix with a space in it is a
-                      // challan nobody can pay, found out at a bank counter.
-                      set('kuickpayPrefix', event.target.value.replace(/\D/g, ''));
-                    }}
-                  />
-                </Field>
-
-                {sampleKuickpay === undefined ? null : (
-                  <p className="text-xs text-muted-foreground">
-                    A child with GR 810 would quote{' '}
-                    <span className="font-mono font-medium text-foreground">{sampleKuickpay}</span>.
-                  </p>
-                )}
-
-                <Field
-                  label="Where parents can pay"
-                  hint="One per line. This is the list printed on the challan."
-                  error={fieldErrors['kuickpayChannels']}
-                >
-                  <Textarea
-                    rows={6}
-                    className="font-mono text-xs"
-                    value={channelText}
-                    onChange={(event) => {
-                      setChannelText(event.target.value);
-                    }}
-                  />
-                </Field>
-
-                <Button
-                  type="button"
-                  tone="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setChannelText(DEFAULT_KUICKPAY_CHANNELS.join('\n'));
-                  }}
-                >
-                  Use Kuickpay’s standard list
-                </Button>
-              </>
-            )}
-          </Card>
-
-          <Card title="1LINK">
-            <CheckboxField
-              label="Print a 1LINK ID"
-              hint={
-                draft.kuickpayEnabled
-                  ? 'Printed under the Kuickpay strip.'
-                  : 'Needs Kuickpay — the 1LINK number is built on top of it.'
-              }
-              checked={draft.onelinkEnabled}
-              disabled={!draft.kuickpayEnabled}
-              onCheckedChange={(next) => {
-                set('onelinkEnabled', next === true);
-              }}
-            />
-
-            {!draft.onelinkEnabled ? null : (
-              <>
-                <Field
-                  label="Institution ID"
-                  error={fieldErrors['onelinkInstitutionId']}
-                  required
-                >
-                  <Input
-                    inputMode="numeric"
-                    autoComplete="off"
-                    className="font-mono"
-                    placeholder="100047"
-                    maxLength={12}
-                    value={draft.onelinkInstitutionId ?? ''}
-                    onChange={(event) => {
-                      set('onelinkInstitutionId', event.target.value.replace(/\D/g, ''));
-                    }}
-                  />
-                </Field>
-
-                {sampleOnelink === undefined ? null : (
-                  <p className="text-xs text-muted-foreground">
-                    That child’s 1LINK number would be{' '}
-                    <span className="font-mono font-medium text-foreground">{sampleOnelink}</span>.
-                  </p>
-                )}
-              </>
-            )}
-          </Card>
+            <p className="text-end text-xs text-muted-foreground tabular-nums" aria-live="polite">
+              {String((draft.footerNote ?? '').length)}/{String(FOOTER_NOTE_MAX)}
+            </p>
+          </SettingsCard>
         </fieldset>
 
         {canConfigure ? (
-          <Button type="submit" isPending={isSaving}>
-            Save challan
+          <Button type="submit" isPending={isSaving} className="w-full sm:w-auto">
+            <SaveIcon className={ICON_SIZE.inline} aria-hidden />
+            Save Challan
           </Button>
         ) : (
           <p className="text-sm text-muted-foreground">
@@ -477,25 +458,107 @@ export function VoucherSettingsForm({
       {/* `no-print`: the print stylesheet promotes any `.voucher-challan` on the
           page to the sheet, and a settings screen must not be able to emit a
           challan for a child who does not exist. */}
-      <div className="no-print space-y-2 xl:sticky xl:top-4">
-        <p className="text-sm text-muted-foreground">
-          Live preview — the challan itself, with a made-up child on it.
-        </p>
-        {/* The sheet at its real size, zoomed down to fit — not reflowed. The
-            width is the printable area of an A4 in the orientation this layout
-            uses, so the preview has the paper's proportions and the copies fill
-            it exactly as they will. Scaling rather than narrowing is what keeps
-            it honest: a narrower preview makes a challan look cramped that is
-            not, and a school would redesign around a problem it does not have. */}
-        <div className="overflow-x-auto rounded-xl border border-border bg-white p-3">
-          <div
-            className={`[zoom:0.55] ${preview.copyCount === 4 ? 'w-[194mm]' : 'w-[281mm]'}`}
-          >
-            <VoucherChallan voucher={SAMPLE} school={school} settings={preview} />
+      <div className="no-print xl:sticky xl:top-4">
+        <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-raised">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-4 sm:px-5">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <ViewIcon className={ICON_SIZE.nav} aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-base font-semibold text-foreground">Live Preview</h2>
+                <p className="text-xs text-muted-foreground sm:text-sm">
+                  How the challan will look with the current settings.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-muted/40 p-3 sm:p-4">
+            <ChallanLivePreview copyCount={preview.copyCount}>
+              <VoucherChallan voucher={SAMPLE} school={school} settings={preview} preview />
+            </ChallanLivePreview>
+          </div>
+        </section>
+      </div>
+    </form>
+  );
+}
+
+/**
+ * Scales the real A4 challan sheet to the full width of the preview pane.
+ *
+ * `transform: scale` keeps print proportions honest; the outer height is
+ * collapsed to the scaled size so the card does not leave empty side gutters
+ * or a tall blank strip under the sheet. Text is not selectable — this is a
+ * picture of a challan, not a document to copy from.
+ */
+function ChallanLivePreview({
+  copyCount,
+  children,
+}: {
+  readonly copyCount: CopyCount;
+  readonly children: ReactNode;
+}) {
+  const sheet = PREVIEW_SHEET_MM[copyCount];
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.5);
+
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (frame === null) {
+      return;
+    }
+
+    const paperWidthPx = (sheet.width / 25.4) * 96;
+    const paperHeightPx = (sheet.height / 25.4) * 96;
+    const target = frame;
+
+    function measure(): void {
+      const width = target.getBoundingClientRect().width;
+      if (width <= 0 || paperWidthPx <= 0) {
+        return;
+      }
+      // The whole sheet, always: fit the pane's width and the screen's height,
+      // whichever is tighter, so a portrait (4-copy) page is seen complete
+      // rather than running off the bottom.
+      const availableHeight = Math.max(window.innerHeight - PREVIEW_CHROME_PX, 240);
+      setScale(Math.min((width - 2) / paperWidthPx, availableHeight / paperHeightPx));
+    }
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(target);
+    window.addEventListener('resize', measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [sheet.width, sheet.height]);
+
+  const scaledWidthPx = ((sheet.width / 25.4) * 96) * scale;
+  const scaledHeightPx = ((sheet.height / 25.4) * 96) * scale;
+
+  return (
+    <div ref={frameRef} className="flex w-full justify-center">
+      <div
+        className="relative overflow-hidden rounded-lg border border-border bg-white"
+        style={{ width: scaledWidthPx, height: scaledHeightPx }}
+      >
+        <div
+          className="origin-top-left select-none"
+          style={{
+            width: `${String(sheet.width)}mm`,
+            height: `${String(sheet.height)}mm`,
+            transform: `scale(${String(scale)})`,
+          }}
+        >
+          <div className="pointer-events-none box-border h-full w-full select-none p-[2mm] [&_*]:select-none [&_.voucher-challan]:h-full [&_.voucher-challan]:w-full">
+            {children}
           </div>
         </div>
       </div>
-    </form>
+    </div>
   );
 }
 
@@ -518,9 +581,13 @@ function LayoutChoice({
 }) {
   return (
     <label
-      className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
-        checked ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-      }`}
+      className={cn(
+        'flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 transition-colors',
+        'has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-ring',
+        checked
+          ? 'border-primary bg-primary/5'
+          : 'border-border bg-field hover:border-primary/40',
+      )}
     >
       <input
         type="radio"
@@ -530,35 +597,72 @@ function LayoutChoice({
         onChange={onSelect}
       />
 
+      <span
+        aria-hidden
+        className={cn(
+          'flex size-5 shrink-0 items-center justify-center rounded-full border',
+          checked ? 'border-primary bg-primary text-primary-foreground' : 'border-input bg-field',
+        )}
+      >
+        {checked ? <ApproveIcon className="size-3" aria-hidden /> : null}
+      </span>
+
       {/* A4 proportions, and the sheet turns with the layout — three copies go
-          across a landscape page, four down a portrait one. Which way up the
+          across a landscape page, four in a portrait square. Which way up the
           paper goes is half of what is being chosen here. */}
       <span
         aria-hidden
-        className={`grid shrink-0 gap-[2px] rounded-xs border border-border bg-background p-[2px] ${
-          count === 4 ? 'h-12 w-[2.12rem] grid-cols-2' : 'h-[2.12rem] w-12 grid-cols-3'
-        }`}
+        className={cn(
+          'grid h-8 w-12 shrink-0 gap-0.5 rounded-sm border border-border bg-card p-0.5',
+          count === 4 ? 'grid-cols-2' : 'grid-cols-3',
+        )}
       >
         {Array.from({ length: count }, (_, index) => (
-          <span key={index} className="rounded-[1px] bg-muted-foreground/30" />
+          <span
+            key={index}
+            className={cn(
+              'rounded-xs',
+              checked ? 'bg-primary/70' : 'bg-muted-foreground/25',
+            )}
+          />
         ))}
       </span>
 
       <span className="min-w-0">
-        <span className="block text-sm font-medium text-foreground">{count} copies</span>
-        <span className="block text-xs text-muted-foreground">
-          {count === 3 ? 'Across a landscape sheet' : 'Two by two, portrait'}
+        <span className="block text-sm font-semibold text-foreground">{count} Copies</span>
+        <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
+          {count === 3 ? 'Across a landscape sheet' : 'In a portrait square'}
         </span>
       </span>
     </label>
   );
 }
 
-function Card({ title, children }: { readonly title: string; readonly children: ReactNode }) {
+function SettingsCard({
+  icon,
+  title,
+  description,
+  children,
+}: {
+  readonly icon: ReactNode;
+  readonly title: string;
+  readonly description?: string;
+  readonly children: ReactNode;
+}) {
   return (
-    <section className="space-y-4 rounded-xl border border-border bg-card p-4">
-      <h2 className="text-base font-medium text-foreground">{title}</h2>
-      {children}
+    <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-raised">
+      <div className="flex items-center gap-3 px-4 pt-4">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          {icon}
+        </span>
+        <div className="min-w-0 space-y-0.5">
+          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+          {description === undefined ? null : (
+            <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+          )}
+        </div>
+      </div>
+      <div className="space-y-3 p-4">{children}</div>
     </section>
   );
 }
@@ -575,17 +679,49 @@ function Alert({ children }: { readonly children: ReactNode }) {
 }
 
 /**
- * A textarea of outlet names into the list the challan prints.
+ * An input with a fixed lead-in the person does not type — the voucher
+ * number's pattern, so only the counter is edited.
  *
- * Blank lines dropped, because they are how a person separates what they are
- * typing from what is already there — not an outlet called "".
+ * Takes every input prop so `<Field>` can hand it the id and the
+ * `aria-describedby` that link it to its label and hint.
  */
-function toChannels(text: string): string[] {
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line !== '');
+function PrefixedInput({
+  prefix,
+  className,
+  ...props
+}: ComponentProps<typeof Input> & { readonly prefix: string }) {
+  return (
+    <div className="flex items-stretch overflow-hidden rounded-md border border-input bg-field focus-within:ring-2 focus-within:ring-ring">
+      <span className="flex shrink-0 items-center border-e border-input bg-muted px-3 font-mono text-xs whitespace-nowrap text-muted-foreground">
+        {prefix}
+      </span>
+      <Input
+        className={cn('rounded-none border-0 font-mono shadow-none focus-visible:ring-0', className)}
+        {...props}
+      />
+    </div>
+  );
 }
+
+/** `WH-V-13` → `{ prefix: 'WH-V-', digits: '13' }`. Undefined when there is no counter to split off. */
+function splitNumber(value: string | null): { prefix: string; digits: string } | undefined {
+  const match = value === null ? null : /^(.*?)(\d+)$/.exec(value);
+  if (match === null || match[1] === undefined || match[2] === undefined || match[1] === '') {
+    return undefined;
+  }
+  return { prefix: match[1], digits: match[2] };
+}
+
+/** The schema's own ceiling for the note, shown as a running count. */
+const FOOTER_NOTE_MAX = 400;
+
+const COPY_FIELD_LABELS = ['School copy name', 'Bank copy name', 'Student copy name', 'Fourth copy name'];
+
+/**
+ * A pale wash per copy, so the three names read as three different slips at a
+ * glance. Semantic tokens only — they follow dark mode and the school's palette.
+ */
+const COPY_TINTS = ['bg-success/10', 'bg-info/10', 'bg-warning/10', 'bg-muted'];
 
 function blankToNull(value: string | null): string | null {
   return value === null || value.trim() === '' ? null : value.trim();

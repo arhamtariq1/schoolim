@@ -53,7 +53,7 @@ export class DatabaseStore implements StoragePort {
    */
   put(input: PutAssetInput): Promise<StoredAsset> {
     return Promise.resolve({
-      key: localKey(input.schoolId, input.kind),
+      key: localKey(input.schoolId, input.kind, input.slot ?? 0),
       url: undefined,
       provider: this.driver,
       byteSize: input.bytes.byteLength,
@@ -83,6 +83,6 @@ export class DatabaseStore implements StoragePort {
  * `storage_key` column non-null for every provider, so "which asset is this"
  * has one answer in the table regardless of where the bytes went.
  */
-export function localKey(schoolId: string, kind: string): string {
-  return `db:${schoolId}:${kind}`;
+export function localKey(schoolId: string, kind: string, slot = 0): string {
+  return slot === 0 ? `db:${schoolId}:${kind}` : `db:${schoolId}:${kind}:${String(slot)}`;
 }

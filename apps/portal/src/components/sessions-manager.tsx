@@ -6,10 +6,47 @@ import {
   SESSION_STATUSES,
   type AcademicSession,
 } from '@ilm/contracts';
-import { Button, ConfirmDialog, DataTable, DateDisplay, DatePicker, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Field, Input, SimpleSelect, StatusBadge, type Column, useToast } from '@ilm/ui';
-import { ApproveIcon, CreateIcon, DeleteIcon, EditIcon, ICON_SIZE } from '@ilm/ui/icons';
+import {
+  Button,
+  ConfirmDialog,
+  DateDisplay,
+  DatePicker,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Field,
+  Input,
+  SimpleSelect,
+  StatusBadge,
+  TwoLineCell,
+  type CardTableColumn,
+  useToast,
+} from '@ilm/ui';
+import {
+  ApproveIcon,
+  CalendarIcon,
+  CreateIcon,
+  DeleteIcon,
+  EditIcon,
+  ICON_SIZE,
+  MoreIcon,
+  SessionIcon,
+  StudentsIcon,
+} from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+
+import { ListDataTable } from '@/components/list-data-table';
+import { ListTableScreen } from '@/components/list-table-screen';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
 
 import { mutate } from '@/lib/mutate';
 
@@ -51,8 +88,36 @@ export function SessionsManager({ sessions, error, canConfigure }: SessionsManag
   const [editing, setEditing] = useState<AcademicSession | undefined>(undefined);
   const [deleting, setDeleting] = useState<AcademicSession | undefined>(undefined);
   const [busyId, setBusyId] = useState<string | undefined>(undefined);
+  const [sortKey, setSortKey] = useState<'name' | 'startDate' | 'status'>('name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const hasCurrent = sessions.some((entry) => entry.isCurrent);
+
+  const sortedSessions = useMemo(() => {
+    const list = [...sessions];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    list.sort((left, right) => {
+      let cmp = 0;
+      if (sortKey === 'name') {
+        cmp = left.name.localeCompare(right.name);
+      } else if (sortKey === 'startDate') {
+        cmp = left.startDate.localeCompare(right.startDate);
+      } else {
+        cmp = left.status.localeCompare(right.status);
+      }
+      return cmp * dir;
+    });
+    return list;
+  }, [sessions, sortKey, sortDir]);
+
+  function toggleSort(key: 'name' | 'startDate' | 'status'): void {
+    if (sortKey === key) {
+      setSortDir((current) => (current === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+    setSortKey(key);
+    setSortDir('asc');
+  }
 
   async function makeCurrent(entry: AcademicSession) {
     setBusyId(entry.id);
@@ -87,133 +152,132 @@ export function SessionsManager({ sessions, error, canConfigure }: SessionsManag
     router.refresh();
   }
 
-  const columns: Column<AcademicSession>[] = [
-    {
-      key: 'name',
-      header: 'Session',
-      render: (row) => (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-medium text-foreground">{row.name}</span>
-          {row.isCurrent ? <StatusBadge tone="success">Current</StatusBadge> : null}
-        </div>
-      ),
-    },
-    {
-      key: 'dates',
-      header: 'Runs',
-      render: (row) => (
-        <span className="text-sm">
-          <DateDisplay value={row.startDate} /> — <DateDisplay value={row.endDate} />
-        </span>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (row) => (
-        <StatusBadge tone={STATUS_TONE[row.status] ?? 'neutral'}>
-          {row.status.charAt(0) + row.status.slice(1).toLowerCase()}
-        </StatusBadge>
-      ),
-    },
-    {
-      key: 'sections',
-      header: 'Sections',
-      align: 'end',
-      hideOnMobile: true,
-      render: (row) => (
-        <span className="font-mono text-sm text-muted-foreground tabular-nums">
-          {row.sectionCount === 0 ? '—' : row.sectionCount}
-        </span>
-      ),
-    },
-    {
-      key: 'students',
-      header: 'Enrolled',
-      align: 'end',
-      hideOnMobile: true,
-      render: (row) => (
-        <span className="font-mono text-sm text-muted-foreground tabular-nums">
-          {row.enrollmentCount === 0 ? '—' : row.enrollmentCount}
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'end',
-      render: (row) =>
-        !canConfigure ? null : (
-          <div className="flex items-center justify-end gap-1">
-            {row.isCurrent || row.status === 'CLOSED' ? null : (
-              <Button
-                tone="ghost"
-                size="sm"
-                disabled={busyId !== undefined}
-                onClick={() => {
-                  void makeCurrent(row);
-                }}
-              >
-                <ApproveIcon className={ICON_SIZE.inline} aria-hidden />
-                Make current
-              </Button>
-            )}
-            <Button
-              tone="ghost"
-              size="sm"
-              disabled={busyId !== undefined}
-              onClick={() => {
+  const columns = useMemo((): CardTableColumn<AcademicSession>[] => {
+    return [
+      {
+        key: 'name',
+        label: 'Session',
+        icon: SessionIcon,
+        sortable: true,
+        width: 'w-[24%]',
+        render: (row) => (
+          <TwoLineCell
+            primary={
+              <span className="inline-flex flex-wrap items-center gap-2">
+                {row.name}
+                {row.isCurrent ? (
+                  <StatusBadge tone="success" size="sm">
+                    Current
+                  </StatusBadge>
+                ) : null}
+              </span>
+            }
+            secondary={
+              row.isCurrent ? 'Current session for enrolments' : 'Academic year'
+            }
+          />
+        ),
+      },
+      {
+        key: 'startDate',
+        label: 'Runs',
+        icon: CalendarIcon,
+        sortable: true,
+        width: 'w-[22%]',
+        render: (row) => (
+          <TwoLineCell
+            primary={
+              <>
+                <DateDisplay value={row.startDate} /> — <DateDisplay value={row.endDate} />
+              </>
+            }
+            secondary="Start to end date"
+          />
+        ),
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        icon: SessionIcon,
+        sortable: true,
+        width: 'w-[14%]',
+        render: (row) => (
+          <TwoLineCell
+            primary={
+              <StatusBadge tone={STATUS_TONE[row.status] ?? 'neutral'}>
+                {row.status.charAt(0) + row.status.slice(1).toLowerCase()}
+              </StatusBadge>
+            }
+            secondary={row.isCurrent ? 'Marked current' : '—'}
+          />
+        ),
+      },
+      {
+        key: 'sections',
+        label: 'Sections',
+        icon: SessionIcon,
+        align: 'end',
+        width: 'w-[12%]',
+        hideOnMobile: true,
+        render: (row) => (
+          <TwoLineCell
+            primary={row.sectionCount === 0 ? '—' : String(row.sectionCount)}
+            secondary="In this session"
+            secondaryMono
+          />
+        ),
+      },
+      {
+        key: 'students',
+        label: 'Enrolled',
+        icon: StudentsIcon,
+        align: 'end',
+        width: 'w-[12%]',
+        hideOnMobile: true,
+        render: (row) => (
+          <TwoLineCell
+            primary={row.enrollmentCount === 0 ? '—' : String(row.enrollmentCount)}
+            secondary="Students"
+            secondaryMono
+          />
+        ),
+      },
+      {
+        key: 'actions',
+        label: 'Actions',
+        align: 'end',
+        width: 'w-[12%]',
+        render: (row) =>
+          !canConfigure ? (
+            <div className="flex justify-end">
+              <span className="text-muted-foreground">—</span>
+            </div>
+          ) : (
+            <SessionRowActions
+              row={row}
+              busy={busyId !== undefined}
+              onMakeCurrent={() => {
+                void makeCurrent(row);
+              }}
+              onEdit={() => {
                 setEditing(row);
                 setDialogOpen(true);
               }}
-            >
-              <EditIcon className={ICON_SIZE.inline} aria-hidden />
-              Edit
-            </Button>
-            {/* Not offered for a session with enrolments or the current one —
-                the server refuses both, and a control that always fails is
-                worse than one that is not there. */}
-            {row.enrollmentCount === 0 && !row.isCurrent ? (
-              <Button
-                tone="ghost"
-                size="sm"
-                aria-label={`Delete ${row.name}`}
-                disabled={busyId !== undefined}
-                onClick={() => {
-                  setDeleting(row);
-                }}
-              >
-                <DeleteIcon className={`${ICON_SIZE.inline} text-danger`} aria-hidden />
-              </Button>
-            ) : null}
-          </div>
-        ),
-    },
-  ];
+              onDelete={() => {
+                setDeleting(row);
+              }}
+            />
+          ),
+      },
+    ];
+  }, [busyId, canConfigure]);
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Academic sessions</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            The school year. Sections, enrolments and fees all belong to one, which is what makes
-            rolling over to next year a supported step rather than a data migration.
-          </p>
-        </div>
-
-        {canConfigure ? (
-          <Button
-            onClick={() => {
-              setEditing(undefined);
-              setDialogOpen(true);
-            }}
-          >
-            <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-            Add session
-          </Button>
-        ) : null}
-      </header>
+      <WorkspacePageHeader
+        title="Academic sessions"
+        description="The school year. Sections, enrolments and fees all belong to one, which is what makes rolling over to next year a supported step rather than a data migration."
+      />
 
       {/* Not a cosmetic warning: with no current session the admission form
           cannot enrol anybody, and nothing on that screen explains why. */}
@@ -230,29 +294,74 @@ export function SessionsManager({ sessions, error, canConfigure }: SessionsManag
         </div>
       ) : null}
 
-      <DataTable
-        rows={sessions}
-        columns={columns}
-        rowKey={(row) => row.id}
-        error={error}
-        caption="Academic sessions"
-        empty={{
-          title: 'No sessions yet',
-          description:
-            'A session is one school year — "2026–2027". Classes get their sections inside it, and students are enrolled into those.',
-          action: canConfigure ? (
+      {error !== undefined ? (
+        <div
+          role="alert"
+          className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+        >
+          {error}
+        </div>
+      ) : null}
+
+      <ListTableScreen
+        tableTitle="All sessions"
+        headerActions={
+          canConfigure ? (
             <Button
+              size="sm"
               onClick={() => {
                 setEditing(undefined);
                 setDialogOpen(true);
               }}
             >
               <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-              Add the first session
+              Add session
             </Button>
-          ) : undefined,
-        }}
-      />
+          ) : null
+        }
+      >
+        <ListDataTable
+          caption="Academic sessions"
+          rows={sortedSessions}
+          columns={columns}
+          rowKey={(row) => row.id}
+          sort={{
+            key: sortKey,
+            direction: sortDir,
+            onToggle: (key) => {
+              toggleSort(key as 'name' | 'startDate' | 'status');
+            },
+          }}
+          empty={{
+            title: 'No sessions yet',
+            description:
+              'A session is one school year — "2026–2027". Classes get their sections inside it, and students are enrolled into those.',
+            action: canConfigure ? (
+              <Button
+                onClick={() => {
+                  setEditing(undefined);
+                  setDialogOpen(true);
+                }}
+              >
+                <CreateIcon className={ICON_SIZE.inline} aria-hidden />
+                Add the first session
+              </Button>
+            ) : undefined,
+          }}
+          renderMobileRow={(row) => (
+            <div className="px-4 py-3">
+              <TwoLineCell
+              primary={row.name}
+              secondary={
+                <>
+                  <DateDisplay value={row.startDate} /> — <DateDisplay value={row.endDate} />
+                </>
+              }
+            />
+          </div>
+        )}
+        />
+      </ListTableScreen>
 
       {dialogOpen ? (
         <SessionDialog
@@ -280,6 +389,86 @@ export function SessionsManager({ sessions, error, canConfigure }: SessionsManag
       />
     </div>
   );
+}
+
+function SessionRowActions({
+  row,
+  busy,
+  onMakeCurrent,
+  onEdit,
+  onDelete,
+}: {
+  row: AcademicSession;
+  busy: boolean;
+  onMakeCurrent: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const canMakeCurrent = !row.isCurrent && row.status !== 'CLOSED';
+  const canDelete = row.enrollmentCount === 0 && !row.isCurrent;
+
+  return (
+    <div className="flex justify-end" data-stop-row-click>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            tone="ghost"
+            size="icon"
+            className="size-8 text-muted-foreground hover:text-foreground"
+            disabled={busy}
+            aria-label={`Actions for ${row.name}`}
+          >
+            <MoreIcon className="size-4" aria-hidden="true" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          {canMakeCurrent ? (
+            <DropdownMenuItem
+              disabled={busy}
+              onSelect={() => {
+                onMakeCurrent();
+              }}
+            >
+              <ApproveIcon className="size-4" aria-hidden="true" />
+              Make current
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem
+            disabled={busy}
+            onSelect={() => {
+              onEdit();
+            }}
+          >
+            <EditIcon className="size-4" aria-hidden="true" />
+            Edit session
+          </DropdownMenuItem>
+          {canDelete ? (
+            <DropdownMenuItem
+              disabled={busy}
+              className="text-danger focus:text-danger"
+              onSelect={() => {
+                onDelete();
+              }}
+            >
+              <DeleteIcon className="size-4" aria-hidden="true" />
+              Delete session
+            </DropdownMenuItem>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
+/** `YYYY-MM-DD` the day after `value`, or undefined while it is blank/invalid. */
+function dayAfter(value: string): string | undefined {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (match === null) {
+    return undefined;
+  }
+  const next = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + 1));
+  return next.toISOString().slice(0, 10);
 }
 
 function SessionDialog({
@@ -404,10 +593,20 @@ function SessionDialog({
                   onChange={setStartDate}
                 />
               </Field>
-              <Field label="Ends" error={fieldErrors['endDate']} required>
+              <Field
+                label="Ends"
+                error={
+                  fieldErrors['endDate'] ??
+                  (startDate !== '' && endDate !== '' && endDate <= startDate
+                    ? 'The session must end after it starts.'
+                    : undefined)
+                }
+                required
+              >
                 <DatePicker
                   value={endDate}
                   onChange={setEndDate}
+                  min={dayAfter(startDate)}
                 />
               </Field>
             </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import type { LucideIcon } from 'lucide-react';
 import { type ComponentProps, useState } from 'react';
 
 import { HidePasswordIcon, ICON_SIZE, ShowPasswordIcon } from '../icons';
@@ -18,18 +19,35 @@ import { Hint, TooltipProvider } from './tooltip';
  * Carries its own `TooltipProvider` because auth screens sit outside the app
  * shell that normally provides one.
  */
-export type PasswordInputProps = Omit<ComponentProps<'input'>, 'type'>;
+export type PasswordInputProps = Omit<ComponentProps<'input'>, 'type'> & {
+  /** Inset leading icon — use with `<Field leadingIcon={…}>`, not `InputIconWrap`. */
+  readonly leadingIcon?: LucideIcon | false;
+};
 
-export function PasswordInput({ className, disabled, ...props }: PasswordInputProps) {
+export function PasswordInput({
+  className,
+  disabled,
+  leadingIcon,
+  ...props
+}: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
   const label = visible ? 'Hide password' : 'Show password';
+  const LeadingIcon = leadingIcon === false ? undefined : leadingIcon;
 
   return (
     <div className="relative">
+      {LeadingIcon === undefined ? null : (
+        <span
+          className="pointer-events-none absolute start-0 top-0 flex h-10 w-10 items-center justify-center text-muted-foreground"
+          aria-hidden="true"
+        >
+          <LeadingIcon className="size-4 shrink-0" />
+        </span>
+      )}
       <Input
         type={visible ? 'text' : 'password'}
         disabled={disabled}
-        className={cn('pe-10', className)}
+        className={cn(LeadingIcon !== undefined && 'ps-10', 'pe-10', className)}
         {...props}
       />
       <TooltipProvider delayDuration={400}>
@@ -61,3 +79,5 @@ export function PasswordInput({ className, disabled, ...props }: PasswordInputPr
     </div>
   );
 }
+
+PasswordInput.displayName = 'PasswordInput';

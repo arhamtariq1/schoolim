@@ -74,8 +74,9 @@ export function Pagination({
           <>No {label}</>
         ) : (
           <>
+            Showing{' '}
             <span className="font-medium text-foreground">
-              {first}–{last}
+              {first} to {last}
             </span>{' '}
             of <span className="font-medium text-foreground">{total}</span> {label}
           </>

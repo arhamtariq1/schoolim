@@ -53,6 +53,8 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   PlatformUser: 'PlatformUser',
   PlatformSession: 'PlatformSession',
+  Plan: 'Plan',
+  PlatformAuditLog: 'PlatformAuditLog',
   SignupIntent: 'SignupIntent',
   SchoolGroup: 'SchoolGroup',
   School: 'School',
@@ -74,10 +76,12 @@ export const ModelName = {
   StudentGuardian: 'StudentGuardian',
   Enrollment: 'Enrollment',
   Staff: 'Staff',
+  StaffClassAssignment: 'StaffClassAssignment',
   ExpenseCategory: 'ExpenseCategory',
   Expense: 'Expense',
   Holiday: 'Holiday',
   FeeHead: 'FeeHead',
+  FeeHeadClassLevel: 'FeeHeadClassLevel',
   StudentFee: 'StudentFee',
   NumberSequence: 'NumberSequence',
   JobRun: 'JobRun',
@@ -92,7 +96,23 @@ export const ModelName = {
   SecurityDeposit: 'SecurityDeposit',
   SecurityDepositRefund: 'SecurityDepositRefund',
   SchoolLogo: 'SchoolLogo',
-  SchoolVoucherSettings: 'SchoolVoucherSettings'
+  SchoolVoucherSettings: 'SchoolVoucherSettings',
+  Subject: 'Subject',
+  AssessmentType: 'AssessmentType',
+  Assessment: 'Assessment',
+  MarkEntry: 'MarkEntry',
+  StaffSalaryPeriod: 'StaffSalaryPeriod',
+  StaffSalaryAdjustment: 'StaffSalaryAdjustment',
+  StaffSalaryPayment: 'StaffSalaryPayment',
+  ClassSubject: 'ClassSubject',
+  ClassAssessmentType: 'ClassAssessmentType',
+  Request: 'Request',
+  RequestEvent: 'RequestEvent',
+  RequestAttachment: 'RequestAttachment',
+  Notification: 'Notification',
+  DeviceToken: 'DeviceToken',
+  Timetable: 'Timetable',
+  TimetableEntry: 'TimetableEntry'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -144,6 +164,41 @@ export const PlatformSessionScalarFieldEnum = {
 } as const
 
 export type PlatformSessionScalarFieldEnum = (typeof PlatformSessionScalarFieldEnum)[keyof typeof PlatformSessionScalarFieldEnum]
+
+
+export const PlanScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  name: 'name',
+  tagline: 'tagline',
+  price: 'price',
+  billingCycle: 'billingCycle',
+  studentCap: 'studentCap',
+  features: 'features',
+  isPublic: 'isPublic',
+  isRecommended: 'isRecommended',
+  sortOrder: 'sortOrder',
+  archivedAt: 'archivedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PlanScalarFieldEnum = (typeof PlanScalarFieldEnum)[keyof typeof PlanScalarFieldEnum]
+
+
+export const PlatformAuditLogScalarFieldEnum = {
+  id: 'id',
+  actorPlatformUserId: 'actorPlatformUserId',
+  action: 'action',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  before: 'before',
+  after: 'after',
+  ip: 'ip',
+  at: 'at'
+} as const
+
+export type PlatformAuditLogScalarFieldEnum = (typeof PlatformAuditLogScalarFieldEnum)[keyof typeof PlatformAuditLogScalarFieldEnum]
 
 
 export const SignupIntentScalarFieldEnum = {
@@ -198,11 +253,15 @@ export const SchoolScalarFieldEnum = {
   country: 'country',
   city: 'city',
   address: 'address',
+  schoolLevels: 'schoolLevels',
+  oLevelClassNames: 'oLevelClassNames',
+  aLevelClassNames: 'aLevelClassNames',
   phone: 'phone',
   email: 'email',
   status: 'status',
   lateFeePercent: 'lateFeePercent',
   lateFeeFlat: 'lateFeeFlat',
+  lateFeeGraceDays: 'lateFeeGraceDays',
   workingDays: 'workingDays',
   attendanceBackdateDays: 'attendanceBackdateDays',
   onboardedAt: 'onboardedAt',
@@ -523,12 +582,26 @@ export const StaffScalarFieldEnum = {
   leftOn: 'leftOn',
   cnic: 'cnic',
   designation: 'designation',
+  address: 'address',
+  photoUrl: 'photoUrl',
+  cvUrl: 'cvUrl',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
 } as const
 
 export type StaffScalarFieldEnum = (typeof StaffScalarFieldEnum)[keyof typeof StaffScalarFieldEnum]
+
+
+export const StaffClassAssignmentScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  staffId: 'staffId',
+  classLevelId: 'classLevelId',
+  createdAt: 'createdAt'
+} as const
+
+export type StaffClassAssignmentScalarFieldEnum = (typeof StaffClassAssignmentScalarFieldEnum)[keyof typeof StaffClassAssignmentScalarFieldEnum]
 
 
 export const ExpenseCategoryScalarFieldEnum = {
@@ -574,6 +647,7 @@ export const HolidayScalarFieldEnum = {
   appliesTo: 'appliesTo',
   startDate: 'startDate',
   endDate: 'endDate',
+  colorKey: 'colorKey',
   notes: 'notes',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -591,11 +665,23 @@ export const FeeHeadScalarFieldEnum = {
   sortOrder: 'sortOrder',
   isActive: 'isActive',
   frequency: 'frequency',
+  lateFeeApplies: 'lateFeeApplies',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type FeeHeadScalarFieldEnum = (typeof FeeHeadScalarFieldEnum)[keyof typeof FeeHeadScalarFieldEnum]
+
+
+export const FeeHeadClassLevelScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  feeHeadId: 'feeHeadId',
+  classLevelId: 'classLevelId',
+  createdAt: 'createdAt'
+} as const
+
+export type FeeHeadClassLevelScalarFieldEnum = (typeof FeeHeadClassLevelScalarFieldEnum)[keyof typeof FeeHeadClassLevelScalarFieldEnum]
 
 
 export const StudentFeeScalarFieldEnum = {
@@ -619,6 +705,8 @@ export const NumberSequenceScalarFieldEnum = {
   schoolId: 'schoolId',
   kind: 'kind',
   nextValue: 'nextValue',
+  prefix: 'prefix',
+  pad: 'pad',
   updatedAt: 'updatedAt'
 } as const
 
@@ -826,6 +914,7 @@ export const SchoolLogoScalarFieldEnum = {
   id: 'id',
   schoolId: 'schoolId',
   kind: 'kind',
+  slot: 'slot',
   bytes: 'bytes',
   mimeType: 'mimeType',
   etag: 'etag',
@@ -845,6 +934,9 @@ export const SchoolVoucherSettingsScalarFieldEnum = {
   id: 'id',
   schoolId: 'schoolId',
   showLogo: 'showLogo',
+  showBankLogos: 'showBankLogos',
+  showDates: 'showDates',
+  showStudentDetails: 'showStudentDetails',
   footerNote: 'footerNote',
   copyCount: 'copyCount',
   copyLabels: 'copyLabels',
@@ -861,6 +953,256 @@ export const SchoolVoucherSettingsScalarFieldEnum = {
 export type SchoolVoucherSettingsScalarFieldEnum = (typeof SchoolVoucherSettingsScalarFieldEnum)[keyof typeof SchoolVoucherSettingsScalarFieldEnum]
 
 
+export const SubjectScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  name: 'name',
+  createdAt: 'createdAt'
+} as const
+
+export type SubjectScalarFieldEnum = (typeof SubjectScalarFieldEnum)[keyof typeof SubjectScalarFieldEnum]
+
+
+export const AssessmentTypeScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  name: 'name',
+  createdAt: 'createdAt'
+} as const
+
+export type AssessmentTypeScalarFieldEnum = (typeof AssessmentTypeScalarFieldEnum)[keyof typeof AssessmentTypeScalarFieldEnum]
+
+
+export const AssessmentScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  sessionId: 'sessionId',
+  classLevelId: 'classLevelId',
+  subjectId: 'subjectId',
+  assessmentTypeId: 'assessmentTypeId',
+  heldOn: 'heldOn',
+  totalMarks: 'totalMarks',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AssessmentScalarFieldEnum = (typeof AssessmentScalarFieldEnum)[keyof typeof AssessmentScalarFieldEnum]
+
+
+export const MarkEntryScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  assessmentId: 'assessmentId',
+  studentId: 'studentId',
+  obtained: 'obtained',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MarkEntryScalarFieldEnum = (typeof MarkEntryScalarFieldEnum)[keyof typeof MarkEntryScalarFieldEnum]
+
+
+export const StaffSalaryPeriodScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  staffId: 'staffId',
+  month: 'month',
+  baseSalary: 'baseSalary',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt'
+} as const
+
+export type StaffSalaryPeriodScalarFieldEnum = (typeof StaffSalaryPeriodScalarFieldEnum)[keyof typeof StaffSalaryPeriodScalarFieldEnum]
+
+
+export const StaffSalaryAdjustmentScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  periodId: 'periodId',
+  kind: 'kind',
+  amount: 'amount',
+  reason: 'reason',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt'
+} as const
+
+export type StaffSalaryAdjustmentScalarFieldEnum = (typeof StaffSalaryAdjustmentScalarFieldEnum)[keyof typeof StaffSalaryAdjustmentScalarFieldEnum]
+
+
+export const StaffSalaryPaymentScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  staffId: 'staffId',
+  periodId: 'periodId',
+  month: 'month',
+  amount: 'amount',
+  paidOn: 'paidOn',
+  method: 'method',
+  reference: 'reference',
+  notes: 'notes',
+  idempotencyKey: 'idempotencyKey',
+  recordedBy: 'recordedBy',
+  createdAt: 'createdAt'
+} as const
+
+export type StaffSalaryPaymentScalarFieldEnum = (typeof StaffSalaryPaymentScalarFieldEnum)[keyof typeof StaffSalaryPaymentScalarFieldEnum]
+
+
+export const ClassSubjectScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  classLevelId: 'classLevelId',
+  subjectId: 'subjectId',
+  teacherId: 'teacherId',
+  createdAt: 'createdAt'
+} as const
+
+export type ClassSubjectScalarFieldEnum = (typeof ClassSubjectScalarFieldEnum)[keyof typeof ClassSubjectScalarFieldEnum]
+
+
+export const ClassAssessmentTypeScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  classLevelId: 'classLevelId',
+  assessmentTypeId: 'assessmentTypeId',
+  createdAt: 'createdAt'
+} as const
+
+export type ClassAssessmentTypeScalarFieldEnum = (typeof ClassAssessmentTypeScalarFieldEnum)[keyof typeof ClassAssessmentTypeScalarFieldEnum]
+
+
+export const RequestScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  requestNo: 'requestNo',
+  createdBy: 'createdBy',
+  requesterRole: 'requesterRole',
+  category: 'category',
+  priority: 'priority',
+  status: 'status',
+  subject: 'subject',
+  description: 'description',
+  studentId: 'studentId',
+  assignedTo: 'assignedTo',
+  resolvedAt: 'resolvedAt',
+  lastActivityAt: 'lastActivityAt',
+  idempotencyKey: 'idempotencyKey',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type RequestScalarFieldEnum = (typeof RequestScalarFieldEnum)[keyof typeof RequestScalarFieldEnum]
+
+
+export const RequestEventScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  requestId: 'requestId',
+  kind: 'kind',
+  actorId: 'actorId',
+  body: 'body',
+  fromStatus: 'fromStatus',
+  toStatus: 'toStatus',
+  assigneeId: 'assigneeId',
+  idempotencyKey: 'idempotencyKey',
+  createdAt: 'createdAt'
+} as const
+
+export type RequestEventScalarFieldEnum = (typeof RequestEventScalarFieldEnum)[keyof typeof RequestEventScalarFieldEnum]
+
+
+export const RequestAttachmentScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  requestId: 'requestId',
+  eventId: 'eventId',
+  uploadedBy: 'uploadedBy',
+  fileName: 'fileName',
+  mimeType: 'mimeType',
+  byteSize: 'byteSize',
+  etag: 'etag',
+  bytes: 'bytes',
+  storageProvider: 'storageProvider',
+  storageKey: 'storageKey',
+  storageUrl: 'storageUrl',
+  createdAt: 'createdAt'
+} as const
+
+export type RequestAttachmentScalarFieldEnum = (typeof RequestAttachmentScalarFieldEnum)[keyof typeof RequestAttachmentScalarFieldEnum]
+
+
+export const NotificationScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  userId: 'userId',
+  kind: 'kind',
+  title: 'title',
+  body: 'body',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  readAt: 'readAt',
+  createdAt: 'createdAt'
+} as const
+
+export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
+export const DeviceTokenScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  userId: 'userId',
+  token: 'token',
+  platform: 'platform',
+  userAgent: 'userAgent',
+  lastSeenAt: 'lastSeenAt',
+  createdAt: 'createdAt'
+} as const
+
+export type DeviceTokenScalarFieldEnum = (typeof DeviceTokenScalarFieldEnum)[keyof typeof DeviceTokenScalarFieldEnum]
+
+
+export const TimetableScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  sessionId: 'sessionId',
+  classLevelId: 'classLevelId',
+  sectionId: 'sectionId',
+  kind: 'kind',
+  assessmentTypeId: 'assessmentTypeId',
+  title: 'title',
+  description: 'description',
+  status: 'status',
+  startsOn: 'startsOn',
+  endsOn: 'endsOn',
+  publishedAt: 'publishedAt',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TimetableScalarFieldEnum = (typeof TimetableScalarFieldEnum)[keyof typeof TimetableScalarFieldEnum]
+
+
+export const TimetableEntryScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  timetableId: 'timetableId',
+  subjectId: 'subjectId',
+  teacherId: 'teacherId',
+  room: 'room',
+  dayOfWeek: 'dayOfWeek',
+  onDate: 'onDate',
+  startTime: 'startTime',
+  endTime: 'endTime',
+  notes: 'notes',
+  isBreak: 'isBreak',
+  createdAt: 'createdAt'
+} as const
+
+export type TimetableEntryScalarFieldEnum = (typeof TimetableEntryScalarFieldEnum)[keyof typeof TimetableEntryScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -869,19 +1211,19 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
-export const JsonNullValueInput = {
-  JsonNull: JsonNull
-} as const
-
-export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
-
-
 export const NullableJsonNullValueInput = {
   DbNull: DbNull,
   JsonNull: JsonNull
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {

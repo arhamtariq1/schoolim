@@ -7,9 +7,13 @@ import {
 } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
-import { AppShell } from '@/components/app-shell';
 import { FeeIncrementsView } from '@/components/fee-increments-view';
 import { apiFetch } from '@/lib/api';
+import {
+  DEFAULT_LIST_PAGE_SIZE,
+  parseSortField,
+  parseSortOrder,
+} from '@/lib/list-page';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
 
@@ -36,14 +40,23 @@ export default async function FeeIncrementsPage({
     sessionId: readParam(params, 'sessionId'),
     status: readParam(params, 'status'),
     gender: readParam(params, 'gender'),
-    grFrom: readParam(params, 'grFrom'),
-    grTo: readParam(params, 'grTo'),
   };
 
-  const limit = clampInt(params['limit'], 25, 1, MAX_PAGE_LIMIT);
+  const limit = clampInt(params['limit'], DEFAULT_LIST_PAGE_SIZE, 1, MAX_PAGE_LIMIT);
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
+  const sort = parseSortField(
+    params['sort'],
+    ['name', 'grNo', 'className', 'currentFee'] as const,
+    'grNo',
+  );
+  const order = parseSortOrder(params['order']);
 
-  const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  const query = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    sort,
+    order,
+  });
   for (const [key, value] of Object.entries(filters)) {
     if (value !== '') {
       query.set(key, value);
@@ -71,25 +84,18 @@ export default async function FeeIncrementsPage({
   const page = listResult.ok ? listResult.data.data : empty;
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <FeeIncrementsView
+    <FeeIncrementsView
         page={page}
         sessions={sessionsResult.ok ? sessionsResult.data.data : []}
         classes={academicsResult.ok ? academicsResult.data.data.classes : []}
         total={page.total}
         limit={limit}
         offset={offset}
+        sort={sort}
+        order={order}
         filters={filters}
         error={listResult.ok ? undefined : listResult.message}
         canApply={session?.permissions.includes('fees.increment.generate') ?? false}
       />
-    </AppShell>
   );
 }

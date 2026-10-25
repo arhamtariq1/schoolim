@@ -28,6 +28,7 @@ export interface StudentRow {
   guardian_phone: string | null;
   father_name: string | null;
   admitted_on: Date | null;
+  photo_url: string | null;
   /**
    * `numeric(14,2)` rupees, converted to paisa in `toListItem`.
    *
@@ -43,8 +44,13 @@ export interface StudentRow {
 export interface StudentScope {
   /** Narrow to one student, while keeping every other restriction identical. */
   readonly studentId?: string | undefined;
-  /** A teacher sees only their assigned sections. */
-  readonly sectionIds?: readonly string[] | undefined;
+  /**
+   * A teacher sees only the classes assigned to them (ADR-0014).
+   *
+   * An empty array means **nothing**, and `undefined` means no restriction —
+   * the two are opposites and the clause below keeps them apart.
+   */
+  readonly classLevelIds?: readonly string[] | undefined;
   /** A parent sees only their own children. */
   readonly guardianUserId?: string | undefined;
   /** A student sees only themselves. */
@@ -104,33 +110,32 @@ export class StudentsRepository {
         // Reception types whichever number is on the paper in front of them.
         `((s.first_name || ' ' || s.last_name) ILIKE ${term}
            OR s.student_code ILIKE ${term}
-           OR s.gr_no ILIKE ${term})`,
+           OR s.gr_no ILIKE ${term}
+           OR g.name ILIKE ${term}
+           OR g.phone ILIKE ${term}
+           OR EXISTS (
+                SELECT 1
+                  FROM student_guardians sgf
+                  JOIN guardians gf ON gf.id = sgf.guardian_id
+                 WHERE sgf.student_id = s.id
+                   AND (gf.name ILIKE ${term} OR gf.phone ILIKE ${term})
+              ))`,
       );
     }
 
     // --- Scoped permissions become a query clause, never a post-fetch filter.
     // Filtering after the fetch would page over rows the caller may not see,
     // so counts and pagination would silently lie (docs/04 §5).
-    if (scope.sectionIds !== undefined) {
+    if (scope.classLevelIds !== undefined) {
+      // On `e`, the enrolment the row is displayed with, so a teacher cannot
+      // be shown a child under a class that is not theirs.
       where.push(
-        scope.sectionIds.length === 0
+        scope.classLevelIds.length === 0
           ? 'FALSE'
-          : `e.section_id = ANY(${bind(scope.sectionIds)}::uuid[])`,
+          : `e.class_level_id = ANY(${bind(scope.classLevelIds)}::uuid[])`,
       );
     }
-    if (scope.guardianUserId !== undefined) {
-      where.push(
-        `EXISTS (SELECT 1 FROM student_guardians sg2
-                 JOIN guardians g2 ON g2.id = sg2.guardian_id
-                 WHERE sg2.student_id = s.id AND g2.user_id = ${bind(scope.guardianUserId)}::uuid)`,
-      );
-    }
-    if (scope.studentUserId !== undefined) {
-      where.push(`s.user_id = ${bind(scope.studentUserId)}::uuid`);
-    }
-    if (scope.studentId !== undefined) {
-      where.push(`s.id = ${bind(scope.studentId)}::uuid`);
-    }
+    where.push(...identityScopeClauses(scope, bind));
 
     // `length` first, on both numbers.
     //
@@ -176,7 +181,7 @@ export class StudentsRepository {
               s.gender::text AS gender,
               cl.name AS class_name, sec.name AS section_name, e.roll_no,
               g.name AS guardian_name, g.phone AS guardian_phone,
-              s.admitted_on,
+              s.admitted_on, s.photo_url,
               -- Scalar subqueries, deliberately, not joins.
               --
               -- A child has several fee lines and often more than one guardian,
@@ -191,10 +196,22 @@ export class StudentsRepository {
                  JOIN guardians gf ON gf.id = sgf.guardian_id
                 WHERE sgf.student_id = s.id AND gf.relation = 'FATHER'
                 LIMIT 1) AS father_name,
+              -- student_fees is a timeline (one row per change), so "the"
+              -- tuition is the row in force today in the school's own zone,
+              -- or, for a child whose fees have not started yet, the first
+              -- one to come. An unordered LIMIT 1 picked either at random.
               (SELECT COALESCE(sf.discounted_amount, sf.amount)
                  FROM student_fees sf
                  JOIN fee_heads fh ON fh.id = sf.fee_head_id
+                 CROSS JOIN (
+                   SELECT (now() AT TIME ZONE COALESCE(
+                             (SELECT timezone FROM schools LIMIT 1), 'Asia/Karachi'))::date AS d
+                 ) today
                 WHERE sf.student_id = s.id AND fh.type = 'TUITION'
+                ORDER BY (sf.effective_from <= today.d) DESC,
+                         CASE WHEN sf.effective_from <= today.d THEN sf.effective_from END DESC,
+                         sf.effective_from ASC,
+                         fh.sort_order ASC
                 LIMIT 1) AS tuition_fee
        ${from}
        ORDER BY ${ORDER[query.sort]} ${direction}
@@ -213,13 +230,71 @@ export class StudentsRepository {
     return { rows, total: Number(counted[0]?.total ?? 0) };
   }
 
-  async countByStatus(tx: TransactionClient): Promise<Record<string, number>> {
-    const rows = await tx.$queryRaw<{ status: string; n: bigint }[]>`
-      SELECT status::text AS status, count(*) AS n
-      FROM students
-      WHERE deleted_at IS NULL
-      GROUP BY status
-    `;
+  /**
+   * Head-counts by status, for the people the caller is allowed to see.
+   *
+   * Scoped like the list, because these numbers sit at the top of the same
+   * screen: a teacher shown "482 active" above a list of 31 has been told how
+   * big the school is, and that is a disclosure with no row in it.
+   */
+  async countByStatus(
+    tx: TransactionClient,
+    scope: StudentScope = {},
+  ): Promise<Record<string, number>> {
+    const where: string[] = ['s.deleted_at IS NULL'];
+    const params: unknown[] = [];
+    const bind = (value: unknown): string => {
+      params.push(value);
+      return `$${String(params.length)}`;
+    };
+
+    if (scope.classLevelIds !== undefined) {
+      // The current session's live enrolment, which is what the list shows.
+      where.push(
+        scope.classLevelIds.length === 0
+          ? 'FALSE'
+          : `EXISTS (SELECT 1
+                      FROM enrollments ce
+                      JOIN academic_sessions cs ON cs.id = ce.session_id AND cs.is_current
+                     WHERE ce.student_id = s.id
+                       AND ce.status = 'ENROLLED'
+                       AND ce.class_level_id = ANY(${bind(scope.classLevelIds)}::uuid[]))`,
+      );
+    }
+    where.push(...identityScopeClauses(scope, bind));
+
+    const rows = await tx.$queryRawUnsafe<{ status: string; n: bigint }[]>(
+      `SELECT s.status::text AS status, count(*) AS n
+         FROM students s
+        WHERE ${where.join(' AND ')}
+        GROUP BY s.status`,
+      ...params,
+    );
     return Object.fromEntries(rows.map((row) => [row.status, Number(row.n)]));
   }
+}
+
+/**
+ * The restrictions that depend on the student's own row rather than on a
+ * class — shared by the list and the counts so the two cannot disagree about
+ * who a parent or a student may see.
+ */
+function identityScopeClauses(scope: StudentScope, bind: (value: unknown) => string): string[] {
+  const clauses: string[] = [];
+
+  if (scope.guardianUserId !== undefined) {
+    clauses.push(
+      `EXISTS (SELECT 1 FROM student_guardians sg2
+               JOIN guardians g2 ON g2.id = sg2.guardian_id
+               WHERE sg2.student_id = s.id AND g2.user_id = ${bind(scope.guardianUserId)}::uuid)`,
+    );
+  }
+  if (scope.studentUserId !== undefined) {
+    clauses.push(`s.user_id = ${bind(scope.studentUserId)}::uuid`);
+  }
+  if (scope.studentId !== undefined) {
+    clauses.push(`s.id = ${bind(scope.studentId)}::uuid`);
+  }
+
+  return clauses;
 }

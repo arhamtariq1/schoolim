@@ -1,6 +1,8 @@
 import {
+  bankLogoSlotSchema,
   ROUTES,
   type AssetKind,
+  type BankLogo,
   updateSchoolAppearanceSchema,
   updateSchoolSettingsSchema,
   updateVoucherSettingsSchema,
@@ -10,8 +12,10 @@ import {
   type SchoolSettings,
   type VoucherSettings,
 } from '@ilm/contracts';
-import { Body, Controller, Delete, Get, Module, Put, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Module, Param, Put, Req, Res } from '@nestjs/common';
 import { type FastifyReply, type FastifyRequest } from 'fastify';
+
+import { AcademicsModule } from '../academics/academics.module';
 
 import { RequirePermission } from '../../shared/rbac/rbac.guard';
 import { clockProvider } from '../../shared/time/clock.provider';
@@ -50,13 +54,14 @@ import { VoucherSettingsService } from './voucher-settings.service';
  * asset never reaches this branch: the router keeps it in Postgres, and it is
  * streamed from here behind the session like everything else.
  */
-async function serveAsset(
+export async function serveAsset(
   logos: SchoolLogoService,
   kind: AssetKind,
   request: FastifyRequest,
   reply: FastifyReply,
+  slot = 0,
 ): Promise<void> {
-  const asset = await logos.locate(kind);
+  const asset = await logos.locate(kind, slot);
 
   // An image appears on every page and changes about once a year. Without a
   // conditional request that is one download per navigation, on a connection
@@ -170,6 +175,49 @@ export class BankLogoController {
     await this.logos.remove('BANK_LOGO');
     return { data: { removed: true } };
   }
+
+  // --- Several marks, by slot --------------------------------------------
+  //
+  // The single-mark paths above are slot 0, so a school that never adds a
+  // second bank sees no difference.
+
+  @Get(ROUTES.bankLogo.list)
+  @RequirePermission('fees.voucher.read')
+  async list(): Promise<{ data: BankLogo[] }> {
+    return { data: await this.logos.listBank() };
+  }
+
+  @Get(`${ROUTES.bankLogo.list}/:slot`)
+  @RequirePermission('fees.voucher.read')
+  async slotImage(
+    @Param('slot') slot: string,
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: false }) reply: FastifyReply,
+  ): Promise<void> {
+    await serveAsset(this.logos, 'BANK_LOGO', request, reply, bankLogoSlotSchema.parse(slot));
+  }
+
+  @Put(`${ROUTES.bankLogo.list}/:slot`)
+  @RequirePermission('settings.school.configure')
+  async uploadSlot(
+    @Param('slot') slot: string,
+    @Body() body: unknown,
+  ): Promise<{ data: SchoolLogoInfo }> {
+    return {
+      data: await this.logos.replace(
+        'BANK_LOGO',
+        uploadSchoolLogoSchema.parse(body),
+        bankLogoSlotSchema.parse(slot),
+      ),
+    };
+  }
+
+  @Delete(`${ROUTES.bankLogo.list}/:slot`)
+  @RequirePermission('settings.school.configure')
+  async removeSlot(@Param('slot') slot: string): Promise<{ data: { removed: true } }> {
+    await this.logos.remove('BANK_LOGO', bankLogoSlotSchema.parse(slot));
+    return { data: { removed: true } };
+  }
 }
 
 /**
@@ -247,6 +295,7 @@ export class VoucherSettingsController {
 }
 
 @Module({
+  imports: [AcademicsModule],
   controllers: [
     SchoolLogoController,
     BankLogoController,
@@ -261,6 +310,6 @@ export class VoucherSettingsController {
     SchoolAppearanceService,
     VoucherSettingsService,
   ],
-  exports: [SchoolLogoService],
+  exports: [SchoolLogoService, SchoolSettingsService, VoucherSettingsService],
 })
 export class SchoolsModule {}

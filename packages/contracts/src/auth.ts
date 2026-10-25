@@ -48,6 +48,8 @@ export const sessionUserSchema = z.object({
   /** Every permission the held roles grant, so the UI can build navigation. */
   permissions: z.array(z.string()),
   mustChangePassword: z.boolean(),
+  /** Profile photo (data URL or https URL) for the header. Sent by the session read only. */
+  avatarUrl: z.string().nullable().optional(),
   /**
    * Has this person proved they can read mail at `email`? ADR-0012.
    *
@@ -156,6 +158,26 @@ export const resetPasswordRequestSchema = z
   });
 
 export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
+
+/** Signed-in user changes their own password. */
+export const changePasswordRequestSchema = z
+  .object({
+    currentPassword: nonEmptyString.max(256),
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, 'Confirm your password.'),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.password !== value.confirmPassword) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['confirmPassword'],
+        message: 'Passwords do not match.',
+      });
+    }
+  });
+
+export type ChangePasswordRequest = z.infer<typeof changePasswordRequestSchema>;
 
 /**
  * One school a set of credentials just unlocked.

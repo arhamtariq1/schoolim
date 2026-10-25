@@ -8,27 +8,44 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  DataTable,
   DateDisplay,
   DatePicker,
-  Field,
-  Input,
   Money,
-  Pagination,
   SimpleSelect,
   StatusBadge,
-  type Column,
+  TwoLineCell,
+  type CardTableColumn,
 } from '@ilm/ui';
 import {
+  AccountIcon,
+  CalendarIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  ClassIcon,
   ExportIcon,
+  FeesIcon,
   ICON_SIZE,
-  SearchIcon,
+  PhoneIcon,
+  StudentsIcon,
+  SuccessIcon,
 } from '@ilm/ui/icons';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useMemo, useState, type ReactNode } from 'react';
 
+import {
+  FEE_LIST_TABLE_CELL,
+  feeListTableHeader,
+  useDebouncedSearchFilter,
+} from '@/components/fees/fee-list-shared';
+import { ListDataTable } from '@/components/list-data-table';
+import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
+import { ListTableScreen } from '@/components/list-table-screen';
+import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { TableSelectionBar } from '@/components/table-selection-bar';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { pageIntro } from '@/lib/page-copy';
+import { nextSortParams } from '@/lib/list-page';
+import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -59,6 +76,8 @@ export interface DefaultersViewProps {
   readonly classes: readonly ClassLevel[];
   readonly limit: number;
   readonly offset: number;
+  readonly sort: 'amount' | 'months' | 'name' | 'grNo' | 'className';
+  readonly order: 'asc' | 'desc';
   readonly filters: {
     q: string;
     classLevelId: string;
@@ -76,39 +95,58 @@ export function DefaultersView({
   classes,
   limit,
   offset,
+  sort,
+  order,
   filters,
   error,
 }: DefaultersViewProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const params = useSearchParams();
   const tenantHref = useTenantHref();
 
-  const [draft, setDraft] = useState(filters);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
 
-  function apply(next: Partial<typeof filters>): void {
-    const merged = { ...draft, ...next };
-    const query = new URLSearchParams();
-    for (const [key, value] of Object.entries(merged)) {
-      if (value !== '') {
+  const {
+    selected,
+    clearSelection,
+    allOnPageSelected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  } = useRowSelection(page.rows, (row) => row.studentId);
+
+  const { searchQuery, onSearchQueryChange } = useDebouncedSearchFilter(filters.q, (value) => {
+    pushFilters({ q: value });
+  });
+
+  const isFiltered = Object.values(filters).some((value) => value !== '');
+
+  function toggleSort(columnKey: string) {
+    const next = nextSortParams(sort, order, columnKey);
+    pushFilters({ sort: next.sort, order: next.order });
+  }
+
+  function pushFilters(next: Record<string, string>): void {
+    const query = new URLSearchParams(params.toString());
+    for (const [key, value] of Object.entries(next)) {
+      if (value === '') {
+        query.delete(key);
+      } else {
         query.set(key, value);
       }
     }
-    query.set('limit', String(limit));
-    router.push(tenantHref(`/fees/defaulters?${query.toString()}`));
+    if (!Object.hasOwn(next, 'limit')) {
+      query.set('limit', String(limit));
+    }
+    if (!Object.hasOwn(next, 'offset')) {
+      query.delete('offset');
+      clearSelection();
+    }
+    router.push(`${pathname}?${query.toString()}`);
   }
 
-  function reset(): void {
-    const cleared = {
-      q: '',
-      classLevelId: '',
-      status: '',
-      gender: '',
-      months: '',
-      from: '',
-      to: '',
-    };
-    setDraft(cleared);
+  function clearFilters(): void {
     router.push(tenantHref('/fees/defaulters'));
   }
 
@@ -131,14 +169,10 @@ export function DefaultersView({
    * they just pressed.
    */
   function renderVouchers(row: DefaulterRow): ReactNode {
-    if (!expanded.has(row.studentId)) {
-      return undefined;
-    }
-
     return (
       <section
         aria-label={`Overdue vouchers for ${row.name}`}
-        className="rounded-xl border border-border bg-card"
+        className="border-t border-border bg-card"
       >
         <header className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-4 py-2">
           <h2 className="text-sm font-medium">
@@ -166,7 +200,7 @@ export function DefaultersView({
                 ))}
                 <th
                   scope="col"
-                  className="px-3 py-2 text-end text-xs font-medium whitespace-nowrap text-muted-foreground"
+                  className="px-3 py-2 text-start text-xs font-semibold whitespace-nowrap text-foreground"
                 >
                   Amount
                 </th>
@@ -195,7 +229,7 @@ export function DefaultersView({
                       {VOUCHER_STATUS_LABELS[voucher.status]}
                     </StatusBadge>
                   </td>
-                  <td className="px-3 py-2 text-end font-mono text-sm tabular-nums">
+                  <td className="px-3 py-2 text-start font-mono text-sm tabular-nums">
                     <Money valueMinor={voucher.balanceMinor} />
                     {/* A part payment is shown rather than implied: "owes
                           3,000" and "owes 3,000 of 5,000" are different
@@ -216,272 +250,283 @@ export function DefaultersView({
     );
   }
 
-  const columns: Column<DefaulterRow>[] = [
-    {
-      key: 'expand',
-      header: '',
-      render: (row) => {
-        const isOpen = expanded.has(row.studentId);
-        return (
-          <Button
-            tone="ghost"
-            size="sm"
-            aria-expanded={isOpen}
-            aria-label={`${isOpen ? 'Hide' : 'Show'} the overdue vouchers for ${row.name}`}
-            onClick={() => {
-              toggle(row.studentId);
-            }}
-          >
-            {isOpen ? (
-              <ChevronDownIcon className={ICON_SIZE.inline} aria-hidden />
-            ) : (
-              <ChevronRightIcon className={ICON_SIZE.inline} aria-hidden />
-            )}
-          </Button>
-        );
+  const columns = useMemo((): CardTableColumn<DefaulterRow>[] => {
+    return [
+      listTableSelectColumn({
+        selected,
+        allOnPageSelected,
+        someOnPageSelected,
+        toggleAllOnPage,
+        toggleRowSelected,
+        getRowId: (row) => row.studentId,
+        rowAriaLabel: (row) => row.name,
+        selectAllAriaLabel: 'Select every defaulter on this page',
+      }),
+      {
+        key: 'grNo',
+        label: 'GR No',
+        ...FEE_LIST_TABLE_CELL,
+        colStyle: { width: '6.5rem' },
+        sortable: true,
+        headerCell: feeListTableHeader('GR No', StudentsIcon),
+        render: (row) => {
+          const isOpen = expanded.has(row.studentId);
+          return (
+            <div className="flex items-center gap-1.5" data-stop-row-click>
+              <Button
+                tone="ghost"
+                size="sm"
+                className="size-8 shrink-0 p-0"
+                aria-expanded={isOpen}
+                aria-label={`${isOpen ? 'Hide' : 'Show'} the overdue vouchers for ${row.name}`}
+                onClick={() => {
+                  toggle(row.studentId);
+                }}
+              >
+                {isOpen ? (
+                  <ChevronDownIcon className={ICON_SIZE.inline} aria-hidden />
+                ) : (
+                  <ChevronRightIcon className={ICON_SIZE.inline} aria-hidden />
+                )}
+              </Button>
+              <span className="font-mono text-sm leading-none tabular-nums">{row.grNo}</span>
+            </div>
+          );
+        },
       },
-    },
-    {
-      key: 'grNo',
-      header: 'G.R No',
-      render: (row) => <span className="font-mono text-xs select-all">{row.grNo}</span>,
-    },
-    {
-      key: 'name',
-      header: 'Student',
-      render: (row) => (
-        <div>
-          <span className="text-balance">{row.name}</span>
-          <span className="block text-xs text-muted-foreground">
-            {[row.className, row.sectionName].filter((part) => part !== null).join(' · ') || '—'}
+      {
+        key: 'name',
+        label: 'Student',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[18%]',
+        sortable: true,
+        headerCell: feeListTableHeader('Student', StudentsIcon),
+        render: (row) => (
+          <TwoLineCell
+            primary={row.name}
+            secondary={
+              [row.className, row.sectionName].filter((part) => part !== null).join(' · ') || '—'
+            }
+          />
+        ),
+      },
+      {
+        key: 'fatherName',
+        label: 'Father',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[14%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Father', AccountIcon),
+        render: (row) => <span className="text-sm">{row.fatherName ?? '—'}</span>,
+      },
+      {
+        key: 'contact',
+        label: 'Contact',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[12%]',
+        headerCell: feeListTableHeader('Contact', PhoneIcon),
+        render: (row) => <span className="font-mono text-sm">{row.contact ?? '—'}</span>,
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[10%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Status'),
+        render: (row) => (
+          <StatusBadge tone={row.status === 'ACTIVE' ? 'success' : 'warning'}>
+            {row.status === 'ACTIVE' ? 'Active' : titleCase(row.status)}
+          </StatusBadge>
+        ),
+      },
+      {
+        key: 'amount',
+        label: 'Amount',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[12%]',
+        sortable: true,
+        headerCell: feeListTableHeader('Amount', FeesIcon),
+        render: (row) => (
+          <span className="font-mono text-sm font-medium text-danger tabular-nums">
+            <Money valueMinor={row.totalOwedMinor} />
           </span>
-        </div>
-      ),
-    },
-    {
-      key: 'fatherName',
-      header: 'Father',
-      hideOnMobile: true,
-      render: (row) => <span className="text-balance">{row.fatherName ?? '—'}</span>,
-    },
-    {
-      key: 'contact',
-      header: 'Contact',
-      render: (row) => <span className="font-mono text-xs">{row.contact ?? '—'}</span>,
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      hideOnMobile: true,
-      // A child who has left still owes what they owed — which is exactly the
-      // balance a school most wants chasing — so the column says which they are
-      // rather than the list hiding them.
-      render: (row) => (
-        <StatusBadge tone={row.status === 'ACTIVE' ? 'success' : 'warning'}>
-          {row.status === 'ACTIVE' ? 'Active' : titleCase(row.status)}
-        </StatusBadge>
-      ),
-    },
-    {
-      key: 'amount',
-      header: 'Amount',
-      align: 'end',
-      render: (row) => (
-        <span className="font-mono text-sm font-medium text-danger tabular-nums">
-          <Money valueMinor={row.totalOwedMinor} />
-        </span>
-      ),
-    },
-    {
-      key: 'months',
-      header: 'Months',
-      align: 'end',
-      render: (row) => <span className="font-mono text-sm tabular-nums">{row.monthsOwed}</span>,
-    },
-    {
-      key: 'monthNames',
-      header: 'Name of month',
-      hideOnMobile: true,
-      render: (row) => (
-        <span className="text-xs text-muted-foreground">
-          {row.months.length === 0 ? 'arrears only' : row.months.map(formatMonth).join(', ')}
-        </span>
-      ),
-    },
-  ];
-
-  const isFiltered = Object.values(filters).some((value) => value !== '');
+        ),
+      },
+      {
+        key: 'months',
+        label: 'Months',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[8%]',
+        headerCell: feeListTableHeader('Months'),
+        render: (row) => <span className="font-mono text-sm tabular-nums">{row.monthsOwed}</span>,
+      },
+      {
+        key: 'monthNames',
+        label: 'Bill months',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[14%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Bill months', CalendarIcon),
+        render: (row) => (
+          <span className="text-sm text-muted-foreground">
+            {row.months.length === 0 ? 'arrears only' : row.months.map(formatMonth).join(', ')}
+          </span>
+        ),
+      },
+    ];
+  }, [
+    allOnPageSelected,
+    expanded,
+    selected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  ]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Defaulters</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Students whose fee was due before <DateDisplay value={page.asOf} /> and is still owed.
-          </p>
-        </div>
+    <div className="w-full space-y-6">
+      <WorkspacePageHeader title="Defaulters" description={pageIntro('/fees/defaulters')} />
 
-        <div className="flex items-end gap-3">
-          <div className="rounded-xl border border-danger/30 bg-danger/5 px-4 py-2">
-            <p className="text-xs text-muted-foreground">Total outstanding</p>
-            <p className="font-mono text-lg font-semibold text-danger tabular-nums">
-              <Money valueMinor={page.totalOwedMinor} />
-            </p>
-          </div>
-          <Button tone="outline" onClick={exportCsv(page)} disabled={page.rows.length === 0}>
+      <ListTableScreen
+        tableTitle="All defaulters"
+        headerActions={
+          <Button tone="outline" size="sm" onClick={exportCsv(page)} disabled={page.rows.length === 0}>
             <ExportIcon className={ICON_SIZE.inline} aria-hidden />
             Export
           </Button>
-        </div>
-      </header>
-
-      <form
-        className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
-        onSubmit={(event: FormEvent) => {
-          event.preventDefault();
-          apply({});
-        }}
-      >
-        <Field label="Search">
-          <div className="relative">
-            <Input
-              value={draft.q}
-              placeholder="Name, father, GR number"
-              onChange={(event) => {
-                setDraft({ ...draft, q: event.target.value });
+        }
+        filters={
+          <ListPageToolbar
+        searchQuery={searchQuery}
+        onSearchQueryChange={onSearchQueryChange}
+        searchPlaceholder="Name, father, GR number"
+        searchAriaLabel="Search defaulters"
+        filters={
+          <>
+            <SimpleSelect
+              className="w-full min-w-32 sm:w-36"
+              ariaLabel="Filter by class"
+              value={filters.classLevelId}
+              triggerIcon={ClassIcon}
+              emptyOption={{ value: '', label: 'Any class' }}
+              placeholder="Any class"
+              options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
+              onValueChange={(next) => {
+                pushFilters({ classLevelId: next });
               }}
             />
-            <SearchIcon
-              className={`${ICON_SIZE.inline} pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground`}
-              aria-hidden
+            <SimpleSelect
+              className="w-full min-w-32 sm:w-36"
+              ariaLabel="Filter by status"
+              value={filters.status}
+              triggerIcon={SuccessIcon}
+              emptyOption={{ value: '', label: 'Any status' }}
+              placeholder="Any status"
+              options={[
+                { value: 'ACTIVE', label: 'Active' },
+                { value: 'INACTIVE', label: 'Inactive' },
+                { value: 'LEFT', label: 'Left' },
+              ]}
+              onValueChange={(next) => {
+                pushFilters({ status: next });
+              }}
             />
-          </div>
-        </Field>
-
-        <Field label="Class">
-          <SimpleSelect
-            value={draft.classLevelId}
-            emptyOption={{ value: '', label: 'Any class' }}
-            options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
-            onValueChange={(next) => {
-              setDraft({ ...draft, classLevelId: next });
-              apply({ classLevelId: next });
+            <SimpleSelect
+              className="w-full min-w-32 sm:w-36"
+              ariaLabel="Months behind"
+              value={filters.months}
+              triggerIcon={CalendarIcon}
+              emptyOption={{ value: '', label: 'Any months behind' }}
+              placeholder="Any months behind"
+              options={[
+                { value: '1', label: 'At least 1 month' },
+                { value: '2', label: 'At least 2 months' },
+                { value: '3', label: 'At least 3 months' },
+                { value: '6', label: 'At least 6 months' },
+              ]}
+              onValueChange={(next) => {
+                pushFilters({ months: next });
+              }}
+            />
+            <SimpleSelect
+              className="w-full min-w-32 sm:w-36"
+              ariaLabel="Filter by gender"
+              value={filters.gender}
+              triggerIcon={AccountIcon}
+              emptyOption={{ value: '', label: 'Any gender' }}
+              placeholder="Any gender"
+              options={[
+                { value: 'MALE', label: 'Male' },
+                { value: 'FEMALE', label: 'Female' },
+              ]}
+              onValueChange={(next) => {
+                pushFilters({ gender: next });
+              }}
+            />
+            <div className="w-44 shrink-0">
+              <DatePicker
+                value={
+                  filters.from !== '' && (filters.to === '' || filters.to === filters.from)
+                    ? filters.from
+                    : ''
+                }
+                aria-label="Due date"
+                onChange={(nextValue) => {
+                  if (nextValue === '') {
+                    pushFilters({ from: '', to: '' });
+                    return;
+                  }
+                  pushFilters({ from: nextValue, to: nextValue });
+                }}
+              />
+            </div>
+          </>
+        }
+          />
+        }
+        footer={
+          <ListTablePaginationFooter
+            total={page.total}
+            limit={limit}
+            offset={offset}
+            label="defaulters"
+            onPageChange={(next) => {
+              pushFilters({ offset: next === 0 ? '' : String(next) });
+            }}
+            onLimitChange={(next) => {
+              pushFilters({ limit: next, offset: '' });
             }}
           />
-        </Field>
-
-        <Field label="Status">
-          <SimpleSelect
-            value={draft.status}
-            emptyOption={{ value: '', label: 'Any status' }}
-            options={[
-              { value: 'ACTIVE', label: 'Active' },
-              { value: 'INACTIVE', label: 'Inactive' },
-              { value: 'LEFT', label: 'Left' },
-            ]}
-            onValueChange={(next) => {
-              setDraft({ ...draft, status: next });
-              apply({ status: next });
-            }}
-          />
-        </Field>
-
-        {/* "At least this far behind" is how a school decides who gets a phone
-            call: three months owing is a different conversation from one. */}
-        <Field label="At least" hint="Months behind">
-          <SimpleSelect
-            value={draft.months}
-            emptyOption={{ value: '', label: 'Any' }}
-            options={[
-              { value: '1', label: '1 month' },
-              { value: '2', label: '2 months' },
-              { value: '3', label: '3 months' },
-              { value: '6', label: '6 months' },
-            ]}
-            onValueChange={(next) => {
-              setDraft({ ...draft, months: next });
-              apply({ months: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Due from" hint="Bounds the due date, not the issue date">
-          <DatePicker
-            value={draft.from}
-            onChange={(next) => {
-              setDraft({ ...draft, from: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Due to">
-          <DatePicker
-            value={draft.to}
-            onChange={(next) => {
-              setDraft({ ...draft, to: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Gender">
-          <SimpleSelect
-            value={draft.gender}
-            emptyOption={{ value: '', label: 'Any' }}
-            options={[
-              { value: 'MALE', label: 'Male' },
-              { value: 'FEMALE', label: 'Female' },
-            ]}
-            onValueChange={(next) => {
-              setDraft({ ...draft, gender: next });
-              apply({ gender: next });
-            }}
-          />
-        </Field>
-
-        <div className="flex items-end gap-2">
-          <Button type="submit" tone="outline" className="flex-1">
-            Apply
-          </Button>
-          <Button type="button" tone="ghost" onClick={reset}>
-            Reset
-          </Button>
-        </div>
-      </form>
-
-      <DataTable
-        rows={page.rows}
-        columns={columns}
-        rowKey={(row) => row.studentId}
-        error={error}
-        caption="Students with overdue fees"
-        isFiltered={isFiltered}
-        onClearFilters={reset}
-        renderExpanded={renderVouchers}
-        empty={{
-          title: 'Nobody is behind',
-          description:
-            'Every fee due before today has been paid. Vouchers that are not due yet are not counted here.',
-        }}
-      />
-
-      {page.total === 0 ? null : (
-        <Pagination
-          total={page.total}
-          limit={limit}
-          offset={offset}
-          label="defaulters"
-          onChange={(next) => {
-            const query = new URLSearchParams(params.toString());
-            if (next === 0) {
-              query.delete('offset');
-            } else {
-              query.set('offset', String(next));
-            }
-            router.push(tenantHref(`/fees/defaulters?${query.toString()}`));
+        }
+      >
+        <ListDataTable
+          title="All defaulters"
+          caption="Students with overdue fees"
+          rows={page.rows}
+          columns={columns}
+          rowKey={(row) => row.studentId}
+          minWidthClass="min-w-[56rem]"
+          error={error}
+          isFiltered={isFiltered}
+          onClearFilters={clearFilters}
+          sort={{
+            key: sort,
+            direction: order,
+            onToggle: toggleSort,
+          }}
+          renderExpanded={(row) =>
+            expanded.has(row.studentId) ? renderVouchers(row) : null
+          }
+          empty={{
+            title: 'Nobody is behind',
+            description:
+              'Every fee due before today has been paid. Vouchers that are not due yet are not counted here.',
           }}
         />
-      )}
+      </ListTableScreen>
+
+      <TableSelectionBar count={selected.size} noun="defaulter" onClear={clearSelection} />
     </div>
   );
 }

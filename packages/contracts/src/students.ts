@@ -1,10 +1,13 @@
 import { z } from 'zod';
 
 import { feeTotalsSchema, studentFeeLineSchema, studentFeeSchema } from './fees';
+import { nationalIdSchema } from './national-id';
 import { listQuery } from './pagination';
 import {
   calendarDateSchema,
+  emailSchema,
   idSchema,
+  minorUnitsSchema,
   nonEmptyString,
   phoneSchema,
   positiveMinorUnitsSchema,
@@ -74,6 +77,8 @@ export const studentListItemSchema = z.object({
    */
   fatherName: z.string().nullable(),
   admittedOn: calendarDateSchema.nullable(),
+  /** Student photograph when uploaded; null on the list when none on file. */
+  photoUrl: z.string().nullable(),
   /**
    * Integer paisa payable for the `TUITION` head, after any discount.
    *
@@ -89,7 +94,6 @@ export type StudentListItem = z.infer<typeof studentListItemSchema>;
 
 export const studentDetailSchema = studentListItemSchema.extend({
   dateOfBirth: calendarDateSchema.nullable(),
-  photoUrl: z.string().nullable(),
   religion: z.string().nullable(),
   bloodGroup: z.string().nullable(),
   nationality: z.string().nullable(),
@@ -148,7 +152,9 @@ export const createStudentSchema = z
     lastName: textSchema(80),
     gender: genderSchema.optional(),
     dateOfBirth: calendarDateSchema.optional(),
-    bFormNo: z.string().trim().max(20).optional(),
+    bFormNo: nationalIdSchema('B-Form number').optional(),
+    /** Optional passport-style photo, as a data URL under ~512 KB. */
+    photoUrl: z.string().trim().max(800_000).optional().nullable(),
     religion: z.string().trim().max(40).optional(),
     bloodGroup: z.string().trim().max(8).optional(),
     nationality: z.string().trim().max(40).optional(),
@@ -201,10 +207,18 @@ export const createStudentSchema = z
         .min(1, 'This is required.')
         .regex(/^\+[1-9]\d{7,14}$/, 'Enter a phone number, for example 03001234567.'),
       address: textSchema(300),
-      email: z.email().optional(),
-      cnic: z.string().trim().max(20).optional(),
+      email: emailSchema.optional(),
+      cnic: nationalIdSchema('CNIC').optional(),
       occupation: z.string().trim().max(80).optional(),
     }).strict(),
+
+    /**
+     * An existing student of this school who is the new child's brother or
+     * sister. The server checks it, and links the new child to that family's
+     * guardian(s) so the siblings share one family record — it is never taken
+     * on trust, and the sibling's own details are not touched.
+     */
+    siblingOfStudentId: idSchema.optional(),
 
     /**
      * The fee structure agreed at admission.
@@ -345,7 +359,9 @@ export type StudentGuardian = z.infer<typeof studentGuardianSchema>;
 /** One row of a student's enrolment history — which class, which year. */
 export const enrollmentHistoryItemSchema = z.object({
   id: idSchema,
+  sessionId: idSchema,
   sessionName: z.string(),
+  classLevelId: idSchema,
   className: z.string(),
   sectionName: z.string().nullable(),
   rollNo: z.int().nullable(),
@@ -372,6 +388,27 @@ export const studentProfileSchema = studentDetailSchema.extend({
 });
 
 export type StudentProfile = z.infer<typeof studentProfileSchema>;
+
+/** One confirmed fee receipt on the student profile — tuition, lab, admission, etc. */
+export const studentFeePaymentHistoryEntrySchema = z.object({
+  id: idSchema,
+  receiptNo: z.string(),
+  paidOn: calendarDateSchema,
+  amountMinor: minorUnitsSchema,
+  method: z.enum(['CASH', 'BANK_TRANSFER', 'CHEQUE', 'CARD', 'OTHER']),
+  voucherNo: z.string().nullable(),
+  /** Human-readable fee names and billing period, e.g. "Tuition Fee · Mar 2026". */
+  description: z.string(),
+});
+
+export type StudentFeePaymentHistoryEntry = z.infer<typeof studentFeePaymentHistoryEntrySchema>;
+
+export const studentFeePaymentHistorySchema = z.object({
+  studentId: idSchema,
+  entries: z.array(studentFeePaymentHistoryEntrySchema),
+});
+
+export type StudentFeePaymentHistory = z.infer<typeof studentFeePaymentHistorySchema>;
 
 /** Adding a guardian to a student, or editing one already attached. */
 export const upsertGuardianSchema = z

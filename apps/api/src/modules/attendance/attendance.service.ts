@@ -15,6 +15,8 @@ import { Injectable } from '@nestjs/common';
 import { type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
+import { classInScope, ClassScopeService } from '../../shared/rbac/class-scope.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 import {
   attendanceBasisPoints,
@@ -55,7 +57,11 @@ import {
  */
 @Injectable()
 export class AttendanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly classScope: ClassScopeService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   // --- Reading --------------------------------------------------------------
 
@@ -66,10 +72,15 @@ export class AttendanceService {
       const date = query.date ?? context.today;
       const day = describeDay(date, context.calendar);
 
+      // A teacher is handed the cards for their own classes and no others, so
+      // the screen they land on is already the right one — not a school-wide
+      // grid with most of it refusing to open.
+      const scope = await this.classScope.classLevelIds(tx, 'attendance.record.read');
+
       const classes = await tx.classLevel.findMany({
-        where: { isActive: true },
+        where: { isActive: true, ...(scope === undefined ? {} : { id: { in: [...scope] } }) },
         orderBy: { numericOrder: 'asc' },
-        select: { id: true, name: true },
+        select: { id: true, name: true, numericOrder: true },
       });
 
       // Two grouped queries for the whole screen rather than two per card. A
@@ -110,12 +121,14 @@ export class AttendanceService {
           return {
             classLevelId: entry.id,
             className: entry.name,
+            numericOrder: entry.numericOrder,
             sectionId: null,
             sectionName: null,
             strength: strengthBy.get(entry.id) ?? 0,
             markedAt: stamp === null ? null : stamp.toISOString(),
-            present: total(PRESENT_STATUSES),
+            present: total(['PRESENT', 'HALF_DAY']),
             absent: total(['ABSENT']),
+            late: total(['LATE']),
             leave: total(['LEAVE', 'EXCUSED']),
           };
         }),
@@ -126,6 +139,8 @@ export class AttendanceService {
   /** One class on one day: who is in it, and what is already recorded. */
   async roster(classLevelId: string, query: RosterQuery, canUnlock: boolean): Promise<Roster> {
     return this.prisma.tenant(async (tx) => {
+      await this.assertClassVisible(tx, classLevelId, 'attendance.record.read');
+
       const context = await this.loadContext(tx, query.sessionId);
       const day = describeDay(query.date, context.calendar);
 
@@ -158,6 +173,7 @@ export class AttendanceService {
               firstName: true,
               lastName: true,
               grNo: true,
+              photoUrl: true,
               status: true,
               guardians: {
                 where: { guardian: { relation: 'FATHER' } },
@@ -207,6 +223,7 @@ export class AttendanceService {
             rollNo: enrolment.rollNo,
             sectionId: enrolment.sectionId,
             sectionName: enrolment.section?.name ?? null,
+            photoUrl: enrolment.student.photoUrl,
             status: mark?.status ?? null,
             note: mark?.note ?? null,
           };
@@ -223,6 +240,11 @@ export class AttendanceService {
     canUnlock: boolean,
   ): Promise<MarkResult> {
     return this.prisma.tenant(async (tx) => {
+      // First, before the calendar and before anything is read about the class:
+      // a teacher marking a class that is not theirs learns nothing about it,
+      // not even that today is a holiday.
+      await this.assertClassVisible(tx, input.classLevelId, 'attendance.record.create');
+
       const context = await this.loadContext(tx, undefined);
       const day = describeDay(input.date, context.calendar);
 
@@ -258,6 +280,20 @@ export class AttendanceService {
         return { saved: 0, skipped: input.entries.length };
       }
 
+      // Who was already absent today, read before the upsert overwrites it: saving
+      // the same register twice must tell a family once, not twice.
+      const before = await tx.attendanceRecord.findMany({
+        where: {
+          studentId: { in: writable.map((entry) => entry.studentId) },
+          date: new Date(input.date),
+          period: 0,
+        },
+        select: { studentId: true, status: true },
+      });
+      const alreadyAbsent = new Set(
+        before.filter((row) => row.status === 'ABSENT').map((row) => row.studentId),
+      );
+
       await upsertAttendance(tx, {
         entries: writable.map((entry) => ({
           studentId: entry.studentId,
@@ -271,14 +307,61 @@ export class AttendanceService {
         markedBy: actorId ?? null,
       });
 
+      await this.announceAbsences(
+        tx,
+        writable.filter((entry) => entry.status === 'ABSENT' && !alreadyAbsent.has(entry.studentId)).map((entry) => entry.studentId),
+        input.date,
+        actorId,
+      );
+
       return { saved: writable.length, skipped: input.entries.length - writable.length };
     });
+  }
+
+  /** Each family hears that their own child was marked absent. */
+  private async announceAbsences(
+    tx: TransactionClient,
+    studentIds: readonly string[],
+    date: string,
+    actorId: string | undefined,
+  ): Promise<void> {
+    if (studentIds.length === 0) {
+      return;
+    }
+    const [students, guardians] = await Promise.all([
+      tx.student.findMany({
+        where: { id: { in: [...studentIds] } },
+        select: { id: true, firstName: true, lastName: true },
+      }),
+      this.notifications.guardianUserIdsByStudent(tx, studentIds),
+    ]);
+    await this.notifications.notifyMany(
+      tx,
+      students.flatMap((student) => {
+        const recipientIds = guardians.get(student.id) ?? [];
+        return recipientIds.length === 0
+          ? []
+          : [
+              {
+                recipientIds,
+                exceptUserId: actorId,
+                kind: 'attendance.absent' as const,
+                title: `${student.firstName} ${student.lastName} was marked absent`,
+                body: date,
+                entityType: 'student' as const,
+                entityId: student.id,
+              },
+            ];
+      }),
+    );
   }
 
   // --- The monthly grid -----------------------------------------------------
 
   async monthlyReport(classLevelId: string, query: MonthlyReportQuery): Promise<MonthlyReport> {
     return this.prisma.tenant(async (tx) => {
+      await this.assertClassVisible(tx, classLevelId, 'attendance.report.read');
+
       const context = await this.loadContext(tx, query.sessionId);
       const days = describeMonth(query.month, context.calendar);
       const dates = daysInMonth(query.month);
@@ -300,8 +383,7 @@ export class AttendanceService {
           ...(query.sectionId === undefined ? {} : { sectionId: query.sectionId }),
           // Anybody enrolled at any point in the month, including a child who
           // left mid-month — their partial month still belongs in the register.
-          OR: [{ endedOn: null }, { endedOn: { gte: new Date(first) } }],
-          enrolledOn: { lte: new Date(last) },
+          ...enrolledDuringMonth(first, last),
           ...(query.q === undefined
             ? {}
             : {
@@ -310,6 +392,16 @@ export class AttendanceService {
                     { firstName: { contains: query.q, mode: 'insensitive' } },
                     { lastName: { contains: query.q, mode: 'insensitive' } },
                     { grNo: { contains: query.q, mode: 'insensitive' } },
+                    {
+                      guardians: {
+                        some: {
+                          guardian: {
+                            relation: 'FATHER',
+                            name: { contains: query.q, mode: 'insensitive' },
+                          },
+                        },
+                      },
+                    },
                   ],
                 },
               }),
@@ -319,7 +411,20 @@ export class AttendanceService {
           rollNo: true,
           enrolledOn: true,
           endedOn: true,
-          student: { select: { id: true, firstName: true, lastName: true, grNo: true } },
+          student: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              grNo: true,
+              photoUrl: true,
+              guardians: {
+                where: { guardian: { relation: 'FATHER' } },
+                take: 1,
+                select: { guardian: { select: { name: true } } },
+              },
+            },
+          },
         },
       });
 
@@ -362,9 +467,12 @@ export class AttendanceService {
             subjectId: enrolment.student.id,
             name: `${enrolment.student.firstName} ${enrolment.student.lastName}`.trim(),
             code: enrolment.student.grNo,
+            fatherName: enrolment.student.guardians[0]?.guardian.name ?? '',
+            photoUrl: enrolment.student.photoUrl,
             days: Object.fromEntries(marks),
             present,
             absent: values.filter((status) => status === 'ABSENT').length,
+            late: values.filter((status) => status === 'LATE').length,
             leave: values.filter((status) => status === 'LEAVE' || status === 'EXCUSED').length,
             expectedDays: expected,
             percentBasisPoints: attendanceBasisPoints(present, expected),
@@ -375,6 +483,27 @@ export class AttendanceService {
   }
 
   // --- Shared ---------------------------------------------------------------
+
+  /**
+   * Refuse a class the caller's grant does not cover.
+   *
+   * **Not found, not forbidden**, the same answer a class that does not exist
+   * gets (docs/16 §7): a 403 would confirm to a teacher that Grade 9 exists and
+   * is somebody else's, which is more than they were told they could know. It
+   * is also checked against the grant of the *action* — a teacher may be able to
+   * read a register they cannot mark — which is why the permission is a
+   * parameter rather than assumed.
+   */
+  private async assertClassVisible(
+    tx: TransactionClient,
+    classLevelId: string,
+    permission: 'attendance.record.read' | 'attendance.record.create' | 'attendance.report.read',
+  ): Promise<void> {
+    const scope = await this.classScope.classLevelIds(tx, permission);
+    if (!classInScope(scope, classLevelId)) {
+      throw new NotFoundError('class');
+    }
+  }
 
   /** The school's week, its holidays, and what day it is where the school is. */
   private async loadContext(
@@ -506,6 +635,14 @@ function enrolledOn(date: string): Record<string, unknown> {
   return {
     OR: [{ enrolledOn: null }, { enrolledOn: { lte: new Date(date) } }],
     AND: [{ OR: [{ endedOn: null }, { endedOn: { gte: new Date(date) } }] }],
+  };
+}
+
+/** Enrolments that overlap a calendar month (same rules as `enrolledOn`, per day). */
+function enrolledDuringMonth(first: string, last: string): Record<string, unknown> {
+  return {
+    OR: [{ enrolledOn: null }, { enrolledOn: { lte: new Date(last) } }],
+    AND: [{ OR: [{ endedOn: null }, { endedOn: { gte: new Date(first) } }] }],
   };
 }
 

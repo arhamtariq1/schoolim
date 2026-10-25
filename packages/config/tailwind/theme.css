@@ -15,8 +15,10 @@
 
 @theme {
   /* --- Typography: four sizes in app chrome. See docs/16 section 5. -------- */
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-sans: var(--font-open-sans, 'Open Sans'), ui-sans-serif, system-ui, sans-serif;
+  /* Numbers, IDs and codes use the app's own font — `font-mono` is kept as a class name so call sites
+     don't change, but a second typeface for digits made every figure look out of place. */
+  --font-mono: var(--font-open-sans, 'Open Sans'), ui-sans-serif, system-ui, sans-serif;
   --font-urdu: 'Noto Nastaliq Urdu', serif;
 
   /* --- Radius ------------------------------------------------------------- */
@@ -101,6 +103,11 @@
 
   /* --- Semantic tokens: the ONLY thing components may reference. ---------- */
   --color-background: var(--bg);
+  /* Inputs, selects, outline buttons and dialogs: white on the slate page, and
+     the page colour in dark mode, where the page is the darkest layer. */
+  --color-field: var(--field);
+  --color-header: var(--header);
+  --color-sidebar: var(--sidebar);
   --color-foreground: var(--fg);
   --color-card: var(--card);
   --color-card-foreground: var(--fg);
@@ -121,6 +128,13 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-info: var(--info);
+  --color-violet: var(--violet);
+  --color-pink: var(--pink);
+  --color-orange: var(--orange);
+  --color-teal: var(--teal);
+  --color-indigo: var(--indigo);
+  --color-slate: var(--slate);
+  --color-cyan: var(--cyan);
   --color-destructive: var(--danger);
   --color-destructive-foreground: oklch(0.985 0 0);
   /* The chrome behind the app frame: sidebar, headers, toolbars. Distinct
@@ -129,22 +143,27 @@
 }
 
 :root {
-  /* The page is NOT the same colour as a card.
-     Pure-white-on-pure-white was the single biggest reason this looked flat:
-     with no tonal difference, every card boundary had to be carried by a
-     border alone, so the screen read as a wireframe. A hair of warmth in the
-     page ground lets white cards lift off it without a heavy shadow. */
-  --bg: oklch(0.985 0.002 286);
-  --surface: oklch(0.995 0.001 286);
+  /* The page is a soft slate (#f8fafc) and cards sit on it in white (#ffffff), so a
+     card reads as a card without a heavy border or shadow. */
+  --canvas-from: #f8fafc;
+  --canvas-mid: #f8fafc;
+  --canvas-to: #f8fafc;
+  --bg: #f8fafc;
+  --field: #ffffff;
+  --surface: oklch(1 0 0);
   --card: oklch(1 0 0);
+  /* The header and the sidebar are cards in light mode; dark gives each its own layer. */
+  --header: var(--card);
+  --sidebar: var(--card);
 
-  --fg: oklch(0.21 0.006 285);
-  --muted: oklch(0.968 0.002 286);
+  /* ~Tailwind gray-800 (#1f2937) — softer than near-black on white. */
+  --fg: oklch(0.278 0.033 257);
+  --muted: oklch(0.968 0.003 264);
   --muted-fg: oklch(0.552 0.014 285);
-  --border: oklch(0.916 0.004 286);
+  --border: oklch(0.922 0.004 264);
   /* Inputs carry a slightly stronger edge than layout borders: a form control
      has to look like something you can click into. */
-  --input-border: oklch(0.885 0.005 286);
+  --input-border: oklch(0.885 0.005 264);
   --ring: var(--color-brand-500);
   --primary: var(--color-brand-600);
   --primary-fg: oklch(0.985 0 0);
@@ -153,34 +172,91 @@
   --warning: oklch(0.68 0.13 75);
   --danger: oklch(0.55 0.2 27);
   --info: oklch(0.6 0.13 240);
+  --violet: oklch(0.55 0.2 295);
+  --pink: oklch(0.62 0.2 350);
+  --orange: oklch(0.64 0.17 50);
+  --teal: oklch(0.58 0.11 190);
+  --indigo: oklch(0.5 0.2 270);
+  --slate: oklch(0.5 0.03 255);
+  --cyan: oklch(0.62 0.11 215);
 
-  --shadow-tint: oklch(0.21 0.006 285 / 7%);
-  --shadow-tint-strong: oklch(0.21 0.006 285 / 12%);
+  --shadow-tint: oklch(0.278 0.033 257 / 7%);
+  --shadow-tint-strong: oklch(0.278 0.033 257 / 12%);
 }
 
 .dark {
-  /* Same relationship inverted: the page is the darkest layer, cards sit
-     above it, chrome sits between. Three steps, not one flat sheet. */
-  --bg: oklch(0.155 0.005 285);
-  --surface: oklch(0.185 0.005 285);
-  --card: oklch(0.205 0.006 285);
+  /*
+   * The default dark theme — a deep navy, with the product's teal on it.
+   *
+   *   page #0b1624 · header and sidebar #0e1a29 (one layer) · cards #111e2d
+   *   borders #263647 · primary #14b8a6 · text #f8fafc
+   *
+   * These are for a school that has not chosen a colour of its own. A school that
+   * has gets the same layers in its own hue instead: BrandTheme appends
+   * `html.dark{…}` rules that derive each of these from the brand ramp, so the
+   * navy is the default and not a fixed property of dark mode.
+   */
+  --canvas-from: #0b1624;
+  --canvas-mid: #0b1624;
+  --canvas-to: #0b1624;
+  --bg: #0b1624;
+  --field: #0b1624;
+  --surface: #0e1a29;
+  --header: #0e1a29;
+  --sidebar: var(--header);
+  --card: #111e2d;
 
-  --fg: oklch(0.96 0.001 286);
-  --muted: oklch(0.265 0.006 286);
-  --muted-fg: oklch(0.712 0.013 286);
-  --border: oklch(1 0 0 / 10%);
-  --input-border: oklch(1 0 0 / 16%);
-  --ring: var(--color-brand-400);
-  --primary: var(--color-brand-400);
-  --primary-fg: oklch(0.21 0.006 285);
+  --fg: #f8fafc;
+  --muted: #172637;
+  --muted-fg: #94a3b8;
+  --border: #263647;
+  --input-border: #30435a;
+  --ring: #14b8a6;
+  --primary: #14b8a6;
+  --primary-fg: oklch(0.278 0.033 257);
 
   --success: oklch(0.7 0.15 150);
   --warning: oklch(0.78 0.14 75);
   --danger: oklch(0.68 0.19 25);
   --info: oklch(0.7 0.13 240);
+  --violet: oklch(0.72 0.15 295);
+  --pink: oklch(0.76 0.15 350);
+  --orange: oklch(0.76 0.14 55);
+  --teal: oklch(0.74 0.11 190);
+  --indigo: oklch(0.7 0.15 270);
+  --slate: oklch(0.74 0.03 255);
+  --cyan: oklch(0.76 0.1 215);
 
   --shadow-tint: oklch(0 0 0 / 32%);
   --shadow-tint-strong: oklch(0 0 0 / 45%);
+}
+
+/*
+ * The My children screen's own palette, in light mode.
+ *
+ * It is the same tokens with different values, scoped to the screen, so every
+ * component on it keeps using `bg-card`, `border-border`, `text-foreground` and
+ * `text-primary` — no colour is written into a component. The page colour
+ * (#f8fafc) is no longer scoped here: it is the platform's own, set on :root.
+ *
+ *   cards #ffffff · borders #e5e7eb · primary #147f8a · text #0f172a
+ */
+:root:not(.dark) .parent-portal {
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --primary: #147f8a;
+  --fg: #0f172a;
+}
+
+/* Must precede @layer base — used in JSX as `bg-workspace-canvas`. */
+@utility bg-workspace-canvas {
+  background-color: var(--bg);
+  background-image: linear-gradient(
+    180deg,
+    var(--canvas-from) 0%,
+    var(--canvas-mid) 48%,
+    var(--canvas-to) 100%
+  );
 }
 
 @layer base {
@@ -189,8 +265,14 @@
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    @apply font-sans text-foreground;
+    background-color: var(--bg);
+    background-image: linear-gradient(
+      180deg,
+      var(--canvas-from) 0%,
+      var(--canvas-mid) 48%,
+      var(--canvas-to) 100%
+    );
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -274,6 +356,17 @@
   ::-webkit-scrollbar-thumb:hover {
     background-color: var(--muted-fg);
     background-clip: content-box;
+  }
+
+  /* Overflow scroll without painting a track (app shell main column). */
+  .scrollbar-hidden {
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 
   /* docs/16 section 12: respect the user's setting. This is a rule. */

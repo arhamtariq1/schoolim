@@ -163,11 +163,24 @@ describe('a page added to the sidebar is searchable without anybody remembering'
       'dashboard.workspace.read',
       'attendance.record.read',
       'attendance.report.read',
+      'attendance.staff.read',
     ]).map((entry) => entry.href);
 
     expect(hrefs).toContain('/attendance/mark/students');
     expect(hrefs).toContain('/attendance/mark/teachers');
     expect(hrefs).toContain('/attendance/reports/students');
     expect(hrefs).toContain('/attendance/reports/teachers');
+  });
+
+  it("keeps the staff register away from a teacher, who holds only the class grants", () => {
+    const hrefs = searchDestinations([
+      'dashboard.workspace.read',
+      'attendance.record.read',
+      'attendance.report.read',
+    ]).map((entry) => entry.href);
+
+    expect(hrefs).toContain('/attendance/mark/students');
+    expect(hrefs).not.toContain('/attendance/mark/teachers');
+    expect(hrefs).not.toContain('/attendance/reports/teachers');
   });
 });

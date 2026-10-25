@@ -1,6 +1,6 @@
 'use client';
 
-import { ROUTES, type Challan, type VoucherSettings } from '@ilm/contracts';
+import { ROUTES, type BankLogo, type Challan, type VoucherSettings } from '@ilm/contracts';
 import { Button } from '@ilm/ui';
 import { ExportIcon, ICON_SIZE, PrintIcon } from '@ilm/ui/icons';
 import { useEffect, useRef, useState } from 'react';
@@ -44,7 +44,7 @@ export function ChallanPrintView({
     address?: string | undefined;
     phone?: string | undefined;
     logoVersion?: string | undefined;
-    bankLogoVersion?: string | undefined;
+    bankLogos?: readonly BankLogo[] | undefined;
     accentColor?: string | undefined;
   };
   readonly settings: VoucherSettings;
@@ -61,6 +61,7 @@ export function ChallanPrintView({
       return;
     }
     started.current = true;
+
 
     const ids = readPrintSelection(new URLSearchParams(window.location.search).get('h'));
 

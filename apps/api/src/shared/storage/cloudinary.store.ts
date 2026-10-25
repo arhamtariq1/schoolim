@@ -88,7 +88,7 @@ export class CloudinaryStore implements StoragePort {
       );
     }
 
-    const publicId = this.publicId(input.schoolId, input.kind);
+    const publicId = this.publicId(input.schoolId, input.kind, input.slot ?? 0);
     const timestamp = cloudinaryTimestamp(this.clock.now());
 
     const signed = {
@@ -154,9 +154,11 @@ export class CloudinaryStore implements StoragePort {
     }
   }
 
-  /** `{prefix}/schools/{schoolId}/{folder}` — tenant-scoped, deterministic. */
-  private publicId(schoolId: string, kind: AssetKind): string {
-    return `${this.config.prefix}/schools/${schoolId}/${assetRules(kind).folder}`;
+  /** `{prefix}/schools/{schoolId}/{folder}[-{slot}]` — tenant-scoped, deterministic. */
+  private publicId(schoolId: string, kind: AssetKind, slot: number): string {
+    const folder = assetRules(kind).folder;
+    // Slot 0 keeps the pre-slot id, so assets uploaded before slots existed still resolve.
+    return `${this.config.prefix}/schools/${schoolId}/${slot === 0 ? folder : `${folder}-${String(slot)}`}`;
   }
 
   /**

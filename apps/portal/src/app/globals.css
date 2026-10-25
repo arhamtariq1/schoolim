@@ -27,7 +27,19 @@
    A browser that ignores named pages prints on its default size and the
    columns still come out in order — narrower than intended, not broken.
 --------------------------------------------------------------------------- */
+.challan-print-root {
+  display: none;
+}
+
 @media print {
+  body.printing-challan > :not(.challan-print-root) {
+    display: none !important;
+  }
+
+  body.printing-challan .challan-print-root {
+    display: block;
+  }
+
   body * {
     visibility: hidden;
   }
@@ -68,6 +80,12 @@
     break-after: page;
     break-inside: avoid;
     padding: 0;
+    /* Fill the printable area so copies are not a short strip on a tall sheet. */
+    height: 194mm;
+  }
+
+  .print-stack > .voucher-challan.challan-portrait {
+    height: 281mm;
   }
 
   .print-stack > .voucher-challan:last-child {
@@ -120,4 +138,587 @@
   .challan-portrait {
     page: challan-portrait;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   The marketing surface — ADR-0019.
+
+   Everything below this line styles exactly one route: the public landing page
+   at the apex (`app/welcome/page.tsx`, reached by a rewrite from `/`). It is
+   fenced behind the `.marketing` class, and nothing inside the application may
+   use any of it.
+
+   The fence matters more than the contents. docs/16 §5 caps app chrome at four
+   type sizes and that cap is what stops the product looking assembled — so a
+   display scale that exists for one page is scoped to one page, rather than
+   added to `@ilm/config/tailwind/theme.css` where a dashboard could reach it.
+--------------------------------------------------------------------------- */
+
+@theme {
+  /* The display face. Declared here as the fallback stack *only*, and pointed
+     at Urbanist down in `.marketing`.
+
+     It cannot be chained here. `@theme` emits onto `:root`, so a
+     `var(--font-urbanist)` written at this level is substituted against the
+     root element — where that variable does not exist, because `next/font`
+     puts it on the class that `app/welcome/page.tsx` carries. The whole
+     declaration then computes to an invalid font list and silently falls back,
+     which is precisely what it did for one build of this page: the headline
+     rendered in Open Sans and nothing anywhere reported a problem.
+
+     `theme.css` gets away with the same shape for `--font-sans` only because
+     that variable class is on `<html>`. */
+  --font-display: ui-sans-serif, system-ui, sans-serif;
+
+  /* A display scale, fluid between a 360px phone and a 1440px desktop.
+
+     `clamp()` rather than a stack of responsive variants because a headline
+     that steps between four fixed sizes visibly jumps at each breakpoint,
+     and this page has one headline doing most of the work.
+
+     The tracking tightens as the size grows, which is simply how type works:
+     the letter spacing that reads as comfortable at 24px reads as loose at
+     84px. These values are tighter than the serif that stood here before
+     wanted — a geometric sans has even, open letterforms and carries no
+     spacing of its own, so an untracked line of it at display size reads as
+     though it has been let out. */
+  --text-display-xs: clamp(1.5rem, 1.31rem + 0.83vw, 2rem);
+  --text-display-xs--line-height: 1.25;
+  --text-display-xs--letter-spacing: -0.015em;
+
+  --text-display-sm: clamp(1.75rem, 1.37rem + 1.67vw, 2.75rem);
+  --text-display-sm--line-height: 1.18;
+  --text-display-sm--letter-spacing: -0.02em;
+
+  --text-display-md: clamp(2.25rem, 1.59rem + 2.92vw, 4rem);
+  --text-display-md--line-height: 1.12;
+  --text-display-md--letter-spacing: -0.028em;
+
+  --text-display-lg: clamp(2.75rem, 1.78rem + 4.33vw, 5.25rem);
+  --text-display-lg--line-height: 1.06;
+  --text-display-lg--letter-spacing: -0.034em;
+
+  /* The small uppercase label that marks a section. Uppercase at `text-xs`
+     needs the extra tracking to stay legible; this is that one value, named,
+     so it is not written as an arbitrary bracket value at nine call sites. */
+  --tracking-label: 0.14em;
+
+  /* ---------------------------------------------------------------------
+     The four tints.
+
+     A pastel is a *ground*, never a foreground: nothing on this page is ever
+     coloured text in one of these. They exist so that four equal things —
+     four capabilities, four facts — can be told apart at a glance without a
+     border, an icon colour or a label doing the work.
+
+     Lightness is deliberately uniform across the four (0.915–0.925). Tints at
+     different lightnesses read as a hierarchy that is not there, and the one
+     that happens to be darkest looks selected. The hues are spaced far enough
+     apart to be distinguishable, and the chroma is kept low so the page stays
+     quiet — the measured ratio of body text on the worst of them is 4.51:1,
+     and on the best 4.66:1, both above the 4.5:1 that docs/16 §6 calls a rule.
+
+     Decorative use is not an excuse to skip that measurement: these carry
+     real text, and `peach` and `lavender` were each lightened once after the
+     first pass came out at 4.19:1 and 4.06:1. --------------------------- */
+  --color-tint-mint: oklch(0.915 0.045 155);
+  --color-tint-butter: oklch(0.925 0.065 95);
+  --color-tint-peach: oklch(0.918 0.042 55);
+  --color-tint-lavender: oklch(0.924 0.038 295);
+
+  /* A radius well past `--radius-card` (0.75rem). The application wants a
+     restrained corner; this page wants a soft one, and the difference between
+     the two is most of what separates "tool" from "welcome". Named rather
+     than written as an arbitrary value, per docs/16 §4.8. */
+  --radius-tile: 1.75rem;
+
+  /* Shadows in the ground's own hue rather than neutral grey. A grey shadow
+     on a warm cream ground reads as dirt; tinting it with the text colour
+     keeps it reading as depth. It is wide and very soft — a tight dark shadow
+     is the single fastest way to make a light page look cheap. */
+  --shadow-tile:
+    0 1px 2px 0 oklch(0.284 0.048 195 / 5%), 0 12px 32px -16px oklch(0.284 0.048 195 / 18%);
+}
+
+/* ---------------------------------------------------------------------------
+   A warm ground, in the same semantic tokens.
+
+   The idea is the one `.parent-portal` established in `theme.css`: the same
+   token names with different values, scoped to a surface, so no colour is
+   written into a component and every `bg-card` / `border-border` on the page
+   keeps working.
+
+   ## But it has to override `--color-*`, not `--bg`
+
+   This is the trap, and it cost a build of this page. `theme.css` declares
+   `--color-background: var(--bg)` inside `@theme`, which emits onto `:root` —
+   and a custom property is substituted at computed-value time *on the element
+   it is declared on*. So `--color-background` resolves against the root's
+   `--bg` and inherits downward as a finished colour. Overriding `--bg` on a
+   descendant arrives far too late to change it.
+
+   `.dark` escapes this only because it sits on `<html>`, the same element as
+   `:root`. A scoped surface does not, so it must override the alias the
+   utility actually reads: `.bg-background` compiles to
+   `background-color: var(--color-background)`.
+
+   The failure is silent, which is the worst part — the class is applied, the
+   CSS is valid, and the colour simply never changes. `.parent-portal` in
+   `theme.css` has the same shape and is worth a look.
+
+   Every value below is measured, in both themes, because this surface
+   replaces the foreground as well as the ground — see the ratios in the
+   comment on each block.
+--------------------------------------------------------------------------- */
+.marketing {
+  /* Cream, not white. A pure white ground under pastel tiles makes the tiles
+     look pasted on; a warm off-white at the same hue as the tints lets them
+     sit in it. This is the single value that most decides whether the page
+     reads as soft or as clinical. */
+  --color-background: oklch(0.972 0.014 85);
+  --color-card: oklch(1 0 0);
+  --color-muted: oklch(0.952 0.016 85);
+  --color-border: oklch(0.906 0.014 85);
+
+  /* Deep green-teal rather than the application's blue-slate. It is the
+     darkest step of the brand ramp, so a school's own palette still flows
+     through it, and on cream it measures 13.0:1. Near-black text on a warm
+     ground reads as harsh; a very dark tint of the brand hue does not. */
+  --color-foreground: var(--color-brand-950);
+  --color-muted-foreground: oklch(0.505 0.025 200);
+
+  /* One step darker than the app's brand-600 button. On cream, brand-600
+     carries 4.77:1 against white — above the line but close to it, and this
+     page's buttons are large and frequently screenshotted. brand-700 takes
+     the same label to 6.58:1 for nothing. */
+  --color-primary: var(--color-brand-700);
+  --color-primary-foreground: oklch(1 0 0);
+
+  /* Resolved here rather than in `@theme`, on the same element that carries
+     `next/font`'s variable class — see the note on `--font-display` above. */
+  --font-display: var(--font-urbanist), ui-sans-serif, system-ui, sans-serif;
+
+  /* The whole surface, not just its headings. The application keeps Open Sans;
+     this page is Urbanist throughout, which is why `font-family` is set here
+     rather than a `font-display` class being hung on thirty elements. */
+  font-family: var(--font-display);
+}
+
+.dark .marketing {
+  /* A deep teal-slate rather than the app's blue-black, carrying the same hue
+     as the light ground so the page is recognisably one page in either theme.
+     Measured: body 16.2:1, muted copy 8.3:1. */
+  --color-background: oklch(0.21 0.025 200);
+  --color-card: oklch(0.26 0.028 200);
+  --color-muted: oklch(0.29 0.03 200);
+  --color-border: oklch(0.36 0.03 200);
+  --color-foreground: oklch(0.97 0.01 200);
+  --color-muted-foreground: oklch(0.76 0.02 200);
+
+  /* The tints invert rather than disappear. A pastel at 0.92 lightness on a
+     dark ground is a torch; these hold the same four hues at a lightness that
+     sits just above the card, so the tiles stay distinguishable without
+     lighting up the room. Muted copy on the worst of them: 4.89:1. */
+  --color-tint-mint: oklch(0.36 0.05 155);
+  --color-tint-butter: oklch(0.37 0.055 95);
+  --color-tint-peach: oklch(0.37 0.05 55);
+  --color-tint-lavender: oklch(0.37 0.05 295);
+
+  /* The light theme's primary is a mid-teal chosen against cream; on this
+     ground it is too dark to carry white. Back up the ramp. */
+  --color-primary: var(--color-brand-400);
+  --color-primary-foreground: var(--color-brand-950);
+
+  /* A shadow is the absence of light. On a dark ground it has to be the
+     absence of more of it, or the panels float with a grey halo. */
+  --shadow-tile: 0 1px 2px 0 oklch(0 0 0 / 30%), 0 12px 32px -16px oklch(0 0 0 / 55%);
+}
+
+/* ---------------------------------------------------------------------------
+   The manifesto, lit word by word.
+
+   `--read` is written by `MarketingSmoothScroll` as the viewport crosses the
+   paragraph; `--word-count` and `--word-index` come from the markup. The
+   product `--read × --word-count` sweeps past each index in turn, and each
+   word fades up over the single unit that follows. One custom property per
+   frame drives the whole paragraph.
+
+   **The defaults are the whole safety story.** `var(--read, 1)` means that with
+   no JavaScript, before hydration, or after the reduced-motion listener removes
+   the property, every word computes to full opacity. The dimming is something
+   motion adds; legibility never depends on it. The floor is 0.22 rather than 0
+   for the same reason — at no point in the sweep is a word actually invisible,
+   so this is a change in emphasis, not a reveal.
+
+   `clamp()` with unitless `calc()` keeps the arithmetic in the compositor's
+   hands rather than JavaScript's, which is what makes a hundred words free.
+--------------------------------------------------------------------------- */
+.marketing [data-read-word] {
+  opacity: clamp(0.22, calc(var(--read, 1) * var(--word-count) - var(--word-index)), 1);
+  transition: opacity 120ms linear;
+}
+
+/* On paper there is no scroll position, so whatever `--read` happened to be
+   when the print dialog opened would be frozen into the page — printing the
+   manifesto as a half-faded paragraph. */
+@media print {
+  .marketing [data-read-word] {
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Letters that roll over on hover.
+
+   Each character is a window one line tall holding two stacked copies of
+   itself. On hover the stack slides up by exactly half its own height, so copy
+   one leaves as copy two arrives, and the per-character delay makes the word
+   break like a wave.
+
+   `overflow: hidden` on an inline box does nothing, hence `inline-block`; and
+   the explicit `line-height` is what guarantees the two copies are exactly one
+   window apart. Inheriting a line-height here would make the roll overshoot or
+   undershoot by whatever the surrounding text happened to use.
+--------------------------------------------------------------------------- */
+.marketing [data-roll-letter] {
+  display: inline-block;
+  overflow: hidden;
+  height: 1.25em;
+  line-height: 1.25;
+  vertical-align: bottom;
+}
+
+.marketing [data-roll-stack] {
+  display: block;
+  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--letter-index, 0) * 22ms);
+}
+
+/* Each face must be a block of its own, or the two copies lay out as inline
+   siblings — side by side on one line instead of stacked — and every label
+   reads as its own letters doubled: `WWhhaatt iitt ddooeess`. */
+.marketing [data-roll-stack] > span {
+  display: block;
+}
+
+@media (hover: hover) {
+  .marketing a:hover [data-roll-stack],
+  .marketing a:focus-visible [data-roll-stack] {
+    transform: translateY(-50%);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The stacking deck.
+
+   Each panel sticks a little lower than the one before it, so as the page
+   scrolls they gather into a deck with every previous panel's top edge still
+   visible above the current one. The offset is the index times a fixed step,
+   which is why the step lives in a variable rather than four hand-written
+   `top` values.
+
+   `scroll-margin-top` has to clear the header *and* the deck, or an anchor
+   that lands on a late panel puts it under the ones already stacked.
+--------------------------------------------------------------------------- */
+.marketing [data-stack] {
+  --stack-step: 1.25rem;
+}
+
+.marketing [data-stack-item] {
+  position: sticky;
+  top: calc(5.5rem + var(--stack-index, 0) * var(--stack-step));
+}
+
+/* ---------------------------------------------------------------------------
+   The one dark panel, and why it is tokens rather than `text-white`.
+
+   `auth-slideshow.tsx` paints white and `white/70` onto the brand gradient,
+   and measured against the gradient's lightest stop those come out at 4.76:1
+   and 3.16:1 — the second of which is under the 4.5:1 that docs/16 §6 calls a
+   rule. The panel here is a flat deep teal instead of a gradient, which fixes
+   the measurement at a single known value, and the colours on it are the same
+   semantic tokens with inverted values. Three things follow:
+
+     · Every ratio below is above 8:1, and provable, because the ground is one
+       colour rather than three blended across 145 degrees.
+     · The panel needs no theme variant. It is dark in light mode and dark in
+       dark mode, because it is deliberately dark — not because the page is.
+     · A school's own `primary_color` still flows through it, since every value
+       is a step on the brand ramp rather than a literal.
+
+   Measured against the brand-950 ground: text 13.5:1, body copy 8.5:1, button
+   label on its fill 13.2:1, button fill against the panel 13.2:1.
+--------------------------------------------------------------------------- */
+.marketing-invert {
+  --color-background: var(--color-brand-950);
+  --color-foreground: oklch(0.985 0 0);
+  --color-muted-foreground: var(--color-brand-300);
+  --color-border: var(--color-brand-800);
+  /* The cream button: the ramp's lightest step, with the darkest as its label. */
+  --color-primary: var(--color-brand-50);
+  --color-primary-foreground: var(--color-brand-950);
+  /* The default ring is brand-500, which on this ground is nearly invisible —
+     and a focus ring nobody can see is the same as no focus ring (§13). */
+  --color-ring: var(--color-brand-200);
+}
+
+/* Two things that must hold whether the page animates or not.
+
+   `inline-block` because a transform does not apply to a non-replaced inline
+   box — but it is set unconditionally so the headline wraps identically with
+   motion on and off, rather than reflowing the moment the attribute lands.
+
+   The marker is hidden here rather than with `[&::-webkit-details-marker]` at
+   the call site, because docs/16 §4.8 bans arbitrary Tailwind values and
+   `list-none` alone still leaves the triangle in older WebKit. */
+.marketing [data-word] {
+  display: inline-block;
+}
+
+.marketing summary::-webkit-details-marker {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Motion.
+
+   Every hidden-until-revealed state below is gated on
+   `html[data-marketing-motion='on']`, which only `MarketingMotion` sets — and
+   it sets it only when the visitor has not asked for reduced motion. Two
+   things follow, both of them load-bearing:
+
+     · With JavaScript unavailable the attribute is never set, so nothing is
+       ever hidden. The page is complete and readable as served HTML.
+     · Under `prefers-reduced-motion: reduce` the attribute is never set
+       either, so the final state *is* the first state. Not a shortened
+       animation — no animation.
+
+   The `@media (prefers-reduced-motion: reduce)` block in `theme.css` is
+   therefore a second belt, not the only one.
+--------------------------------------------------------------------------- */
+
+@keyframes marketing-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.5rem, 0);
+  }
+}
+
+html[data-marketing-motion='on'] .marketing {
+  /* Words wait for their heading to come into view, not for the page to load.
+
+     This was an on-load animation first, and it was wrong: every heading below
+     the fold finished staggering while the visitor was still reading the hero,
+     so by the time they scrolled down there was nothing left to reveal. The
+     hero is unaffected by the change — an `IntersectionObserver` fires for
+     something already on screen as soon as it is observed. */
+  [data-word] {
+    opacity: 0;
+    transform: translate3d(0, 0.45em, 0);
+    transition:
+      opacity 800ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 800ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: calc(var(--word-index, 0) * 55ms + 60ms);
+    will-change: opacity, transform;
+  }
+
+  [data-reveal-words].is-visible [data-word] {
+    opacity: 1;
+    transform: none;
+    will-change: auto;
+  }
+
+  /* The hero's supporting blocks do play on load: they are above the fold by
+     definition — this attribute is only ever used in the first viewport — and
+     `both` holds the `from` keyframe through the delay so nothing flashes in
+     before its turn. */
+  [data-rise] {
+    animation: marketing-rise 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--rise-index, 0) * 90ms + 240ms);
+  }
+
+  /* Below the fold: the observer adds `is-visible`. Transitions rather than
+     animations, so an element that is already on screen when the page loads
+     reveals from wherever it is instead of restarting. */
+  [data-reveal] {
+    opacity: 0;
+    transform: translate3d(0, 1.5rem, 0);
+    transition:
+      opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: calc(var(--reveal-index, 0) * 80ms);
+    will-change: opacity, transform;
+  }
+
+  [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+    /* Dropped the moment it has played: a page holding thirty composited
+       layers open for the rest of the session is how a phone starts to stutter. */
+    will-change: auto;
+  }
+
+  /* A hairline that draws itself. The only motion on this page that is not a
+     fade — a rule is a structural element, so it arrives structurally. */
+  [data-rule] {
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: calc(var(--reveal-index, 0) * 80ms);
+  }
+
+  [data-rule].is-visible {
+    transform: none;
+  }
+
+  /* -------------------------------------------------------------------------
+     The two continuous animations.
+
+     Everything above plays once and stops. These two run for as long as the
+     page is open, which makes them the only motion here with an ongoing cost,
+     so both are confined to properties the compositor can animate on its own
+     thread — `transform` and `opacity`, never `top`, `left`, `width` or a
+     filter.
+
+     They live inside this gate rather than relying on `theme.css`'s global
+     reduced-motion rule, because that rule sets `animation-duration: 0.01ms`,
+     which does not cancel a loop so much as fast-forward it to its end state.
+     Not declaring the animation at all leaves the element exactly where the
+     HTML put it.
+     ------------------------------------------------------------------------- */
+
+  /* The live dot beside the status line. It is the only thing on the page that
+     blinks, and it earns it: it is reporting something that is actually live. */
+  [data-pulse] {
+    animation: marketing-pulse 2.4s ease-in-out infinite;
+  }
+
+  /* The single blurred ground behind the hero, drifting slowly so the warmth
+     at the top of the page never settles into a fixed shape. There were two;
+     the second washed the right-hand side lavender and read as a bruise over
+     the headline, so it is gone. */
+  [data-blob] {
+    animation: marketing-drift 22s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes marketing-pulse {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.82);
+  }
+}
+
+@keyframes marketing-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  to {
+    transform: translate3d(2rem, -1.5rem, 0) scale(1.12);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The blurred pastel grounds behind the hero.
+
+   A heavy `blur()` on a large element is expensive to rasterise, so these are
+   declared once, never animated *through* the filter (only transformed), and
+   there are two of them rather than five. `pointer-events: none` because an
+   invisible 24rem circle floating over the headline would otherwise eat every
+   click that lands on it.
+
+   They are drawn behind everything in the hero by `isolation` on the section
+   and a negative z-index here; without the isolation they would sit behind the
+   page background instead and vanish entirely.
+--------------------------------------------------------------------------- */
+.marketing-blob {
+  position: absolute;
+  z-index: -1;
+  border-radius: 9999px;
+  filter: blur(72px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.dark .marketing-blob {
+  /* The same shapes at full strength on a dark ground are light sources, and
+     the headline sitting on top of one stops being readable. */
+  opacity: 0.3;
+}
+
+/* Size and placement live here rather than as Tailwind utilities because the
+   values are off the spacing scale docs/16 §4.3 fixes — a 26rem circle is not
+   a layout measurement, it is the shape of a smudge. Logical properties, so it
+   mirrors correctly if the page is ever set right-to-left. */
+.marketing-blob-a {
+  inset-block-start: -6rem;
+  inset-inline-start: -8rem;
+  inline-size: 26rem;
+  block-size: 26rem;
+}
+
+/* ---------------------------------------------------------------------------
+   An underline that sweeps out from the start edge on hover.
+
+   A `background-image` rather than a `border-bottom`, because a border cannot
+   be animated from zero width without changing layout. This paints a 1px line
+   as a background and animates `background-size`, so nothing around it moves.
+
+   `background-position` is the start edge in both writing directions, and
+   `0 100%` puts the line on the text's own baseline box rather than the
+   element's, which is what keeps it tight to the type.
+--------------------------------------------------------------------------- */
+.marketing [data-underline] {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  padding-block-end: 0.125rem;
+}
+
+@media (hover: hover) {
+  .marketing [data-underline]:hover,
+  .marketing [data-underline]:focus-visible {
+    background-size: 100% 1px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The logo, in dark mode.
+
+   The asset is a full-colour mark with a dark navy wordmark, drawn for a light
+   card. Inverting it would throw away the teal; dropping it would leave the
+   dark theme with no mark at all. So it keeps its own colours and is given the
+   light ground it was drawn for — which reads as a deliberate chip rather than
+   an accident.
+--------------------------------------------------------------------------- */
+.dark .marketing [data-logo] {
+  background-color: oklch(1 0 0);
+  border-radius: 9999px;
+  padding-inline: 0.875rem;
+  padding-block: 0.375rem;
+}
+
+/* The scroll indicator: a 1px hairline across the top, scaled from Lenis's own
+   progress. Hidden until the engine reports once, so it is not a stray line
+   across the page when there is no JavaScript. */
+.marketing-progress {
+  transform: scaleX(var(--scroll-progress, 0));
+  transform-origin: left center;
+}
+
+/* Lenis's own two requirements. The third rule it ships —
+   `scroll-behavior: auto !important` — is not here because nothing in this
+   repository sets `scroll-behavior: smooth`, and docs/16 §2 bans `!important`.
+   If a future stylesheet adds smooth scrolling globally, this is the line that
+   will need revisiting. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+html.lenis-stopped {
+  overflow: hidden;
 }

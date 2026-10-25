@@ -17,12 +17,15 @@ import {
   DialogHeader,
   DialogTitle,
   Field,
+  FloatingActionBar,
   Input,
   useToast,
 } from '@ilm/ui';
-import { DeleteIcon, ICON_SIZE, PrintIcon } from '@ilm/ui/icons';
+import { DeleteIcon, FinanceIcon, ICON_SIZE, PrintIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+
+import { BulkVoucherPaymentDialog } from './bulk-voucher-payment-dialog';
 
 import { mutate } from '@/lib/mutate';
 import { stashPrintSelection } from '@/lib/print-handoff';
@@ -60,6 +63,8 @@ export interface VoucherBulkBarProps {
   /** Select all rows behind the filters. Absent when there are too many. */
   readonly onSelectAllMatching?: (() => Promise<void>) | undefined;
   readonly canDelete: boolean;
+  /** May record payments (`fees.payment.create`). */
+  readonly canCollect: boolean;
 }
 
 export function VoucherBulkBar({
@@ -68,6 +73,7 @@ export function VoucherBulkBar({
   matching,
   onSelectAllMatching,
   canDelete,
+  canCollect,
 }: VoucherBulkBarProps) {
   const router = useRouter();
   const toast = useToast();
@@ -75,6 +81,7 @@ export function VoucherBulkBar({
   const [confirming, setConfirming] = useState(false);
   const [reason, setReason] = useState('');
   const [isBusy, setIsBusy] = useState(false);
+  const [collecting, setCollecting] = useState(false);
 
   const count = selected.size;
   if (count === 0) {
@@ -83,24 +90,11 @@ export function VoucherBulkBar({
 
   const overCap = count > MAX_BULK_VOUCHERS;
 
-  /**
-   * More match than can be selected, so there is no honest "select all".
-   *
-   * Offering it would take the first five hundred by sort order, which is an
-   * arbitrary five hundred of two thousand — useless for printing, where the
-   * stack has to be a class. So the bar says the limit and points at the
-   * filter that makes the selection meaningful.
-   */
-  const tooManyMatching = matching > MAX_BULK_VOUCHERS && onSelectAllMatching === undefined;
-
   function print() {
     const token = stashPrintSelection([...selected]);
 
     if (token === undefined) {
-      toast.error(
-        'Could not open the print view',
-        'This browser is blocking site storage. Allow it for this site, or print from the row menu.',
-      );
+      toast.error('Could not open print view. Allow site storage for this site and try again.');
       return;
     }
 
@@ -128,10 +122,7 @@ export function VoucherBulkBar({
     } else {
       // Named, not counted. "3 could not be deleted" sends somebody hunting;
       // "SEP-0142 had a payment" is the answer they were about to look for.
-      toast.warning(
-        `${String(deleted)} deleted, ${String(skipped.length)} left alone`,
-        summarise(skipped),
-      );
+      toast.warning(`${String(deleted)} deleted. ${summarise(skipped)}`);
     }
 
     setReason('');
@@ -141,70 +132,76 @@ export function VoucherBulkBar({
 
   return (
     <>
-      <div
-        role="status"
-        className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-overlay"
-      >
-        {/*
-          The header checkbox ticks the page in front of you and nothing else,
-          which is the only scope it can honestly have — it cannot tick rows it
-          has not loaded. So the bar says what is selected *and* what matches,
-          and the difference between the two is where the next control goes.
-          Leaving that difference unsaid is what made "does this select twenty
-          or five hundred" a question somebody had to ask.
-        */}
-        <span className="text-sm text-foreground">
-          <span className="font-medium">
-            {count} selected
-          </span>
-          {matching > count ? (
-            <span className="text-muted-foreground"> of {matching} matching these filters</span>
-          ) : null}
-        </span>
-
-        {onSelectAllMatching === undefined ? null : (
-          <Button
-            tone="ghost"
-            size="sm"
-            onClick={() => {
-              void onSelectAllMatching();
-            }}
-          >
-            Select all {matching}
-          </Button>
-        )}
-
-        {!tooManyMatching ? null : (
-          <span className="text-sm text-warning">
-            Only {MAX_BULK_VOUCHERS} can be handled at once — filter by class to print a stack.
-          </span>
-        )}
-
-        <div className="ms-auto flex flex-wrap items-center gap-2">
-          <Button size="sm" disabled={overCap} onClick={print}>
-            <PrintIcon className={ICON_SIZE.inline} aria-hidden />
-            Print {count} {count === 1 ? 'challan' : 'challans'}
-          </Button>
-
-          {!canDelete ? null : (
+      <FloatingActionBar
+        message={<span className="font-medium whitespace-nowrap">{count} selected</span>}
+        leadingActions={
+          onSelectAllMatching === undefined ? null : (
             <Button
-              tone="outline"
+              tone="ghost"
               size="sm"
-              disabled={overCap}
               onClick={() => {
-                setConfirming(true);
+                void onSelectAllMatching();
               }}
             >
-              <DeleteIcon className={`${ICON_SIZE.inline} text-danger`} aria-hidden />
-              Delete
+              Select all {matching}
             </Button>
-          )}
+          )
+        }
+        actions={
+          <>
+            <Button tone="ghost" size="sm" onClick={onClear}>
+              Clear selection
+            </Button>
 
-          <Button tone="ghost" size="sm" onClick={onClear}>
-            Clear
-          </Button>
-        </div>
-      </div>
+            {!canCollect ? null : (
+              <Button
+                tone="outline"
+                size="sm"
+                disabled={overCap}
+                onClick={() => {
+                  setCollecting(true);
+                }}
+              >
+                <FinanceIcon className={ICON_SIZE.inline} aria-hidden />
+                Record payment
+              </Button>
+            )}
+
+            {!canDelete ? null : (
+              <Button
+                tone="danger"
+                size="sm"
+                disabled={overCap}
+                onClick={() => {
+                  setConfirming(true);
+                }}
+              >
+                <DeleteIcon className={ICON_SIZE.inline} aria-hidden />
+                Delete
+              </Button>
+            )}
+
+            <Button size="sm" disabled={overCap} onClick={print}>
+              <PrintIcon className={ICON_SIZE.inline} aria-hidden />
+              Print {count} {count === 1 ? 'challan' : 'challans'}
+            </Button>
+          </>
+        }
+      />
+
+      {collecting ? (
+        <BulkVoucherPaymentDialog
+          ids={[...selected]}
+          onClose={() => {
+            setCollecting(false);
+          }}
+          onDone={() => {
+            setCollecting(false);
+            onClear();
+            router.refresh();
+          }}
+        />
+      ) : null}
 
       {/* A plain Dialog rather than ConfirmDialog, for the reason the
           single-voucher delete already found: that component takes no

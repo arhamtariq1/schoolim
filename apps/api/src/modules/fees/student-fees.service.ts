@@ -1,5 +1,13 @@
 import { type FeeTotals, type StudentFee, type StudentFeeLine } from '@ilm/contracts';
-import { fromDecimalString, minorUnits, toDecimalString, type MinorUnits } from '@ilm/utils';
+import {
+  DEFAULT_TIMEZONE,
+  fromDecimalString,
+  minorUnits,
+  systemClock,
+  toDecimalString,
+  today as todayIn,
+  type MinorUnits,
+} from '@ilm/utils';
 import { Injectable } from '@nestjs/common';
 
 import { type TransactionClient } from '../../prisma';
@@ -32,12 +40,25 @@ export class StudentFeesService {
   }
 
   /**
-   * Replace the whole structure.
+   * Save the structure as the person edited it.
    *
-   * Delete-then-insert inside one transaction rather than a diff. A fee
-   * structure is a handful of rows that a person edits as a unit, and a diff
-   * would buy nothing except a class of bug where a removed line survives
-   * because the comparison missed it.
+   * ## The timeline is kept
+   *
+   * `student_fees` is a timeline: one row per head per change, each with the
+   * day it starts (fee increments add rows; see `FeeIncrementsService`). This
+   * used to delete every row and re-insert the lines dated today, which threw
+   * away every scheduled increment and made every earlier month unbillable —
+   * September's tuition, edited on 25 October, was skipped as "starts later".
+   *
+   * So the edit applies to the row that is **in force**, per head:
+   *
+   * - a head that is no longer listed is removed from the student, history and
+   *   all (vouchers already issued copied their amounts and are untouched);
+   * - a head whose amount or discount changed has its in-force row corrected
+   *   in place, keeping its start date and any later scheduled rise;
+   * - a head that is new starts on the first of the current month in the
+   *   school's own calendar, so this month can still be billed but months the
+   *   child was never charged for are not invented.
    */
   async replace(
     studentId: string,
@@ -54,16 +75,79 @@ export class StudentFeesService {
 
       await assertHeadsExist(tx, lines);
 
-      await tx.studentFee.deleteMany({ where: { studentId } });
-      if (lines.length > 0) {
-        await tx.studentFee.createMany({
-          data: lines.map((line) => toRow(studentId, line)) as never,
+      const today = await schoolToday(tx);
+      const existing = await tx.studentFee.findMany({
+        where: { studentId },
+        orderBy: { effectiveFrom: 'asc' },
+        select: { id: true, feeHeadId: true, effectiveFrom: true },
+      });
+      const inForce = inForceByHead(existing, today);
+      const kept = new Set(lines.map((line) => line.feeHeadId));
+
+      const removedHeads = [...new Set(existing.map((row) => row.feeHeadId))].filter(
+        (head) => !kept.has(head),
+      );
+      if (removedHeads.length > 0) {
+        await tx.studentFee.deleteMany({ where: { studentId, feeHeadId: { in: removedHeads } } });
+      }
+
+      for (const line of lines) {
+        const current = inForce.get(line.feeHeadId);
+        if (current === undefined) {
+          await tx.studentFee.create({
+            data: toRow(
+              studentId,
+              line,
+              new Date(`${today.slice(0, 7)}-01T00:00:00.000Z`),
+            ) as never,
+          });
+          continue;
+        }
+        await tx.studentFee.update({
+          where: { id: current.id },
+          data: {
+            amount: toDecimalString(minorUnits(line.amountMinor)),
+            discountedAmount:
+              line.discountedAmountMinor === undefined
+                ? null
+                : toDecimalString(minorUnits(line.discountedAmountMinor)),
+            discountReason:
+              line.discountReason === undefined || line.discountReason === ''
+                ? null
+                : line.discountReason,
+          },
         });
       }
 
       return readStructure(tx, studentId);
     });
   }
+}
+
+/**
+ * The row each head is charged at today: the latest one already started, or —
+ * for a child whose fees begin later (next term's intake) — the first to come.
+ */
+function inForceByHead<T extends { feeHeadId: string; effectiveFrom: Date }>(
+  rows: readonly T[],
+  today: string,
+): Map<string, T> {
+  const chosen = new Map<string, T>();
+  // `rows` is oldest first: a started row replaces any earlier one, and a
+  // future row is only taken when nothing has started.
+  for (const row of rows) {
+    const started = row.effectiveFrom.toISOString().slice(0, 10) <= today;
+    if (started || !chosen.has(row.feeHeadId)) {
+      chosen.set(row.feeHeadId, row);
+    }
+  }
+  return chosen;
+}
+
+/** "Today" on the school's wall calendar, not the server's. */
+async function schoolToday(tx: TransactionClient): Promise<string> {
+  const school = await tx.school.findFirst({ select: { timezone: true } });
+  return todayIn(systemClock, school?.timezone ?? DEFAULT_TIMEZONE);
 }
 
 /**
@@ -157,17 +241,26 @@ export async function readStructure(
   tx: TransactionClient,
   studentId: string,
 ): Promise<{ fees: StudentFee[]; totals: FeeTotals }> {
-  const rows = await tx.studentFee.findMany({
+  const all = await tx.studentFee.findMany({
     where: { studentId },
-    orderBy: [{ feeHead: { sortOrder: 'asc' } }, { feeHead: { name: 'asc' } }],
+    orderBy: { effectiveFrom: 'asc' },
     select: {
       feeHeadId: true,
+      effectiveFrom: true,
       amount: true,
       discountedAmount: true,
       discountReason: true,
-      feeHead: { select: { name: true, type: true } },
+      feeHead: { select: { name: true, type: true, sortOrder: true } },
     },
   });
+
+  // One row per head — the amount charged today — not the whole timeline.
+  // Summing every row double-counted a fee the moment it was increased.
+  const today = await schoolToday(tx);
+  const rows = [...inForceByHead(all, today).values()].sort(
+    (a, b) =>
+      a.feeHead.sortOrder - b.feeHead.sortOrder || a.feeHead.name.localeCompare(b.feeHead.name),
+  );
 
   let gross = 0;
   let payable = 0;
@@ -212,15 +305,27 @@ export async function readStructure(
  */
 export async function defaultFeeLines(
   tx: TransactionClient,
+  classLevelId?: string,
 ): Promise<{ feeHeadId: string; amountMinor: MinorUnits }[]> {
   const rows = await tx.feeHead.findMany({
     where: { isActive: true },
     orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-    select: { id: true, defaultAmount: true },
+    select: {
+      id: true,
+      defaultAmount: true,
+      classLevels: { select: { classLevelId: true } },
+    },
   });
 
-  return rows.map((row) => ({
-    feeHeadId: row.id,
-    amountMinor: fromDecimalString(row.defaultAmount.toFixed(2)),
-  }));
+  return rows
+    .filter((row) => {
+      if (classLevelId === undefined || row.classLevels.length === 0) {
+        return true;
+      }
+      return row.classLevels.some((link) => link.classLevelId === classLevelId);
+    })
+    .map((row) => ({
+      feeHeadId: row.id,
+      amountMinor: fromDecimalString(row.defaultAmount.toFixed(2)),
+    }));
 }

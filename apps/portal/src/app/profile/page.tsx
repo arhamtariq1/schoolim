@@ -1,48 +1,36 @@
-import { ROUTES, type UserProfile } from '@ilm/contracts';
-import { Button, Skeleton } from '@ilm/ui';
-import { EditIcon, ICON_SIZE } from '@ilm/ui/icons';
-import Link from 'next/link';
+import { ROUTES, SCHOOL_ROLE_LABELS, type UserProfile } from '@ilm/contracts';
 
-import { PageHeader } from '@/components/page-header';
-import { ProfileView } from '@/components/profile-view';
-import { SchoolShell } from '@/components/school-shell';
+import { ProfilePageLayout } from '@/components/profile-page-layout';
+import { ProfileWorkspaceEditor } from '@/components/profile-workspace-editor';
 import { apiFetch } from '@/lib/api';
+import { loadProfileSchoolWorkspace } from '@/lib/profile-school-workspace';
+import { getSession } from '@/lib/session';
 
-/**
- * Read-only profile. Incomplete sessions never land here — the proxy and
- * `requireSchoolSession` send them to `/profile/create`.
- */
+const PROFILE_DESCRIPTION = 'Manage your account and school information.';
+
 export default async function ProfilePage() {
-  const result = await apiFetch<{ data: UserProfile }>(ROUTES.me.profile);
+  const session = await getSession();
+  const [profileResult, workspace] = await Promise.all([
+    apiFetch<{ data: UserProfile }>(ROUTES.me.profile),
+    loadProfileSchoolWorkspace(),
+  ]);
+
+  const roleLabel = [...new Set((session?.roles ?? []).map((role) => SCHOOL_ROLE_LABELS[role]))].join(', ');
 
   return (
-    <SchoolShell>
-      <PageHeader
-        title="Profile"
-        description="Your account details at this school."
-        actions={
-          <Button asChild>
-            <Link href="/profile/edit" className="cursor-pointer">
-              <EditIcon className={ICON_SIZE.inline} aria-hidden="true" />
-              Edit profile
-            </Link>
-          </Button>
-        }
-      />
-      {result.ok ? (
-        <ProfileView profile={result.data.data} />
+    <ProfilePageLayout title="Profile" description={PROFILE_DESCRIPTION}>
+      {profileResult.ok ? (
+        <ProfileWorkspaceEditor
+          mode="view"
+          profile={profileResult.data.data}
+          workspace={workspace}
+          roleLabel={roleLabel}
+        />
       ) : (
-        <p className="text-sm text-danger">{result.message}</p>
+        <p className="text-sm text-danger">{profileResult.message}</p>
       )}
-    </SchoolShell>
+    </ProfilePageLayout>
   );
 }
 
-export function ProfilePageSkeleton() {
-  return (
-    <div className="mx-auto w-full max-w-3xl space-y-4" role="status" aria-label="Loading profile">
-      <Skeleton className="h-8 w-40" />
-      <Skeleton className="h-48 w-full" />
-    </div>
-  );
-}
+export { ProfileViewSkeleton as ProfilePageSkeleton } from '@/components/profile-skeletons';

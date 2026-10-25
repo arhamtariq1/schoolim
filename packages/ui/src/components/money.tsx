@@ -13,9 +13,9 @@ import { cn } from '../lib/cn';
  *
  * Rendering rules, all of which exist because an accountant reads columns of
  * these and notices immediately when they are wrong:
- * - monospace and right-aligned, so decimal points line up down a column;
- * - `tabular-nums`, so digits do not shift width between values;
- * - exactly two decimals, never truncated, never abbreviated to "12.5k";
+ * - sans + `tabular-nums`, aligned with dashboard KPI figures;
+ * - whole rupees without “.00”; paisa with two decimals when needed;
+ * - never abbreviated to "12.5k";
  * - negative in red **and** parentheses, because colour alone carries no
  *   meaning in print or to a colour-blind reader (docs/16 section 3).
  */
@@ -47,7 +47,10 @@ export function Money({
   if (dashOnZero && amount === 0) {
     return (
       <span
-        className={cn('font-mono text-sm text-muted-foreground tabular-nums', className)}
+        className={cn(
+          'text-sm font-medium tracking-tight text-muted-foreground tabular-nums',
+          className,
+        )}
         {...props}
       >
         —
@@ -66,7 +69,7 @@ export function Money({
   return (
     <span
       className={cn(
-        'font-mono text-sm whitespace-nowrap tabular-nums',
+        'text-sm font-medium tracking-tight whitespace-nowrap tabular-nums',
         isNegative && 'text-danger',
         className,
       )}

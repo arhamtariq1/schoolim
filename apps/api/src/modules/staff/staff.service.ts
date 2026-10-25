@@ -1,20 +1,26 @@
 import {
+  STAFF_ROLE_LABELS,
   STAFF_ROLE_TO_SCHOOL_ROLE,
   staffRoleCanSignIn,
   type CreateStaff,
   type StaffListItem,
   type StaffListQuery,
+  type StaffProfile,
   type StaffRole,
   type UpdateStaff,
 } from '@ilm/contracts';
 import { fromDecimalString, minorUnits, toDecimalString } from '@ilm/utils';
 import { Inject, Injectable } from '@nestjs/common';
 
+import { type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, ConflictError, NotFoundError } from '../../shared/errors/domain-error';
+import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
+import { NotificationsService } from '../notifications/notifications.service';
 
 import { StaffInviteService } from './staff-invite.service';
+import { StaffSalaryService } from './staff-salary.service';
 
 /**
  * Staff — employment records, and the portal accounts some of them carry.
@@ -51,9 +57,20 @@ const LIST_SELECTION = {
   basicSalary: true,
   userId: true,
   joinedOn: true,
+  createdAt: true,
   // The account's own state, for `invitePending`. An invited account exists
   // and cannot be used; the list has to be able to say so.
   user: { select: { status: true } },
+} as const;
+
+const PROFILE_SELECTION = {
+  ...LIST_SELECTION,
+  cnic: true,
+  designation: true,
+  address: true,
+  photoUrl: true,
+  cvUrl: true,
+  classAssignments: { select: { classLevelId: true } },
 } as const;
 
 @Injectable()
@@ -61,6 +78,9 @@ export class StaffService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly invites: StaffInviteService,
+    private readonly salary: StaffSalaryService,
+    private readonly context: TenantContextService,
+    private readonly notifications: NotificationsService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -70,6 +90,7 @@ export class StaffService {
         deletedAt: null,
         ...(query.status === undefined ? {} : { status: query.status }),
         ...(query.role === undefined ? {} : { role: query.role }),
+        ...(query.gender === undefined ? {} : { gender: query.gender }),
         ...(query.q === undefined || query.q === ''
           ? {}
           : {
@@ -109,6 +130,7 @@ export class StaffService {
           joinedOn: row.joinedOn === null ? null : row.joinedOn.toISOString().slice(0, 10),
           hasLogin: row.userId !== null,
           invitePending: row.user?.status === 'INVITED',
+          createdAt: row.createdAt.toISOString(),
         })),
       };
     });
@@ -157,11 +179,19 @@ export class StaffService {
             ...(input.phone === undefined ? {} : { phone: input.phone }),
             ...(input.gender === undefined ? {} : { gender: input.gender }),
             ...(input.joinedOn === undefined ? {} : { joinedOn: new Date(input.joinedOn) }),
-            ...(input.cnic === undefined ? {} : { cnic: input.cnic }),
+            cnic: input.cnic,
             ...(input.designation === undefined ? {} : { designation: input.designation }),
+            ...(input.address === undefined ? {} : { address: input.address }),
+            ...(input.photoUrl === undefined ? {} : { photoUrl: input.photoUrl }),
+            ...(input.cvUrl === undefined ? {} : { cvUrl: input.cvUrl }),
           } as never,
           select: LIST_SELECTION,
         });
+
+        // The classes in the same transaction as the teacher: a teacher saved
+        // without them is one who signs in to an empty portal, and the form
+        // said they were assigned.
+        await this.replaceClassAssignments(tx, created.id, input.classLevelIds);
 
         // Only for the roles that use the portal, and only with somewhere to
         // send it. The contract already refuses a portal role with no email, so
@@ -171,6 +201,18 @@ export class StaffService {
           staffRoleCanSignIn(input.role) && input.email !== undefined
             ? await this.invites.issue(tx, created.id, this.clock.now())
             : undefined;
+
+        // The people who manage staff hear about the new colleague, in this
+        // transaction, so there is no notification for a hire that rolled back.
+        await this.notifications.notify(tx, {
+          recipientIds: await this.notifications.userIdsWithPermission(tx, 'staff.record.update'),
+          exceptUserId: this.context.userId,
+          kind: 'staff.added',
+          title: `New staff member: ${input.name}`,
+          body: `${STAFF_ROLE_LABELS[input.role]} · ${employeeNo}`,
+          entityType: 'staff',
+          entityId: created.id,
+        });
 
         return { id: created.id, invitation };
       })
@@ -193,20 +235,24 @@ export class StaffService {
     return this.detail(id);
   }
 
-  /** One row, as the list shows it. */
-  private async detail(id: string): Promise<StaffListItem> {
+  async getProfile(id: string): Promise<StaffProfile> {
     return this.prisma.tenant(async (tx) => {
       const row = await tx.staff.findFirst({
         where: { id, deletedAt: null },
-        select: LIST_SELECTION,
+        select: PROFILE_SELECTION,
       });
 
       if (row === null) {
         throw new NotFoundError('staff member');
       }
 
-      return toListItem(row);
+      return toProfile(row);
     });
+  }
+
+  /** One row, as the list shows it. */
+  private async detail(id: string): Promise<StaffListItem> {
+    return this.getProfile(id);
   }
 
   async update(id: string, input: UpdateStaff): Promise<StaffListItem> {
@@ -220,9 +266,36 @@ export class StaffService {
           throw new NotFoundError('staff member');
         }
 
+        // The owner is the only Admin. Somebody already holding the role may
+        // keep it (editing their phone resends it), but nobody can be promoted.
+        if (input.role === 'ADMIN' && existing.role !== 'ADMIN') {
+          throw new BusinessRuleError(
+            'BUSINESS_RULE_VIOLATION',
+            'Admin is the school owner and is set when the school is registered.',
+          );
+        }
+
         const nextRole = input.role ?? existing.role;
         const nextEmail = input.email ?? existing.email ?? undefined;
         const userId = existing.userId;
+
+        // Judged against the role they will end up with, because a PATCH
+        // carrying only classes says nothing about the role. Somebody who stops
+        // being a teacher loses the classes with it: a grant that outlives the
+        // role it was for is access nobody remembers giving.
+        if (nextRole !== 'TEACHER' && (input.classLevelIds?.length ?? 0) > 0) {
+          throw new BusinessRuleError(
+            'BUSINESS_RULE_VIOLATION',
+            'Only teachers are assigned classes. Change the role to Teacher first.',
+          );
+        }
+        if (nextRole === 'TEACHER') {
+          if (input.classLevelIds !== undefined) {
+            await this.replaceClassAssignments(tx, id, input.classLevelIds);
+          }
+        } else if (existing.role === 'TEACHER') {
+          await this.replaceClassAssignments(tx, id, []);
+        }
 
         // A role change can take somebody's portal access away, and leaving a
         // live account behind for a janitor is the whole reason the roles are
@@ -298,6 +371,12 @@ export class StaffService {
           }
         }
 
+        // A raise applies from the months made after it. Months that were already
+        // running are made now, at the salary being replaced, so they keep it.
+        if (input.basicSalaryMinor !== undefined) {
+          await this.salary.snapshotBeforeSalaryChange(tx, id);
+        }
+
         const updated = await tx.staff.update({
           where: { id },
           data: {
@@ -314,6 +393,9 @@ export class StaffService {
             ...(input.joinedOn === undefined ? {} : { joinedOn: new Date(input.joinedOn) }),
             ...(input.cnic === undefined ? {} : { cnic: input.cnic }),
             ...(input.designation === undefined ? {} : { designation: input.designation }),
+            ...(input.address === undefined ? {} : { address: input.address }),
+            ...(input.photoUrl === undefined ? {} : { photoUrl: input.photoUrl }),
+            ...(input.cvUrl === undefined ? {} : { cvUrl: input.cvUrl }),
             ...(userId === existing.userId ? {} : { userId }),
           },
           select: LIST_SELECTION,
@@ -365,10 +447,139 @@ export class StaffService {
         });
       }
 
+      // Their access ends with their employment, class grants included.
+      await this.replaceClassAssignments(tx, id, []);
+
       await tx.staff.update({
         where: { id },
         data: { deletedAt: now, status: 'LEFT', leftOn: now, designation: reason.slice(0, 80) },
       });
+    });
+  }
+
+  /**
+   * Remove several people at once: one transaction, the same effect as
+   * `remove` for each, and nothing half-done if it fails part way.
+   *
+   * Ids that are not (or no longer) on the list are reported back rather than
+   * failing the request, so pressing it twice, or removing somebody another
+   * administrator just removed, is harmless.
+   */
+  async removeMany(
+    ids: readonly string[],
+    reason: string,
+  ): Promise<{ deleted: number; skipped: string[] }> {
+    const unique = [...new Set(ids)];
+
+    return this.prisma.tenant(async (tx) => {
+      const found = await tx.staff.findMany({
+        where: { id: { in: unique }, deletedAt: null },
+        select: { id: true, userId: true },
+      });
+      const foundIds = new Set(found.map((row) => row.id));
+      const userIds = found.flatMap((row) => (row.userId === null ? [] : [row.userId]));
+      const now = this.clock.now();
+
+      if (userIds.length > 0) {
+        await tx.user.updateMany({
+          where: { id: { in: userIds } },
+          // Bumping the version invalidates tokens already issued, so access
+          // ends now rather than when the current one expires.
+          data: { status: 'DISABLED', tokenVersion: { increment: 1 } },
+        });
+        await tx.session.updateMany({
+          where: { userId: { in: userIds }, revokedAt: null },
+          data: { revokedAt: now, revokedReason: 'staff-removed' },
+        });
+      }
+
+      if (foundIds.size > 0) {
+        for (const staffId of foundIds) {
+          await this.replaceClassAssignments(tx, staffId, []);
+        }
+
+        await tx.staff.updateMany({
+          where: { id: { in: [...foundIds] } },
+          data: { deletedAt: now, status: 'LEFT', leftOn: now, designation: reason.slice(0, 80) },
+        });
+      }
+
+      return { deleted: foundIds.size, skipped: unique.filter((id) => !foundIds.has(id)) };
+    });
+  }
+
+  /**
+   * Make a teacher's classes exactly `requested`, and say so in the audit log.
+   *
+   * Replace rather than add/remove: the form submits the whole set it is
+   * showing, so the stored set must equal it. Reading what is there first and
+   * writing only the difference keeps the rows (and their `created_at`) of
+   * classes that did not change, and means pressing Save twice writes nothing
+   * the second time — and no second audit entry for a change that did not
+   * happen.
+   *
+   * Every id is checked against the school's own classes first. The foreign
+   * key alone would accept another school's class id (foreign keys are checked
+   * outside row-level security), which would be a cross-tenant write through
+   * the one door nobody thinks of as one.
+   */
+  private async replaceClassAssignments(
+    tx: TransactionClient,
+    staffId: string,
+    requested: readonly string[],
+  ): Promise<void> {
+    const wanted = [...new Set(requested)];
+
+    if (wanted.length > 0) {
+      const known = await tx.classLevel.findMany({
+        where: { id: { in: wanted } },
+        select: { id: true },
+      });
+      if (known.length !== wanted.length) {
+        throw new BusinessRuleError(
+          'BUSINESS_RULE_VIOLATION',
+          'One of the chosen classes no longer exists at this school. Reload the list and choose again.',
+        );
+      }
+    }
+
+    const current = (
+      await tx.staffClassAssignment.findMany({
+        where: { staffId },
+        select: { classLevelId: true },
+      })
+    ).map((row) => row.classLevelId);
+
+    const added = wanted.filter((id) => !current.includes(id));
+    const removed = current.filter((id) => !wanted.includes(id));
+
+    if (added.length === 0 && removed.length === 0) {
+      return;
+    }
+
+    if (removed.length > 0) {
+      await tx.staffClassAssignment.deleteMany({
+        where: { staffId, classLevelId: { in: removed } },
+      });
+    }
+    if (added.length > 0) {
+      await tx.staffClassAssignment.createMany({
+        data: added.map((classLevelId) => ({ staffId, classLevelId })) as never,
+      });
+    }
+
+    await tx.auditLog.create({
+      data: {
+        schoolId: this.context.schoolId,
+        action: 'staff.classes.assign',
+        entityType: 'Staff',
+        entityId: staffId,
+        actorType: 'USER',
+        actorUserId: this.context.userId ?? null,
+        before: { classLevelIds: current },
+        after: { classLevelIds: wanted },
+        at: this.clock.now(),
+      },
     });
   }
 
@@ -412,6 +623,40 @@ function schoolRoleFor(role: StaffRole): string {
   return mapped;
 }
 
+function toProfile(row: {
+  id: string;
+  employeeNo: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  gender: StaffListItem['gender'];
+  role: StaffRole;
+  status: StaffListItem['status'];
+  casualLeaves: number;
+  sickLeaves: number;
+  basicSalary: { toFixed: (digits: number) => string };
+  joinedOn: Date | null;
+  userId: string | null;
+  createdAt: Date;
+  user?: { status: string } | null;
+  cnic: string | null;
+  designation: string | null;
+  address: string | null;
+  photoUrl: string | null;
+  cvUrl: string | null;
+  classAssignments: { classLevelId: string }[];
+}): StaffProfile {
+  return {
+    ...toListItem(row),
+    cnic: row.cnic,
+    designation: row.designation,
+    address: row.address,
+    photoUrl: row.photoUrl,
+    cvUrl: row.cvUrl,
+    classLevelIds: row.classAssignments.map((entry) => entry.classLevelId),
+  };
+}
+
 function toListItem(row: {
   id: string;
   employeeNo: string;
@@ -426,6 +671,7 @@ function toListItem(row: {
   basicSalary: { toFixed: (digits: number) => string };
   joinedOn: Date | null;
   userId: string | null;
+  createdAt: Date;
   user?: { status: string } | null;
 }): StaffListItem {
   return {
@@ -443,6 +689,7 @@ function toListItem(row: {
     joinedOn: row.joinedOn === null ? null : row.joinedOn.toISOString().slice(0, 10),
     hasLogin: row.userId !== null,
     invitePending: row.user?.status === 'INVITED',
+    createdAt: row.createdAt.toISOString(),
   };
 }
 

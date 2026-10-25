@@ -58,6 +58,9 @@ const APP_DOMAIN = process.env['APP_DOMAIN'] ?? 'localhost';
  */
 export const TENANT_PREFIX_HEADER = 'x-tenant-prefix';
 
+/** Canonical app path (no tenant prefix) for server layouts — set on every school request. */
+export const INNER_PATH_HEADER = 'x-inner-path';
+
 /**
  * The only paths on a school's address that a signed-out person may reach.
  *
@@ -182,6 +185,7 @@ function prefixed(path: string, slug: string): string {
  */
 function proceed(request: NextRequest, inner: string, headers: Headers): NextResponse {
   headers.set(TENANT_PREFIX_HEADER, tenantPrefixFor(request));
+  headers.set(INNER_PATH_HEADER, inner);
 
   if (TENANT_MODE !== 'path' || inner === request.nextUrl.pathname) {
     return NextResponse.next({ request: { headers } });
@@ -359,6 +363,6 @@ export const config = {
    * page served on the apex, and defaults should fail toward the safe side.
    */
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|firebase-messaging-sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };

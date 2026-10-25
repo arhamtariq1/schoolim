@@ -38,7 +38,7 @@ describe('the fees section', () => {
     const fees = find(visibleNavItems(ACCOUNTANT), 'Fees');
 
     expect(labels(fees?.children ?? [])).toEqual([
-      'Fee vouchers',
+      'Fee Vouchers',
       'Generate fee',
       'Defaulters',
       'Fee increment',
@@ -52,7 +52,7 @@ describe('the fees section', () => {
     const visible = visibleNavItems(['fees.voucher.read', 'fees.defaulter.read']);
     const fees = find(visible, 'Fees');
 
-    expect(labels(fees?.children ?? [])).toEqual(['Fee vouchers', 'Defaulters']);
+    expect(labels(fees?.children ?? [])).toEqual(['Fee Vouchers', 'Defaulters']);
   });
 
   it('disappears entirely rather than becoming a heading that expands to nothing', () => {
@@ -78,6 +78,48 @@ describe('the fees section', () => {
     // child. Either way nobody lands on the redirect itself.
     expect(fees?.href).toBe('/fees');
     expect(fees?.children?.[0]?.href).toBe('/fees/vouchers');
+  });
+});
+
+describe('the finance section', () => {
+  it('gives the owner revenue, expense and salaries, in that order', () => {
+    const finance = find(
+      visibleNavItems(['finance.expense.read', 'finance.revenue.read', 'staff.salary.read']),
+      'Finance',
+    );
+
+    expect(finance?.href).toBe('/finance');
+    expect(labels(finance?.children ?? [])).toEqual(['Revenue', 'Expense', 'Salaries']);
+    expect(finance?.children?.[0]?.href).toBe('/finance/revenue');
+  });
+
+  it('keeps revenue from anybody without finance.revenue.read', () => {
+    // The principal and the accountant: expenses and salaries, never earnings.
+    const finance = find(visibleNavItems(['finance.expense.read', 'staff.salary.read']), 'Finance');
+
+    expect(labels(finance?.children ?? [])).toEqual(['Expense', 'Salaries']);
+  });
+
+  it('no longer lists salaries or expense at the top level', () => {
+    const items = visibleNavItems(['finance.expense.read', 'staff.salary.read']);
+
+    expect(labels(items)).not.toContain('Salaries');
+    expect(labels(items)).not.toContain('Expense');
+  });
+
+  it('is absent for somebody with no finance permission', () => {
+    expect(labels(visibleNavItems(['attendance.record.read']))).not.toContain('Finance');
+  });
+});
+
+describe('calendar', () => {
+  it('is its own top-level item, not a child of Academics', () => {
+    const items = visibleNavItems(['academics.structure.read']);
+    const academics = find(items, 'Academics');
+
+    expect(labels(items)).toContain('Calendar');
+    expect(find(items, 'Calendar')?.href).toBe('/academics/holidays');
+    expect(labels(academics?.children ?? [])).not.toContain('Calendar');
   });
 });
 
@@ -119,7 +161,7 @@ describe('the sidebar as a whole', () => {
       'attendance.record.read',
     ]);
 
-    expect(labels(teacher)).toEqual(['Home', 'Students', 'Attendance']);
+    expect(labels(teacher)).toEqual(['Dashboard', 'Students', 'Attendance']);
   });
 
   it('never offers an item whose permission is not held', () => {
@@ -165,5 +207,42 @@ describe('the sidebar as a whole', () => {
     walk(NAV_ITEMS);
 
     expect(seen).toEqual([...new Set(seen)]);
+  });
+});
+
+describe('the Requests door', () => {
+  const find = (permissions: Permission[]) =>
+    visibleNavItems(permissions).find((item) => item.href === '/requests');
+
+  it('reads "My Requests" to anyone who can only raise them', () => {
+    expect(find(['workflow.request.create'])?.label).toBe('My Requests');
+  });
+
+  it('reads "Manage Requests" to anyone who manages them', () => {
+    expect(find(['workflow.request.create', 'workflow.request.manage'])?.label).toBe(
+      'Manage Requests',
+    );
+  });
+
+  it('is not there at all for someone who can do neither', () => {
+    expect(find(['fees.voucher.read'])).toBeUndefined();
+  });
+});
+
+describe('the Timetables item', () => {
+  it('shows for anyone who can read timetables', () => {
+    const items = visibleNavItems(['academics.timetable.read']);
+    expect(labels(items)).toContain('Timetables');
+  });
+
+  it('is hidden from someone who cannot', () => {
+    expect(labels(visibleNavItems(ACCOUNTANT))).not.toContain('Timetables');
+  });
+});
+
+describe('the parent Fee vouchers item', () => {
+  it('shows for a guardian, and not for an accountant', () => {
+    expect(labels(visibleNavItems(['parent.child.read', 'parent.voucher.read']))).toContain('Fee vouchers');
+    expect(labels(visibleNavItems(ACCOUNTANT))).not.toContain('Fee vouchers');
   });
 });

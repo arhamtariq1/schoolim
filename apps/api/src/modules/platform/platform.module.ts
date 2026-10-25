@@ -4,6 +4,8 @@ import { PasswordService } from '../../shared/auth/password.service';
 import { TokenService } from '../../shared/auth/token.service';
 import { clockProvider } from '../../shared/time/clock.provider';
 
+import { PlansService } from './plans.service';
+import { PlatformAuditService } from './platform-audit.service';
 import { PlatformAuthService } from './platform-auth.service';
 import { PlatformSessionService } from './platform-session.service';
 import { PlatformController } from './platform.controller';
@@ -27,6 +29,8 @@ import { SchoolsService } from './schools.service';
     PlatformSessionService,
     PlatformAuthService,
     SchoolsService,
+    PlatformAuditService,
+    PlansService,
   ],
 })
 export class PlatformModule {}

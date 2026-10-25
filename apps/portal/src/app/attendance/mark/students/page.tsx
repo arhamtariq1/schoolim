@@ -1,8 +1,10 @@
 import { ROUTES, type ClassOverview } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
-import { AppShell } from '@/components/app-shell';
-import { AttendanceClassGrid } from '@/components/attendance-class-grid';
+import { AttendanceClassOverviewTable } from '@/components/attendance-class-overview-table';
+import { NoAcademicSessionState } from '@/components/no-academic-session-state';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { isNoAcademicSessionError } from '@/lib/academic-session-error';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -28,34 +30,41 @@ export default async function MarkStudentAttendancePage({
   const params = await searchParams;
   const date = typeof params['date'] === 'string' ? params['date'] : '';
 
-  const [session, result] = await Promise.all([
+  // `getSession` stays in the batch: the shell reads it from the request, but
+  // dropping the call would change what this page fetches.
+  const [, result] = await Promise.all([
     getSession(),
     apiFetch<{ data: ClassOverview }>(
       `${ROUTES.attendance.classes}${date === '' ? '' : `?date=${date}`}`,
     ),
   ]);
 
+  if (!result.ok && isNoAcademicSessionError(result.message)) {
+    return (
+      <div className="w-full space-y-6">
+        <WorkspacePageHeader
+          title="Mark student attendance"
+          description="Pick a class. Everyone starts present, so you only tap the exceptions."
+        />
+        <NoAcademicSessionState />
+      </div>
+    );
+  }
+
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <div className="space-y-6">
-        <AttendanceClassGrid
+    <div className="space-y-6">
+        <AttendanceClassOverviewTable
           overview={result.ok ? result.data.data : EMPTY}
           hrefPrefix="/attendance/mark/students"
           hrefSuffix={date === '' ? '' : `?date=${date}`}
           actionLabel="Mark attendance"
+          reviewLabel="View / Edit"
           title="Mark student attendance"
           description="Pick a class. Everyone starts present, so you only tap the exceptions."
           basePath="/attendance/mark/students"
+          reportHrefPrefix="/attendance/reports/students"
           error={result.ok ? undefined : result.message}
         />
       </div>
-    </AppShell>
   );
 }

@@ -57,6 +57,22 @@ export type PlatformUser = Prisma.PlatformUserModel
  */
 export type PlatformSession = Prisma.PlatformSessionModel
 /**
+ * Model Plan
+ * A subscription plan a school can buy. Platform data, not tenant data: no
+ * `school_id`, no RLS, and the application role holds no grant. Prices are
+ * configuration (docs/15 D2), edited from the console and read by the public
+ * landing page. Archived, never deleted, so a future subscription can always
+ * point at the plan it was sold under.
+ */
+export type Plan = Prisma.PlanModel
+/**
+ * Model PlatformAuditLog
+ * Every change a platform user makes: actor, action, entity, before, after.
+ * Append-only. Separate from `audit_logs`, which is tenant-scoped and cannot
+ * hold an action that belongs to no school.
+ */
+export type PlatformAuditLog = Prisma.PlatformAuditLogModel
+/**
  * Model SignupIntent
  * In-progress self-serve signup: credentials → email OTP → school details.
  * 
@@ -228,6 +244,24 @@ export type Enrollment = Prisma.EnrollmentModel
  */
 export type Staff = Prisma.StaffModel
 /**
+ * Model StaffClassAssignment
+ * Which classes a teacher takes — the data a `TEACHER`'s scoped grants compile
+ * into (docs/08 §5, ADR-0014).
+ * 
+ * A class is a `ClassLevel`, not a `Section`: sections are created per session,
+ * so an assignment to one would silently lapse at every rollover and leave a
+ * teacher with an empty portal on the first morning of the year. Attendance and
+ * the roster already address a class by its level.
+ * 
+ * Zero rows means **no access**, never "all classes" — the opposite default to
+ * `FeeHeadClassLevel`, because here a missing row has to fail closed.
+ * 
+ * Erasure: these are access grants, not history. They are deleted when the
+ * member of staff is removed or stops being a teacher, and cascade with the
+ * staff row or the class.
+ */
+export type StaffClassAssignment = Prisma.StaffClassAssignmentModel
+/**
  * Model ExpenseCategory
  * The old "Expense Type" screen, which this replaces.
  * 
@@ -266,6 +300,14 @@ export type Holiday = Prisma.HolidayModel
  * orphan the amount every existing student was admitted on.
  */
 export type FeeHead = Prisma.FeeHeadModel
+/**
+ * Model FeeHeadClassLevel
+ * Which classes a fee head applies to.
+ * 
+ * No rows for a head means "all classes" — that is the default, and the
+ * admission form / default catalogue treat an empty link set as unrestricted.
+ */
+export type FeeHeadClassLevel = Prisma.FeeHeadClassLevelModel
 /**
  * Model StudentFee
  * What one child was agreed to pay for one head, fixed at admission.
@@ -380,3 +422,152 @@ export type SchoolLogo = Prisma.SchoolLogoModel
  * defaults, which is what every school starts with and most keep.
  */
 export type SchoolVoucherSettings = Prisma.SchoolVoucherSettingsModel
+/**
+ * Model Subject
+ * A subject a school teaches. School-configured rather than an enum: every
+ * school's list differs, and a hard-coded one is school-specific code (R1).
+ * 
+ * Erasure: not personal data; deleted with the school.
+ */
+export type Subject = Prisma.SubjectModel
+/**
+ * Model AssessmentType
+ * A kind of test a school gives: "Class test", "Monthly test", "Midterm"...
+ * 
+ * School-configured rather than an enum, for the same reason as `Subject`:
+ * schools name their assessments differently, and a fixed list is
+ * school-specific code (R1). Four generic ones are seeded on first use.
+ * 
+ * Erasure: not personal data; deleted with the school.
+ */
+export type AssessmentType = Prisma.AssessmentTypeModel
+/**
+ * Model Assessment
+ * One test or exam for one class, subject and day.
+ * 
+ * The unique key is the duplicate guard: a second "Grade 5 / Maths / Monthly
+ * test / 12 Aug" is the same test entered twice, and two of them would give a
+ * child two results for one paper. The database refuses it, so a double-click
+ * or two teachers cannot create it.
+ * 
+ * Erasure: an academic record, kept for life of the school relationship + 10
+ * years (docs/17 s4). Marks are anonymised with the student, not deleted.
+ */
+export type Assessment = Prisma.AssessmentModel
+/**
+ * Model MarkEntry
+ * One child's result in one assessment. `obtained` null means absent.
+ * 
+ * Erasure: anonymised with the student (docs/17 s4); cascades with the
+ * assessment.
+ */
+export type MarkEntry = Prisma.MarkEntryModel
+/**
+ * Model StaffSalaryPeriod
+ * One monthly salary record per member of staff.
+ * 
+ * The base salary is a snapshot taken when the month became payable, so a later
+ * raise never rewrites an earlier month. Adjustments and payments hang off it.
+ * Append-only (R4): the app role holds SELECT and INSERT only.
+ * 
+ * Erasure: a payroll record, kept with the financial records (docs/17 s4:
+ * 10 years) and never deleted.
+ */
+export type StaffSalaryPeriod = Prisma.StaffSalaryPeriodModel
+/**
+ * Model StaffSalaryAdjustment
+ * A bonus, allowance, deduction or manual correction to one month's salary.
+ * Signed amount, with a reason. Append-only.
+ * 
+ * Erasure: kept with the payroll record.
+ */
+export type StaffSalaryAdjustment = Prisma.StaffSalaryAdjustmentModel
+/**
+ * Model StaffSalaryPayment
+ * Salary paid to a member of staff. Several per month are allowed (part
+ * payments); each belongs to that month's `StaffSalaryPeriod`.
+ * 
+ * Append-only (R4), enforced by the database: the app role holds INSERT and
+ * SELECT on this table and nothing else.
+ * 
+ * Erasure: a payroll record, kept with the financial records (docs/17 s4:
+ * 10 years) and never deleted.
+ */
+export type StaffSalaryPayment = Prisma.StaffSalaryPaymentModel
+/**
+ * Model ClassSubject
+ * Which subjects a class has. Subjects stay the school's own list; this says
+ * which of them a class uses, and marks for the class may only use these.
+ * 
+ * Erasure: configuration, not personal data. Cascades with the class or subject.
+ */
+export type ClassSubject = Prisma.ClassSubjectModel
+/**
+ * Model ClassAssessmentType
+ * Which assessment types a class has. Same shape and reasoning as `ClassSubject`.
+ */
+export type ClassAssessmentType = Prisma.ClassAssessmentTypeModel
+/**
+ * Model Request
+ * A question, complaint or concern a parent or teacher raised with the school.
+ * 
+ * A ticket, not an approval: nothing here changes another record. What
+ * happened to it is the timeline in `request_events`; this row is its current
+ * state. The state machine lives in `@ilm/contracts` (`REQUEST_TRANSITIONS`).
+ * 
+ * Erasure (docs/17 s4): kept for the life of the relationship + 1 year,
+ * redacted when a per-student erasure runs on the child it names, deleted with
+ * the tenant. Never deleted by the application role (no DELETE grant).
+ */
+export type Request = Prisma.RequestModel
+/**
+ * Model RequestEvent
+ * One thing that happened to a request, oldest first: it being raised, a
+ * message, a status change, an assignment. Append-only — the application role
+ * holds SELECT and INSERT only — so the history of who said or changed what
+ * cannot be edited by the application.
+ */
+export type RequestEvent = Prisma.RequestEventModel
+/**
+ * Model RequestAttachment
+ * A picture attached to a request or a reply. Same storage columns as
+ * `school_logos` (ADR-0013); always the private asset kind, so the bytes stay
+ * in Postgres whatever storage is configured. Append-only.
+ */
+export type RequestAttachment = Prisma.RequestAttachmentModel
+/**
+ * Model Notification
+ * The header bell: a pointer to something that happened, for one person.
+ * 
+ * Not a record of anything — the thing it points at is. Erasure (docs/17 s4):
+ * deleted 90 days after it is read, with the user, and with the tenant.
+ */
+export type Notification = Prisma.NotificationModel
+/**
+ * Model DeviceToken
+ * A browser or phone that has agreed to receive push notifications for one user.
+ * The token is what Firebase Cloud Messaging addresses; it is a credential to
+ * push to that device, so it never leaves the API.
+ */
+export type DeviceToken = Prisma.DeviceTokenModel
+/**
+ * Model Timetable
+ * A schedule for one class (or one section of it) in one session.
+ * 
+ * `DRAFT` is visible to the office alone; `PUBLISHED` to the teachers and
+ * parents it concerns. A class timetable repeats weekly between `starts_on` and
+ * `ends_on` (either may be open); an assessment timetable lists dated papers
+ * and its dates are worked out from them.
+ * 
+ * Erasure (docs/17 s4): not personal data. Kept for the life of the school;
+ * deleted with the tenant.
+ */
+export type Timetable = Prisma.TimetableModel
+/**
+ * Model TimetableEntry
+ * One period or one paper. A class timetable's entries repeat on a weekday; an
+ * assessment timetable's are held on a date — exactly one of the two is set.
+ * Times are `HH:MM` text: a clock time has no time zone, and zero-padded 24-hour
+ * text compares and sorts correctly.
+ */
+export type TimetableEntry = Prisma.TimetableEntryModel

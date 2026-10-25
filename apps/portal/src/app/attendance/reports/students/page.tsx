@@ -1,8 +1,10 @@
 import { ROUTES, type ClassOverview } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
-import { AppShell } from '@/components/app-shell';
-import { AttendanceClassGrid } from '@/components/attendance-class-grid';
+import { AttendanceClassReportTable } from '@/components/attendance-class-report-table';
+import { NoAcademicSessionState } from '@/components/no-academic-session-state';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { isNoAcademicSessionError } from '@/lib/academic-session-error';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
 
@@ -16,32 +18,34 @@ const EMPTY: ClassOverview = {
 };
 
 export default async function StudentReportIndexPage() {
-  const [session, result] = await Promise.all([
+  // `getSession` stays in the batch: the shell reads it from the request, but
+  // dropping the call would change what this page fetches.
+  const [, result] = await Promise.all([
     getSession(),
     apiFetch<{ data: ClassOverview }>(ROUTES.attendance.classes),
   ]);
 
+  if (!result.ok && isNoAcademicSessionError(result.message)) {
+    return (
+      <div className="w-full space-y-6">
+        <WorkspacePageHeader
+          title="Student attendance report"
+          description="A month at a time, per class."
+        />
+        <NoAcademicSessionState />
+      </div>
+    );
+  }
+
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <div className="space-y-6">
-        <AttendanceClassGrid
+    <div className="space-y-6">
+        <AttendanceClassReportTable
           overview={result.ok ? result.data.data : EMPTY}
           hrefPrefix="/attendance/reports/students"
-          actionLabel="View report"
           title="Student attendance report"
           description="A month at a time, per class, with the percentage worked out against the days each child could actually have attended."
-          showDatePicker={false}
-          basePath="/attendance/reports/students"
           error={result.ok ? undefined : result.message}
         />
       </div>
-    </AppShell>
   );
 }

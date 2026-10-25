@@ -1,7 +1,6 @@
-import { FeesIcon, ChevronRightIcon, ICON_SIZE, PrintIcon, SchoolIcon } from '@ilm/ui/icons';
+import { FeesIcon, ChevronRightIcon, ICON_SIZE, PrintIcon } from '@ilm/ui/icons';
 import Link from 'next/link';
 
-import { AppShell } from '@/components/app-shell';
 import { getSession } from '@/lib/session';
 
 /**
@@ -14,17 +13,6 @@ import { getSession } from '@/lib/session';
 
 const SECTIONS = [
   {
-    href: '/settings/school',
-    label: 'School',
-    description: 'Name, address, contact details and logo — what is printed on every challan.',
-    icon: SchoolIcon,
-    // Read, not configure: the page shows the school's own name and phone,
-    // which is on its letterhead, and the form is what checks whether the
-    // viewer may change them. Listing it behind `configure` would hide the
-    // details from the office staff who read them off it all day.
-    permission: 'dashboard.workspace.read',
-  },
-  {
     href: '/settings/fees',
     label: 'Fees',
     description: 'What your school charges. Admission forms fill themselves in from this list.',
@@ -33,9 +21,9 @@ const SECTIONS = [
   },
   {
     href: '/settings/voucher',
-    label: 'Fee challan',
+    label: 'Voucher Settings',
     description:
-      'How the printed challan is laid out, and the Kuickpay or 1LINK ID a parent pays with.',
+      'Where voucher numbering starts, how the printed voucher is laid out, and the Kuickpay or 1LINK ID a parent pays with.',
     icon: PrintIcon,
     permission: 'fees.voucher.read',
   },
@@ -47,15 +35,7 @@ export default async function SettingsPage() {
   const visible = SECTIONS.filter((entry) => permissions.includes(entry.permission));
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={permissions}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-6">
         <div>
           <h1 className="text-xl font-semibold text-foreground">Settings</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -68,7 +48,7 @@ export default async function SettingsPage() {
             <li key={entry.href}>
               <Link
                 href={entry.href}
-                className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="flex items-center gap-4 rounded-xl border border-border/70 bg-card shadow-raised p-4 hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
                 <entry.icon className={`${ICON_SIZE.heading} shrink-0 text-primary`} aria-hidden />
                 <span className="min-w-0 flex-1">
@@ -86,6 +66,5 @@ export default async function SettingsPage() {
           ))}
         </ul>
       </div>
-    </AppShell>
   );
 }

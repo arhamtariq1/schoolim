@@ -313,7 +313,7 @@ export type GenerationResult = z.infer<typeof generationResultSchema>;
 // --- The list ---------------------------------------------------------------
 
 export const voucherListQuerySchema = listQuery(
-  ['issueDate', 'dueDate', 'voucherNo', 'amount', 'studentName'] as const,
+  ['issueDate', 'dueDate', 'voucherNo', 'amount', 'studentName', 'status'] as const,
   {
     sessionId: idSchema.optional(),
     classLevelId: idSchema.optional(),
@@ -516,13 +516,14 @@ export const bulkDeleteVouchersSchema = z
 export type BulkDeleteVouchers = z.infer<typeof bulkDeleteVouchersSchema>;
 
 /** Why one voucher in a bulk selection was left where it was. */
-export const BULK_SKIP_REASONS = ['ALREADY_PAID', 'HAS_DEPOSIT', 'NOT_FOUND'] as const;
+export const BULK_SKIP_REASONS = ['ALREADY_PAID', 'HAS_DEPOSIT', 'HAS_WAIVER', 'NOT_FOUND'] as const;
 export const bulkSkipReasonSchema = z.enum(BULK_SKIP_REASONS);
 export type BulkSkipReason = z.infer<typeof bulkSkipReasonSchema>;
 
 export const BULK_SKIP_REASON_LABELS: Readonly<Record<BulkSkipReason, string>> = {
   ALREADY_PAID: 'Money has been received — reverse the payment first',
   HAS_DEPOSIT: 'Collected a security deposit — refund or clear it first',
+  HAS_WAIVER: 'A waiver was given on it — the record of that waiver is kept',
   NOT_FOUND: 'Already gone',
 };
 
@@ -532,6 +533,56 @@ export const bulkDeleteResultSchema = z.object({
 });
 
 export type BulkDeleteResult = z.infer<typeof bulkDeleteResultSchema>;
+
+/**
+ * Recording payment on many vouchers at once — a class that paid at the bank
+ * together, a stack of counterfoils entered at the end of the day.
+ *
+ * Each voucher is settled **in full**, exactly as the single Pay button does
+ * without an amount: its own balance, the late fee if `paidOn` is past the due
+ * date, and any arrears it carries, oldest first. A part payment is a decision
+ * about one family and belongs on that family's voucher.
+ *
+ * `idempotencyKey` names the batch. Each voucher's payment is keyed from it, so
+ * sending the same batch twice — a double click, a retry after a dropped
+ * connection — records each payment once, and a run that stopped half way
+ * finishes the rest when resent.
+ */
+export const bulkRecordPaymentSchema = z
+  .object({
+    ids: z.array(idSchema).min(1, 'Choose at least one voucher.').max(MAX_BULK_VOUCHERS),
+    method: paymentMethodSchema.default('CASH'),
+    paidOn: calendarDateSchema,
+    reference: z.string().trim().max(80).optional(),
+    // Shorter than a single payment's key: a voucher id is appended to it.
+    idempotencyKey: z.string().trim().min(16).max(200),
+  })
+  .strict();
+
+export type BulkRecordPayment = z.infer<typeof bulkRecordPaymentSchema>;
+
+/** Why one voucher in a bulk payment was not paid. */
+export const BULK_PAY_SKIP_REASONS = ['ALREADY_PAID', 'CANCELLED', 'NOT_FOUND'] as const;
+export const bulkPaySkipReasonSchema = z.enum(BULK_PAY_SKIP_REASONS);
+export type BulkPaySkipReason = z.infer<typeof bulkPaySkipReasonSchema>;
+
+export const BULK_PAY_SKIP_REASON_LABELS: Readonly<Record<BulkPaySkipReason, string>> = {
+  ALREADY_PAID: 'Already settled',
+  CANCELLED: 'Cancelled — nothing is owed',
+  NOT_FOUND: 'No longer exists',
+};
+
+export const bulkPaymentResultSchema = z.object({
+  /** Vouchers a payment was recorded against in this run. */
+  paid: z.int().min(0),
+  /** What those payments add up to, late fees and arrears included. */
+  totalMinor: minorUnitsSchema,
+  skipped: z.array(
+    z.object({ id: idSchema, voucherNo: z.string().nullable(), reason: bulkPaySkipReasonSchema }),
+  ),
+});
+
+export type BulkPaymentResult = z.infer<typeof bulkPaymentResultSchema>;
 
 /**
  * The challans behind a selection, for printing a stack of them.

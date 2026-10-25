@@ -80,3 +80,23 @@ export const schoolLogoInfoSchema = z.object({
 });
 
 export type SchoolLogoInfo = z.infer<typeof schoolLogoInfoSchema>;
+
+/**
+ * How many bank marks a challan can carry.
+ *
+ * A school that banks with several accepts payment at any of them, and prints
+ * every mark in one row at the foot of each copy. Four is what fits that row
+ * at a size a bank counter can still recognise.
+ */
+export const BANK_LOGO_SLOTS = 4;
+
+export const bankLogoSlotSchema = z.coerce.number().int().min(0).max(BANK_LOGO_SLOTS - 1);
+
+/** One filled bank-logo slot. Empty slots are not listed. */
+export const bankLogoSchema = z.object({
+  slot: z.int().min(0).max(BANK_LOGO_SLOTS - 1),
+  /** Cache-busting version, as on `SchoolLogoInfo`. */
+  version: z.string(),
+});
+
+export type BankLogo = z.infer<typeof bankLogoSchema>;

@@ -8,6 +8,7 @@ import {
   VOUCHER_STATUSES,
   VOUCHER_STATUS_LABELS,
   type AcademicSession,
+  type BankLogo,
   type ClassLevel,
   type FeeHead,
   type VoucherDetail,
@@ -17,9 +18,17 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  DataTable,
+  Card,
+  CardTable,
+  Checkbox,
   DateDisplay,
   DatePicker,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Dialog,
   DialogBody,
   DialogContent,
@@ -30,33 +39,87 @@ import {
   Field,
   Input,
   Money,
-  Pagination,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   SimpleSelect,
   StatusBadge,
-  type Column,
   useToast,
+  type CardTableColumn,
 } from '@ilm/ui';
 import {
+  CalendarIcon,
+  ClassIcon,
+  CloseIcon,
+  DateRangeIcon,
   DeleteIcon,
   EditIcon,
+  ExportIcon,
+  FeesIcon,
+  FinanceIcon,
   ICON_SIZE,
+  MoreIcon,
+  MoreVerticalIcon,
+  OverdueIcon,
   PrintIcon,
+  RefundIcon,
   SearchIcon,
+  SessionIcon,
   SpinnerIcon,
+  StudentsIcon,
+  SuccessIcon,
+  WarningIcon,
 } from '@ilm/ui/icons';
 import { systemClock } from '@ilm/utils';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 
+
+function afterMenuAction(action: () => void): void {
+  action();
+  const swallow = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  document.addEventListener('click', swallow, true);
+  window.setTimeout(() => {
+    document.removeEventListener('click', swallow, true);
+  }, 100);
+}
+
+import { ListDataTable } from './list-data-table';
+import { ListTablePaginationFooter } from './list-table-pagination-footer';
 import { VoucherBulkBar } from './voucher-bulk-bar';
 import { VoucherChallan } from './voucher-challan';
 import { VoucherEditDialog } from './voucher-edit-dialog';
 
+import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
+import {
+  FEE_LIST_SELECT_COLUMN,
+  FEE_LIST_TABLE_CELL,
+  classBadgeTone,
+  feeListSelectCheckboxWrap,
+  feeListSortableTableHeader,
+  feeListTableHeader,
+  splitStudentDisplayName,
+  useDebouncedSearchFilter,
+} from '@/components/fees/fee-list-shared';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { formatInclusiveDateRange } from '@/lib/expense-date-range';
+import { nextSortParams } from '@/lib/list-page';
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
+import { pageIntro } from '@/lib/page-copy';
 import { stashPrintSelection } from '@/lib/print-handoff';
+import { selectionScope, useScopedSelection } from '@/lib/use-scoped-selection';
 import { useTenantHref } from '@/lib/use-tenant-href';
+
+/** Matches app header search (`md:max-w-xl` in app-shell). */
+const VOUCHER_TABLE_SEARCH_CLASS = 'relative w-full min-w-0 md:max-w-xl';
+
+/** Empty on purpose — the badge design lives in `StatusBadge`. */
+const VOUCHER_TABLE_BADGE_CLASS = '';
 
 /**
  * Fees › Vouchers.
@@ -86,19 +149,20 @@ export interface VouchersViewProps {
   offset: number;
   filters: {
     q: string;
-    grNo: string;
     sessionId: string;
     classLevelId: string;
     status: string;
     from: string;
     to: string;
   };
+  sort: 'issueDate' | 'dueDate' | 'voucherNo' | 'amount' | 'studentName' | 'status';
+  order: 'asc' | 'desc';
   school: {
     name: string;
     address?: string | undefined;
     phone?: string | undefined;
     logoVersion?: string | undefined;
-    bankLogoVersion?: string | undefined;
+    bankLogos?: readonly BankLogo[] | undefined;
     accentColor?: string | undefined;
   };
   /** How this school’s challan is laid out. Defaults until they change it. */
@@ -121,6 +185,8 @@ export function VouchersView({
   limit,
   offset,
   filters,
+  sort,
+  order,
   school,
   voucherSettings,
   error,
@@ -131,11 +197,11 @@ export function VouchersView({
 }: VouchersViewProps) {
   const router = useRouter();
   const tenantHref = useTenantHref();
+  const pathname = usePathname();
   const params = useSearchParams();
 
   const toast = useToast();
 
-  const [draft, setDraft] = useState(filters);
   const [busyId, setBusyId] = useState<string | undefined>(undefined);
   const [cancelling, setCancelling] = useState<VoucherSummary | undefined>(undefined);
   const [cancelReason, setCancelReason] = useState('');
@@ -143,7 +209,24 @@ export function VouchersView({
   const [previewing, setPreviewing] = useState<VoucherDetail | undefined>(undefined);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [editing, setEditing] = useState<VoucherSummary | undefined>(undefined);
-  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+  // Survives moving between pages — see use-scoped-selection for why useState cannot.
+  const [selected, setSelected] = useScopedSelection(
+    'fee-vouchers',
+    selectionScope(new URLSearchParams(params.toString())),
+  );
+  const [rangeDraft, setRangeDraft] = useState({ from: filters.from, to: filters.to });
+
+  useEffect(() => {
+    setRangeDraft({ from: filters.from, to: filters.to });
+  }, [filters.from, filters.to]);
+
+  const isFiltered =
+    filters.q !== '' ||
+    filters.classLevelId !== '' ||
+    filters.status !== '' ||
+    filters.sessionId !== '' ||
+    filters.from !== '' ||
+    filters.to !== '';
 
   /**
    * Take every voucher behind the current filters, not just this page.
@@ -166,10 +249,7 @@ export function VouchersView({
     const token = stashPrintSelection(ids);
 
     if (token === undefined) {
-      toast.error(
-        'Could not open the print view',
-        'This browser is blocking site storage. Allow it for this site and try again.',
-      );
+      toast.error('Could not open print view. Allow site storage for this site and try again.');
       return;
     }
 
@@ -194,47 +274,75 @@ export function VouchersView({
     setSelected(new Set(body.data.ids));
   }
 
-  function apply(next: Partial<typeof filters>, resetPage = true) {
-    // A filter change drops the selection; turning a page keeps it.
-    //
-    // Without this, ticking twenty October vouchers and then filtering to
-    // November leaves twenty rows selected that are no longer on screen — and
-    // Delete would remove vouchers the operator can no longer see, from a
-    // month they are no longer looking at. Paging is the opposite case: the
-    // rows are still in the set, and carrying the ticks across pages is the
-    // whole point of being able to tick across pages.
-    if (resetPage) {
-      setSelected(new Set());
-    }
-
-    const merged = { ...draft, ...next };
-    const query = new URLSearchParams();
-    for (const [key, value] of Object.entries(merged)) {
-      if (value !== '') {
-        query.set(key, value);
+  const pushFilters = useCallback(
+    (next: Record<string, string>) => {
+      const keepsPage = Object.hasOwn(next, 'offset');
+      if (!keepsPage) {
+        setSelected(new Set());
       }
-    }
-    query.set('limit', String(limit));
-    if (!resetPage) {
-      query.set('offset', String(offset));
-    }
-    router.push(tenantHref(`/fees/vouchers?${query.toString()}`));
+
+      const query = new URLSearchParams(params.toString());
+      query.delete('grNo');
+
+      for (const [key, value] of Object.entries(next)) {
+        if (value === '') {
+          query.delete(key);
+        } else {
+          query.set(key, value);
+        }
+      }
+
+      if (!keepsPage) {
+        query.delete('offset');
+      }
+
+      router.push(`${pathname}?${query.toString()}`);
+    },
+    [params, pathname, router],
+  );
+
+  const { searchQuery, onSearchQueryChange } = useDebouncedSearchFilter(filters.q, (value) => {
+    pushFilters({ q: value });
+  });
+
+  function toggleSort(columnKey: string) {
+    const next = nextSortParams(sort, order, columnKey);
+    pushFilters({ sort: next.sort, order: next.order });
   }
 
-  function reset() {
+  function clearFilters() {
     setSelected(new Set());
-    const cleared = {
-      q: '',
-      grNo: '',
-      sessionId: '',
-      classLevelId: '',
-      status: '',
-      from: '',
-      to: '',
-    };
-    setDraft(cleared);
     router.push(tenantHref('/fees/vouchers'));
   }
+
+  function toggleRowSelected(id: string, checked: boolean) {
+    const next = new Set(selected);
+    if (checked) {
+      next.add(id);
+    } else {
+      next.delete(id);
+    }
+    setSelected(next);
+  }
+
+  function toggleAllOnPage(checked: boolean) {
+    if (!checked) {
+      const next = new Set(selected);
+      for (const row of rows) {
+        next.delete(row.id);
+      }
+      setSelected(next);
+      return;
+    }
+    const next = new Set(selected);
+    for (const row of rows) {
+      next.add(row.id);
+    }
+    setSelected(next);
+  }
+
+  const allOnPageSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
+  const someOnPageSelected = rows.some((row) => selected.has(row.id));
 
   async function openChallan(row: VoucherSummary) {
     setIsLoadingPreview(true);
@@ -262,268 +370,432 @@ export function VouchersView({
       toast.error(result.message);
       return;
     }
-    toast.success(`${cancelling.voucherNo} deleted`, 'Those months can be billed again.');
+    toast.success(`${cancelling.voucherNo} deleted.`);
     setCancelling(undefined);
     setCancelReason('');
     router.refresh();
   }
 
-  const columns: Column<VoucherSummary>[] = [
-    {
-      key: 'grNo',
-      header: 'GR No',
-      render: (row) => <span className="font-mono text-sm">{row.grNo ?? '—'}</span>,
-    },
-    {
-      key: 'student',
-      header: 'Student',
-      render: (row) => (
-        <span className="min-w-0">
-          <span className="block truncate font-medium text-foreground">{row.studentName}</span>
-          <span className="block truncate text-xs text-muted-foreground">
-            {row.className ?? '—'}
-            {row.sectionName === null ? '' : ` ${row.sectionName}`}
+  const sortState = useMemo(() => ({ key: sort, direction: order }), [sort, order]);
+
+  const columns = useMemo((): CardTableColumn<VoucherSummary>[] => {
+    return [
+      {
+        key: 'select',
+        label: '',
+        ...FEE_LIST_SELECT_COLUMN,
+        colStyle: { width: '3.25rem' },
+        headerCell: feeListSelectCheckboxWrap(
+          <Checkbox
+            checked={allOnPageSelected ? true : someOnPageSelected ? 'indeterminate' : false}
+            aria-label="Select every voucher on this page"
+            onCheckedChange={(next) => {
+              toggleAllOnPage(next === true);
+            }}
+          />,
+        ),
+        render: (row) =>
+          feeListSelectCheckboxWrap(
+            <Checkbox
+              checked={selected.has(row.id)}
+              aria-label={`Select voucher ${row.voucherNo}`}
+              onCheckedChange={(next) => {
+                toggleRowSelected(row.id, next === true);
+              }}
+            />,
+            { stopRowClick: true },
+          ),
+      },
+      {
+        key: 'voucherNo',
+        label: 'Voucher #',
+        ...FEE_LIST_TABLE_CELL,
+        colStyle: { width: '7.5rem' },
+        sortable: true,
+        headerCell: feeListSortableTableHeader('Voucher #', 'voucherNo', sortState, toggleSort, FeesIcon),
+        render: (row) => (
+          <span className="text-sm font-medium leading-none tabular-nums text-foreground">
+            {row.voucherNo}
           </span>
-        </span>
-      ),
-    },
-    {
-      key: 'issueDate',
-      header: 'Issued',
-      render: (row) => <DateDisplay value={row.issueDate} />,
-    },
-    {
-      key: 'dueDate',
-      header: 'Due',
-      render: (row) => <DateDisplay value={row.dueDate} />,
-    },
-    {
-      key: 'months',
-      header: 'Bill months',
-      render: (row) => (
-        <span className="text-sm text-muted-foreground">
-          {row.billMonths.length === 0
-            ? '—'
-            : row.billMonths.map((month) => formatMonth(month)).join(', ')}
-        </span>
-      ),
-    },
-    {
-      key: 'amount',
-      header: 'Amount',
-      align: 'end',
-      render: (row) => (
-        <span className="font-mono text-sm tabular-nums">
-          <Money valueMinor={row.totalPayableMinor} />
-          {row.arrearsMinor > 0 ? (
-            <span className="block text-xs font-normal text-warning">
-              incl. <Money valueMinor={row.arrearsMinor} withSymbol={false} /> arrears
+        ),
+      },
+      {
+        key: 'studentName',
+        label: 'Student',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[20%]',
+        sortable: true,
+        headerCell: feeListSortableTableHeader('Student', 'studentName', sortState, toggleSort, StudentsIcon),
+        render: (row) => {
+          const { firstName, lastName } = splitStudentDisplayName(row.studentName);
+          return (
+            <div className="flex min-w-0 items-center gap-3">
+              <StudentAdmissionAvatar
+                firstName={firstName}
+                lastName={lastName}
+                photoUrl={null}
+                className="size-9 text-[11px]"
+              />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-foreground">{row.studentName}</p>
+                <p className="truncate text-xs tabular-nums text-muted-foreground">
+                  {row.grNo === null ? '—' : `GR ${row.grNo}`}
+                </p>
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        key: 'className',
+        label: 'Class',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[10%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Class', StudentsIcon),
+        render: (row) =>
+          row.className === null ? (
+            <span className="text-sm text-muted-foreground">—</span>
+          ) : (
+            <StatusBadge
+              tone={classBadgeTone(row.className)}
+              size="sm"
+              icon={ClassIcon}
+              className={VOUCHER_TABLE_BADGE_CLASS}
+            >
+              {row.className}
+            </StatusBadge>
+          ),
+      },
+      {
+        key: 'issueDate',
+        label: 'Issued',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[11%]',
+        hideOnMobile: true,
+        sortable: true,
+        headerCell: feeListSortableTableHeader('Issued', 'issueDate', sortState, toggleSort, CalendarIcon),
+        render: (row) => (
+          <span className="inline-flex items-center gap-2 text-sm leading-none text-foreground">
+            <CalendarIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            <DateDisplay value={row.issueDate} />
+          </span>
+        ),
+      },
+      {
+        key: 'dueDate',
+        label: 'Due',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[11%]',
+        hideOnMobile: true,
+        sortable: true,
+        headerCell: feeListSortableTableHeader('Due', 'dueDate', sortState, toggleSort, CalendarIcon),
+        render: (row) => (
+          <span className="inline-flex items-center gap-2 text-sm leading-none text-foreground">
+            <CalendarIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            <DateDisplay value={row.dueDate} />
+          </span>
+        ),
+      },
+      {
+        key: 'months',
+        label: 'Bill months',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[11%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Bill months', CalendarIcon),
+        render: (row) =>
+          row.billMonths.length === 0 ? (
+            <span className="text-sm text-muted-foreground">—</span>
+          ) : (
+            <span className="inline-flex flex-wrap gap-1">
+              {row.billMonths.map((month) => (
+                <StatusBadge key={month} tone="neutral" size="sm" icon={CalendarIcon}>
+                  {formatMonth(month)}
+                </StatusBadge>
+              ))}
             </span>
-          ) : null}
-        </span>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (row) => (
-        <StatusBadge tone={toneFor(row.status)}>{VOUCHER_STATUS_LABELS[row.status]}</StatusBadge>
-      ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'end',
-      render: (row) => (
-        <div className="flex items-center justify-end gap-1">
-          {/* Absent on a cancelled voucher: there is nothing left to correct,
-              and the server refuses. */}
-          {canEdit && row.status !== 'CANCELLED' && row.status !== 'PAID' ? (
-            <Button
-              tone="ghost"
-              size="sm"
-              aria-label={`Edit ${row.voucherNo}`}
-              disabled={busyId !== undefined}
-              onClick={() => {
-                setEditing(row);
-              }}
-            >
-              <EditIcon className={ICON_SIZE.inline} aria-hidden />
-            </Button>
-          ) : null}
-          {canCollect && row.balanceMinor > 0 && row.status !== 'CANCELLED' ? (
-            <Button
-              tone="ghost"
-              size="sm"
-              disabled={busyId !== undefined}
-              onClick={() => {
-                setPaying(row);
-              }}
-            >
-              Pay
-            </Button>
-          ) : null}
-          <Button
-            tone="ghost"
+          ),
+      },
+      {
+        key: 'amount',
+        label: 'Amount',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[11%]',
+        sortable: true,
+        headerCell: feeListSortableTableHeader('Amount', 'amount', sortState, toggleSort, FeesIcon),
+        render: (row) => <Money valueMinor={row.totalPayableMinor} withSymbol />,
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[11%]',
+        sortable: true,
+        headerCell: feeListSortableTableHeader('Status', 'status', sortState, toggleSort),
+        render: (row) => (
+          <StatusBadge
+            tone={toneFor(row.status)}
             size="sm"
-            aria-label={`Print ${row.voucherNo}`}
-            disabled={busyId !== undefined}
-            onClick={() => {
+            icon={voucherStatusIcon(row.status)}
+            className={VOUCHER_TABLE_BADGE_CLASS}
+          >
+            {VOUCHER_STATUS_LABELS[row.status]}
+          </StatusBadge>
+        ),
+      },
+      {
+        key: 'actions',
+        label: 'Actions',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[9%]',
+        headerCell: feeListTableHeader('Actions'),
+        render: (row) => (
+          <VoucherRowActions
+            row={row}
+            busyId={busyId}
+            isLoadingPreview={isLoadingPreview}
+            canEdit={canEdit}
+            canCollect={canCollect}
+            canCancel={canCancel}
+            onEdit={() => {
+              setEditing(row);
+            }}
+            onPay={() => {
+              setPaying(row);
+            }}
+            onPrint={() => {
               void openChallan(row);
             }}
-          >
-            {busyId === row.id && isLoadingPreview ? (
-              <SpinnerIcon className={`${ICON_SIZE.inline} animate-spin`} aria-hidden />
-            ) : (
-              <PrintIcon className={ICON_SIZE.inline} aria-hidden />
-            )}
-          </Button>
-          {/* Absent once money has arrived — the server refuses, and offering a
-              control that always fails is worse than not offering it. */}
-          {canCancel && row.paidMinor === 0 ? (
-            <Button
-              tone="ghost"
-              size="sm"
-              aria-label={`Delete ${row.voucherNo}`}
-              disabled={busyId !== undefined}
-              onClick={() => {
-                setCancelling(row);
-                setCancelReason('');
-              }}
-            >
-              <DeleteIcon className={`${ICON_SIZE.inline} text-danger`} aria-hidden />
-            </Button>
-          ) : null}
-        </div>
-      ),
-    },
-  ];
+            onDelete={() => {
+              setCancelling(row);
+              setCancelReason('');
+            }}
+          />
+        ),
+      },
+    ];
+  }, [
+    allOnPageSelected,
+    busyId,
+    canCancel,
+    canCollect,
+    canEdit,
+    isLoadingPreview,
+    selected,
+    someOnPageSelected,
+    sortState,
+  ]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Fee vouchers</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {totals.count} {totals.count === 1 ? 'voucher' : 'vouchers'} ·{' '}
-            <Money valueMinor={totals.outstandingMinor} /> outstanding
-          </p>
-        </div>
-      </header>
+    <div className="w-full space-y-6">
+      <WorkspacePageHeader title="Fee Vouchers" description={pageIntro('/fees/vouchers')} />
 
-      <form
-        className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
-        onSubmit={(event: FormEvent) => {
-          event.preventDefault();
-          apply({});
-        }}
-      >
-        <Field label="Search">
-          <div className="relative">
-            <Input
-              value={draft.q}
-              placeholder="Name, father, voucher no"
-              onChange={(event) => {
-                setDraft({ ...draft, q: event.target.value });
-              }}
-            />
-            <SearchIcon
-              className={`${ICON_SIZE.inline} pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground`}
-              aria-hidden
-            />
+      {error !== undefined ? (
+        <div
+          role="alert"
+          className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+        >
+          {error}
+        </div>
+      ) : null}
+
+      <Card className="overflow-hidden">
+        <div className="border-b border-border p-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className={`${VOUCHER_TABLE_SEARCH_CLASS} shrink-0`}>
+              <SearchIcon
+                className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => {
+                  onSearchQueryChange(event.target.value);
+                }}
+                placeholder="Search by student name, GR number or voucher no…"
+                aria-label="Search vouchers"
+                className="h-10 w-full rounded-md border border-border bg-field ps-9 pe-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2 xl:ms-auto xl:justify-end">
+              <SimpleSelect
+                className="w-full min-w-32 sm:w-36"
+                ariaLabel="Filter by class"
+                value={filters.classLevelId}
+                triggerIcon={ClassIcon}
+                emptyOption={{ value: '', label: 'Any class' }}
+                placeholder="Any class"
+                options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
+                onValueChange={(next) => {
+                  pushFilters({ classLevelId: next });
+                }}
+              />
+              <SimpleSelect
+                className="w-full min-w-32 sm:w-36"
+                ariaLabel="Filter by status"
+                value={filters.status}
+                triggerIcon={FeesIcon}
+                emptyOption={{ value: '', label: 'Any status' }}
+                placeholder="Any status"
+                options={VOUCHER_STATUSES.map((status) => ({
+                  value: status,
+                  label: VOUCHER_STATUS_LABELS[status],
+                }))}
+                onValueChange={(next) => {
+                  pushFilters({ status: next });
+                }}
+              />
+              <SimpleSelect
+                className="w-full min-w-32 sm:w-40"
+                ariaLabel="Filter by session"
+                value={filters.sessionId}
+                triggerIcon={SessionIcon}
+                emptyOption={{ value: '', label: 'Any session' }}
+                placeholder="Any session"
+                options={sessions.map((entry) => ({
+                  value: entry.id,
+                  label: entry.isCurrent ? `${entry.name} (current)` : entry.name,
+                }))}
+                onValueChange={(next) => {
+                  pushFilters({ sessionId: next });
+                }}
+              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button tone="outline" className="w-full gap-2 sm:w-auto">
+                    <DateRangeIcon className={ICON_SIZE.inline} aria-hidden />
+                    {filters.from !== '' && filters.to !== ''
+                      ? formatInclusiveDateRange(filters.from, filters.to)
+                      : 'Issued dates'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-auto space-y-3 p-4">
+                  <Field label="From">
+                    <DatePicker
+                      value={rangeDraft.from}
+                      aria-label="From date"
+                      onChange={(next) => {
+                        setRangeDraft((prev) => ({ ...prev, from: next }));
+                      }}
+                    />
+                  </Field>
+                  <Field label="To">
+                    <DatePicker
+                      value={rangeDraft.to}
+                      aria-label="To date"
+                      onChange={(next) => {
+                        setRangeDraft((prev) => ({ ...prev, to: next }));
+                      }}
+                    />
+                  </Field>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      className="w-full"
+                      onClick={() => {
+                        pushFilters({ from: rangeDraft.from, to: rangeDraft.to });
+                      }}
+                    >
+                      Apply range
+                    </Button>
+                    <Button
+                      tone="ghost"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        pushFilters({ from: '', to: '' });
+                      }}
+                    >
+                      Clear dates
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
-        </Field>
-
-        <Field label="GR number">
-          <Input
-            value={draft.grNo}
-            placeholder="1081"
-            onChange={(event) => {
-              setDraft({ ...draft, grNo: event.target.value });
-            }}
-          />
-        </Field>
-
-        <Field label="Class">
-          <SimpleSelect
-            value={draft.classLevelId}
-            emptyOption={{ value: '', label: 'Any class' }}
-            options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
-            onValueChange={(next) => {
-              setDraft({ ...draft, classLevelId: next });
-              apply({ classLevelId: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Status">
-          <SimpleSelect
-            value={draft.status}
-            emptyOption={{ value: '', label: 'Any status' }}
-            options={VOUCHER_STATUSES.map((status) => ({
-              value: status,
-              label: VOUCHER_STATUS_LABELS[status],
-            }))}
-            onValueChange={(next) => {
-              setDraft({ ...draft, status: next });
-              apply({ status: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Session">
-          <SimpleSelect
-            value={draft.sessionId}
-            emptyOption={{ value: '', label: 'Any session' }}
-            options={sessions.map((entry) => ({ value: entry.id, label: entry.name }))}
-            onValueChange={(next) => {
-              setDraft({ ...draft, sessionId: next });
-              apply({ sessionId: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Issued from">
-          <DatePicker
-            value={draft.from}
-            onChange={(nextValue) => {
-              setDraft({ ...draft, from: nextValue });
-            }}
-          />
-        </Field>
-
-        <Field label="Issued to">
-          <DatePicker
-            value={draft.to}
-            onChange={(nextValue) => {
-              setDraft({ ...draft, to: nextValue });
-            }}
-          />
-        </Field>
-
-        <div className="flex items-end gap-2">
-          <Button type="submit" tone="outline" className="flex-1">
-            Apply
-          </Button>
-          <Button type="button" tone="ghost" onClick={reset}>
-            Reset
-          </Button>
         </div>
-      </form>
 
-      <DataTable
-        rows={rows}
-        columns={columns}
-        rowKey={(row) => row.id}
-        selection={{ selected, onChange: setSelected, noun: 'voucher' }}
-        error={error}
-        caption="Fee vouchers"
-        empty={{
-          title: 'No vouchers here',
-          description:
-            'Nothing matches these filters. Generate a month of fees, or clear the filters to see everything.',
-        }}
-      />
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
+          <h2 className="text-sm font-semibold text-foreground">All Fee Vouchers</h2>
+          <div className="flex items-center gap-2">
+            <Button
+              tone="outline"
+              size="sm"
+              className="gap-2"
+              disabled={rows.length === 0}
+              onClick={exportVouchersCsv(rows)}
+            >
+              <ExportIcon className={ICON_SIZE.inline} aria-hidden />
+              Export
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  tone="outline"
+                  size="icon"
+                  className="size-9 shrink-0"
+                  aria-label="More voucher actions"
+                >
+                  <MoreIcon className={ICON_SIZE.inline} aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {canEdit ? (
+                  <DropdownMenuItem asChild>
+                    <Link href={tenantHref('/fees/generate')}>Generate fees</Link>
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuItem
+                  disabled={selected.size === 0}
+                  onSelect={() => {
+                    openPrintPage([...selected]);
+                  }}
+                >
+                  <PrintIcon className={ICON_SIZE.inline} aria-hidden />
+                  Print selected
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        <ListDataTable
+          title="Fee Vouchers"
+          caption="Fee Vouchers"
+          rows={rows}
+          columns={columns}
+          rowKey={(row) => row.id}
+          minWidthClass="min-w-[64rem]"
+          error={undefined}
+          isFiltered={isFiltered}
+          onClearFilters={clearFilters}
+          sort={{
+            key: sort,
+            direction: order,
+            onToggle: toggleSort,
+          }}
+          empty={{
+            title: 'No vouchers here',
+            description:
+              'Nothing matches these filters. Generate a month of fees, or clear the filters to see everything.',
+          }}
+        />
+
+        <ListTablePaginationFooter
+          total={total}
+          limit={limit}
+          offset={offset}
+          label="vouchers"
+          onPageChange={(next) => {
+            pushFilters({ offset: next === 0 ? '' : String(next) });
+          }}
+          onLimitChange={(next) => {
+            pushFilters({ limit: next, offset: '' });
+          }}
+        />
+      </Card>
 
       <VoucherBulkBar
         selected={selected}
@@ -535,26 +807,8 @@ export function VouchersView({
           total > rows.length && total <= MAX_BULK_VOUCHERS ? selectAllMatching : undefined
         }
         canDelete={canCancel}
+        canCollect={canCollect}
       />
-
-      {total === 0 ? null : (
-        <Pagination
-          total={total}
-          limit={limit}
-          offset={offset}
-          label="vouchers"
-          onChange={(next) => {
-            apply({}, false);
-            const query = new URLSearchParams(params.toString());
-            if (next === 0) {
-              query.delete('offset');
-            } else {
-              query.set('offset', String(next));
-            }
-            router.push(tenantHref(`/fees/vouchers?${query.toString()}`));
-          }}
-        />
-      )}
 
       <VoucherEditDialog
         voucher={editing}
@@ -645,7 +899,7 @@ export function VouchersView({
       >
         <DialogContent className="max-w-5xl">
           <DialogHeader>
-            <DialogTitle>Fee challan</DialogTitle>
+            <DialogTitle>Fee voucher</DialogTitle>
             <DialogDescription>
               {/* The three copies are named by the school, so this no longer
                   says "school, bank and parent" — that was true of the old
@@ -658,9 +912,8 @@ export function VouchersView({
               // The sheet at its printable size, zoomed to fit the dialog. What
               // is on screen is then the paper, not an approximation of it.
               <div
-                className={`mx-auto [zoom:0.6] ${
-                  voucherSettings.copyCount === 4 ? 'w-[194mm]' : 'w-[281mm]'
-                }`}
+                className={`mx-auto [zoom:0.6] ${voucherSettings.copyCount === 4 ? 'w-[194mm]' : 'w-[281mm]'
+                  }`}
               >
                 <VoucherChallan voucher={previewing} school={school} settings={voucherSettings} />
               </div>
@@ -704,6 +957,117 @@ export function VouchersView({
   );
 }
 
+function VoucherRowActions({
+  row,
+  busyId,
+  isLoadingPreview,
+  canEdit,
+  canCollect,
+  canCancel,
+  onEdit,
+  onPay,
+  onPrint,
+  onDelete,
+}: {
+  row: VoucherSummary;
+  busyId: string | undefined;
+  isLoadingPreview: boolean;
+  canEdit: boolean;
+  canCollect: boolean;
+  canCancel: boolean;
+  onEdit: () => void;
+  onPay: () => void;
+  onPrint: () => void;
+  onDelete: () => void;
+}) {
+  const showEdit = canEdit && row.status !== 'CANCELLED' && row.status !== 'PAID';
+  const showPay = canCollect && row.balanceMinor > 0 && row.status !== 'CANCELLED';
+  const showDelete = canCancel && row.paidMinor === 0;
+  const disabled = busyId !== undefined;
+
+  return (
+    <div className="flex justify-start" data-stop-row-click>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            tone="ghost"
+            size="icon"
+            className="size-8 text-muted-foreground hover:text-foreground"
+            aria-label={`Actions for voucher ${row.voucherNo}`}
+            disabled={disabled}
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+          >
+            <MoreVerticalIcon className={ICON_SIZE.inline} aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          side="bottom"
+          align="end"
+          sideOffset={8}
+          collisionPadding={12}
+          className="w-48"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+          }}
+        >
+          <DropdownMenuLabel>{row.voucherNo}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {showEdit ? (
+            <DropdownMenuItem
+              onSelect={() => {
+                afterMenuAction(onEdit);
+              }}
+            >
+              <EditIcon className={ICON_SIZE.inline} aria-hidden />
+              Edit voucher
+            </DropdownMenuItem>
+          ) : null}
+          {showPay ? (
+            <DropdownMenuItem
+              onSelect={() => {
+                afterMenuAction(onPay);
+              }}
+            >
+              <FinanceIcon className={ICON_SIZE.inline} aria-hidden />
+              Record payment
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem
+            disabled={disabled}
+            onSelect={() => {
+              afterMenuAction(onPrint);
+            }}
+          >
+            {busyId === row.id && isLoadingPreview ? (
+              <SpinnerIcon className={`${ICON_SIZE.inline} animate-spin`} aria-hidden />
+            ) : (
+              <PrintIcon className={ICON_SIZE.inline} aria-hidden />
+            )}
+            Preview challan
+          </DropdownMenuItem>
+          {showDelete ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                destructive
+                onSelect={() => {
+                  afterMenuAction(onDelete);
+                }}
+              >
+                <DeleteIcon className={ICON_SIZE.inline} aria-hidden />
+                Delete voucher
+              </DropdownMenuItem>
+            </>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
 /**
  * Taking money at the counter.
  *
@@ -735,8 +1099,13 @@ function CollectDialog({
     setFormError(undefined);
     setIsPending(true);
 
+    const entered = rupeesToMinor(amount) ?? 0;
     const result = await mutate(ROUTES.vouchers.pay(voucher.id), 'POST', {
-      amountMinor: rupeesToMinor(amount) ?? 0,
+      // Left at the full outstanding figure, the amount is not sent: the server
+      // then settles exactly what it computes is owed — arrears, this voucher,
+      // and the late fee if the payment date is past due. Sending the figure
+      // shown here would leave the surcharge behind as a small open balance.
+      ...(entered === due ? {} : { amountMinor: entered }),
       method,
       paidOn,
       ...(reference.trim() === '' ? {} : { reference: reference.trim() }),
@@ -749,7 +1118,7 @@ function CollectDialog({
       setFormError(result.message);
       return;
     }
-    toast.success('Payment recorded', `Receipt for ${voucher.studentName}.`);
+    toast.success(`Payment recorded for ${voucher.studentName}.`);
     onDone();
   }
 
@@ -789,11 +1158,16 @@ function CollectDialog({
               <Field
                 label="Amount"
                 required
-                hint={
+                hint={[
                   voucher.arrearsMinor > 0
                     ? 'Arrears are settled first, oldest voucher before newest.'
-                    : undefined
-                }
+                    : '',
+                  voucher.lateFeeMinor > 0 && paidOn > voucher.dueDate
+                    ? `Paid after the due date: a late fee of ${formatCurrency(voucher.lateFeeMinor)} applies if it has not been charged yet, and is included when the full amount is collected.`
+                    : '',
+                ]
+                  .filter((part) => part !== '')
+                  .join(' ') || undefined}
               >
                 <Input
                   type="number"
@@ -860,6 +1234,71 @@ function toneFor(status: VoucherStatus): 'success' | 'danger' | 'warning' | 'neu
     default:
       return 'neutral';
   }
+}
+
+function voucherStatusIcon(status: VoucherStatus): typeof SuccessIcon {
+  switch (status) {
+    case 'PAID':
+      return SuccessIcon;
+    case 'PARTIALLY_PAID':
+      return FeesIcon;
+    case 'UNPAID':
+      return OverdueIcon;
+    case 'WAIVED':
+      return RefundIcon;
+    case 'CANCELLED':
+      return CloseIcon;
+    default:
+      return WarningIcon;
+  }
+}
+
+const VOUCHER_CSV_BOM = '\uFEFF';
+
+function exportVouchersCsv(rows: readonly VoucherSummary[]): () => void {
+  return () => {
+    const header = [
+      'Voucher #',
+      'GR No',
+      'Student',
+      'Class',
+      'Issued',
+      'Due',
+      'Bill months',
+      'Amount (PKR)',
+      'Status',
+    ];
+
+    const lines = rows.map((row) =>
+      [
+        row.voucherNo,
+        row.grNo ?? '',
+        row.studentName,
+        row.className ?? '',
+        row.issueDate,
+        row.dueDate,
+        row.billMonths.map(formatMonth).join(' '),
+        `${String(Math.trunc(row.totalPayableMinor / 100))}.${String(Math.abs(row.totalPayableMinor) % 100).padStart(2, '0')}`,
+        VOUCHER_STATUS_LABELS[row.status],
+      ].map(voucherCsvCell),
+    );
+
+    const csv = [header.map(voucherCsvCell).join(','), ...lines.map((line) => line.join(','))].join(
+      '\r\n',
+    );
+    const blob = new Blob([VOUCHER_CSV_BOM + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `fee-vouchers-${systemClock.now().toISOString().slice(0, 10)}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+}
+
+function voucherCsvCell(value: string): string {
+  const guarded = /^[=+\-@]/.test(value) ? `'${value}` : value;
+  return /[",\r\n]/.test(guarded) ? `"${guarded.replaceAll('"', '""')}"` : guarded;
 }
 
 function formatMonth(iso: string): string {

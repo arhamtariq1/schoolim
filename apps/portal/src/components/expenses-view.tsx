@@ -3,48 +3,120 @@
 import {
   createExpenseSchema,
   PAYMENT_METHOD_LABELS,
-  PAYMENT_METHODS,
   ROUTES,
   type AcademicSession,
   type Expense,
   type ExpenseCategory,
   type ExpenseTotals,
+  type PaymentMethod,
+  paymentMethodSchema,
 } from '@ilm/contracts';
-import { Button, ConfirmDialog, DataTable, DateDisplay, DatePicker, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Field, Input, Money, Pagination, SimpleSelect, type Column, useToast } from '@ilm/ui';
-import { CreateIcon, DeleteIcon, EditIcon, ICON_SIZE, SearchIcon } from '@ilm/ui/icons';
+import {
+  Button,
+  ConfirmDialog,
+  DateDisplay,
+  DatePicker,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  Field,
+  Input,
+  Money,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  SimpleSelect,
+  StatusBadge,
+  TwoLineCell,
+  useToast,
+  type CardTableColumn,
+  type StatusBadgeProps,
+} from '@ilm/ui';
+import {
+  CalendarIcon,
+  CreateIcon,
+  DateRangeIcon,
+  DeleteIcon,
+  EditIcon,
+  ExpenseIcon,
+  FeesIcon,
+  FinanceIcon,
+  ICON_SIZE,
+  MoreIcon,
+  SessionIcon,
+} from '@ilm/ui/icons';
 import { minorUnits } from '@ilm/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useTransition, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent, type ReactElement } from 'react';
 
+import { DASHBOARD_STAT_NUMBER_CLASS } from '@/components/dashboard/dashboard-stat-card';
+import { ExpenseWorkspaceShell } from '@/components/expense-workspace-shell';
+import {
+  FEE_LIST_TABLE_CELL,
+  afterMenuAction,
+  feeListSortableTableHeader,
+  feeListTableHeader,
+  useDebouncedSearchFilter,
+} from '@/components/fees/fee-list-shared';
+import { ListDataTable } from '@/components/list-data-table';
+import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
+import { ListTableScreen } from '@/components/list-table-screen';
+import { TableSelectionBar } from '@/components/table-selection-bar';
+import { formatInclusiveDateRange } from '@/lib/expense-date-range';
+import { nextSortParams } from '@/lib/list-page';
+import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
+import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
-/**
- * Expenses — what the school spent, filtered and totalled.
- *
- * ## The total is the point of this screen
- *
- * It is the sum over **everything matching the filters**, computed by the
- * database, not by adding up the page. A figure that changed when you turned
- * the page would be worse than showing none — and this one is quoted to a
- * board.
- */
-
-const METHOD_OPTIONS = PAYMENT_METHODS.map((value) => ({
+const METHOD_OPTIONS = (
+  ['CASH', 'BANK_TRANSFER', 'CHEQUE', 'CARD', 'OTHER'] as const satisfies readonly PaymentMethod[]
+).map((value) => ({
   value,
   label: PAYMENT_METHOD_LABELS[value],
 }));
+
+const CATEGORY_TONES: readonly StatusBadgeProps['tone'][] = [
+  'info',
+  'warning',
+  'success',
+  'neutral',
+];
 
 export interface ExpensesViewProps {
   rows: Expense[];
   categories: ExpenseCategory[];
   sessions: AcademicSession[];
   totals: ExpenseTotals;
+  monthTotals: ExpenseTotals;
+  lastMonthTotals: ExpenseTotals;
   total: number;
   limit: number;
   offset: number;
-  filters: { q: string; categoryId: string; sessionId: string; from: string; to: string };
+  filters: {
+    q: string;
+    categoryId: string;
+    sessionId: string;
+    method: string;
+    from: string;
+    to: string;
+  };
+  sort: 'paidOn' | 'amount' | 'voucherNo' | 'createdAt';
+  order: 'asc' | 'desc';
   error?: string | undefined;
   canManage: boolean;
+  paymentMethods: readonly PaymentMethod[];
 }
 
 export function ExpensesView({
@@ -52,24 +124,43 @@ export function ExpensesView({
   categories,
   sessions,
   totals,
+  monthTotals,
+  lastMonthTotals,
   total,
   limit,
   offset,
   filters,
+  sort,
+  order,
   error,
   canManage,
+  paymentMethods,
 }: ExpensesViewProps) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const tenantHref = useTenantHref();
   const toast = useToast();
-  const [, startTransition] = useTransition();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | undefined>(undefined);
   const [deleting, setDeleting] = useState<Expense | undefined>(undefined);
+  const {
+    selected,
+    clearSelection,
+    allOnPageSelected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  } = useRowSelection(rows, (row) => row.id);
 
-  function apply(next: Record<string, string>) {
+  const [rangeDraft, setRangeDraft] = useState({ from: filters.from, to: filters.to });
+
+  useEffect(() => {
+    setRangeDraft({ from: filters.from, to: filters.to });
+  }, [filters.from, filters.to]);
+
+  function pushFilters(next: Record<string, string>) {
     const query = new URLSearchParams(params.toString());
     for (const [key, value] of Object.entries(next)) {
       if (value === '') {
@@ -78,18 +169,39 @@ export function ExpensesView({
         query.set(key, value);
       }
     }
-    // Any filter change returns to page one; paging itself is exempt or it
-    // would undo the page it just set.
     if (!Object.hasOwn(next, 'offset')) {
       query.delete('offset');
+      clearSelection();
     }
-    startTransition(() => {
-      router.push(`${pathname}?${query.toString()}`);
-    });
+    router.push(`${pathname}?${query.toString()}`);
   }
 
-  const isFiltered =
-    filters.q !== '' || filters.categoryId !== '' || filters.from !== '' || filters.to !== '';
+  function clearFilters() {
+    router.push(tenantHref('/finance/expenses'));
+  }
+
+  const { searchQuery, onSearchQueryChange } = useDebouncedSearchFilter(filters.q, (value) => {
+    pushFilters({ q: value });
+  });
+
+  function toggleSort(columnKey: string) {
+    const next = nextSortParams(sort, order, columnKey);
+    pushFilters({ sort: next.sort, order: next.order });
+  }
+
+  const sortState = useMemo(() => ({ key: sort, direction: order }), [sort, order]);
+
+  const isFiltered = Object.entries(filters).some(([key, value]) => {
+    if (key === 'from' || key === 'to') {
+      return false;
+    }
+    return value !== '';
+  });
+
+  function openCreate() {
+    setEditing(undefined);
+    setDialogOpen(true);
+  }
 
   async function confirmDelete() {
     if (deleting === undefined) {
@@ -106,235 +218,309 @@ export function ExpensesView({
     router.refresh();
   }
 
-  const columns: Column<Expense>[] = [
-    {
-      key: 'voucherNo',
-      header: 'Voucher',
-      render: (row) => <span className="font-mono text-xs select-all">{row.voucherNo}</span>,
-    },
-    {
-      key: 'description',
-      header: 'Description',
-      render: (row) => (
-        <div className="min-w-0">
-          <p className="truncate font-medium text-foreground">{row.description}</p>
-          {row.payee === null ? null : (
-            <p className="truncate text-xs text-muted-foreground">to {row.payee}</p>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'paidOn',
-      header: 'Date',
-      render: (row) => <DateDisplay value={row.paidOn} />,
-    },
-    {
-      key: 'category',
-      header: 'Category',
-      render: (row) => <span className="text-sm">{row.categoryName}</span>,
-    },
-    {
-      key: 'method',
-      header: 'Method',
-      hideOnMobile: true,
-      render: (row) => (
-        <span className="text-sm text-muted-foreground">{PAYMENT_METHOD_LABELS[row.method]}</span>
-      ),
-    },
-    {
-      key: 'amount',
-      header: 'Amount',
-      align: 'end',
-      render: (row) => <Money valueMinor={minorUnits(row.amountMinor)} />,
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'end',
-      render: (row) =>
-        !canManage ? null : (
-          <div className="flex items-center justify-end gap-1">
-            <Button
-              tone="ghost"
-              size="sm"
-              onClick={() => {
+  const columns = useMemo((): CardTableColumn<Expense>[] => {
+    return [
+      listTableSelectColumn({
+        selected,
+        allOnPageSelected,
+        someOnPageSelected,
+        toggleAllOnPage,
+        toggleRowSelected,
+        getRowId: (row) => row.id,
+        rowAriaLabel: (row) => row.voucherNo,
+        selectAllAriaLabel: 'Select every expense on this page',
+      }),
+      {
+        key: 'voucherNo',
+        label: 'Voucher #',
+        ...FEE_LIST_TABLE_CELL,
+        colStyle: { width: '7.5rem' },
+        sortable: true,
+        headerCell: feeListSortableTableHeader(
+          'Voucher #',
+          'voucherNo',
+          sortState,
+          toggleSort,
+          ExpenseIcon,
+        ),
+        render: (row) => (
+          <span className="font-mono text-sm tabular-nums">{row.voucherNo}</span>
+        ),
+      },
+      {
+        key: 'description',
+        label: 'Description',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[18%]',
+        headerCell: feeListTableHeader('Description'),
+        render: (row) => (
+          <TwoLineCell
+            primary={row.description}
+            secondary={row.payee === null ? '—' : row.payee}
+          />
+        ),
+      },
+      {
+        key: 'category',
+        label: 'Category',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[11%]',
+        headerCell: feeListTableHeader('Category'),
+        render: (row) => (
+          <StatusBadge tone={categoryTone(row.categoryName, categories)}>
+            {row.categoryName}
+          </StatusBadge>
+        ),
+      },
+      {
+        key: 'paidOn',
+        label: 'Date',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[10%]',
+        hideOnMobile: true,
+        sortable: true,
+        headerCell: feeListSortableTableHeader(
+          'Date',
+          'paidOn',
+          sortState,
+          toggleSort,
+          CalendarIcon,
+        ),
+        render: (row) => (
+          <span className="text-sm">
+            <DateDisplay value={row.paidOn} />
+          </span>
+        ),
+      },
+      {
+        key: 'method',
+        label: 'Payment method',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[12%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Payment method'),
+        render: (row) => (
+          <StatusBadge tone={methodTone(row.method)}>{PAYMENT_METHOD_LABELS[row.method]}</StatusBadge>
+        ),
+      },
+      {
+        key: 'amount',
+        label: 'Amount',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[10%]',
+        sortable: true,
+        headerCell: feeListSortableTableHeader(
+          'Amount',
+          'amount',
+          sortState,
+          toggleSort,
+          FeesIcon,
+        ),
+        render: (row) => (
+          <Money valueMinor={minorUnits(row.amountMinor)} className={DASHBOARD_STAT_NUMBER_CLASS} />
+        ),
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[9%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Status'),
+        render: () => <StatusBadge tone="success">Paid</StatusBadge>,
+      },
+      {
+        key: 'actions',
+        label: 'Actions',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[8%]',
+        headerCell: feeListTableHeader('Actions'),
+        render: (row) =>
+          !canManage ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <ExpenseRowActions
+              row={row}
+              onEdit={() => {
                 setEditing(row);
                 setDialogOpen(true);
               }}
-            >
-              <EditIcon className={ICON_SIZE.inline} aria-hidden />
-              Edit
-            </Button>
-            <Button
-              tone="ghost"
-              size="sm"
-              aria-label={`Delete ${row.voucherNo}`}
-              onClick={() => {
+              onDelete={() => {
                 setDeleting(row);
               }}
-            >
-              <DeleteIcon className={`${ICON_SIZE.inline} text-danger`} aria-hidden />
-            </Button>
-          </div>
-        ),
-    },
-  ];
+            />
+          ),
+      },
+    ];
+  }, [
+    allOnPageSelected,
+    canManage,
+    categories,
+    selected,
+    someOnPageSelected,
+    sortState,
+    toggleAllOnPage,
+    toggleRowSelected,
+  ]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Expenses</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {isFiltered ? 'Matching these filters' : 'This session'}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="rounded-xl border border-border bg-card px-4 py-3">
-            <p className="text-xs text-muted-foreground">
-              {isFiltered ? 'Total, filtered' : 'Total spent'}
-            </p>
-            <p className="mt-1">
-              <Money valueMinor={minorUnits(totals.totalMinor)} withSymbol className="text-lg" />
-            </p>
-          </div>
-
-          {canManage ? (
-            <Button
-              onClick={() => {
-                setEditing(undefined);
-                setDialogOpen(true);
-              }}
-            >
-              <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-              Add expense
-            </Button>
-          ) : null}
-        </div>
-      </header>
-
-      <form
-        className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-5"
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          const value = new FormData(event.currentTarget).get('q');
-          apply({ q: typeof value === 'string' ? value : '' });
-        }}
+    <>
+      <ExpenseWorkspaceShell
+        totals={totals}
+        monthTotals={monthTotals}
+        lastMonthTotals={lastMonthTotals}
+        canManage={canManage}
+        onAddExpense={canManage ? openCreate : undefined}
       >
-        <div className="relative lg:col-span-2">
-          <SearchIcon
-            className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            name="q"
-            defaultValue={filters.q}
-            placeholder="Description, payee or voucher"
-            aria-label="Search expenses"
-            className="ps-9"
-          />
-        </div>
-
-        <SimpleSelect
-          value={filters.categoryId}
-          onValueChange={(next) => {
-            apply({ categoryId: next });
-          }}
-          options={categories.map((entry) => ({ value: entry.id, label: entry.name }))}
-          ariaLabel="Filter by category"
-          emptyOption={{ value: '', label: 'Any category' }}
-        />
-
-        <DatePicker
-          aria-label="From date"
-          value={filters.from}
-          onChange={(nextValue) => {
-            apply({ from: nextValue });
-          }}
-        />
-        <DatePicker
-          aria-label="To date"
-          value={filters.to}
-          onChange={(nextValue) => {
-            apply({ to: nextValue });
-          }}
-        />
-
-        <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-5">
-          <Button type="submit" tone="outline" size="sm">
-            Search
-          </Button>
-          {isFiltered ? (
-            <Button
-              type="button"
-              tone="ghost"
-              size="sm"
-              onClick={() => {
-                apply({ q: '', categoryId: '', from: '', to: '' });
+        <ListTableScreen
+          tableTitle="All expenses"
+          headerActions={
+            canManage ? (
+              <Button size="sm" onClick={openCreate}>
+                <CreateIcon className={ICON_SIZE.inline} aria-hidden />
+                Add expense
+              </Button>
+            ) : null
+          }
+          filters={
+            <ListPageToolbar
+              searchQuery={searchQuery}
+              onSearchQueryChange={onSearchQueryChange}
+              searchPlaceholder="Search by description, voucher, category…"
+              searchAriaLabel="Search expenses"
+              searchClassName="md:max-w-xs lg:max-w-sm"
+              filters={
+                <>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button tone="outline" className="shrink-0 gap-2">
+                        <DateRangeIcon className={ICON_SIZE.inline} aria-hidden />
+                        {formatInclusiveDateRange(filters.from, filters.to)}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-auto space-y-3 p-4">
+                      <Field label="From">
+                        <DatePicker
+                          value={rangeDraft.from}
+                          aria-label="From date"
+                          onChange={(next) => {
+                            setRangeDraft((prev) => ({ ...prev, from: next }));
+                          }}
+                        />
+                      </Field>
+                      <Field label="To">
+                        <DatePicker
+                          value={rangeDraft.to}
+                          aria-label="To date"
+                          onChange={(next) => {
+                            setRangeDraft((prev) => ({ ...prev, to: next }));
+                          }}
+                        />
+                      </Field>
+                      <Button
+                        className="w-full"
+                        onClick={() => {
+                          pushFilters({ from: rangeDraft.from, to: rangeDraft.to });
+                        }}
+                      >
+                        Apply range
+                      </Button>
+                    </PopoverContent>
+                  </Popover>
+                  <SimpleSelect
+                    className="w-full min-w-32 sm:w-36"
+                    ariaLabel="Filter by category"
+                    value={filters.categoryId}
+                    triggerIcon={ExpenseIcon}
+                    emptyOption={{ value: '', label: 'All categories' }}
+                    placeholder="All categories"
+                    options={categories.map((entry) => ({ value: entry.id, label: entry.name }))}
+                    onValueChange={(next) => {
+                      pushFilters({ categoryId: next });
+                    }}
+                  />
+                  <SimpleSelect
+                    className="w-full min-w-32 sm:w-40"
+                    ariaLabel="Filter by payment method"
+                    value={filters.method}
+                    triggerIcon={FinanceIcon}
+                    emptyOption={{ value: '', label: 'All payment methods' }}
+                    placeholder="All payment methods"
+                    options={paymentMethods.map((method) => ({
+                      value: method,
+                      label: PAYMENT_METHOD_LABELS[method],
+                    }))}
+                    onValueChange={(next) => {
+                      pushFilters({ method: next });
+                    }}
+                  />
+                  {sessions.length > 1 ? (
+                    <SimpleSelect
+                      className="w-full min-w-32 sm:w-36"
+                      ariaLabel="Filter by session"
+                      value={filters.sessionId}
+                      triggerIcon={SessionIcon}
+                      emptyOption={{ value: '', label: 'All sessions' }}
+                      placeholder="All sessions"
+                      options={sessions.map((entry) => ({
+                        value: entry.id,
+                        label: entry.isCurrent ? `${entry.name} (current)` : entry.name,
+                      }))}
+                      onValueChange={(next) => {
+                        pushFilters({ sessionId: next });
+                      }}
+                    />
+                  ) : null}
+                </>
+              }
+            />
+          }
+          footer={
+            <ListTablePaginationFooter
+              total={total}
+              limit={limit}
+              offset={offset}
+              label="expenses"
+              onPageChange={(next) => {
+                pushFilters({ offset: next === 0 ? '' : String(next) });
               }}
-            >
-              Reset
-            </Button>
-          ) : null}
-          {sessions.length > 1 ? (
-            <div className="ms-auto w-48">
-              <SimpleSelect
-                value={filters.sessionId}
-                onValueChange={(next) => {
-                  apply({ sessionId: next });
-                }}
-                options={sessions.map((entry) => ({
-                  value: entry.id,
-                  label: entry.isCurrent ? `${entry.name} (current)` : entry.name,
-                }))}
-                ariaLabel="Session"
-              />
-            </div>
-          ) : null}
-        </div>
-      </form>
-
-      <DataTable
-        rows={rows}
-        columns={columns}
-        rowKey={(row) => row.id}
-        error={error}
-        isFiltered={isFiltered}
-        onClearFilters={() => {
-          apply({ q: '', categoryId: '', from: '', to: '' });
-        }}
-        caption="Expenses"
-        empty={{
-          title: 'Nothing recorded yet',
-          description:
-            'Every payment out — salaries, utilities, repairs. Categories group them so the totals mean something.',
-          action: canManage ? (
-            <Button
-              onClick={() => {
-                setEditing(undefined);
-                setDialogOpen(true);
+              onLimitChange={(next) => {
+                pushFilters({ limit: next, offset: '' });
               }}
-            >
-              <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-              Add the first expense
-            </Button>
-          ) : undefined,
-        }}
-      />
+            />
+          }
+        >
+          <ListDataTable
+            title="Expenses"
+            rows={rows}
+            columns={columns}
+            rowKey={(row) => row.id}
+            tableLayout="auto"
+            minWidthClass="min-w-[64rem]"
+            error={error}
+            isFiltered={isFiltered}
+            onClearFilters={clearFilters}
+            sort={{
+              key: sort,
+              direction: order,
+              onToggle: toggleSort,
+            }}
+            empty={{
+              title: 'Nothing recorded yet',
+              description:
+                'Every payment out — salaries, utilities, repairs. Categories group them so the totals mean something.',
+              action: canManage ? (
+                <Button onClick={openCreate}>
+                  <CreateIcon className={ICON_SIZE.inline} aria-hidden />
+                  Add the first expense
+                </Button>
+              ) : undefined,
+            }}
+          />
+        </ListTableScreen>
+      </ExpenseWorkspaceShell>
 
-      {total === 0 ? null : (
-        <Pagination
-          total={total}
-          limit={limit}
-          offset={offset}
-          label="expenses"
-          onChange={(next) => {
-            apply({ offset: next === 0 ? '' : String(next) });
-          }}
-        />
-      )}
+      <TableSelectionBar count={selected.size} noun="expense" onClear={clearSelection} />
 
       {dialogOpen ? (
         <ExpenseDialog
@@ -363,7 +549,71 @@ export function ExpensesView({
         tone="danger"
         onConfirm={confirmDelete}
       />
-    </div>
+    </>
+  );
+}
+
+function categoryTone(
+  name: string,
+  categories: readonly ExpenseCategory[],
+): StatusBadgeProps['tone'] {
+  const index = categories.findIndex((entry) => entry.name === name);
+  return CATEGORY_TONES[(index < 0 ? 0 : index) % CATEGORY_TONES.length] ?? 'neutral';
+}
+
+function methodTone(method: PaymentMethod): StatusBadgeProps['tone'] {
+  switch (method) {
+    case 'CASH':
+      return 'success';
+    case 'BANK_TRANSFER':
+      return 'info';
+    case 'CHEQUE':
+      return 'warning';
+    case 'CARD':
+      return 'neutral';
+    default:
+      return 'neutral';
+  }
+}
+
+function ExpenseRowActions({
+  row,
+  onEdit,
+  onDelete,
+}: {
+  readonly row: Expense;
+  readonly onEdit: () => void;
+  readonly onDelete: () => void;
+}): ReactElement {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button tone="ghost" size="sm" aria-label={`Actions for ${row.voucherNo}`}>
+          <MoreIcon className={ICON_SIZE.inline} aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>{row.voucherNo}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={() => {
+            afterMenuAction(onEdit);
+          }}
+        >
+          <EditIcon className={ICON_SIZE.inline} aria-hidden />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          destructive
+          onSelect={() => {
+            afterMenuAction(onDelete);
+          }}
+        >
+          <DeleteIcon className={ICON_SIZE.inline} aria-hidden />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -388,7 +638,7 @@ function ExpenseDialog({
   const [description, setDescription] = useState('');
   const [payee, setPayee] = useState('');
   const [amount, setAmount] = useState('');
-  const [method, setMethod] = useState('CASH');
+  const [method, setMethod] = useState<PaymentMethod>('CASH');
   const [paidOn, setPaidOn] = useState('');
   const [reference, setReference] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -407,19 +657,12 @@ function ExpenseDialog({
     setPayee(editing?.payee ?? '');
     setAmount(editing === undefined ? '' : (editing.amountMinor / 100).toFixed(2));
     setMethod(editing?.method ?? 'CASH');
-    // Defaults to the date the session covers rather than "today", which may
-    // fall outside it when somebody is entering last year's books.
     setPaidOn(editing?.paidOn ?? '');
     setReference(editing?.reference ?? '');
     setFieldErrors({});
     setFormError(undefined);
   }
 
-  // Run once, on mount. The dialog is mounted fresh for each row (its call site
-  // keys it by id), so this is the prefill — and it replaces a `reset()` hung
-  // off `onOpenChange(true)`, which Radix only fires for a dialog that opens
-  // itself. Opened from a row's Edit button, that callback never ran and the
-  // form kept whatever was last typed into it.
   useEffect(reset, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -427,8 +670,11 @@ function ExpenseDialog({
     setFieldErrors({});
     setFormError(undefined);
 
-    const rupees = Number(amount);
-    if (!Number.isFinite(rupees) || rupees < 0) {
+    // Through the shared parser, not `Number(amount) * 100`: that routes money
+    // through a float (ADR-0007), and `Number('')` is 0, so an untouched amount
+    // box passed the check and recorded a zero-rupee expense.
+    const amountMinor = rupeesToMinor(amount);
+    if (amountMinor === undefined || amountMinor <= 0) {
       setFieldErrors({ amountMinor: 'Enter an amount, for example 8000.' });
       return;
     }
@@ -437,7 +683,7 @@ function ExpenseDialog({
       sessionId,
       categoryId,
       description,
-      amountMinor: Math.trunc(rupees * 100 + 0.5),
+      amountMinor,
       method,
       paidOn,
       ...(payee.trim() === '' ? {} : { payee }),
@@ -557,10 +803,7 @@ function ExpenseDialog({
                 />
               </Field>
               <Field label="Date paid" error={fieldErrors['paidOn']} required>
-                <DatePicker
-                  value={paidOn}
-                  onChange={setPaidOn}
-                />
+                <DatePicker value={paidOn} onChange={setPaidOn} />
               </Field>
             </div>
 
@@ -577,7 +820,12 @@ function ExpenseDialog({
               <Field label="Method" error={fieldErrors['method']}>
                 <SimpleSelect
                   value={method}
-                  onValueChange={setMethod}
+                  onValueChange={(next) => {
+                    const parsed = paymentMethodSchema.safeParse(next);
+                    if (parsed.success) {
+                      setMethod(parsed.data);
+                    }
+                  }}
                   options={METHOD_OPTIONS}
                   ariaLabel="Payment method"
                 />

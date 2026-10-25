@@ -177,15 +177,12 @@ export function PromoteStudents({ sessions, canConfigure, error }: PromoteStuden
     setIsRunning(false);
 
     if (!result.ok) {
-      toast.error('Nobody was moved', result.message);
+      toast.error(result.message);
       return;
     }
 
     setDone(result.data);
-    toast.success(
-      `${String(result.data.promoted)} moved into ${preview.to.name}`,
-      'Assign their sections next, then generate fees for the new session.',
-    );
+    toast.success(`${String(result.data.promoted)} students moved into ${preview.to.name}.`);
     router.refresh();
   }
 
@@ -204,7 +201,7 @@ export function PromoteStudents({ sessions, canConfigure, error }: PromoteStuden
 
       {error === undefined ? null : <Alert>{error}</Alert>}
 
-      <section className="grid gap-4 rounded-xl border border-border bg-card p-4 sm:grid-cols-2">
+      <section className="grid gap-4 rounded-xl border border-border/70 bg-card shadow-raised p-4 sm:grid-cols-2">
         <Field label="From" hint="The year ending.">
           <SessionSelect value={fromId} options={options} onChange={setFromId} />
         </Field>
@@ -220,12 +217,12 @@ export function PromoteStudents({ sessions, canConfigure, error }: PromoteStuden
       ) : isLoading ? (
         <p className="text-sm text-muted-foreground">Working out who would move…</p>
       ) : preview === undefined ? null : preview.classes.length === 0 ? (
-        <p className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
+        <p className="rounded-xl border border-border/70 bg-card shadow-raised p-6 text-sm text-muted-foreground">
           Nobody is enrolled in {preview.from.name}, so there is nothing to carry forward.
         </p>
       ) : (
         <>
-          <section className="overflow-hidden rounded-xl border border-border bg-card">
+          <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-raised">
             <table className="w-full text-sm">
               <thead className="border-b border-border text-xs text-muted-foreground uppercase">
                 <tr>

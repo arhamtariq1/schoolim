@@ -2,8 +2,19 @@
 
 import { acceptInviteRequestSchema, ROUTES, type AcceptInviteResult } from '@ilm/contracts';
 import { Button, Field, PasswordInput, useToast } from '@ilm/ui';
+import { ApproveIcon, ICON_SIZE, LockedIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+
+import {
+  fieldErrorsFromZod,
+  showApiErrorToast,
+  showFormValidationToast,
+  showNetworkErrorToast,
+} from '@/lib/form-validation';
+
+import { AuthFormActions } from './auth-form-actions';
+import { PasswordRequirements } from './password-requirements';
 
 /**
  * "Set your password" — the other end of a staff invitation.
@@ -52,17 +63,15 @@ export function AcceptInviteForm({
       // Checked here rather than on the server, because the server has no
       // business being told the password twice.
       setFieldErrors({ confirm: 'Both passwords must match.' });
+      toast.error('Both passwords must match.');
       return;
     }
 
     const parsed = acceptInviteRequestSchema.safeParse({ token, password });
 
     if (!parsed.success) {
-      const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        next[issue.path.join('.')] = issue.message;
-      }
-      setFieldErrors(next);
+      setFieldErrors(fieldErrorsFromZod(parsed.error));
+      showFormValidationToast(toast);
       return;
     }
 
@@ -77,6 +86,7 @@ export function AcceptInviteForm({
       });
     } catch {
       setIsPending(false);
+      showNetworkErrorToast(toast);
       setFormError('Could not reach the server. Check your connection and try again.');
       return;
     }
@@ -84,13 +94,16 @@ export function AcceptInviteForm({
     if (!response.ok) {
       const problem = (await response.json().catch(() => ({}))) as { detail?: string };
       setIsPending(false);
-      setFormError(problem.detail ?? 'That did not work. Ask the school to send a new invitation.');
+      const detail =
+        problem.detail ?? 'Ask your school to send a new invitation link.';
+      setFormError(detail);
+      showApiErrorToast(toast, 'Invitation failed', detail);
       return;
     }
 
     const body = (await response.json()) as { data: AcceptInviteResult };
 
-    toast.success('Your account is ready', 'Sign in with the password you just chose.');
+    toast.success('Account ready. Sign in with your new password.');
     router.replace(`/login?email=${encodeURIComponent(body.data.email)}`);
   }
 
@@ -100,7 +113,7 @@ export function AcceptInviteForm({
         void submit(event);
       }}
       noValidate
-      className="space-y-5"
+      className="space-y-3.5"
     >
       <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
         Setting up <span className="font-medium text-foreground">{email}</span>
@@ -115,24 +128,22 @@ export function AcceptInviteForm({
         </p>
       )}
 
-      <Field
-        label="Choose a password"
-        hint="At least 8 characters, with upper and lower case, a number and a symbol — e.g. Abde@112."
-        error={fieldErrors['password']}
-        required
-      >
-        <PasswordInput
-          autoComplete="new-password"
-          autoFocus
-          placeholder="Create a password"
-          value={password}
-          onChange={(event) => {
-            setPassword(event.target.value);
-          }}
-        />
-      </Field>
+      <div className="space-y-1.5">
+        <Field label="Choose a password" error={fieldErrors['password']} required leadingIcon={LockedIcon}>
+          <PasswordInput
+            autoComplete="new-password"
+            autoFocus
+            placeholder="Create a password"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+            }}
+          />
+        </Field>
+        <PasswordRequirements password={password} />
+      </div>
 
-      <Field label="Confirm password" error={fieldErrors['confirm']} required>
+      <Field label="Confirm password" error={fieldErrors['confirm']} required leadingIcon={LockedIcon}>
         <PasswordInput
           autoComplete="new-password"
           placeholder="Re-enter your password"
@@ -143,9 +154,12 @@ export function AcceptInviteForm({
         />
       </Field>
 
-      <Button type="submit" isPending={isPending} className="w-full" size="touch">
-        {isPending ? 'Setting up…' : 'Set password and continue'}
-      </Button>
+      <AuthFormActions>
+        <Button type="submit" isPending={isPending} className="w-full" size="touch">
+          <ApproveIcon className={ICON_SIZE.inline} aria-hidden />
+          {isPending ? 'Setting up…' : 'Set password and continue'}
+        </Button>
+      </AuthFormActions>
     </form>
   );
 }

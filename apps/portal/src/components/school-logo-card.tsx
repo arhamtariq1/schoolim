@@ -1,14 +1,15 @@
 'use client';
 
 import { ROUTES, type SchoolLogoInfo, type UploadSchoolLogo } from '@ilm/contracts';
-import { Button, useToast } from '@ilm/ui';
-import { ICON_SIZE, SpinnerIcon } from '@ilm/ui/icons';
+import { Button, cn, useToast } from '@ilm/ui';
+import { ICON_SIZE, ImageIcon, SaveIcon, SpinnerIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useId, useState } from 'react';
 
 import { LogoPicker } from './logo-picker';
 
 import { mutate } from '@/lib/mutate';
+import { ABSENT_SCHOOL_LOGO, notifySchoolLogoUpdated } from '@/lib/school-logo-shell';
 
 /**
  * Settings › an image the school owns.
@@ -78,6 +79,9 @@ export function SchoolLogoCard({
 
     setChosen(undefined);
     toast.success(`${noun} updated.`);
+    if (imageRoute === ROUTES.schoolLogo.image) {
+      notifySchoolLogoUpdated(result.data);
+    }
     router.refresh();
   }
 
@@ -95,61 +99,75 @@ export function SchoolLogoCard({
 
     setChosen(undefined);
     toast.success(`${noun} removed.`);
+    if (imageRoute === ROUTES.schoolLogo.image) {
+      notifySchoolLogoUpdated(ABSENT_SCHOOL_LOGO);
+    }
     router.refresh();
   }
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4" aria-labelledby={headingId}>
-      <h2 id={headingId} className="text-base font-medium text-foreground">
-        {title}
-      </h2>
-      <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>
+    <section
+      className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-raised"
+      aria-labelledby={headingId}
+    >
+      <div className="flex gap-3 border-b border-border px-4 py-4 sm:px-5">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <ImageIcon className={ICON_SIZE.nav} aria-hidden />
+        </span>
+        <div className="min-w-0 space-y-0.5">
+          <h2 id={headingId} className="text-base font-semibold text-foreground">
+            {title}
+          </h2>
+          <p className="max-w-2xl text-xs text-muted-foreground sm:text-sm">{description}</p>
+        </div>
+      </div>
 
-      {error === undefined ? null : (
-        <p
-          role="alert"
-          className="mt-3 rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger"
-        >
-          {error}
-        </p>
-      )}
-      {formError === undefined ? null : (
-        <p
-          role="alert"
-          className="mt-3 rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger"
-        >
-          {formError}
-        </p>
-      )}
+      <div className="space-y-4 px-4 py-4 sm:px-5">
+        {error === undefined ? null : (
+          <p
+            role="alert"
+            className="rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger"
+          >
+            {error}
+          </p>
+        )}
+        {formError === undefined ? null : (
+          <p
+            role="alert"
+            className="rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger"
+          >
+            {formError}
+          </p>
+        )}
 
-      <div className="mt-4">
         <LogoPicker
           value={chosen}
           onChange={setChosen}
           currentSrc={currentSrc}
           disabled={!canConfigure || isSaving}
         />
-      </div>
 
-      {!canConfigure ? null : (
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button disabled={chosen === undefined || isSaving} onClick={() => void save()}>
-            {isSaving ? (
-              <SpinnerIcon className={`${ICON_SIZE.inline} animate-spin`} aria-hidden />
+        {!canConfigure ? null : (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {/* Only when there is something on the server to remove. Clearing a
+                file that was merely chosen is the picker's own Remove button, and
+                it needs no request. */}
+            {info.present ? (
+              <Button tone="ghost" disabled={isSaving} onClick={() => void remove()}>
+                Remove current logo
+              </Button>
             ) : null}
-            Save logo
-          </Button>
-
-          {/* Only when there is something on the server to remove. Clearing a
-              file that was merely chosen is the picker's own Remove button, and
-              it needs no request. */}
-          {info.present ? (
-            <Button tone="ghost" disabled={isSaving} onClick={() => void remove()}>
-              Remove current logo
+            <Button disabled={chosen === undefined || isSaving} onClick={() => void save()}>
+              {isSaving ? (
+                <SpinnerIcon className={cn(ICON_SIZE.inline, 'animate-spin')} aria-hidden />
+              ) : (
+                <SaveIcon className={ICON_SIZE.inline} aria-hidden />
+              )}
+              Save Logo
             </Button>
-          ) : null}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

@@ -1,69 +1,68 @@
 'use client';
 
-import { ROUTES, STUDENT_STATUSES, type StudentListItem } from '@ilm/contracts';
+import {
+  ROUTES,
+  STUDENT_STATUSES,
+  type StudentListItem,
+  type StudentListQuery,
+} from '@ilm/contracts';
 import {
   Button,
   ConfirmDialog,
-  DataTable,
-  Pagination,
   DateDisplay,
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
   Money,
   SimpleSelect,
   StatusBadge,
+  TwoLineCell,
   useToast,
-  type Column,
+  type CardTableColumn,
 } from '@ilm/ui';
-import { CreateIcon, DeleteIcon, EditIcon, MoreIcon, SearchIcon } from '@ilm/ui/icons';
+import {
+  AccountIcon,
+  CalendarIcon,
+  ClassIcon,
+  CreateIcon,
+  DeleteIcon,
+  EditIcon,
+  ErrorIcon,
+  FeesIcon,
+  LockedIcon,
+  PhoneIcon,
+  SignOutIcon,
+  StudentsIcon,
+  SuccessIcon,
+} from '@ilm/ui/icons';
 import { minorUnits } from '@ilm/utils';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { useState, useTransition, type FormEvent } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useMemo, useState, useTransition } from 'react';
 
 import { EditStudentDialog } from './edit-student-dialog';
+import { ListDataTable } from './list-data-table';
+import { ListTablePaginationFooter } from './list-table-pagination-footer';
+import { ListTableRowActions } from './list-table-row-actions';
+import { ListTableScreen } from './list-table-screen';
+import { TableSelectionBar } from './table-selection-bar';
 
+import { StudentAdmissionAvatar } from '@/components/dashboard/student-admission-avatar';
+import {
+  FEE_LIST_TABLE_CELL,
+  LIST_TABLE_BADGE_CLASS,
+  afterMenuAction,
+  classBadgeTone,
+  feeListSortableTableHeader,
+  feeListTableHeader,
+  useDebouncedSearchFilter,
+} from '@/components/fees/fee-list-shared';
+import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
+import { pageIntro } from '@/lib/page-copy';
 import { mutateOrThrow } from '@/lib/mutate';
 import { useTenantHref } from '@/lib/use-tenant-href';
-
-/**
- * Run a row-menu action without the leftover click navigating the row.
- *
- * Dropdown content is portaled. After an item is chosen the menu unmounts and
- * the browser delivers `click` to whatever is now under the pointer — the
- * table row — which would open the student detail on top of the confirm dialog.
- * Capturing that one click stops it.
- */
-function afterMenuAction(action: () => void): void {
-  action();
-  const swallow = (event: MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-  };
-  document.addEventListener('click', swallow, true);
-  window.setTimeout(() => {
-    document.removeEventListener('click', swallow, true);
-  }, 100);
-}
-
-/**
- * The student list.
- *
- * Filters live in the URL, not in component state: a filtered view is then a
- * link someone can paste to a colleague, it survives a refresh, and the back
- * button does what it should. `useTransition` keeps the previous rows on screen
- * while the new ones load rather than flashing a skeleton over data that is
- * about to be almost identical (docs/16 §7).
- *
- * Row actions sit behind one menu rather than four buttons per row. Thirteen
- * rows with four visible actions is fifty-two tap targets competing for
- * attention; one "⋯" per row is one.
- */
 
 const STATUS_TONE: Record<string, 'success' | 'neutral' | 'warning' | 'danger'> = {
   ACTIVE: 'success',
@@ -73,9 +72,19 @@ const STATUS_TONE: Record<string, 'success' | 'neutral' | 'warning' | 'danger'> 
   STRUCK_OFF: 'danger',
 };
 
+const STUDENT_STATUS_ICON = {
+  ACTIVE: SuccessIcon,
+  INACTIVE: LockedIcon,
+  GRADUATED: ClassIcon,
+  LEFT: SignOutIcon,
+  STRUCK_OFF: ErrorIcon,
+} as const satisfies Record<(typeof STUDENT_STATUSES)[number], typeof SuccessIcon>;
+
 function humanise(status: string): string {
   return status.toLowerCase().replace('_', ' ');
 }
+
+export type StudentSortKey = StudentListQuery['sort'];
 
 export interface StudentsTableProps {
   rows: StudentListItem[];
@@ -86,18 +95,17 @@ export interface StudentsTableProps {
   offset: number;
   search: string;
   status: string;
-  /** The class filter, from the URL. Empty means every class. */
   classLevelId: string;
-  /** Classes in the current session, for the filter. Naturally a short list. */
   classes: readonly { id: string; name: string }[];
   isFiltered: boolean;
+  sort: StudentSortKey;
+  order: 'asc' | 'desc';
   can: { create: boolean; update: boolean; delete: boolean };
 }
 
 export function StudentsTable({
   rows,
   total,
-  aggregates,
   error,
   search,
   status,
@@ -106,6 +114,8 @@ export function StudentsTable({
   isFiltered,
   limit,
   offset,
+  sort,
+  order,
   can,
 }: StudentsTableProps) {
   const router = useRouter();
@@ -119,6 +129,15 @@ export function StudentsTable({
   const [deleting, setDeleting] = useState<StudentListItem | undefined>(undefined);
   const [leaving, setLeaving] = useState<StudentListItem | undefined>(undefined);
 
+  const {
+    selected,
+    clearSelection,
+    allOnPageSelected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  } = useRowSelection(rows, (row) => row.id);
+
   function apply(next: Record<string, string>) {
     const updated = new URLSearchParams(params.toString());
     for (const [key, value] of Object.entries(next)) {
@@ -129,342 +148,432 @@ export function StudentsTable({
       }
     }
 
-    // Changing a filter always returns to the first page.
-    //
-    // Without this, searching from page 3 asks for rows 51–75 of a result set
-    // that now has four rows, and the screen says "no students" for a search
-    // that matched. Paging itself is exempt, or it would reset the page it just
-    // set.
     if (!Object.hasOwn(next, 'offset')) {
       updated.delete('offset');
+      clearSelection();
     }
 
     startTransition(() => {
-      router.replace(`${pathname}?${updated.toString()}`);
+      router.push(`${pathname}?${updated.toString()}`);
     });
   }
 
-  const columns: Column<StudentListItem>[] = [
-    {
-      key: 'grNo',
-      header: 'GR no.',
-      // Monospace and selectable: it is read aloud and copied constantly, and
-      // it is the number written on the physical file.
-      render: (row) => <span className="font-mono text-xs select-all">{row.grNo}</span>,
-    },
-    {
-      key: 'studentCode',
-      header: 'Student ID',
-      hideOnMobile: true,
-      render: (row) => (
-        <span className="font-mono text-xs text-muted-foreground select-all">
-          {row.studentCode}
-        </span>
-      ),
-    },
-    {
-      key: 'name',
-      header: 'Name',
-      render: (row) => (
-        <span className="font-medium text-balance">
-          {row.firstName} {row.lastName}
-        </span>
-      ),
-    },
-    {
-      key: 'class',
-      header: 'Class',
-      render: (row) =>
-        row.className === null ? (
-          <span className="text-muted-foreground">Not enrolled</span>
-        ) : (
-          <span>
-            {row.className}
-            {row.sectionName === null ? '' : ` — ${row.sectionName}`}
-          </span>
-        ),
-    },
-    // No Roll column, deliberately.
-    //
-    // A roll is a position on *one* section's register. This list is every
-    // student in the school, sorted by name, so the column put "7" from Grade 2
-    // — A next to "7" from Prep — B and invited the reading that they are the
-    // same kind of number. The roll belongs beside the register it orders,
-    // which is the attendance roster and the student's own profile.
-    {
-      key: 'father',
-      header: 'Father / guardian',
-      render: (row) =>
-        row.fatherName === null ? (
-          // Named plainly: this is a task-queue item, not a cosmetic gap.
-          <span className="text-warning">No guardian on file</span>
-        ) : (
-          <span>{row.fatherName}</span>
-        ),
-    },
-    {
-      key: 'contact',
-      header: 'Contact',
-      hideOnMobile: true,
-      render: (row) =>
-        row.guardianPhone === null ? (
-          <span className="text-muted-foreground">—</span>
-        ) : (
-          <a
-            href={`tel:${row.guardianPhone}`}
-            className="font-mono text-xs underline"
-            onClick={(event) => {
-              // The row opens the student; the phone link must not.
-              event.stopPropagation();
-            }}
-          >
-            {row.guardianPhone}
-          </a>
-        ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (row) => (
-        <StatusBadge tone={STATUS_TONE[row.status] ?? 'neutral'}>
-          {humanise(row.status)}
-        </StatusBadge>
-      ),
-    },
-    {
-      key: 'tuition',
-      header: 'Tuition',
-      align: 'end',
-      hideOnMobile: true,
-      // Payable, after any agreed discount — the figure reception is asked for
-      // on the phone, which is why it is on the list rather than one click in.
-      render: (row) =>
-        row.tuitionFeeMinor === null ? (
-          <span className="text-muted-foreground">—</span>
-        ) : (
-          <Money valueMinor={minorUnits(row.tuitionFeeMinor)} />
-        ),
-    },
-    {
-      key: 'admittedOn',
-      header: 'Admitted',
-      hideOnMobile: true,
-      render: (row) =>
-        row.admittedOn === null ? (
-          <span className="text-muted-foreground">—</span>
-        ) : (
-          <DateDisplay value={row.admittedOn} />
-        ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'end',
-      render: (row) =>
-        !can.update && !can.delete ? null : (
-          <div
-            data-stop-row-click=""
-            onClick={(event) => {
-              event.stopPropagation();
-            }}
-            onPointerDown={(event) => {
-              event.stopPropagation();
-            }}
-          >
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                aria-label={`Actions for ${row.firstName} ${row.lastName}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                }}
-              >
-                <MoreIcon className="size-4" aria-hidden="true" />
-              </DropdownMenuTrigger>
+  const { searchQuery, onSearchQueryChange } = useDebouncedSearchFilter(search, (value) => {
+    apply({ q: value });
+  });
 
-              <DropdownMenuContent
-                onCloseAutoFocus={(event) => {
-                  event.preventDefault();
-                }}
-              >
-                <DropdownMenuLabel>
-                  {row.firstName} {row.lastName}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+  function clearFilters(): void {
+    apply({ q: '', status: '', classLevelId: '' });
+  }
 
-                {can.update ? (
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      afterMenuAction(() => {
-                        setEditing(row);
-                      });
-                    }}
-                  >
-                    <EditIcon aria-hidden="true" />
-                    Edit details
-                  </DropdownMenuItem>
-                ) : null}
+  function toggleSort(columnKey: string): void {
+    const nextKey = columnKey as StudentSortKey;
+    if (sort === nextKey) {
+      apply({ order: order === 'asc' ? 'desc' : 'asc' });
+      return;
+    }
+    apply({ sort: nextKey, order: 'asc' });
+  }
 
-                {can.update && row.status === 'ACTIVE' ? (
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      afterMenuAction(() => {
-                        setLeaving(row);
-                      });
-                    }}
-                  >
-                    Mark as left
-                  </DropdownMenuItem>
-                ) : null}
+  const sortState = useMemo(() => ({ key: sort, direction: order }), [sort, order]);
 
-                {can.delete ? (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      destructive
-                      onSelect={() => {
-                        afterMenuAction(() => {
-                          setDeleting(row);
-                        });
-                      }}
-                    >
-                      <DeleteIcon aria-hidden="true" />
-                      Delete record
-                    </DropdownMenuItem>
-                  </>
-                ) : null}
-              </DropdownMenuContent>
-            </DropdownMenu>
+  const columns = useMemo((): CardTableColumn<StudentListItem>[] => {
+    return [
+      listTableSelectColumn({
+        selected,
+        allOnPageSelected,
+        someOnPageSelected,
+        toggleAllOnPage,
+        toggleRowSelected,
+        getRowId: (row) => row.id,
+        rowAriaLabel: (row) => `${row.firstName} ${row.lastName}`,
+        selectAllAriaLabel: 'Select every student on this page',
+      }),
+      {
+        key: 'grNo',
+        label: 'GR no.',
+        ...FEE_LIST_TABLE_CELL,
+        colStyle: { width: '6.5rem' },
+        sortable: true,
+        headerCell: feeListSortableTableHeader(
+          'GR no.',
+          'grNo',
+          sortState,
+          toggleSort,
+          StudentsIcon,
+        ),
+        render: (row) => (
+          <span className="text-sm font-medium tabular-nums text-foreground">{row.grNo}</span>
+        ),
+      },
+      {
+        key: 'name',
+        label: 'Name',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[20%]',
+        sortable: true,
+        headerCell: feeListSortableTableHeader(
+          'Name',
+          'name',
+          sortState,
+          toggleSort,
+          StudentsIcon,
+        ),
+        render: (row) => (
+          <div className="flex min-w-0 items-center gap-3">
+            <StudentAdmissionAvatar
+              firstName={row.firstName}
+              lastName={row.lastName}
+              photoUrl={row.photoUrl}
+              className="size-9 text-[11px]"
+            />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-foreground">
+                {row.firstName} {row.lastName}
+              </p>
+              <p className="truncate text-xs tabular-nums text-muted-foreground">
+                GR {row.grNo}
+              </p>
+            </div>
           </div>
         ),
-    },
-  ];
+      },
+      {
+        key: 'className',
+        label: 'Class',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[12%]',
+        hideOnMobile: true,
+        sortable: true,
+        headerCell: feeListSortableTableHeader(
+          'Class',
+          'className',
+          sortState,
+          toggleSort,
+          ClassIcon,
+        ),
+        render: (row) =>
+          row.className === null ? (
+            <span className="text-sm text-muted-foreground">—</span>
+          ) : (
+            <StatusBadge
+              tone={classBadgeTone(row.className)}
+              size="sm"
+              icon={ClassIcon}
+              className={LIST_TABLE_BADGE_CLASS}
+            >
+              {row.sectionName === null ? row.className : `${row.className} · ${row.sectionName}`}
+            </StatusBadge>
+          ),
+      },
+      {
+        key: 'father',
+        label: 'Father / guardian',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[14%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Father / guardian', AccountIcon),
+        render: (row) =>
+          row.fatherName === null ? (
+            <span className="text-sm text-muted-foreground">—</span>
+          ) : (
+            <span className="text-sm text-foreground">{row.fatherName}</span>
+          ),
+      },
+      {
+        key: 'contact',
+        label: 'Contact',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[12%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Contact', PhoneIcon),
+        render: (row) =>
+          row.guardianPhone === null ? (
+            <span className="text-sm text-muted-foreground">—</span>
+          ) : (
+            <a
+              href={`tel:${row.guardianPhone}`}
+              className="text-sm tabular-nums text-foreground no-underline hover:text-primary"
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              {row.guardianPhone}
+            </a>
+          ),
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[10%]',
+        headerCell: feeListTableHeader('Status'),
+        render: (row) => (
+          <StatusBadge
+            tone={STATUS_TONE[row.status] ?? 'neutral'}
+            size="sm"
+            icon={row.status === 'ACTIVE' ? SuccessIcon : undefined}
+            className={LIST_TABLE_BADGE_CLASS}
+          >
+            {humanise(row.status)}
+          </StatusBadge>
+        ),
+      },
+      {
+        key: 'tuition',
+        label: 'Tuition',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[10%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Tuition', FeesIcon),
+        render: (row) =>
+          row.tuitionFeeMinor === null ? (
+            <span className="text-sm text-muted-foreground">—</span>
+          ) : (
+            <Money valueMinor={minorUnits(row.tuitionFeeMinor)} withSymbol />
+          ),
+      },
+      {
+        key: 'createdAt',
+        label: 'Admitted',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[11%]',
+        hideOnMobile: true,
+        sortable: true,
+        headerCell: feeListSortableTableHeader(
+          'Admitted',
+          'createdAt',
+          sortState,
+          toggleSort,
+          CalendarIcon,
+        ),
+        render: (row) =>
+          row.admittedOn === null ? (
+            <span className="text-sm text-muted-foreground">—</span>
+          ) : (
+            <span className="inline-flex items-center gap-2 text-sm leading-none text-foreground">
+              <CalendarIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+              <DateDisplay value={row.admittedOn} />
+            </span>
+          ),
+      },
+      {
+        key: 'actions',
+        label: 'Actions',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[8%]',
+        headerCell: feeListTableHeader('Actions'),
+        render: (row) =>
+          !can.update && !can.delete ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <ListTableRowActions
+              ariaLabel={`Actions for ${row.firstName} ${row.lastName}`}
+            >
+              <DropdownMenuLabel>
+                {row.firstName} {row.lastName}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {can.update ? (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    afterMenuAction(() => {
+                      setEditing(row);
+                    });
+                  }}
+                >
+                  <EditIcon className="text-muted-foreground" aria-hidden />
+                  Edit details
+                </DropdownMenuItem>
+              ) : null}
+              {can.update && row.status === 'ACTIVE' ? (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    afterMenuAction(() => {
+                      setLeaving(row);
+                    });
+                  }}
+                >
+                  <SignOutIcon className="text-muted-foreground" aria-hidden />
+                  Mark as left
+                </DropdownMenuItem>
+              ) : null}
+              {can.delete ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-danger focus:text-danger"
+                    onSelect={() => {
+                      afterMenuAction(() => {
+                        setDeleting(row);
+                      });
+                    }}
+                  >
+                    <DeleteIcon aria-hidden />
+                    Delete record
+                  </DropdownMenuItem>
+                </>
+              ) : null}
+            </ListTableRowActions>
+          ),
+      },
+    ];
+  }, [
+    allOnPageSelected,
+    can.delete,
+    can.update,
+    order,
+    selected,
+    someOnPageSelected,
+    sort,
+    sortState,
+    toggleAllOnPage,
+    toggleRowSelected,
+  ]);
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Students</h1>
-          <p className="text-sm text-muted-foreground">
-            {total} {total === 1 ? 'student' : 'students'}
-            {aggregates['totalActive'] === undefined
-              ? ''
-              : ` · ${aggregates['totalActive']} active`}
-          </p>
+    <div className="w-full space-y-6">
+      <WorkspacePageHeader title="Students" description={pageIntro('/students')} />
+
+      {error !== undefined ? (
+        <div
+          role="alert"
+          className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+        >
+          {error}
         </div>
-
-        {/* A link to a page, not a dialog. Admission grew a fee structure and a
-            money total, and a modal cannot be linked to, cannot survive a
-            refresh, and gives a receptionist nowhere to leave a half-finished
-            admission while they phone a parent for a CNIC. */}
-        {can.create ? (
-          <Button asChild>
-            <Link href={tenantHref('/students/new')}>
-              <CreateIcon className="size-4" aria-hidden="true" />
-              Admit student
-            </Link>
-          </Button>
-        ) : null}
-      </header>
-
-      <form
-        role="search"
-        className="flex flex-wrap items-center gap-2"
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          const value = new FormData(event.currentTarget).get('q');
-          apply({ q: typeof value === 'string' ? value : '' });
-        }}
-      >
-        <div className="relative min-w-56 flex-1">
-          <SearchIcon
-            className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden="true"
-          />
-          <input
-            type="search"
-            name="q"
-            defaultValue={search}
-            placeholder="Name, GR or Student ID"
-            aria-label="Search students"
-            className="h-10 w-full rounded-md border border-border bg-background ps-9 pe-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          />
-        </div>
-
-        {/*
-          Class before status, because it is the one people reach for.
-          "Show me Grade 4" is a daily question at a front desk; "show me the
-          students who left" is a monthly one.
-        */}
-        <SimpleSelect
-          className="w-44"
-          ariaLabel="Filter by class"
-          value={classLevelId}
-          emptyOption={{ value: '', label: 'Any class' }}
-          placeholder="Any class"
-          disabled={classes.length === 0}
-          onValueChange={(value) => {
-            apply({ classLevelId: value });
-          }}
-          options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
-        />
-
-        <SimpleSelect
-          className="w-44"
-          ariaLabel="Filter by status"
-          value={status}
-          emptyOption={{ value: '', label: 'Any status' }}
-          placeholder="Any status"
-          onValueChange={(value) => {
-            apply({ status: value });
-          }}
-          options={STUDENT_STATUSES.map((value) => ({ value, label: humanise(value) }))}
-        />
-
-        <Button type="submit" tone="outline" isPending={isPending}>
-          Search
-        </Button>
-      </form>
+      ) : null}
 
       <div
         aria-busy={isPending}
         className={isPending ? 'opacity-60 transition-opacity' : undefined}
       >
-        <DataTable
-          rows={rows}
-          columns={columns}
-          rowKey={(row) => row.id}
-          caption="Students"
-          {...(error === undefined ? {} : { error })}
-          isFiltered={isFiltered}
-          // The row opens the student. It never mutates (docs/16 §9).
-          onRowClick={(row) => {
-            router.push(tenantHref(`/students/${row.id}`));
-          }}
-          onClearFilters={() => {
-            apply({ q: '', status: '' });
-          }}
-          empty={{
-            title: 'No students yet',
-            description:
-              'A student is admitted with a GR number, a class and a guardian. Admitting the first one takes about a minute.',
-          }}
-        />
-
-        {/* Hidden while there is nothing to page through, so an empty school
-            is not handed a control that does nothing. */}
-        {total === 0 ? null : (
-          <Pagination
-            total={total}
-            limit={limit}
-            offset={offset}
-            label="students"
-            onChange={(next) => {
-              apply({ offset: next === 0 ? '' : String(next) });
+        <ListTableScreen
+          tableTitle="All students"
+          filters={
+            <ListPageToolbar
+              searchQuery={searchQuery}
+              onSearchQueryChange={onSearchQueryChange}
+              searchPlaceholder="Name, father/guardian, phone or GR no…"
+              searchAriaLabel="Search students by name, guardian, phone or GR number"
+              filters={
+                <>
+                  <SimpleSelect
+                    className="w-full min-w-32 sm:w-36"
+                    ariaLabel="Filter by class"
+                    value={classLevelId}
+                    triggerIcon={ClassIcon}
+                    emptyOption={{ value: '', label: 'Any class' }}
+                    placeholder="Any class"
+                    disabled={classes.length === 0}
+                    onValueChange={(value) => {
+                      apply({ classLevelId: value });
+                    }}
+                    options={classes.map((entry) => ({
+                      value: entry.id,
+                      label: entry.name,
+                      icon: ClassIcon,
+                    }))}
+                  />
+                  <SimpleSelect
+                    className="w-full min-w-32 sm:w-36"
+                    ariaLabel="Filter by status"
+                    value={status}
+                    triggerIcon={SuccessIcon}
+                    emptyOption={{ value: '', label: 'Any status' }}
+                    placeholder="Any status"
+                    onValueChange={(value) => {
+                      apply({ status: value });
+                    }}
+                    options={STUDENT_STATUSES.map((value) => ({
+                      value,
+                      label: humanise(value),
+                      icon: STUDENT_STATUS_ICON[value],
+                    }))}
+                  />
+                  {can.create ? (
+                    <Button asChild className="w-full sm:w-auto">
+                      <Link href={tenantHref('/students/new')}>
+                        <CreateIcon className="size-4" aria-hidden="true" />
+                        Admit student
+                      </Link>
+                    </Button>
+                  ) : null}
+                </>
+              }
+            />
+          }
+          footer={
+            <ListTablePaginationFooter
+              total={total}
+              limit={limit}
+              offset={offset}
+              label="students"
+              onPageChange={(next) => {
+                apply({ offset: next === 0 ? '' : String(next) });
+              }}
+              onLimitChange={(next) => {
+                apply({ limit: next, offset: '' });
+              }}
+            />
+          }
+        >
+          <ListDataTable
+            title="All students"
+            caption="Students"
+            rows={rows}
+            columns={columns}
+            rowKey={(row) => row.id}
+            minWidthClass="min-w-[64rem]"
+            isFiltered={isFiltered}
+            onClearFilters={clearFilters}
+            sort={{
+              key: sort,
+              direction: order,
+              onToggle: toggleSort,
             }}
+            onRowClick={(row) => {
+              router.push(tenantHref(`/students/${row.id}`));
+            }}
+            empty={{
+              title: 'No students yet',
+              description:
+                'A student is admitted with a GR number, a class and a guardian. Admitting the first one takes about a minute.',
+              action: can.create ? (
+                <Button asChild>
+                  <Link href={tenantHref('/students/new')}>
+                    <CreateIcon className="size-4" aria-hidden="true" />
+                    Admit the first student
+                  </Link>
+                </Button>
+              ) : undefined,
+            }}
+            renderMobileRow={(row) => (
+              <div className="flex items-center gap-3 px-4 py-3">
+                <StudentAdmissionAvatar
+                  firstName={row.firstName}
+                  lastName={row.lastName}
+                  photoUrl={row.photoUrl}
+                />
+                <TwoLineCell
+                  primary={
+                    <span className="font-medium">
+                      {row.firstName} {row.lastName}
+                    </span>
+                  }
+                  secondary={`GR ${row.grNo} · ${row.className ?? 'Not enrolled'} · ${humanise(row.status)}`}
+                />
+              </div>
+            )}
           />
-        )}
+        </ListTableScreen>
       </div>
+
+      <TableSelectionBar
+        count={selected.size}
+        noun="student"
+        onClear={clearSelection}
+      />
 
       {editing === undefined ? null : (
         <EditStudentDialog
@@ -478,8 +587,6 @@ export function StudentsTable({
         />
       )}
 
-      {/* Leaving is a status change, not a delete: the child stays in the
-          register. The reason is required because the register has to say why. */}
       <ConfirmDialog
         open={leaving !== undefined}
         onOpenChange={(next) => {
@@ -511,9 +618,6 @@ export function StudentsTable({
         }}
       />
 
-      {/* Delete is for a record created in error. Typing the GR number is
-          deliberately annoying — it is the number on the physical file, so it
-          forces the operator to confirm they have the right child. */}
       <ConfirmDialog
         open={deleting !== undefined}
         onOpenChange={(next) => {

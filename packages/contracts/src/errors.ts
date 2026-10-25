@@ -47,6 +47,10 @@ export const ERROR_CODES = [
   'AUTH_OTP_EXPIRED',
   /** Reset token missing, used, or expired. */
   'AUTH_RESET_TOKEN_INVALID',
+  /** Signed-in password change: current password did not match. */
+  'AUTH_PASSWORD_INCORRECT',
+  /** New password matches the current one. */
+  'AUTH_PASSWORD_REUSED',
 
   // --- Request shape --------------------------------------------------------
   'VALIDATION_FAILED',
@@ -71,12 +75,15 @@ export const ERROR_CODES = [
   'FEES_VOUCHER_CANCELLED',
   'FEES_VOUCHER_HAS_DEPOSIT',
   'FEES_PAYMENT_EXCEEDS_BALANCE',
+  'FEES_PAYMENT_IN_FUTURE',
+  'FEES_VOUCHER_HAS_WAIVER',
   'FEES_PAYMENT_ALREADY_REVERSED',
   'ACADEMICS_PROMOTION_ALREADY_RUN',
   'ACADEMICS_PROMOTION_IN_PROGRESS',
   'FEES_GENERATION_ALREADY_RUN',
   'FEES_GENERATION_IN_PROGRESS',
   'FEES_RUN_NOT_REVERSIBLE',
+  'FEES_CLASS_UNKNOWN',
   'FEES_NO_FEE_PLAN',
   'FEES_PERIOD_CLOSED',
   /** No active tuition head, so there is nothing an increment could raise. */
@@ -101,6 +108,18 @@ export const ERROR_CODES = [
    * hitting it is the system working rather than failing.
    */
   'FEES_ALREADY_BILLED',
+
+  // --- Requests -------------------------------------------------------------
+  /** A status the state machine does not allow from where the request is. */
+  'REQUESTS_INVALID_TRANSITION',
+  /** Somebody else moved it while this person was deciding. */
+  'REQUESTS_CHANGED',
+  /** A picture refused because of how many, or how late, rather than what it is. */
+  'REQUESTS_ATTACHMENT_REFUSED',
+
+  // --- Timetables -----------------------------------------------------------
+  /** The same class, teacher or room in two places at once. The message names which. */
+  'TIMETABLE_CONFLICT',
 
   // --- Attendance -----------------------------------------------------------
   'ATTENDANCE_ALREADY_MARKED',
@@ -152,6 +171,8 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, number>> = {
   AUTH_OTP_INVALID: 400,
   AUTH_OTP_EXPIRED: 400,
   AUTH_RESET_TOKEN_INVALID: 400,
+  AUTH_PASSWORD_INCORRECT: 400,
+  AUTH_PASSWORD_REUSED: 400,
 
   VALIDATION_FAILED: 400,
   NOT_FOUND: 404,
@@ -171,12 +192,16 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, number>> = {
   FEES_VOUCHER_CANCELLED: 409,
   FEES_VOUCHER_HAS_DEPOSIT: 409,
   FEES_PAYMENT_EXCEEDS_BALANCE: 422,
+  FEES_PAYMENT_IN_FUTURE: 422,
+  FEES_VOUCHER_HAS_WAIVER: 409,
   FEES_PAYMENT_ALREADY_REVERSED: 409,
   ACADEMICS_PROMOTION_ALREADY_RUN: 409,
   ACADEMICS_PROMOTION_IN_PROGRESS: 409,
   FEES_GENERATION_ALREADY_RUN: 409,
   FEES_GENERATION_IN_PROGRESS: 409,
   FEES_RUN_NOT_REVERSIBLE: 422,
+  /** A class on a fee head that no longer exists — refresh and choose again. */
+  FEES_CLASS_UNKNOWN: 422,
   FEES_NO_FEE_PLAN: 422,
   FEES_PERIOD_CLOSED: 422,
   FEES_NO_TUITION_HEAD: 422,
@@ -185,6 +210,12 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, number>> = {
   FEES_DEPOSIT_ALREADY_RECORDED: 409,
   FEES_INCREMENT_RACED: 409,
   FEES_ALREADY_BILLED: 409,
+
+  REQUESTS_INVALID_TRANSITION: 422,
+  REQUESTS_CHANGED: 409,
+  REQUESTS_ATTACHMENT_REFUSED: 422,
+
+  TIMETABLE_CONFLICT: 409,
 
   ATTENDANCE_ALREADY_MARKED: 409,
   ATTENDANCE_WINDOW_CLOSED: 422,

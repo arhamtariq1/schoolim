@@ -6,10 +6,19 @@ import {
   type ForgotPasswordResult,
 } from '@ilm/contracts';
 import { Button, Field, Input, useToast } from '@ilm/ui';
-import Link from 'next/link';
+import { EmailIcon, ICON_SIZE } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
+import {
+  fieldErrorsFromZod,
+  showApiErrorToast,
+  showFormValidationToast,
+  showNetworkErrorToast,
+} from '@/lib/form-validation';
+
+import { AuthFormActions } from './auth-form-actions';
+import { AuthInlineLink } from './auth-inline-link';
 import { PASSWORD_RESET_CONTEXT } from './otp-verification-form';
 
 /**
@@ -34,9 +43,8 @@ export function ForgotPasswordForm() {
     setFieldErrors({});
     const parsed = forgotPasswordRequestSchema.safeParse({ email });
     if (!parsed.success) {
-      const message = parsed.error.issues[0]?.message ?? 'Enter a valid email address.';
-      setFieldErrors({ email: message });
-      toast.error(message);
+      setFieldErrors(fieldErrorsFromZod(parsed.error));
+      showFormValidationToast(toast);
       return;
     }
 
@@ -54,24 +62,26 @@ export function ForgotPasswordForm() {
           detail?: string;
           code?: string;
         };
-        const message =
+        const title =
+          problem.code === 'AUTH_EMAIL_NOT_FOUND' ? 'Email not found' : 'Could not send code';
+        const detail =
           problem.code === 'AUTH_EMAIL_NOT_FOUND'
-            ? (problem.detail ?? 'No account uses that email.')
-            : (problem.detail ?? 'Could not send a reset code. Try again.');
+            ? (problem.detail ?? 'No account uses that email address.')
+            : (problem.detail ?? 'Try again in a moment.');
         if (problem.code === 'AUTH_EMAIL_NOT_FOUND') {
-          setFieldErrors({ email: message });
+          setFieldErrors({ email: detail });
         }
-        toast.error(message);
+        showApiErrorToast(toast, title, detail);
         return;
       }
 
       const body = (await response.json()) as { data: ForgotPasswordResult };
-      toast.success('Check your email', `We sent a code to ${body.data.email}.`);
+      toast.success(`Reset code sent to ${body.data.email}.`);
       router.push(
         `/otp-verification?context=${PASSWORD_RESET_CONTEXT}&email=${encodeURIComponent(body.data.email)}`,
       );
     } catch {
-      toast.error('Could not reach the server. Check your connection and try again.');
+      showNetworkErrorToast(toast);
     } finally {
       setIsPending(false);
     }
@@ -83,9 +93,9 @@ export function ForgotPasswordForm() {
         void submit(event);
       }}
       noValidate
-      className="space-y-4"
+      className="space-y-3.5"
     >
-      <Field label="Email" error={fieldErrors['email']} required>
+      <Field label="Email" error={fieldErrors['email']} required leadingIcon={EmailIcon}>
         <Input
           type="email"
           name="email"
@@ -100,16 +110,17 @@ export function ForgotPasswordForm() {
         />
       </Field>
 
-      <Button type="submit" isPending={isPending} className="w-full" size="touch">
-        {isPending ? 'Sending…' : 'Send reset code'}
-      </Button>
-
-      <p className="text-center text-sm text-muted-foreground">
-        Remembered it?{' '}
-        <Link href="/login" className="font-medium text-primary hover:underline">
-          Sign in
-        </Link>
-      </p>
+      <AuthFormActions
+        footer={
+          <p className="text-center text-sm text-muted-foreground">
+            Remembered it? <AuthInlineLink href="/login">Sign in</AuthInlineLink>
+          </p>
+        }
+      >
+        <Button type="submit" isPending={isPending} className="w-full" size="touch">
+          {isPending ? 'Sending…' : 'Send reset code'}
+        </Button>
+      </AuthFormActions>
     </form>
   );
 }

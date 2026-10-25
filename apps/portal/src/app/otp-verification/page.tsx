@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { AuthLayout } from '@/components/auth-layout';
+import { authScreenLayout } from '@/components/auth-screen-props';
 import { OtpVerificationForm, PASSWORD_RESET_CONTEXT } from '@/components/otp-verification-form';
 import { SignupBackLink } from '@/components/signup-abandon';
 import { SIGNUP_CONTEXT, SignupStepGate } from '@/components/signup-step-gate';
@@ -28,6 +29,8 @@ export default async function OtpVerificationPage({
 
   return (
     <AuthLayout
+      {...authScreenLayout}
+      fitViewport
       title="Enter verification code"
       subtitle={
         isPasswordReset

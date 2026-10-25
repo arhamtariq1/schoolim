@@ -1,12 +1,13 @@
 'use client';
 
 import { brandColorSchema, ROUTES, type SchoolAppearance } from '@ilm/contracts';
-import { brandRamp, Button, Field, Input, useToast } from '@ilm/ui';
-import { ICON_SIZE, SuccessIcon, WarningIcon } from '@ilm/ui/icons';
+import { brandRamp, Button, cardSurfaceClassName, cn, Field, Input, useToast } from '@ilm/ui';
+import { ApproveIcon, ICON_SIZE, PaletteIcon, SuccessIcon, WarningIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { mutate } from '@/lib/mutate';
+import { notifySchoolColourUpdated } from '@/lib/school-logo-shell';
 
 /**
  * Settings › School › the school's own colour.
@@ -58,14 +59,28 @@ const PRESETS = [
 
 /** What the portal ships with, and what "Reset" goes back to. */
 const DEFAULT_HEX = '#147f8a';
+export const DEFAULT_BRAND_HEX = DEFAULT_HEX;
 
 export interface BrandColourCardProps {
   readonly appearance: SchoolAppearance;
   readonly canConfigure: boolean;
   readonly error?: string | undefined;
+  /**
+   * Setup: the school does not exist yet, so there is nothing to save to. The
+   * card drops its own Save / Reset buttons and reports the pick through
+   * `onColourChange`; the setup form saves it once the school has been created.
+   */
+  readonly deferSave?: boolean;
+  readonly onColourChange?: ((hex: string | null) => void) | undefined;
 }
 
-export function BrandColourCard({ appearance, canConfigure, error }: BrandColourCardProps) {
+export function BrandColourCard({
+  appearance,
+  canConfigure,
+  error,
+  deferSave = false,
+  onColourChange,
+}: BrandColourCardProps) {
   const router = useRouter();
   const toast = useToast();
 
@@ -87,6 +102,15 @@ export function BrandColourCard({ appearance, canConfigure, error }: BrandColour
   // never chosen still counts as a change worth saving.
   const isDirty = (valid ?? '') !== (saved ?? DEFAULT_HEX);
 
+  useEffect(() => {
+    if (deferSave) {
+      onColourChange?.(valid ?? null);
+    }
+  }, [deferSave, onColourChange, valid]);
+
+  const isCustomColour =
+    valid !== undefined && !PRESETS.some((preset) => preset.hex === valid);
+
   async function save(next: string | null): Promise<void> {
     setIsSaving(true);
     setFormError(undefined);
@@ -102,15 +126,16 @@ export function BrandColourCard({ appearance, canConfigure, error }: BrandColour
     }
 
     setChosen(result.data.primaryColor ?? DEFAULT_HEX);
-    toast.success(
-      next === null ? 'Back to the default colour.' : 'Portal colour saved.',
-      'Everyone at this school sees it on their next page.',
-    );
+    notifySchoolColourUpdated(result.data.primaryColor);
+    toast.success(next === null ? 'Back to the default colour.' : 'Portal colour saved.');
     router.refresh();
   }
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4" aria-labelledby="brand-colour">
+    <section
+      className={cn('h-full p-4', cardSurfaceClassName)}
+      aria-labelledby="brand-colour"
+    >
       <h2 id="brand-colour" className="text-base font-medium text-foreground">
         Portal colour
       </h2>
@@ -124,8 +149,8 @@ export function BrandColourCard({ appearance, canConfigure, error }: BrandColour
 
       <fieldset disabled={!canConfigure || isSaving} className="mt-4 space-y-5">
         <div>
-          <span className="block text-sm font-medium text-foreground">Choose a colour</span>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <span className="block text-sm font-semibold text-foreground">Color</span>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
             {PRESETS.map((preset) => {
               const isCurrent = valid === preset.hex;
               return (
@@ -138,65 +163,92 @@ export function BrandColourCard({ appearance, canConfigure, error }: BrandColour
                   onClick={() => {
                     setChosen(preset.hex);
                   }}
-                  className={`size-9 rounded-full border-2 transition-transform focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+                  className={cn(
+                    'relative flex size-10 shrink-0 items-center justify-center rounded-full transition-transform focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                    !isCurrent && 'hover:scale-105',
+                  )}
+                  style={
                     isCurrent
-                      ? 'scale-110 border-foreground'
-                      : 'border-transparent hover:scale-105'
-                  }`}
-                  style={{ backgroundColor: preset.hex }}
+                      ? {
+                          backgroundColor: preset.hex,
+                          boxShadow: `0 0 0 2px var(--card), 0 0 0 4px ${preset.hex}`,
+                        }
+                      : { backgroundColor: preset.hex }
+                  }
                 >
                   {isCurrent ? (
-                    <SuccessIcon className="mx-auto size-4 text-white" aria-hidden />
+                    <ApproveIcon className="size-4 text-white drop-shadow-sm" aria-hidden="true" />
                   ) : null}
                 </button>
               );
             })}
-          </div>
-        </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label="Or enter your own"
-            hint="Six-digit hex, the way a brand book writes it."
-            error={chosen.trim() === '' || parsed.success ? undefined : 'Use a colour like #1b838e.'}
-          >
-            <Input
-              value={chosen}
-              spellCheck={false}
-              autoCapitalize="off"
-              className="font-mono"
-              placeholder="#1b838e"
-              onChange={(event) => {
-                setChosen(event.target.value);
-              }}
-            />
-          </Field>
+            <span className="mx-1 hidden h-8 w-px shrink-0 bg-border sm:block" aria-hidden="true" />
 
-          <div className="flex items-end">
-            {/*
-              A native colour input, on purpose. Every operating system already
-              has a colour picker people know, with an eyedropper on the
-              platforms that support one — and rebuilding that in a settings
-              card is a week spent producing something worse.
-            */}
-            <label className="flex h-10 cursor-pointer items-center gap-2 rounded-md border border-border px-3 text-sm text-muted-foreground hover:bg-muted/50">
+            <label className="relative inline-flex cursor-pointer items-center gap-2.5 rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:outline-none">
+              <span
+                className={cn(
+                  'relative flex size-10 shrink-0 items-center justify-center rounded-full p-0.5',
+                  isCustomColour
+                    ? 'bg-transparent'
+                    : 'bg-linear-to-br from-red-500 via-emerald-500 to-blue-500',
+                )}
+                style={
+                  isCustomColour && valid !== undefined
+                    ? {
+                        boxShadow: `0 0 0 2px var(--card), 0 0 0 4px ${valid}`,
+                      }
+                    : undefined
+                }
+              >
+                <span
+                  className="flex size-full items-center justify-center rounded-full bg-card"
+                  style={isCustomColour && valid !== undefined ? { backgroundColor: valid } : undefined}
+                >
+                  {isCustomColour ? (
+                    <ApproveIcon className="size-4 text-white drop-shadow-sm" aria-hidden="true" />
+                  ) : (
+                    <PaletteIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+                  )}
+                </span>
+              </span>
+              <span className="pointer-events-none text-sm font-medium text-foreground">Custom</span>
               <input
                 type="color"
                 value={valid ?? DEFAULT_HEX}
+                aria-label="Choose a custom colour"
+                className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
                 onChange={(event) => {
-                  setChosen(event.target.value);
+                  setChosen(event.target.value.toLowerCase());
                 }}
-                className="size-6 cursor-pointer rounded border-0 bg-transparent p-0"
               />
-              Pick from a wheel
             </label>
           </div>
         </div>
 
-        {ramp === undefined ? null : <Preview ramp={ramp} />}
+        {deferSave ? null : (
+        <Field
+          label="Or enter your own"
+          hint="Six-digit hex, the way a brand book writes it."
+          error={chosen.trim() === '' || parsed.success ? undefined : 'Use a colour like #1b838e.'}
+        >
+          <Input
+            value={chosen}
+            spellCheck={false}
+            autoCapitalize="off"
+            className="max-w-xs font-mono"
+            placeholder="#1b838e"
+            onChange={(event) => {
+              setChosen(event.target.value);
+            }}
+          />
+        </Field>
+        )}
+
+        {deferSave || ramp === undefined ? null : <Preview ramp={ramp} />}
       </fieldset>
 
-      {!canConfigure ? (
+      {deferSave ? null : !canConfigure ? (
         <p className="mt-4 text-sm text-muted-foreground">
           Only an owner or principal can change this.
         </p>
@@ -243,7 +295,7 @@ function Preview({ ramp }: { readonly ramp: NonNullable<ReturnType<typeof brandR
   const passes = ramp.lightContrast >= 4.5;
 
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
+    <div className="rounded-lg border border-border bg-field p-4">
       <div
         className="flex flex-wrap items-center gap-3"
         style={

@@ -11,7 +11,9 @@ import { Button, DatePicker, Dialog, DialogBody, DialogContent, DialogDescriptio
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
+import { PhoneInput } from '@/components/phone-input';
 import { mutate } from '@/lib/mutate';
+import { livePhoneError, phoneInputError } from '@/lib/phone-format';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -131,6 +133,13 @@ export function AdmitStudentDialog({
       },
     };
 
+    const phoneError = phoneInputError(form.guardianPhone);
+    if (phoneError !== undefined) {
+      setFieldErrors({ 'guardian.phone': phoneError });
+      setFormError('Some details need fixing.');
+      return;
+    }
+
     // The same schema the server will apply, so the message a person sees here
     // is the message the server would have sent (docs/12 R7).
     const parsed = createStudentSchema.safeParse(candidate);
@@ -162,8 +171,7 @@ export function AdmitStudentDialog({
     // leads. Then open the new record — reception usually wants to add a fee or
     // a second guardian while the parent is still at the desk.
     toast.success(
-      `${form.firstName} ${form.lastName} admitted`,
-      `GR ${result.data.grNo} · Student ID ${result.data.studentCode}`,
+      `${form.firstName} ${form.lastName} admitted · GR ${result.data.grNo}.`,
     );
 
     setForm(EMPTY);
@@ -322,17 +330,15 @@ export function AdmitStudentDialog({
 
                 <Field
                   label="Phone"
-                  error={fieldErrors['guardian.phone']}
-                  hint="03001234567 or +923001234567 — both work."
+                  error={fieldErrors['guardian.phone'] ?? livePhoneError(form.guardianPhone)}
+                  hint="Digits only, starting with 03 or 02."
                   className="sm:col-span-2"
                   required
                 >
-                  <Input
-                    type="tel"
-                    inputMode="numeric"
+                  <PhoneInput
                     value={form.guardianPhone}
-                    onChange={(event) => {
-                      set('guardianPhone', event.target.value.replace(/\D/g, '').slice(0, 15));
+                    onValueChange={(next) => {
+                      set('guardianPhone', next);
                     }}
                   />
                 </Field>

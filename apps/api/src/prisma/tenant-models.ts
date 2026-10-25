@@ -34,9 +34,25 @@ export const TENANT_MODELS = [
   'Enrollment',
   // Phase 2 — fees
   'FeeHead',
+  'FeeHeadClassLevel',
   'StudentFee',
   'Holiday',
   'Staff',
+  /** ADR-0014: which classes a teacher takes — what their scoped grants compile into. */
+  'StaffClassAssignment',
+  /** Salary paid per month. Append-only: the app role cannot UPDATE or DELETE. */
+  'StaffSalaryPayment',
+  /** One monthly salary record per staff member, and its adjustments. Append-only. */
+  'StaffSalaryPeriod',
+  'StaffSalaryAdjustment',
+  /** Marks: subjects, tests and exams, and per-student results. */
+  'Subject',
+  'AssessmentType',
+  /** Which subjects and assessment types each class has. */
+  'ClassSubject',
+  'ClassAssessmentType',
+  'Assessment',
+  'MarkEntry',
   'ExpenseCategory',
   'Expense',
   // Vouchers, payments, and the batch engine behind them.
@@ -57,6 +73,17 @@ export const TENANT_MODELS = [
   'SchoolLogo',
   'SchoolVoucherSettings',
   'NumberSequence',
+  /** ADR-0016: parent and teacher concerns, their append-only timeline and pictures. */
+  'Request',
+  'RequestEvent',
+  'RequestAttachment',
+  /** The header bell: a pointer to something that happened, for one user. */
+  'Notification',
+  /** Push devices (FCM). The token is a credential and is never returned. */
+  'DeviceToken',
+  /** ADR-0017: class and assessment schedules. The calendar reads them. */
+  'Timetable',
+  'TimetableEntry',
 ] as const;
 
 export type TenantModel = (typeof TENANT_MODELS)[number];

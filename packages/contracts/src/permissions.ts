@@ -22,6 +22,10 @@ export const PERMISSIONS = [
   'students.guardian.read',
   'students.guardian.create',
   'students.guardian.update',
+  /** A guardian reading their own children. Held by PARENT alone — staff roles use the screens above. */
+  'parent.child.read',
+  /** A guardian reading the fee vouchers of their own children. Held by PARENT alone. */
+  'parent.voucher.read',
   'admissions.application.read',
   'admissions.application.create',
   'admissions.application.update',
@@ -55,31 +59,56 @@ export const PERMISSIONS = [
   'finance.expense.create',
   'finance.expense.approve',
   'finance.report.read',
+  /** Revenue figures, charts and trends. The Admin (school owner) alone. */
+  'finance.revenue.read',
 
   // --- Attendance -----------------------------------------------------------
   'attendance.record.read',
   'attendance.record.create',
   'attendance.record.unlock',
   'attendance.report.read',
+  /**
+   * The staff register and its report. Separate from `attendance.record.*`
+   * because a teacher holds those **scoped to their classes**, and a scoped
+   * grant has no meaning for the staff register: it is not a class's.
+   */
+  'attendance.staff.read',
+  'attendance.staff.create',
+  /** A member of staff reading their own attendance. Never anybody else's. */
+  'attendance.own.read',
 
   // --- Staff ----------------------------------------------------------------
   'staff.record.read',
   'staff.record.update',
   'staff.salary.read',
+  /** Record that salary was paid. Money moving, so not the principal (docs/08 s4). */
+  'staff.salary.pay',
 
   // --- Exams ----------------------------------------------------------------
   'exams.exam.configure',
   'exams.mark.create',
   'exams.result.read',
   'exams.result.publish',
+  /**
+   * Subjects and assessment types: add, rename, delete. School-wide by nature —
+   * the list is shared — so it is held **unscoped**, even by a teacher.
+   */
+  'exams.setup.manage',
 
   // --- Workflow and communication -------------------------------------------
   'workflow.request.create',
   'workflow.request.approve',
+  /**
+   * Every request in the school: read, reply, assign, set status (ADR-0016).
+   * Raising one and reading your own is `workflow.request.create`, held by all.
+   */
+  'workflow.request.manage',
   'comms.message.create',
 
   // --- Settings and governance ----------------------------------------------
   'settings.school.configure',
+  /** The school's plan and its invoices with the platform. The Admin's alone, like revenue. */
+  'settings.billing.manage',
   'settings.user.manage',
   'settings.data.export',
   'audit.log.read',

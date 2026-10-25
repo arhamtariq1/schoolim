@@ -6,12 +6,22 @@ import {
   signupStartRequestSchema,
   type SignupStartResult,
 } from '@ilm/contracts';
-import { Button, CheckboxField, Field, Input, PasswordInput, useToast } from '@ilm/ui';
+import { Button, Checkbox, Field, Input, PasswordInput, useToast } from '@ilm/ui';
+import { AccountIcon, EmailIcon, ICON_SIZE, LockedIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
+import { AuthFormActions } from './auth-form-actions';
+import { AuthInlineLink } from './auth-inline-link';
+import { PasswordRequirements } from './password-requirements';
 import { SIGNUP_CONTEXT } from './signup-step-gate';
 
+import {
+  fieldErrorsFromZod,
+  showApiErrorToast,
+  showFormValidationToast,
+  showNetworkErrorToast,
+} from '@/lib/form-validation';
 import { readSignupDraft, saveSignupDraft } from '@/lib/signup-draft';
 
 /**
@@ -98,19 +108,12 @@ export function SignupCredentialsForm() {
     });
 
     if (!parsed.success) {
-      const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path.join('.');
-        if (key !== '') {
-          next[key] = issue.message;
-        }
+      setFieldErrors(fieldErrorsFromZod(parsed.error));
+      if (!accepted) {
+        toast.error('Accept the terms and privacy policy to continue.');
+      } else {
+        showFormValidationToast(toast);
       }
-      setFieldErrors(next);
-      toast.error(
-        accepted
-          ? (parsed.error.issues[0]?.message ?? 'Check the highlighted fields.')
-          : 'Accept the terms to continue.',
-      );
       return;
     }
 
@@ -125,7 +128,7 @@ export function SignupCredentialsForm() {
 
       if (!response.ok) {
         const problem = (await response.json().catch(() => ({}))) as { detail?: string };
-        toast.error(problem.detail ?? 'Could not start signup. Try again.');
+        showApiErrorToast(toast, 'Signup failed', problem.detail, 'Could not start signup. Try again.');
         return;
       }
 
@@ -138,12 +141,12 @@ export function SignupCredentialsForm() {
         confirmPassword,
         accepted,
       });
-      toast.success('Check your email', `We sent a code to ${body.data.email}.`);
+      toast.success(`Verification code sent to ${body.data.email}.`);
       router.push(
         `/otp-verification?context=${SIGNUP_CONTEXT}&email=${encodeURIComponent(body.data.email)}`,
       );
     } catch {
-      toast.error('Could not reach the server. Check your connection and try again.');
+      showNetworkErrorToast(toast);
     } finally {
       setIsPending(false);
     }
@@ -155,10 +158,15 @@ export function SignupCredentialsForm() {
         void submit(event);
       }}
       noValidate
-      className="space-y-4"
+      className="space-y-3.5"
     >
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="First name" error={fieldErrors['firstName']} required>
+      <div className="grid gap-3.5 sm:grid-cols-2">
+        <Field
+          label="First name"
+          error={fieldErrors['firstName']}
+          required
+          leadingIcon={AccountIcon}
+        >
           <Input
             name="firstName"
             autoComplete="given-name"
@@ -172,7 +180,12 @@ export function SignupCredentialsForm() {
           />
         </Field>
 
-        <Field label="Last name" error={fieldErrors['lastName']} required>
+        <Field
+          label="Last name"
+          error={fieldErrors['lastName']}
+          required
+          leadingIcon={AccountIcon}
+        >
           <Input
             name="lastName"
             autoComplete="family-name"
@@ -186,7 +199,7 @@ export function SignupCredentialsForm() {
         </Field>
       </div>
 
-      <Field label="Email" error={fieldErrors['email']} required>
+      <Field label="Email" error={fieldErrors['email']} required leadingIcon={EmailIcon}>
         <Input
           name="email"
           type="email"
@@ -200,25 +213,28 @@ export function SignupCredentialsForm() {
         />
       </Field>
 
-      <Field
-        label="Password"
-        error={fieldErrors['password']}
-        hint="At least 8 characters, with upper and lower case, a number and a symbol — e.g. Abde@112."
-        required
-      >
-        <PasswordInput
-          name="password"
-          autoComplete="new-password"
-          placeholder="Create a password"
-          value={password}
-          disabled={isPending}
-          onChange={(event) => {
-            setPassword(event.target.value);
-          }}
-        />
-      </Field>
+      <div className="space-y-1.5">
+        <Field label="Password" error={fieldErrors['password']} required leadingIcon={LockedIcon}>
+          <PasswordInput
+            name="password"
+            autoComplete="new-password"
+            placeholder="Create a password"
+            value={password}
+            disabled={isPending}
+            onChange={(event) => {
+              setPassword(event.target.value);
+            }}
+          />
+        </Field>
+        <PasswordRequirements password={password} dense />
+      </div>
 
-      <Field label="Confirm password" error={fieldErrors['confirmPassword']} required>
+      <Field
+        label="Confirm password"
+        error={fieldErrors['confirmPassword']}
+        required
+        leadingIcon={LockedIcon}
+      >
         <PasswordInput
           name="confirmPassword"
           autoComplete="new-password"
@@ -231,27 +247,42 @@ export function SignupCredentialsForm() {
         />
       </Field>
 
-      <CheckboxField
-        label="I accept the Terms & Conditions."
-        id="accepted-terms"
-        name="acceptedTerms"
-        className="whitespace-nowrap"
-        checked={accepted}
-        disabled={isPending}
-        onCheckedChange={(next) => {
-          setAccepted(next === true);
-        }}
-      />
-
-      <Button
-        type="submit"
-        isPending={isPending}
-        disabled={!accepted}
-        className="w-full"
-        size="touch"
+      <label
+        htmlFor="accepted-terms"
+        className="flex cursor-pointer items-center gap-2.5 py-0.5 select-none"
       >
-        {isPending ? 'Sending code…' : 'Continue'}
-      </Button>
+        <Checkbox
+          id="accepted-terms"
+          name="acceptedTerms"
+          checked={accepted}
+          disabled={isPending}
+          onCheckedChange={(next) => {
+            setAccepted(next === true);
+          }}
+        />
+        <span className="text-sm leading-snug text-foreground">
+          I accept the{' '}
+          <span className="font-medium text-primary">Terms &amp; Conditions.</span>
+        </span>
+      </label>
+
+      <AuthFormActions
+        footer={
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account? <AuthInlineLink href="/login">Sign in</AuthInlineLink>
+          </p>
+        }
+      >
+        <Button
+          type="submit"
+          isPending={isPending}
+          disabled={!accepted}
+          className="w-full"
+          size="touch"
+        >
+          {isPending ? 'Sending code…' : 'Continue'}
+        </Button>
+      </AuthFormActions>
     </form>
   );
 }

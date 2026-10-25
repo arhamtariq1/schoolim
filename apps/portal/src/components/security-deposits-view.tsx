@@ -8,7 +8,7 @@ import {
 } from '@ilm/contracts';
 import {
   Button,
-  DataTable,
+  CardTable,
   DateDisplay,
   DatePicker,
   Dialog,
@@ -18,30 +18,58 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Field,
   Input,
   Money,
-  Pagination,
   SimpleSelect,
   StatusBadge,
   Textarea,
+  TwoLineCell,
   useToast,
-  type Column,
+  type CardTableColumn,
 } from '@ilm/ui';
 import {
+  AccountIcon,
+  CalendarIcon,
+  ClassIcon,
   DepositIcon,
+  FeesIcon,
   ICON_SIZE,
+  SuccessIcon,
+  MoreIcon,
+  PhoneIcon,
   RefundIcon,
-  SearchIcon,
   SpinnerIcon,
+  StudentsIcon,
   ViewIcon,
 } from '@ilm/ui/icons';
 import { systemClock } from '@ilm/utils';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useMemo, useState, type ReactElement } from 'react';
 
+import {
+  FEE_LIST_TABLE_CELL,
+  afterMenuAction,
+  feeListTableHeader,
+  useDebouncedSearchFilter,
+} from '@/components/fees/fee-list-shared';
+import { ListDataTable } from '@/components/list-data-table';
+import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
+import { ListTableScreen } from '@/components/list-table-screen';
+import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { TableSelectionBar } from '@/components/table-selection-bar';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
+import { pageIntro } from '@/lib/page-copy';
 import { rupeesToMinor } from '@/lib/money';
 import { mutate } from '@/lib/mutate';
+import { nextSortParams } from '@/lib/list-page';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -71,6 +99,8 @@ export interface SecurityDepositsViewProps {
   readonly classes: readonly ClassLevel[];
   readonly limit: number;
   readonly offset: number;
+  readonly sort: 'receivedOn' | 'name' | 'grNo' | 'deposited' | 'left';
+  readonly order: 'asc' | 'desc';
   readonly filters: {
     q: string;
     classLevelId: string;
@@ -86,16 +116,21 @@ export function SecurityDepositsView({
   classes,
   limit,
   offset,
+  sort,
+  order,
   filters,
   error,
   canRefund,
 }: SecurityDepositsViewProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const params = useSearchParams();
   const tenantHref = useTenantHref();
   const toast = useToast();
 
-  const [draft, setDraft] = useState(filters);
+  const { searchQuery, onSearchQueryChange } = useDebouncedSearchFilter(filters.q, (value) => {
+    pushFilters({ q: value });
+  });
   const [refunding, setRefunding] = useState<SecurityDepositRow | undefined>(undefined);
   const [viewing, setViewing] = useState<SecurityDepositRow | undefined>(undefined);
   const [amount, setAmount] = useState('');
@@ -109,21 +144,42 @@ export function SecurityDepositsView({
   const amountMinor = rupeesToMinor(amount);
   const available = refunding?.leftMinor ?? 0;
 
-  function apply(next: Partial<typeof filters>): void {
-    const merged = { ...draft, ...next };
-    const query = new URLSearchParams();
-    for (const [key, value] of Object.entries(merged)) {
-      if (value !== '') {
+  const isFiltered = Object.values(filters).some((value) => value !== '');
+
+  const {
+    selected,
+    clearSelection,
+    allOnPageSelected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  } = useRowSelection(page.rows, (row) => row.id);
+
+  function toggleSort(columnKey: string) {
+    const next = nextSortParams(sort, order, columnKey);
+    pushFilters({ sort: next.sort, order: next.order });
+  }
+
+  function pushFilters(next: Record<string, string>): void {
+    const query = new URLSearchParams(params.toString());
+    for (const [key, value] of Object.entries(next)) {
+      if (value === '') {
+        query.delete(key);
+      } else {
         query.set(key, value);
       }
     }
-    query.set('limit', String(limit));
-    router.push(tenantHref(`/fees/security-deposits?${query.toString()}`));
+    if (!Object.hasOwn(next, 'limit')) {
+      query.set('limit', String(limit));
+    }
+    if (!Object.hasOwn(next, 'offset')) {
+      query.delete('offset');
+      clearSelection();
+    }
+    router.push(`${pathname}?${query.toString()}`);
   }
 
-  function reset(): void {
-    const cleared = { q: '', classLevelId: '', status: '', state: '' };
-    setDraft(cleared);
+  function clearFilters(): void {
     router.push(tenantHref('/fees/security-deposits'));
   }
 
@@ -167,266 +223,257 @@ export function SecurityDepositsView({
     router.refresh();
   }
 
-  const columns: Column<SecurityDepositRow>[] = [
-    {
-      key: 'grNo',
-      header: 'G.R No',
-      render: (row) => <span className="font-mono text-xs select-all">{row.grNo}</span>,
-    },
-    {
-      key: 'month',
-      header: 'Month',
-      render: (row) => (
-        <span className="text-xs">
-          <DateDisplay value={row.receivedOn} />
-          {row.voucherNo === null ? null : (
-            <span className="block font-mono text-xs text-muted-foreground">{row.voucherNo}</span>
-          )}
-        </span>
-      ),
-    },
-    {
-      key: 'name',
-      header: 'Student',
-      render: (row) => (
-        <div>
-          <span className="text-balance">{row.name}</span>
-          {row.className === null ? null : (
-            <span className="block text-xs text-muted-foreground">{row.className}</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'fatherName',
-      header: 'Father',
-      hideOnMobile: true,
-      render: (row) => <span className="text-balance">{row.fatherName ?? '—'}</span>,
-    },
-    {
-      key: 'contact',
-      header: 'Contact',
-      hideOnMobile: true,
-      render: (row) => <span className="font-mono text-xs">{row.contact ?? '—'}</span>,
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      hideOnMobile: true,
-      render: (row) => (
-        <StatusBadge tone={row.status === 'ACTIVE' ? 'success' : 'neutral'}>
-          {row.status === 'ACTIVE' ? 'Active' : titleCase(row.status)}
-        </StatusBadge>
-      ),
-    },
-    {
-      key: 'deposited',
-      header: 'Deposited',
-      align: 'end',
-      render: (row) => (
-        <span className="font-mono text-sm tabular-nums">
-          <Money valueMinor={row.depositedMinor} />
-        </span>
-      ),
-    },
-    {
-      key: 'refunded',
-      header: 'Refunded',
-      align: 'end',
-      render: (row) => (
-        <span className="font-mono text-sm tabular-nums text-muted-foreground">
-          <Money valueMinor={row.refundedMinor} dashOnZero />
-        </span>
-      ),
-    },
-    {
-      key: 'left',
-      header: 'Left',
-      align: 'end',
-      render: (row) => (
-        <span
-          className={`font-mono text-sm font-medium tabular-nums ${
-            row.leftMinor === 0 ? 'text-muted-foreground' : ''
-          }`}
-        >
-          <Money valueMinor={row.leftMinor} />
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'end',
-      render: (row) => (
-        <div className="flex items-center justify-end gap-1">
-          <Button
-            tone="ghost"
-            size="sm"
-            aria-label={`Refunds from ${row.name}'s deposit`}
-            disabled={row.refunds.length === 0}
-            onClick={() => {
+  const columns = useMemo((): CardTableColumn<SecurityDepositRow>[] => {
+    return [
+      listTableSelectColumn({
+        selected,
+        allOnPageSelected,
+        someOnPageSelected,
+        toggleAllOnPage,
+        toggleRowSelected,
+        getRowId: (row) => row.id,
+        rowAriaLabel: (row) => row.name,
+        selectAllAriaLabel: 'Select every deposit on this page',
+      }),
+      {
+        key: 'grNo',
+        label: 'GR No',
+        ...FEE_LIST_TABLE_CELL,
+        colStyle: { width: '5.75rem' },
+        sortable: true,
+        headerCell: feeListTableHeader('GR No', StudentsIcon),
+        render: (row) => (
+          <span className="font-mono text-sm leading-none tabular-nums">{row.grNo}</span>
+        ),
+      },
+      {
+        key: 'receivedOn',
+        label: 'Received',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[12%]',
+        sortable: true,
+        headerCell: feeListTableHeader('Received', CalendarIcon),
+        render: (row) => (
+          <TwoLineCell
+            primary={<DateDisplay value={row.receivedOn} />}
+            secondary={row.voucherNo ?? ''}
+            secondaryMono
+          />
+        ),
+      },
+      {
+        key: 'name',
+        label: 'Student',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[16%]',
+        sortable: true,
+        headerCell: feeListTableHeader('Student', StudentsIcon),
+        render: (row) => (
+          <TwoLineCell primary={row.name} secondary={row.className ?? '—'} />
+        ),
+      },
+      {
+        key: 'fatherName',
+        label: 'Father',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[12%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Father', AccountIcon),
+        render: (row) => <span className="text-sm">{row.fatherName ?? '—'}</span>,
+      },
+      {
+        key: 'contact',
+        label: 'Contact',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[11%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Contact', PhoneIcon),
+        render: (row) => <span className="font-mono text-sm">{row.contact ?? '—'}</span>,
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[9%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Status'),
+        render: (row) => (
+          <StatusBadge tone={row.status === 'ACTIVE' ? 'success' : 'neutral'}>
+            {row.status === 'ACTIVE' ? 'Active' : titleCase(row.status)}
+          </StatusBadge>
+        ),
+      },
+      {
+        key: 'deposited',
+        label: 'Deposited',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[10%]',
+        sortable: true,
+        headerCell: feeListTableHeader('Deposited', DepositIcon),
+        render: (row) => (
+          <span className="font-mono text-sm tabular-nums">
+            <Money valueMinor={row.depositedMinor} />
+          </span>
+        ),
+      },
+      {
+        key: 'refunded',
+        label: 'Refunded',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[10%]',
+        hideOnMobile: true,
+        headerCell: feeListTableHeader('Refunded', RefundIcon),
+        render: (row) => (
+          <span className="font-mono text-sm tabular-nums text-muted-foreground">
+            <Money valueMinor={row.refundedMinor} dashOnZero />
+          </span>
+        ),
+      },
+      {
+        key: 'left',
+        label: 'Left',
+        sortable: true,
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[10%]',
+        headerCell: feeListTableHeader('Left', FeesIcon),
+        render: (row) => (
+          <span className="font-mono text-sm font-medium tabular-nums">
+            <Money valueMinor={row.leftMinor} />
+          </span>
+        ),
+      },
+      {
+        key: 'actions',
+        label: 'Actions',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[8%]',
+        headerCell: feeListTableHeader('Actions'),
+        render: (row) => (
+          <DepositRowActions
+            row={row}
+            canRefund={canRefund}
+            onView={() => {
               setViewing(row);
             }}
-          >
-            <ViewIcon className={ICON_SIZE.inline} aria-hidden />
-          </Button>
-          {/* Absent once nothing is left: the server refuses, and a button that
-              always fails is worse than no button (docs/16 §7). */}
-          {canRefund && row.leftMinor > 0 ? (
-            <Button
-              tone="outline"
-              size="sm"
-              onClick={() => {
-                openRefund(row);
-              }}
-            >
-              <RefundIcon className={ICON_SIZE.inline} aria-hidden />
-              Refund
-            </Button>
-          ) : null}
-        </div>
-      ),
-    },
-  ];
-
-  const isFiltered = Object.values(filters).some((value) => value !== '');
+            onRefund={() => {
+              openRefund(row);
+            }}
+          />
+        ),
+      },
+    ];
+  }, [
+    allOnPageSelected,
+    canRefund,
+    selected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  ]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Security deposits</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Money the school is holding for families, and what has been given back.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <div className="rounded-xl border border-border bg-card px-4 py-2">
-            <p className="text-xs text-muted-foreground">Total deposited</p>
-            <p className="font-mono text-lg font-semibold tabular-nums">
-              <Money valueMinor={page.totalDepositedMinor} />
-            </p>
-          </div>
-          {/* The liability, which is the figure that matters — it is what the
-              school would owe if every family left tomorrow. */}
-          <div className="rounded-xl border border-warning/30 bg-warning/5 px-4 py-2">
-            <p className="text-xs text-muted-foreground">Total left to refund</p>
-            <p className="font-mono text-lg font-semibold tabular-nums text-warning">
-              <Money valueMinor={page.totalLeftMinor} />
-            </p>
-          </div>
-        </div>
-      </header>
-
-      <form
-        className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
-        onSubmit={(event: FormEvent) => {
-          event.preventDefault();
-          apply({});
-        }}
-      >
-        <Field label="Search">
-          <div className="relative">
-            <Input
-              value={draft.q}
-              placeholder="Name, father, GR number"
-              onChange={(event) => {
-                setDraft({ ...draft, q: event.target.value });
-              }}
-            />
-            <SearchIcon
-              className={`${ICON_SIZE.inline} pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground`}
-              aria-hidden
-            />
-          </div>
-        </Field>
-
-        <Field label="Class">
-          <SimpleSelect
-            value={draft.classLevelId}
-            emptyOption={{ value: '', label: 'Any class' }}
-            options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
-            onValueChange={(next) => {
-              setDraft({ ...draft, classLevelId: next });
-              apply({ classLevelId: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Status">
-          <SimpleSelect
-            value={draft.status}
-            emptyOption={{ value: '', label: 'Any status' }}
-            options={[
-              { value: 'ACTIVE', label: 'Active' },
-              { value: 'INACTIVE', label: 'Inactive' },
-              { value: 'LEFT', label: 'Left' },
-            ]}
-            onValueChange={(next) => {
-              setDraft({ ...draft, status: next });
-              apply({ status: next });
-            }}
-          />
-        </Field>
-
-        <Field label="Deposit" hint="Still held, or fully returned">
-          <SimpleSelect
-            value={draft.state}
-            emptyOption={{ value: '', label: 'All deposits' }}
-            options={[
-              { value: 'held', label: 'Still held' },
-              { value: 'settled', label: 'Fully refunded' },
-            ]}
-            onValueChange={(next) => {
-              setDraft({ ...draft, state: next });
-              apply({ state: next });
-            }}
-          />
-        </Field>
-
-        <div className="flex items-end gap-2 lg:col-start-4">
-          <Button type="submit" tone="outline" className="flex-1">
-            Apply
-          </Button>
-          <Button type="button" tone="ghost" onClick={reset}>
-            Reset
-          </Button>
-        </div>
-      </form>
-
-      <DataTable
-        rows={page.rows}
-        columns={columns}
-        rowKey={(row) => row.id}
-        error={error}
-        caption="Security deposits held"
-        isFiltered={isFiltered}
-        onClearFilters={reset}
-        empty={{
-          title: 'No deposits recorded',
-          description:
-            'A security deposit is recorded when it is collected — on a fee voucher, or at the counter. None have been taken yet.',
-        }}
+    <div className="w-full space-y-6">
+      <WorkspacePageHeader
+        title="Security deposits"
+        description={pageIntro('/fees/security-deposits')}
       />
 
-      {page.total === 0 ? null : (
-        <Pagination
-          total={page.total}
-          limit={limit}
-          offset={offset}
-          label="deposits"
-          onChange={(next) => {
-            const query = new URLSearchParams(params.toString());
-            if (next === 0) {
-              query.delete('offset');
-            } else {
-              query.set('offset', String(next));
+      <ListTableScreen
+        tableTitle="All deposits"
+        filters={
+          <ListPageToolbar
+            searchQuery={searchQuery}
+            onSearchQueryChange={onSearchQueryChange}
+            searchPlaceholder="Name, father, GR number"
+            searchAriaLabel="Search security deposits"
+            filters={
+              <>
+                <SimpleSelect
+                  className="w-full min-w-32 sm:w-36"
+                  ariaLabel="Filter by class"
+                  value={filters.classLevelId}
+                  triggerIcon={ClassIcon}
+                  emptyOption={{ value: '', label: 'Any class' }}
+                  placeholder="Any class"
+                  options={classes.map((entry) => ({ value: entry.id, label: entry.name }))}
+                  onValueChange={(next) => {
+                    pushFilters({ classLevelId: next });
+                  }}
+                />
+                <SimpleSelect
+                  className="w-full min-w-32 sm:w-36"
+                  ariaLabel="Filter by status"
+                  value={filters.status}
+                  triggerIcon={SuccessIcon}
+                  emptyOption={{ value: '', label: 'Any status' }}
+                  placeholder="Any status"
+                  options={[
+                    { value: 'ACTIVE', label: 'Active' },
+                    { value: 'INACTIVE', label: 'Inactive' },
+                    { value: 'LEFT', label: 'Left' },
+                  ]}
+                  onValueChange={(next) => {
+                    pushFilters({ status: next });
+                  }}
+                />
+                <SimpleSelect
+                  className="w-full min-w-32 sm:w-40"
+                  ariaLabel="Filter by deposit state"
+                  value={filters.state}
+                  triggerIcon={DepositIcon}
+                  emptyOption={{ value: '', label: 'All deposits' }}
+                  placeholder="All deposits"
+                  options={[
+                    { value: 'held', label: 'Still held' },
+                    { value: 'settled', label: 'Fully refunded' },
+                  ]}
+                  onValueChange={(next) => {
+                    pushFilters({ state: next });
+                  }}
+                />
+              </>
             }
-            router.push(tenantHref(`/fees/security-deposits?${query.toString()}`));
+          />
+        }
+        footer={
+          <ListTablePaginationFooter
+            total={page.total}
+            limit={limit}
+            offset={offset}
+            label="deposits"
+            onPageChange={(next) => {
+              pushFilters({ offset: next === 0 ? '' : String(next) });
+            }}
+            onLimitChange={(next) => {
+              pushFilters({ limit: next, offset: '' });
+            }}
+          />
+        }
+      >
+        <ListDataTable
+          title="All deposits"
+          caption="Security deposits held"
+          rows={page.rows}
+          columns={columns}
+          rowKey={(row) => row.id}
+          minWidthClass="min-w-[56rem]"
+          error={error}
+          isFiltered={isFiltered}
+          onClearFilters={clearFilters}
+          sort={{
+            key: sort,
+            direction: order,
+            onToggle: toggleSort,
+          }}
+          empty={{
+            title: 'No deposits recorded',
+            description:
+              'A security deposit is recorded when it is collected — on a fee voucher, or at the counter. None have been taken yet.',
           }}
         />
-      )}
+      </ListTableScreen>
+
+      <TableSelectionBar count={selected.size} noun="deposit" onClear={clearSelection} />
 
       {/* Money leaving the building, so the dialog states the three figures
           rather than asking "are you sure?" (docs/16 §11), and the reason is in
@@ -627,4 +674,49 @@ function formatRupees(minor: number): string {
 
 function titleCase(value: string): string {
   return value.charAt(0) + value.slice(1).toLowerCase();
+}
+
+function DepositRowActions({
+  row,
+  canRefund,
+  onView,
+  onRefund,
+}: {
+  readonly row: SecurityDepositRow;
+  readonly canRefund: boolean;
+  readonly onView: () => void;
+  readonly onRefund: () => void;
+}): ReactElement {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button tone="ghost" size="sm" aria-label={`Actions for ${row.name}`}>
+          <MoreIcon className={ICON_SIZE.inline} aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>{row.name}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          disabled={row.refunds.length === 0}
+          onSelect={() => {
+            afterMenuAction(onView);
+          }}
+        >
+          <ViewIcon className={ICON_SIZE.inline} aria-hidden />
+          View refunds
+        </DropdownMenuItem>
+        {canRefund && row.leftMinor > 0 ? (
+          <DropdownMenuItem
+            onSelect={() => {
+              afterMenuAction(onRefund);
+            }}
+          >
+            <RefundIcon className={ICON_SIZE.inline} aria-hidden />
+            Refund
+          </DropdownMenuItem>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }

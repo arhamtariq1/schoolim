@@ -135,6 +135,14 @@ export const classLevelSchema = z.object({
   sections: z.array(sectionSchema),
   /** Across every session — the number that makes deletion unsafe. */
   studentCount: z.int().min(0),
+  /**
+   * Students enrolled **now**, in the session being shown — whether or not they
+   * have been put in a section yet. The number a class list should display: the
+   * per-section counts miss everybody not yet in a section.
+   */
+  sessionStudentCount: z.int().min(0),
+  /** Teachers assigned to this class (staff form → Class). Active staff only. */
+  teachers: z.array(z.object({ id: idSchema, name: z.string() })),
 });
 
 export type ClassLevel = z.infer<typeof classLevelSchema>;
@@ -205,6 +213,20 @@ export const HOLIDAY_AUDIENCE_LABELS: Readonly<Record<HolidayAudience, string>> 
   STAFF: 'Staff only',
 };
 
+/** Fixed calendar colours — semantic tokens in UI, stored as keys in the database. */
+export const HOLIDAY_COLOR_KEYS = ['rose', 'amber', 'emerald', 'sky', 'violet', 'teal'] as const;
+export const holidayColorKeySchema = z.enum(HOLIDAY_COLOR_KEYS);
+export type HolidayColorKey = z.infer<typeof holidayColorKeySchema>;
+
+export const HOLIDAY_COLOR_LABELS: Readonly<Record<HolidayColorKey, string>> = {
+  rose: 'Rose',
+  amber: 'Amber',
+  emerald: 'Emerald',
+  sky: 'Sky',
+  violet: 'Violet',
+  teal: 'Teal',
+};
+
 export const holidaySchema = z.object({
   id: idSchema,
   sessionId: idSchema,
@@ -214,6 +236,7 @@ export const holidaySchema = z.object({
   startDate: calendarDateSchema,
   /** Inclusive. Equal to `startDate` for a single day. */
   endDate: calendarDateSchema,
+  colorKey: holidayColorKeySchema,
   notes: z.string().nullable(),
   /** Inclusive day count, computed server-side so no caller re-derives it. */
   days: z.int().min(1),
@@ -230,6 +253,7 @@ export const createHolidaySchema = z
     startDate: calendarDateSchema,
     /** Omit for a single day; the server sets it equal to `startDate`. */
     endDate: calendarDateSchema.optional(),
+    colorKey: holidayColorKeySchema.default('rose'),
     notes: z.string().trim().max(300).optional(),
   })
   .strict()
@@ -247,6 +271,7 @@ export const updateHolidaySchema = z
     appliesTo: holidayAudienceSchema.optional(),
     startDate: calendarDateSchema.optional(),
     endDate: calendarDateSchema.optional(),
+    colorKey: holidayColorKeySchema.optional(),
     notes: z.string().trim().max(300).nullable().optional(),
   })
   .strict()
@@ -259,3 +284,35 @@ export const updateHolidaySchema = z
   );
 
 export type UpdateHoliday = z.infer<typeof updateHolidaySchema>;
+
+export const holidaysListQuerySchema = z.object({
+  sessionId: idSchema.optional(),
+});
+
+export type HolidaysListQuery = z.infer<typeof holidaysListQuerySchema>;
+
+/** Ensures every row has a valid palette key (older API rows or partial JSON). */
+export function normalizeHoliday(row: Holiday): Holiday {
+  const colorKey = holidayColorKeySchema.safeParse(row.colorKey);
+  return {
+    ...row,
+    colorKey: colorKey.success ? colorKey.data : 'rose',
+  };
+}
+
+/**
+ * A teacher on a class's page — enough to recognise them and reach them.
+ *
+ * Its own shape, fetched by the class page, and **not** folded into
+ * `ClassLevel`: a photograph can be hundreds of kilobytes, and the Classes list
+ * carries every class at once.
+ */
+export interface ClassTeacher {
+  id: string;
+  name: string;
+  employeeNo: string;
+  designation: string | null;
+  email: string | null;
+  phone: string | null;
+  photoUrl: string | null;
+}

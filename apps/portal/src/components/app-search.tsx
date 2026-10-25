@@ -1,6 +1,11 @@
 'use client';
 
-import { ROUTES, type Permission, type StudentLookupResult } from '@ilm/contracts';
+import {
+  ROUTES,
+  type ClassLevel,
+  type Permission,
+  type StudentLookupResult,
+} from '@ilm/contracts';
 import {
   CommandEmpty,
   CommandFooter,
@@ -10,12 +15,13 @@ import {
   CommandPalette,
   Money,
 } from '@ilm/ui';
-import { ICON_SIZE, StudentsIcon } from '@ilm/ui/icons';
+import { ChevronRightIcon, ClassIcon, ICON_SIZE, StudentsIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
-import { NAV_ICONS } from '@/components/nav-icons';
+import { Highlight } from '@/components/search-highlight';
 import { searchDestinations } from '@/lib/search-destinations';
+import { classTopicHref, normalise, searchTopics, tokens } from '@/lib/search-index';
 import { useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -28,25 +34,21 @@ import { useTenantHref } from '@/lib/use-tenant-href';
  *
  * ## What it searches
  *
- * **Pages**, always — every destination the person's permissions actually
- * reveal, taken from the same tree the sidebar is built from, so a screen
- * nobody can open is never offered. Matching is local and instant.
+ * **Pages**, always: every destination the person's permissions actually
+ * reveal, taken from the same tree the sidebar is built from.
  *
- * **Students**, once two characters are typed. That is one debounced request,
- * on a keystroke, rather than anything on page load: the palette costs nothing
- * until it is opened and nothing until it is used.
+ * **Inside pages** (`search-index.ts`): the sections, settings and tasks that
+ * live on those pages, found by the words a person would type, so "subject"
+ * leads to where subjects are managed and to each class's Subjects section even
+ * though no page is called that. Matched words are highlighted and each result
+ * says where it lives.
  *
- * Vouchers are not in yet. The placeholder says what it does rather than what
- * it will do — a search box that promises vouchers and finds none is worse than
- * one that never mentioned them.
+ * **Classes**, once the list has loaded: by name, and as the target of a
+ * class-scoped section (which needs a class id to be a real URL).
  *
- * ## Why the pages are flattened
+ * **Students**, once two characters are typed: one debounced request.
  *
- * The sidebar is a tree because structure helps when you are browsing. Nobody
- * browses a palette — they type three letters and press Enter — so the tree is
- * flattened to its leaves and each one carries its parent's name as a subtitle:
- * "Defaulters · Fees" tells you which one you are about to open when two
- * sections have a page with a similar name.
+ * Everything local is instant and costs nothing until the palette is opened.
  */
 
 export interface AppSearchProps {
@@ -55,6 +57,9 @@ export interface AppSearchProps {
   readonly children: (open: () => void) => React.ReactNode;
 }
 
+/** How many classes one section expands into. A school can have twenty. */
+const CLASS_ROWS = 5;
+
 export function AppSearch({ permissions, children }: AppSearchProps) {
   const router = useRouter();
   const tenantHref = useTenantHref();
@@ -62,9 +67,11 @@ export function AppSearch({ permissions, children }: AppSearchProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [students, setStudents] = useState<readonly StudentLookupResult[]>([]);
+  const [classes, setClasses] = useState<readonly ClassLevel[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   const canReadStudents = permissions.includes('students.student.read' satisfies Permission);
+  const canReadClasses = permissions.includes('academics.structure.read' satisfies Permission);
 
   // Flattened once per permission set, not per keystroke.
   const destinations = useMemo(() => searchDestinations(permissions), [permissions]);
@@ -78,8 +85,34 @@ export function AppSearch({ permissions, children }: AppSearchProps) {
       // actually does for somebody who has just been given an account.
       return destinations.slice(0, 7);
     }
-    return destinations.filter((entry) => entry.haystack.includes(term)).slice(0, 8);
+    const words = tokens(term);
+    return destinations
+      .filter((entry) => words.every((word) => entry.haystack.includes(word)))
+      .slice(0, 6);
   }, [destinations, term]);
+
+  const topicHits = useMemo(() => searchTopics(permissions, term, 6), [permissions, term]);
+
+  // The best class-scoped section, expanded to one row per class.
+  const classTopic = topicHits.find((hit) => hit.topic.classScoped === true)?.topic;
+
+  const matchedClasses = useMemo(() => {
+    if (term === '' || classes.length === 0) {
+      return [];
+    }
+    const words = tokens(term);
+    return classes
+      .filter((entry) => {
+        const name = normalise(entry.name);
+        return words.every((word) => name.includes(word));
+      })
+      .slice(0, CLASS_ROWS);
+  }, [classes, term]);
+
+  const topicClasses = useMemo(
+    () => (classTopic === undefined ? [] : classes.filter((entry) => entry.isActive).slice(0, CLASS_ROWS)),
+    [classTopic, classes],
+  );
 
   // ⌘K from anywhere, and Ctrl+K for the half of the world not on a Mac.
   useEffect(() => {
@@ -94,6 +127,32 @@ export function AppSearch({ permissions, children }: AppSearchProps) {
       window.removeEventListener('keydown', onKeyDown);
     };
   }, []);
+
+  // The class list, once, the first time it could be needed. A failure leaves
+  // class-scoped sections linking to the Classes page instead.
+  useEffect(() => {
+    if (!open || !canReadClasses || classes.length > 0 || term === '') {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch(ROUTES.academics.classes, { credentials: 'include' });
+        if (!response.ok || cancelled) {
+          return;
+        }
+        const body = (await response.json()) as { data: ClassLevel[] };
+        if (!cancelled) {
+          setClasses(body.data);
+        }
+      } catch {
+        // Offline or the API is down: the rest of the palette still works.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, canReadClasses, classes.length, term]);
 
   // Students, debounced.
   useEffect(() => {
@@ -142,6 +201,12 @@ export function AppSearch({ permissions, children }: AppSearchProps) {
     router.push(tenantHref(href));
   }
 
+  const hasResults =
+    matchedPages.length > 0 ||
+    topicHits.length > 0 ||
+    matchedClasses.length > 0 ||
+    students.length > 0;
+
   return (
     <>
       {children(() => {
@@ -160,7 +225,9 @@ export function AppSearch({ permissions, children }: AppSearchProps) {
         onValueChange={setQuery}
         isLoading={isSearching}
         label="Search"
-        placeholder={canReadStudents ? 'Search pages and students…' : 'Search pages…'}
+        placeholder={
+          canReadStudents ? 'Search pages, settings and students…' : 'Search pages and settings…'
+        }
         footer={
           <CommandFooter>
             <span className="flex items-center gap-1.5">
@@ -170,7 +237,7 @@ export function AppSearch({ permissions, children }: AppSearchProps) {
             </span>
             <span className="flex items-center gap-1.5">
               <CommandKey>↵</CommandKey>
-              to open
+              Open
             </span>
             <span className="ms-auto flex items-center gap-1.5">
               <CommandKey>esc</CommandKey>
@@ -179,42 +246,114 @@ export function AppSearch({ permissions, children }: AppSearchProps) {
           </CommandFooter>
         }
       >
-        {matchedPages.length === 0 && students.length === 0 && !isSearching ? (
+        {!hasResults && !isSearching ? (
           <CommandEmpty>
             Nothing matches “{query}”.
             <span className="mt-1 block text-xs">
-              Try a page name, a student’s name, or their GR number.
+              Try a page name, a setting like “late fee”, a student’s name or their GR number.
             </span>
           </CommandEmpty>
         ) : null}
 
         {matchedPages.length === 0 ? null : (
-          <CommandGroup heading={term === '' ? 'Go to' : 'Pages'}>
-            {matchedPages.map((entry) => {
-              const Icon = NAV_ICONS[entry.icon];
-              return (
-                <CommandItem
-                  key={entry.href}
-                  value={entry.href}
-                  onSelect={() => {
-                    go(entry.href);
-                  }}
-                >
-                  {Icon === undefined ? null : (
-                    <Icon
-                      className={`${ICON_SIZE.inline} shrink-0 text-muted-foreground`}
-                      aria-hidden
-                    />
-                  )}
-                  <span className="truncate">{entry.label}</span>
-                  {entry.section === undefined ? null : (
-                    <span className="ms-auto shrink-0 text-xs text-muted-foreground">
-                      {entry.section}
-                    </span>
-                  )}
-                </CommandItem>
-              );
-            })}
+          <CommandGroup heading="Pages">
+            {matchedPages.map((entry) => (
+              <CommandItem
+                key={entry.href}
+                value={`page-${entry.href}`}
+                onSelect={() => {
+                  go(entry.href);
+                }}
+              >
+                <ChevronRightIcon
+                  className={`${ICON_SIZE.inline} shrink-0 text-muted-foreground`}
+                  aria-hidden
+                />
+                <span className="truncate">
+                  <Highlight text={entry.label} term={term} />
+                </span>
+                {entry.section === undefined ? null : (
+                  <span className="ms-auto shrink-0 text-xs text-muted-foreground">
+                    {entry.section}
+                  </span>
+                )}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
+        {topicHits.length === 0 ? null : (
+          <CommandGroup heading="Found inside pages">
+            {topicHits.map(({ topic }) => (
+              <CommandItem
+                key={topic.id}
+                value={`topic-${topic.id}`}
+                onSelect={() => {
+                  go(topic.href);
+                }}
+              >
+                <ChevronRightIcon
+                  className={`${ICON_SIZE.inline} shrink-0 text-muted-foreground`}
+                  aria-hidden
+                />
+                <span className="min-w-0">
+                  <span className="block truncate">
+                    <Highlight text={topic.title} term={term} />
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    <Highlight text={topic.where} term={term} />
+                    {topic.classScoped === true ? ' · choose a class' : ''}
+                  </span>
+                </span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
+        {classTopic === undefined || topicClasses.length === 0 ? null : (
+          <CommandGroup heading={`${classTopic.title} in a class`}>
+            {topicClasses.map((entry) => (
+              <CommandItem
+                key={entry.id}
+                value={`class-topic-${entry.id}`}
+                onSelect={() => {
+                  go(classTopicHref(entry.id, classTopic.anchor));
+                }}
+              >
+                <ClassIcon
+                  className={`${ICON_SIZE.inline} shrink-0 text-muted-foreground`}
+                  aria-hidden
+                />
+                <span className="truncate">
+                  {classTopic.title} · {entry.name}
+                </span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
+        {matchedClasses.length === 0 ? null : (
+          <CommandGroup heading="Classes">
+            {matchedClasses.map((entry) => (
+              <CommandItem
+                key={entry.id}
+                value={`class-${entry.id}`}
+                onSelect={() => {
+                  go(classTopicHref(entry.id, undefined));
+                }}
+              >
+                <ClassIcon
+                  className={`${ICON_SIZE.inline} shrink-0 text-muted-foreground`}
+                  aria-hidden
+                />
+                <span className="truncate">
+                  <Highlight text={entry.name} term={term} />
+                </span>
+                <span className="ms-auto shrink-0 text-xs text-muted-foreground">
+                  {entry.studentCount} students
+                </span>
+              </CommandItem>
+            ))}
           </CommandGroup>
         )}
 

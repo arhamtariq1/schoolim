@@ -5,6 +5,7 @@ import {
   type AcademicSession,
   type ClassLevel,
   type FeeHead,
+  type BankLogo,
   type SchoolLogoInfo,
   type SchoolSettings,
   type VoucherSettings,
@@ -13,9 +14,13 @@ import {
 } from '@ilm/contracts';
 import type { Metadata } from 'next';
 
-import { AppShell } from '@/components/app-shell';
 import { VouchersView } from '@/components/vouchers-view';
 import { apiFetch } from '@/lib/api';
+import {
+  DEFAULT_LIST_PAGE_SIZE,
+  parseNewestFirstOrder,
+  parseSortField,
+} from '@/lib/list-page';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
 
@@ -26,7 +31,7 @@ import { getSession } from '@/lib/session';
  * is a link, and the server does the filtering — this screen must stay fast on
  * a school with four years of history behind it.
  */
-export const metadata: Metadata = { title: 'Fee vouchers' };
+export const metadata: Metadata = { title: 'Fee Vouchers' };
 
 export default async function VouchersPage({
   searchParams,
@@ -34,9 +39,10 @@ export default async function VouchersPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+  const qParam = readParam(params, 'q');
+  const grNoParam = readParam(params, 'grNo');
   const filters = {
-    q: readParam(params, 'q'),
-    grNo: readParam(params, 'grNo'),
+    q: qParam !== '' ? qParam : grNoParam,
     sessionId: readParam(params, 'sessionId'),
     classLevelId: readParam(params, 'classLevelId'),
     status: readParam(params, 'status'),
@@ -44,10 +50,21 @@ export default async function VouchersPage({
     to: readParam(params, 'to'),
   };
 
-  const limit = clampInt(params['limit'], 25, 1, MAX_PAGE_LIMIT);
+  const limit = clampInt(params['limit'], DEFAULT_LIST_PAGE_SIZE, 1, MAX_PAGE_LIMIT);
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
+  const sort = parseSortField(
+    params['sort'],
+    ['issueDate', 'dueDate', 'voucherNo', 'amount', 'studentName', 'status'] as const,
+    'issueDate',
+  );
+  const order = parseNewestFirstOrder(params);
 
-  const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  const query = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    sort,
+    order,
+  });
   for (const [key, value] of Object.entries(filters)) {
     if (value !== '') {
       query.set(key, value);
@@ -85,7 +102,7 @@ export default async function VouchersPage({
     apiFetch<{ data: SchoolSettings }>(ROUTES.school.settings),
     apiFetch<{ data: VoucherSettings }>(ROUTES.school.voucherSettings),
     apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info),
-    apiFetch<{ data: SchoolLogoInfo }>(ROUTES.bankLogo.info),
+    apiFetch<{ data: BankLogo[] }>(ROUTES.bankLogo.list),
   ]);
 
   const emptyTotals: VoucherTotals = {
@@ -96,15 +113,7 @@ export default async function VouchersPage({
   };
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <VouchersView
+    <VouchersView
         rows={listResult.ok ? listResult.data.data : []}
         sessions={sessionsResult.ok ? sessionsResult.data.data : []}
         classes={academicsResult.ok ? academicsResult.data.data.classes : []}
@@ -114,6 +123,8 @@ export default async function VouchersPage({
         limit={listResult.ok ? listResult.data.meta.page.limit : limit}
         offset={listResult.ok ? listResult.data.meta.page.offset : offset}
         filters={filters}
+        sort={sort}
+        order={order}
         school={{
           name: schoolResult.ok ? schoolResult.data.data.name : (session?.school.name ?? ''),
           address: schoolResult.ok ? (schoolResult.data.data.address ?? undefined) : undefined,
@@ -122,10 +133,7 @@ export default async function VouchersPage({
             logoResult.ok && logoResult.data.data.present
               ? (logoResult.data.data.version ?? '')
               : undefined,
-          bankLogoVersion:
-            bankLogoResult.ok && bankLogoResult.data.data.present
-              ? (bankLogoResult.data.data.version ?? '')
-              : undefined,
+          bankLogos: bankLogoResult.ok ? bankLogoResult.data.data : [],
           accentColor: schoolResult.ok
             ? (schoolResult.data.data.primaryColor ?? undefined)
             : (session?.school.primaryColor ?? undefined),
@@ -139,6 +147,5 @@ export default async function VouchersPage({
         canEdit={session?.permissions.includes('fees.voucher.generate') ?? false}
         canConfigureChallan={session?.permissions.includes('settings.school.configure') ?? false}
       />
-    </AppShell>
   );
 }

@@ -1,6 +1,5 @@
 import { ROUTES, type AcademicSession } from '@ilm/contracts';
 
-import { SchoolShell } from '@/components/school-shell';
 import { SessionsManager } from '@/components/sessions-manager';
 import { apiFetch } from '@/lib/api';
 import { getSession } from '@/lib/session';
@@ -13,12 +12,10 @@ export default async function SessionsPage() {
   ]);
 
   return (
-    <SchoolShell>
-      <SessionsManager
+    <SessionsManager
         sessions={result.ok ? result.data.data : []}
         error={result.ok ? undefined : result.message}
         canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
       />
-    </SchoolShell>
   );
 }

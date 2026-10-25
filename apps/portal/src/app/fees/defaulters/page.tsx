@@ -2,9 +2,13 @@ import { MAX_PAGE_LIMIT, ROUTES, type ClassLevel, type DefaulterList } from '@il
 import { systemClock } from '@ilm/utils';
 import type { Metadata } from 'next';
 
-import { AppShell } from '@/components/app-shell';
 import { DefaultersView } from '@/components/defaulters-view';
 import { apiFetch } from '@/lib/api';
+import {
+  DEFAULT_LIST_PAGE_SIZE,
+  parseSortField,
+  parseSortOrder,
+} from '@/lib/list-page';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
 
@@ -33,14 +37,23 @@ export default async function DefaultersPage({
     to: readParam(params, 'to'),
   };
 
-  const limit = clampInt(params['limit'], 25, 1, MAX_PAGE_LIMIT);
+  const limit = clampInt(params['limit'], DEFAULT_LIST_PAGE_SIZE, 1, MAX_PAGE_LIMIT);
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
+  const sort = parseSortField(
+    params['sort'],
+    ['amount', 'months', 'name', 'grNo', 'className'] as const,
+    'amount',
+  );
+  const order =
+    params['order'] === undefined && params['sort'] === undefined
+      ? 'desc'
+      : parseSortOrder(params['order']);
 
   const query = new URLSearchParams({
     limit: String(limit),
     offset: String(offset),
-    sort: 'amount',
-    order: 'desc',
+    sort,
+    order,
   });
   for (const [key, value] of Object.entries(filters)) {
     if (value !== '') {
@@ -48,7 +61,7 @@ export default async function DefaultersPage({
     }
   }
 
-  const [session, listResult, academicsResult] = await Promise.all([
+  const [, listResult, academicsResult] = await Promise.all([
     getSession(),
     apiFetch<{ data: DefaulterList }>(`${ROUTES.defaulters.list}?${query.toString()}`),
     apiFetch<{ data: { session: { id: string } | null; classes: ClassLevel[] } }>(
@@ -65,22 +78,15 @@ export default async function DefaultersPage({
   };
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <DefaultersView
+    <DefaultersView
         page={listResult.ok ? listResult.data.data : empty}
         classes={academicsResult.ok ? academicsResult.data.data.classes : []}
         limit={limit}
         offset={offset}
+        sort={sort}
+        order={order}
         filters={filters}
         error={listResult.ok ? undefined : listResult.message}
       />
-    </AppShell>
   );
 }

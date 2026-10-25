@@ -1,6 +1,7 @@
 'use client';
 
 import * as SelectPrimitive from '@radix-ui/react-select';
+import type { LucideIcon } from 'lucide-react';
 import { type ComponentProps, type ReactNode } from 'react';
 
 import { ApproveIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '../icons';
@@ -38,7 +39,7 @@ export function SelectTrigger({
     <SelectPrimitive.Trigger
       className={cn(
         'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-border',
-        'bg-background px-3 text-sm',
+        'bg-field px-3 text-sm',
         'placeholder:text-muted-foreground',
         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
@@ -104,12 +105,15 @@ export function SelectContent({
 export function SelectItem({
   className,
   children,
+  leadingIcon: LeadingIcon,
   ...props
-}: ComponentProps<typeof SelectPrimitive.Item>) {
+}: ComponentProps<typeof SelectPrimitive.Item> & {
+  readonly leadingIcon?: LucideIcon;
+}) {
   return (
     <SelectPrimitive.Item
       className={cn(
-        'relative flex w-full cursor-default items-center rounded-sm py-2 ps-2 pe-8 text-sm',
+        'relative flex w-full cursor-pointer items-center gap-2 rounded-sm py-2 ps-2 pe-8 text-sm',
         'outline-none select-none',
         'focus:bg-muted data-[highlighted]:bg-muted',
         'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
@@ -117,6 +121,9 @@ export function SelectItem({
       )}
       {...props}
     >
+      {LeadingIcon === undefined ? null : (
+        <LeadingIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      )}
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
       <span className="absolute end-2 flex size-4 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
@@ -149,6 +156,7 @@ export interface SelectOption {
   readonly value: string;
   readonly label: string;
   readonly disabled?: boolean;
+  readonly icon?: LucideIcon;
 }
 
 export interface SimpleSelectProps {
@@ -165,7 +173,9 @@ export interface SimpleSelectProps {
   readonly 'aria-invalid'?: boolean;
   readonly required?: boolean;
   /** Rendered as the first option; picking it clears the filter. */
-  readonly emptyOption?: { value: string; label: string } | undefined;
+  readonly emptyOption?: { value: string; label: string; icon?: LucideIcon } | undefined;
+  /** Leading icon in the trigger — list filters, rows-per-page, etc. */
+  readonly triggerIcon?: LucideIcon;
 }
 
 /**
@@ -191,6 +201,7 @@ export function SimpleSelect({
   emptyOption,
   className,
   disabled,
+  triggerIcon: TriggerIcon,
   ...props
 }: SimpleSelectProps): ReactNode {
   return (
@@ -202,14 +213,27 @@ export function SimpleSelect({
       disabled={disabled}
     >
       <SelectTrigger className={className} aria-label={ariaLabel} {...props}>
+        {TriggerIcon === undefined ? null : (
+          <TriggerIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        )}
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
         {emptyOption === undefined ? null : (
-          <SelectItem value={ANY}>{emptyOption.label}</SelectItem>
+          <SelectItem
+            value={ANY}
+            leadingIcon={emptyOption.icon ?? TriggerIcon}
+          >
+            {emptyOption.label}
+          </SelectItem>
         )}
         {options.map((option) => (
-          <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
+          <SelectItem
+            key={option.value}
+            value={option.value}
+            disabled={option.disabled}
+            leadingIcon={option.icon ?? TriggerIcon}
+          >
             {option.label}
           </SelectItem>
         ))}

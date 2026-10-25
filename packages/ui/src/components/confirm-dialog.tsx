@@ -114,7 +114,7 @@ export function ConfirmDialog({
         <AlertDialogPrimitive.Content
           className={cn(
             'fixed start-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2',
-            'rounded-lg border border-border bg-background p-5 shadow-lg',
+            'rounded-lg border border-border bg-field p-5 shadow-lg',
             'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
             'data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
           )}
@@ -148,7 +148,7 @@ export function ConfirmDialog({
                   setTyped(event.target.value);
                 }}
                 className={cn(
-                  'h-10 w-full rounded-md border border-border bg-background px-3 text-sm',
+                  'h-10 w-full rounded-md border border-border bg-field px-3 text-sm',
                   'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                 )}
               />

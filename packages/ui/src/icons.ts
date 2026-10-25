@@ -30,18 +30,22 @@ export {
 
   // --- Navigation -----------------------------------------------------------
   LayoutDashboard as DashboardIcon,
+  /** Enrolling a new student — not the generic create (`CreateIcon`) act. */
+  UserPlus as AdmissionIcon,
   Users as StudentsIcon,
   Wallet as FeesIcon,
   CalendarCheck as AttendanceIcon,
   BookOpen as AcademicsIcon,
   Banknote as FinanceIcon,
+  Coins as SalaryIcon,
   Inbox as RequestsIcon,
   Settings as SettingsIcon,
   ChevronRight as ChevronRightIcon,
   ChevronDown as ChevronDownIcon,
   ChevronLeft as ChevronLeftIcon,
   ArrowLeft as BackIcon,
-  MoreHorizontal as MoreIcon,
+  MoreVertical as MoreIcon,
+  MoreVertical as MoreVerticalIcon,
 
   // --- Status ---------------------------------------------------------------
   CircleAlert as WarningIcon,
@@ -56,16 +60,39 @@ export {
 
   // --- Account and session --------------------------------------------------
   LogOut as SignOutIcon,
+  LogIn as SignInIcon,
   User as AccountIcon,
+  Mail as EmailIcon,
+  Phone as PhoneIcon,
+  Briefcase as DesignationIcon,
+  Globe as WebIcon,
+  MapPin as LocationIcon,
+  Save as SaveIcon,
+  Palette as PaletteIcon,
   Eye as ShowPasswordIcon,
   EyeOff as HidePasswordIcon,
+  /** Pause a catalogue row without deleting it (fee heads, etc.). */
+  PowerOff as TurnOffIcon,
+  Power as TurnOnIcon,
 
   // --- Academic structure ---------------------------------------------------
   GraduationCap as ClassIcon,
   LayoutGrid as SectionIcon,
+  Rows3 as RowsPerPageIcon,
   CalendarRange as SessionIcon,
   CalendarOff as HolidayIcon,
   Receipt as ExpenseIcon,
+
+  // --- Timetable: one icon for a kind of subject, and for a break -------------
+  Calculator as SubjectMathIcon,
+  FlaskConical as SubjectScienceIcon,
+  Monitor as SubjectComputerIcon,
+  Languages as SubjectLanguageIcon,
+  MoonStar as SubjectIslamicIcon,
+  BookMarked as SubjectIcon,
+  Coffee as BreakIcon,
+  Clock as ClockIcon,
+  LayoutList as ListViewIcon,
 
   // --- Fees -----------------------------------------------------------------
   /** A fee's timeline: what it was, from when. */
@@ -73,9 +100,25 @@ export {
   /** Money going back to a family, which is not the same act as an undo. */
   HandCoins as RefundIcon,
   /** Money the school holds but has not earned. */
-  PiggyBank as DepositIcon,
+  ShieldCheck as DepositIcon,
   /** Somebody who has not paid by the day it was due. */
   AlarmClock as OverdueIcon,
+  /** Challan page layout (copies per sheet). */
+  PanelsTopLeft as PageLayoutIcon,
+  /** Names printed on each challan copy. */
+  Tags as TagIcon,
+  /** What appears on the challan body. */
+  ListChecks as ListChecksIcon,
+  /** Kuickpay consumer number on a challan. */
+  Zap as QuickpayIcon,
+  /** 1LINK consumer number on a challan. */
+  Link2 as LinkIcon,
+  /** Bank / school mark upload. */
+  Image as ImageIcon,
+  /** Choose or change a profile photo. */
+  Camera as CameraIcon,
+  /** A document attached to a record, such as a CV. */
+  FileText as FileIcon,
 
   // --- Dates ----------------------------------------------------------------
   Calendar as CalendarIcon,

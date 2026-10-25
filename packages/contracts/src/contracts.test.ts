@@ -19,7 +19,15 @@ import {
   MAX_PAGE_LIMIT,
   offsetPaginationSchema,
 } from './pagination';
+import { nationalIdSchema } from './national-id';
 import { isPermission, PERMISSIONS, type Permission } from './permissions';
+import {
+  ASSIGNABLE_STAFF_ROLES,
+  bulkDeleteStaffSchema,
+  createStaffSchema,
+  formatCnic,
+  MAX_BULK_STAFF,
+} from './staff';
 import {
   calendarDateSchema,
   emailSchema,
@@ -69,34 +77,62 @@ describe('role matrix — segregation of duties', () => {
     expect(hasPermission(['ACCOUNTANT'], 'fees.waiver.approve')).toBe(false);
   });
 
-  it('lets the principal approve but not silently record a payment', () => {
-    expect(hasPermission(['PRINCIPAL'], 'fees.discount.approve')).toBe(true);
-    expect(hasPermission(['PRINCIPAL'], 'fees.payment.create')).toBe(false);
+  it('gives the principal and office staff everything the Admin has except revenue', () => {
+    for (const role of ['PRINCIPAL', 'RECEPTION'] as const) {
+      for (const permission of Object.keys(ROLE_PERMISSIONS.OWNER)) {
+        expect(hasPermission([role], permission as Permission)).toBe(
+          permission !== 'finance.revenue.read' && permission !== 'settings.billing.manage',
+        );
+      }
+    }
   });
 
-  it('lets reception take a payment but not cancel or reverse one', () => {
-    expect(hasPermission(['RECEPTION'], 'fees.payment.create')).toBe(true);
-    expect(hasPermission(['RECEPTION'], 'fees.voucher.cancel')).toBe(false);
-    expect(hasPermission(['RECEPTION'], 'fees.payment.reverse')).toBe(false);
-  });
-
-  it('reserves the audit log and full export for the owner and principal', () => {
+  it('reserves revenue for the Admin alone', () => {
     for (const role of SCHOOL_ROLES) {
-      const expected = role === 'OWNER' || role === 'PRINCIPAL';
+      expect(hasPermission([role], 'finance.revenue.read')).toBe(role === 'OWNER');
+    }
+  });
+
+  it('reserves Pricing and Billing for the Admin alone', () => {
+    for (const role of SCHOOL_ROLES) {
+      expect(hasPermission([role], 'settings.billing.manage')).toBe(role === 'OWNER');
+    }
+  });
+
+  it('keeps the audit log and full export for the Admin, principal and office staff', () => {
+    for (const role of SCHOOL_ROLES) {
+      const expected = role === 'OWNER' || role === 'PRINCIPAL' || role === 'RECEPTION';
       expect(hasPermission([role], 'audit.log.read')).toBe(expected);
       expect(hasPermission([role], 'settings.data.export')).toBe(expected);
     }
   });
 
-  it('reserves striking a student off for the owner and principal', () => {
+  it('keeps striking a student off away from the legacy admin and accountant', () => {
     expect(hasPermission(['ADMIN'], 'students.student.delete')).toBe(false);
-    expect(hasPermission(['OWNER'], 'students.student.delete')).toBe(true);
-    expect(hasPermission(['PRINCIPAL'], 'students.student.delete')).toBe(true);
+    for (const role of ['OWNER', 'PRINCIPAL', 'RECEPTION'] as const) {
+      expect(hasPermission([role], 'students.student.delete')).toBe(true);
+    }
   });
 
   it('gives the owner every permission', () => {
-    for (const permission of PERMISSIONS) {
+    // `parent.child.read` belongs to guardians alone; an owner reads children
+    // through the staff screens, and holding it would put the parent portal in
+    // their navigation.
+    //
+    // `attendance.own.read` is likewise withheld: the owner tracks the staff's
+    // attendance, not their own, so My attendance stays out of their menu.
+    const withheld: string[] = ['parent.child.read', 'parent.voucher.read', 'attendance.own.read'];
+    for (const permission of PERMISSIONS.filter((entry) => !withheld.includes(entry))) {
       expect(hasPermission(['OWNER'], permission)).toBe(true);
+    }
+  });
+
+  it('keeps My attendance for staff who have their own record, not for the owner or admin', () => {
+    for (const role of ['TEACHER', 'PRINCIPAL', 'RECEPTION'] as const) {
+      expect(hasPermission([role], 'attendance.own.read')).toBe(true);
+    }
+    for (const role of ['OWNER', 'ADMIN', 'PARENT'] as const) {
+      expect(hasPermission([role], 'attendance.own.read')).toBe(false);
     }
   });
 
@@ -320,5 +356,84 @@ describe('contract coverage', () => {
     expect(count).toBeGreaterThan(0);
     const sample: Permission = 'fees.voucher.generate';
     expect(PERMISSIONS).toContain(sample);
+  });
+});
+
+describe('staff CNIC and roles', () => {
+  const base = { name: 'Aslam', phone: '+923001234567', role: 'PEON' } as const;
+
+  it('formats digits as XXXXX-XXXXXXX-X and ignores extras', () => {
+    expect(formatCnic('3520212345671')).toBe('35202-1234567-1');
+    expect(formatCnic('35202-1234567-1999')).toBe('35202-1234567-1');
+    expect(formatCnic('352')).toBe('352');
+    expect(formatCnic('abc3520212')).toBe('35202-12');
+  });
+
+  it('accepts exactly 13 digits and stores them formatted', () => {
+    const parsed = createStaffSchema.parse({ ...base, cnic: '3520212345671' });
+    expect(parsed.cnic).toBe('35202-1234567-1');
+  });
+
+  it('rejects a CNIC that is not 13 digits', () => {
+    expect(createStaffSchema.safeParse({ ...base, cnic: '35202-123456-1' }).success).toBe(false);
+    expect(createStaffSchema.safeParse({ ...base, cnic: '' }).success).toBe(false);
+  });
+
+  it('refuses to create a second Admin and offers no Admin in the form', () => {
+    const result = createStaffSchema.safeParse({
+      ...base,
+      role: 'ADMIN',
+      email: 'a@b.test',
+      cnic: '35202-1234567-1',
+    });
+    expect(result.success).toBe(false);
+    expect(ASSIGNABLE_STAFF_ROLES).not.toContain('ADMIN');
+  });
+});
+
+describe('staff phone', () => {
+  const base = { name: 'Aslam', role: 'PEON', cnic: '35202-1234567-1' } as const;
+
+  it('accepts an 11-digit Pakistani mobile in E.164', () => {
+    expect(createStaffSchema.safeParse({ ...base, phone: '+923001234567' }).success).toBe(true);
+  });
+
+  it('rejects numbers that are too short, too long or not mobiles', () => {
+    for (const phone of ['+92300123456', '+9230012345678', '+924001234567', '+14155550123']) {
+      expect(createStaffSchema.safeParse({ ...base, phone }).success).toBe(false);
+    }
+  });
+});
+
+describe('bulk staff removal', () => {
+  const id = '5f0c7a52-8b7e-4c3a-9a64-2d1b6f0e9c11';
+
+  it('needs at least one id and a reason', () => {
+    expect(bulkDeleteStaffSchema.safeParse({ ids: [], reason: 'Left' }).success).toBe(false);
+    expect(bulkDeleteStaffSchema.safeParse({ ids: [id] }).success).toBe(false);
+    expect(bulkDeleteStaffSchema.safeParse({ ids: [id], reason: 'Left the school' }).success).toBe(
+      true,
+    );
+  });
+
+  it('refuses more than the cap and ids that are not uuids', () => {
+    const many = Array.from({ length: MAX_BULK_STAFF + 1 }, () => id);
+    expect(bulkDeleteStaffSchema.safeParse({ ids: many, reason: 'Left' }).success).toBe(false);
+    expect(bulkDeleteStaffSchema.safeParse({ ids: ['nope'], reason: 'Left' }).success).toBe(false);
+  });
+});
+
+describe('B-Form and national id numbers', () => {
+  const bForm = nationalIdSchema('B-Form number');
+
+  it('accepts 13 digits and stores them with hyphens', () => {
+    expect(bForm.parse('4343434343443')).toBe('43434-3434344-3');
+    expect(bForm.parse('43434-3434344-3')).toBe('43434-3434344-3');
+  });
+
+  it('rejects anything that is not 13 digits, naming the field', () => {
+    const result = bForm.safeParse('43434-343434-3');
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain('B-Form number');
   });
 });

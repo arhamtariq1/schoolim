@@ -2,9 +2,18 @@
 
 import { loginRequestSchema, ROUTES, type LoginOutcome, type SchoolChoice } from '@ilm/contracts';
 import { Button, Field, Input, PasswordInput, useToast } from '@ilm/ui';
-import Link from 'next/link';
+import { EmailIcon, ICON_SIZE, LockedIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+
+import {
+  fieldErrorsFromZod,
+  showFormValidationToast,
+  showNetworkErrorToast,
+} from '@/lib/form-validation';
+
+import { AuthFormActions } from './auth-form-actions';
+import { AuthInlineLink } from './auth-inline-link';
 
 interface Problem {
   code?: string;
@@ -18,7 +27,13 @@ interface Problem {
  * errors stay under the inputs for assistive tech. `isPending` disables the
  * button so a double click cannot fire two sign-ins.
  */
-export function LoginForm({ initialEmail = '' }: { initialEmail?: string }) {
+export function LoginForm({
+  initialEmail = '',
+  showCreateAccountLink = false,
+}: {
+  readonly initialEmail?: string;
+  readonly showCreateAccountLink?: boolean;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [identifier, setIdentifier] = useState(initialEmail);
@@ -37,15 +52,8 @@ export function LoginForm({ initialEmail = '' }: { initialEmail?: string }) {
 
     const parsed = loginRequestSchema.safeParse({ identifier, password, rememberDevice: false });
     if (!parsed.success) {
-      const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path[0];
-        if (typeof key === 'string') {
-          next[key] = issue.message;
-        }
-      }
-      setFieldErrors(next);
-      toast.error(parsed.error.issues[0]?.message ?? 'Check the highlighted fields.');
+      setFieldErrors(fieldErrorsFromZod(parsed.error));
+      showFormValidationToast(toast);
       return;
     }
 
@@ -60,14 +68,14 @@ export function LoginForm({ initialEmail = '' }: { initialEmail?: string }) {
 
       if (!response.ok) {
         const problem = (await response.json().catch(() => ({}))) as Problem;
-        toast.error(problem.detail ?? 'Could not sign you in. Try again.');
+        toast.error(problem.detail ?? 'Check your email and password, then try again.');
         return;
       }
 
       const body = (await response.json()) as { data: LoginOutcome };
 
       if (body.data.kind === 'session') {
-        toast.success('Signed in');
+        toast.success('Signed in successfully!');
         const next = body.data.user.mustChangePassword
           ? '/settings/password'
           : body.data.user.profileCompleted
@@ -82,14 +90,14 @@ export function LoginForm({ initialEmail = '' }: { initialEmail?: string }) {
 
       if (only !== undefined && rest.length === 0) {
         setChoices(undefined);
-        toast.success('Signed in');
+        toast.success('Signed in successfully!');
         window.location.assign(only.continueUrl);
         return;
       }
 
       setChoices(body.data.choices);
     } catch {
-      toast.error('Could not reach the server. Check your connection and try again.');
+      showNetworkErrorToast(toast);
     } finally {
       setIsPending(false);
     }
@@ -106,15 +114,15 @@ export function LoginForm({ initialEmail = '' }: { initialEmail?: string }) {
           void submit(event);
         }}
         noValidate
-        className="space-y-4"
+        className="space-y-3.5"
       >
-        <Field label="Email or phone" error={fieldErrors['identifier']} required>
+        <Field label="Email" error={fieldErrors['identifier']} required leadingIcon={EmailIcon}>
           <Input
-            type="text"
+            type="email"
             name="identifier"
             autoComplete="username"
             autoFocus
-            placeholder="Email or phone"
+            placeholder="you@school.edu.pk"
             value={identifier}
             disabled={isPending}
             onChange={(event) => {
@@ -123,7 +131,7 @@ export function LoginForm({ initialEmail = '' }: { initialEmail?: string }) {
           />
         </Field>
 
-        <Field label="Password" error={fieldErrors['password']} required>
+        <Field label="Password" error={fieldErrors['password']} required leadingIcon={LockedIcon}>
           <PasswordInput
             name="password"
             autoComplete="current-password"
@@ -136,18 +144,25 @@ export function LoginForm({ initialEmail = '' }: { initialEmail?: string }) {
           />
         </Field>
 
-        <div className="flex justify-end">
-          <Link
-            href="/forgot-password"
-            className="text-sm font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            Forgot password?
-          </Link>
-        </div>
-
-        <Button type="submit" isPending={isPending} className="w-full" size="touch">
-          {isPending ? 'Signing in…' : 'Sign in'}
-        </Button>
+        <AuthFormActions
+          nav={
+            <div className="flex justify-end text-sm">
+              <AuthInlineLink href="/forgot-password">Forgot password?</AuthInlineLink>
+            </div>
+          }
+          showDivider={showCreateAccountLink}
+          footer={
+            showCreateAccountLink ? (
+              <p className="text-center text-sm text-muted-foreground">
+                New here? <AuthInlineLink href="/signup">Create account</AuthInlineLink>
+              </p>
+            ) : undefined
+          }
+        >
+          <Button type="submit" isPending={isPending} className="w-full" size="touch">
+            {isPending ? 'Signing in…' : 'Sign in'}
+          </Button>
+        </AuthFormActions>
       </form>
     </>
   );

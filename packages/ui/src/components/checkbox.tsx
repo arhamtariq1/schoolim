@@ -22,7 +22,7 @@ export function Checkbox({ className, ...props }: ComponentProps<typeof Checkbox
   return (
     <CheckboxPrimitive.Root
       className={cn(
-        'peer size-4 shrink-0 rounded border border-input bg-background transition-colors',
+        'peer size-4 shrink-0 rounded border border-input bg-field transition-colors',
         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
         'data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground',
@@ -59,12 +59,27 @@ export function CheckboxField({ label, hint, className, id, ...props }: Checkbox
   const inputId = id ?? `cb-${label.replace(/\W+/g, '-').toLowerCase()}`;
   const hintId = `${inputId}-hint`;
 
+  if (hint === undefined) {
+    return (
+      <label
+        htmlFor={inputId}
+        className={cn(
+          'flex cursor-pointer items-center gap-2.5 py-1 select-none',
+          className,
+        )}
+      >
+        <Checkbox id={inputId} {...props} />
+        <span className="text-sm leading-normal font-medium text-foreground">{label}</span>
+      </label>
+    );
+  }
+
   return (
     <div className={cn('flex items-start gap-2.5 py-1.5', className)}>
       <Checkbox
         id={inputId}
         className="mt-0.5"
-        {...(hint === undefined ? {} : { 'aria-describedby': hintId })}
+        aria-describedby={hintId}
         {...props}
       />
       <div className="min-w-0">
@@ -74,11 +89,9 @@ export function CheckboxField({ label, hint, className, id, ...props }: Checkbox
         >
           {label}
         </label>
-        {hint === undefined ? null : (
-          <p id={hintId} className="mt-0.5 text-xs text-muted-foreground">
-            {hint}
-          </p>
-        )}
+        <p id={hintId} className="mt-0.5 text-xs text-muted-foreground">
+          {hint}
+        </p>
       </div>
     </div>
   );

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 import { emailSchema, phoneSchema, schoolSlugSchema, textSchema, timeZoneSchema } from './primitives';
+import { levelClassNamesSchema } from './school-level-classes';
+import { schoolLevelsSchema } from './school-levels';
 import { uploadSchoolLogoSchema } from './school-logo';
 
 /**
@@ -9,6 +11,9 @@ import { uploadSchoolLogoSchema } from './school-logo';
  * Completing the first-login form sets `profileCompletedAt` on the user and
  * `onboardedAt` on the school, which unlocks the rest of the portal.
  */
+
+/** The role shown for, and stored against, whoever registers a school. */
+export const OWNER_DESIGNATION = 'Admin';
 
 export const userProfileSchema = z.object({
   name: z.string(),
@@ -22,8 +27,10 @@ export const userProfileSchema = z.object({
     name: z.string(),
     slug: z.string(),
     city: z.string().nullable(),
+    address: z.string().nullable(),
     phone: z.string().nullable(),
     email: z.string().nullable(),
+    schoolLevels: z.array(z.string()),
     /** False until the owner finishes the first-login school form. */
     onboarded: z.boolean(),
   }),
@@ -37,7 +44,8 @@ export const upsertUserProfileSchema = z
     name: textSchema(120),
     phone: phoneSchema,
     designation: textSchema(80).optional(),
-    avatarUrl: z.string().url().max(2048).optional().nullable(),
+    /** Optional data URL or https URL — same size ceiling as staff photos. */
+    avatarUrl: z.string().trim().max(800_000).optional().nullable(),
   })
   .strict();
 
@@ -55,6 +63,8 @@ export const completeOnboardingSchema = z
         name: textSchema(120),
         phone: phoneSchema,
         designation: textSchema(80).optional(),
+        /** Optional data URL or https URL — same size ceiling as staff photos. */
+        avatarUrl: z.string().trim().max(800_000).optional().nullable(),
       })
       .strict(),
     school: z
@@ -62,8 +72,11 @@ export const completeOnboardingSchema = z
         name: textSchema(160),
         slug: schoolSlugSchema,
         city: textSchema(80),
+        address: textSchema(240),
         phone: phoneSchema,
         email: emailSchema,
+        schoolLevels: schoolLevelsSchema,
+        ...levelClassNamesSchema.shape,
         timezone: timeZoneSchema.default('Asia/Karachi'),
         locale: z.enum(['en', 'ur']).default('en'),
       })

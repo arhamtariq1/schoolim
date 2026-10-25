@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 
 import {
+  formatGrNo,
   type GenerateVouchers,
   type GenerationResult,
   type PreviewVouchers,
@@ -20,6 +21,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
 
 import {
@@ -64,7 +66,21 @@ import {
 export class VoucherGenerationService {
   private readonly logger = new Logger(VoucherGenerationService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
+
+  private async assertNumberingConfigured(): Promise<void> {
+    const rows = await this.prisma.tenant((tx) =>
+      tx.$queryRawUnsafe<{ id: string }[]>(
+        `SELECT id::text FROM number_sequences WHERE kind = 'voucher' AND school_id = current_school_id()`,
+      ),
+    );
+    if (rows.length === 0) {
+      throw new BusinessRuleError('BUSINESS_RULE_VIOLATION', VOUCHER_NUMBER_NOT_SET);
+    }
+  }
 
   /**
    * What generation would do, without doing it.
@@ -189,6 +205,10 @@ export class VoucherGenerationService {
    * when somebody presses a slow button twice.
    */
   async generate(input: GenerateVouchers, actorId: string | undefined): Promise<GenerationResult> {
+    // Before the run is claimed, so a school that has not chosen where voucher
+    // numbering starts is told so without a failed job run left behind.
+    await this.assertNumberingConfigured();
+
     const existing = await this.claimRun(input, actorId);
     if (existing.replay !== undefined) {
       return { ...existing.replay, jobRunId: existing.jobRunId, replayed: true };
@@ -263,9 +283,15 @@ export class VoucherGenerationService {
         select: { lateFeePercent: true, lateFeeFlat: true },
       });
 
+      const lateFeeHeads = await tx.feeHead.findMany({
+        where: { lateFeeApplies: true },
+        select: { id: true },
+      });
+
       return {
         sessionId: session.id,
         heads,
+        lateFeeHeadIds: new Set(lateFeeHeads.map((head) => head.id)),
         // A numeric(5,2) percent parsed as a decimal IS its basis points:
         // 5.00 becomes 500. No float, no rounding, no second unit to confuse.
         lateFeeBasisPoints: fromDecimalString(school.lateFeePercent.toFixed(2)),
@@ -440,12 +466,12 @@ export class VoucherGenerationService {
 
     return this.prisma.tenant(
       async (tx) => {
-        const firstNumber = await allocateVoucherNumbers(tx, billable.length);
+        const { first: firstNumber, prefix, pad } = await allocateVoucherNumbers(tx, billable.length);
 
         const drafts = billable.map((plan, index) => ({
           id: uuidV7(),
           plan,
-          voucherNo: `FV-${String(firstNumber + index).padStart(6, '0')}`,
+          voucherNo: formatGrNo(prefix, firstNumber + index, pad),
         }));
 
         // 1. The vouchers, with the amounts the plan expects.
@@ -561,6 +587,12 @@ export class VoucherGenerationService {
           });
         }
 
+        // 7. Tell each family about their own child's voucher. Inside this transaction,
+        //    so a notification exists exactly when its voucher does: nothing for a voucher
+        //    that won no periods or a chunk that rolled back, and a re-sent run (same
+        //    idempotency key) never reaches this line twice.
+        await this.announce(tx, kept, drafts, input);
+
         const netPayableMinor = kept.reduce(
           (sum, entry) => sum + payableOf(entry.lines) + entry.plan.arrearsMinor,
           0,
@@ -576,6 +608,49 @@ export class VoucherGenerationService {
       // rows. A chunk here writes two hundred vouchers and their lines, and
       // timing out part-way is how a run half-bills a school.
       { timeout: BATCH_TIMEOUT_MS, maxWait: BATCH_MAX_WAIT_MS },
+    );
+  }
+
+  /** One notification per linked guardian with a portal login, per voucher. */
+  private async announce(
+    tx: TransactionClient,
+    kept: readonly { id: string; plan: StudentPlan; lines: PlannedLine[] }[],
+    drafts: readonly { id: string; voucherNo: string }[],
+    input: GenerateVouchers,
+  ): Promise<void> {
+    if (kept.length === 0) {
+      return;
+    }
+    const links = await tx.studentGuardian.findMany({
+      where: { studentId: { in: [...new Set(kept.map((entry) => entry.plan.studentId))] }, guardian: { userId: { not: null }, deletedAt: null } },
+      select: { studentId: true, guardian: { select: { userId: true } } },
+    });
+    const guardiansOf = new Map<string, string[]>();
+    for (const link of links) {
+      if (link.guardian.userId === null) continue;
+      guardiansOf.set(link.studentId, [...(guardiansOf.get(link.studentId) ?? []), link.guardian.userId]);
+    }
+    const numbers = new Map(drafts.map((draft) => [draft.id, draft.voucherNo]));
+
+    await this.notifications.notifyMany(
+      tx,
+      kept.flatMap((entry) => {
+        const recipientIds = guardiansOf.get(entry.plan.studentId) ?? [];
+        if (recipientIds.length === 0) return [];
+        const months = monthsOf(entry.lines);
+        const month = months.length === 0 ? monthLabel(new Date(input.issueDate)) : months.map(monthLabel).join(', ');
+        const totalMinor = payableOf(entry.lines) + entry.plan.arrearsMinor;
+        return [
+          {
+            recipientIds,
+            kind: 'voucher.generated' as const,
+            title: `New fee voucher for ${entry.plan.studentName}`,
+            body: `${month} · ${moneyLabel(totalMinor)} · Due ${dateLabel(new Date(input.dueDate))} · ${numbers.get(entry.id) ?? ''}`.trim(),
+            entityType: 'voucher' as const,
+            entityId: entry.id,
+          },
+        ];
+      }),
     );
   }
 
@@ -681,6 +756,24 @@ function payableOf(lines: readonly PlannedLine[]): number {
   return lines.reduce((sum, line) => sum + line.amountMinor - line.discountMinor, 0);
 }
 
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as const;
+
+function monthLabel(date: Date): string {
+  return `${MONTH_NAMES[date.getUTCMonth()] ?? ''} ${String(date.getUTCFullYear())}`;
+}
+
+function dateLabel(date: Date): string {
+  return `${String(date.getUTCDate()).padStart(2, '0')}-${(MONTH_NAMES[date.getUTCMonth()] ?? '').slice(0, 3)}-${String(date.getUTCFullYear())}`;
+}
+
+/** Whole rupees with grouping, paisa only when there are some — integer maths throughout. */
+function moneyLabel(minor: number): string {
+  const whole = Math.trunc(minor / 100);
+  const paisa = minor % 100;
+  const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return paisa === 0 ? `Rs ${grouped}` : `Rs ${grouped}.${String(paisa).padStart(2, '0')}`;
+}
+
 function monthsOf(lines: readonly PlannedLine[]): Date[] {
   const months = new Map<number, Date>();
   for (const line of lines) {
@@ -708,19 +801,23 @@ function amountsFor(
   const gross = lines.reduce((sum, line) => sum + line.amountMinor, 0);
   const discount = lines.reduce((sum, line) => sum + line.discountMinor, 0);
   const net = gross - discount;
-  const total = net + plan.arrearsMinor;
 
   return {
     grossAmount: toDecimalString(minorUnits(gross)),
     discountAmount: toDecimalString(minorUnits(discount)),
     arrearsAmount: toDecimalString(minorUnits(plan.arrearsMinor)),
     netPayable: toDecimalString(minorUnits(net)),
-    // Charged on the whole figure the parent is asked for, arrears included —
-    // that is what "payable after due date" means on a challan.
+    // Charged only on the heads the Admin ticked, after discount. Arrears are
+    // left out: they were already rated on the voucher they came from, and
+    // rating them again is how one late payment gets charged twice.
     lateFeeAmount: toDecimalString(
       minorUnits(
         applyLateFee
-          ? computeLateFee(total, context.lateFeeBasisPoints, context.lateFeeFlatMinor)
+          ? computeLateFee(
+              lateFeeBaseMinor(lines, context.lateFeeHeadIds),
+              context.lateFeeBasisPoints,
+              context.lateFeeFlatMinor,
+            )
           : 0,
       ),
     ),
@@ -734,25 +831,32 @@ function amountsFor(
  * gapless: the sequence moves by `count` under the row lock the upsert takes,
  * so two concurrent runs cannot be handed overlapping ranges.
  */
-async function allocateVoucherNumbers(tx: TransactionClient, count: number): Promise<number> {
-  const rows = await tx.$queryRawUnsafe<{ first: number }[]>(
-    `INSERT INTO number_sequences (id, school_id, kind, next_value, updated_at)
-     VALUES (gen_random_uuid(), current_school_id(), 'voucher', $1::int + 1, now())
-     ON CONFLICT (school_id, kind)
-     DO UPDATE SET next_value = number_sequences.next_value + $1::int, updated_at = now()
-     RETURNING next_value - $1::int AS first`,
+async function allocateVoucherNumbers(
+  tx: TransactionClient,
+  count: number,
+): Promise<{ first: number; prefix: string; pad: number }> {
+  // An UPDATE, not an upsert: an upsert would create the counter at 1 on the
+  // first run, which is exactly the default voucher numbering must not have.
+  const rows = await tx.$queryRawUnsafe<{ first: number; prefix: string; pad: number }[]>(
+    `UPDATE number_sequences
+        SET next_value = next_value + $1::int, updated_at = now()
+      WHERE kind = 'voucher' AND school_id = current_school_id()
+      RETURNING next_value - $1::int AS first, prefix, pad`,
     count,
   );
 
-  const first = rows[0]?.first;
-  if (first === undefined) {
+  const row = rows[0];
+  if (row === undefined) {
     throw new BusinessRuleError(
-      'INTERNAL_ERROR',
-      'Could not allocate voucher numbers. Nothing was saved.',
+      'BUSINESS_RULE_VIOLATION',
+      VOUCHER_NUMBER_NOT_SET,
     );
   }
-  return first;
+  return row;
 }
+
+const VOUCHER_NUMBER_NOT_SET =
+  'Set the starting voucher number under Settings › Voucher Settings before generating fees.';
 
 /**
  * A time-ordered UUID, matching the `uuid(7)` the columns default to.
@@ -783,6 +887,8 @@ interface GenerationContext {
   readonly heads: HeadCatalogue;
   readonly lateFeeBasisPoints: number;
   readonly lateFeeFlatMinor: MinorUnits;
+  /** Heads the school's late fee is charged on. */
+  readonly lateFeeHeadIds: ReadonlySet<string>;
 }
 
 /**
@@ -796,10 +902,29 @@ interface GenerationContext {
  * percent becomes when parsed as a decimal: 5.00% is 500.
  */
 export function computeLateFee(netMinor: number, basisPoints: number, flatMinor: number): number {
-  if (basisPoints <= 0 && flatMinor <= 0) {
+  // Nothing late-fee bearing on the voucher: no percentage and no flat charge.
+  if (netMinor <= 0 || (basisPoints <= 0 && flatMinor <= 0)) {
     return 0;
   }
   return percentageOfMoney(minorUnits(netMinor), basisPoints) + flatMinor;
+}
+
+/** What the late fee is rated on: the chosen heads' lines, net of discount. */
+export function lateFeeBaseMinor(
+  lines: readonly {
+    readonly feeHeadId: string | null;
+    readonly amountMinor: number;
+    readonly discountMinor: number;
+  }[],
+  eligibleHeadIds: ReadonlySet<string>,
+): number {
+  return lines.reduce(
+    (sum, line) =>
+      line.feeHeadId !== null && eligibleHeadIds.has(line.feeHeadId)
+        ? sum + line.amountMinor - line.discountMinor
+        : sum,
+    0,
+  );
 }
 
 /** Prisma `where` for a scope, without ever taking `schoolId` as a parameter. */

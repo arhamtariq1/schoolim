@@ -4,17 +4,16 @@ import {
   type AcademicSession,
   type ClassLevelWithSections,
   type FeeHead,
+  type GrNumberSettings,
 } from '@ilm/contracts';
-import { BackIcon, ICON_SIZE } from '@ilm/ui/icons';
 import { DEFAULT_TIMEZONE, systemClock, today } from '@ilm/utils';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 
 import { AdmissionForm } from '@/components/admission-form';
-import { AppShell } from '@/components/app-shell';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
 import { apiFetch } from '@/lib/api';
+import { pageIntro } from '@/lib/page-copy';
 import { getSession } from '@/lib/session';
-import { tenantHref } from '@/lib/tenant-server';
 
 /**
  * Admission — its own page, not a dialog.
@@ -30,17 +29,17 @@ import { tenantHref } from '@/lib/tenant-server';
  * classes and the fee catalogue already in it rather than assembling itself in
  * front of the person filling it in.
  */
-export const metadata: Metadata = { title: 'Admit a student' };
+export const metadata: Metadata = { title: 'New admission' };
 
 export default async function NewStudentPage() {
-  const [session, academics, sessions, fees, studentsHref] = await Promise.all([
+  const [session, academics, sessions, fees, grNumber] = await Promise.all([
     getSession(),
     apiFetch<{ data: { session: { id: string } | null; classes: ClassLevelWithSections[] } }>(
       ROUTES.academics.setup,
     ),
     apiFetch<{ data: AcademicSession[] }>(ROUTES.academics.sessions),
     apiFetch<{ data: FeeHead[] }>(ROUTES.fees.heads),
-    tenantHref('/students'),
+    apiFetch<{ data: GrNumberSettings }>(ROUTES.school.grNumber),
   ]);
 
   const setup = academics.ok ? academics.data.data : { session: null, classes: [] };
@@ -61,42 +60,21 @@ export default async function NewStudentPage() {
   const catalogue = fees.ok ? fees.data.data.filter((head) => head.isActive) : [];
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <div className="mx-auto max-w-5xl space-y-6">
-        <div>
-          <Link
-            href={studentsHref}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <BackIcon className={ICON_SIZE.inline} aria-hidden />
-            Students
-          </Link>
-          <h1 className="mt-3 text-xl font-semibold text-foreground">Admit a student</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            A GR number and a Student ID are issued automatically. Class, guardian and fees can all
-            be changed later.
-          </p>
-        </div>
+    <div className="w-full space-y-8">
+      <WorkspacePageHeader title="New admission" description={pageIntro('/students/new')} />
 
-        <AdmissionForm
-          // Computed here, in the school's own timezone, rather than in the
-          // browser: a Karachi school admitting at 11pm must get today's
-          // Karachi date, and the browser may be anywhere.
-          today={today(systemClock, session?.school.timezone ?? DEFAULT_TIMEZONE)}
-          sessionId={setup.session?.id ?? null}
-          sessions={enrollableSessions}
-          classes={setup.classes}
-          catalogue={catalogue}
-          canSetFees={session?.permissions.includes('fees.discount.create') ?? false}
-        />
-      </div>
-    </AppShell>
+      <AdmissionForm
+        today={today(systemClock, session?.school.timezone ?? DEFAULT_TIMEZONE)}
+        sessionId={setup.session?.id ?? null}
+        sessions={enrollableSessions}
+        classes={setup.classes}
+        catalogue={catalogue}
+        canSetFees={session?.permissions.includes('fees.discount.create') ?? false}
+        // A failed read is not "not configured": the server refuses the admission
+        // itself, so the form only blocks on a definite answer.
+        grConfigured={!grNumber.ok || grNumber.data.data.configured}
+        canConfigureGr={session?.permissions.includes('settings.school.configure') ?? false}
+      />
+    </div>
   );
 }

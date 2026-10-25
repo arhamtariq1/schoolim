@@ -139,6 +139,14 @@ const TEACHER = {
   email: 'ayesha@invite-a.test',
   phone: '+923001234567',
   role: 'TEACHER',
+  cnic: '35202-1234567-1',
+} as const;
+
+const JANITOR = {
+  name: 'Rafiq',
+  phone: '+923009876543',
+  role: 'PEON',
+  cnic: '35202-7654321-9',
 } as const;
 
 async function addStaff(body: Record<string, unknown>, jar = ownerA, host = HOST_A) {
@@ -192,7 +200,7 @@ async function plantToken(userId: string, token: string, expiresAt: Date): Promi
 async function userOf(staffId: string): Promise<Record<string, unknown>> {
   const rows = await admin.$queryRawUnsafe<Record<string, unknown>[]>(
     `SELECT u.id, u.email, u.status::text AS status, u.password_hash,
-            u.email_verified_at, u.must_change_password
+            u.email_verified_at, u.must_change_password, u.phone, u.profile_completed_at
        FROM staff s JOIN users u ON u.id = s.user_id
       WHERE s.id = $1::uuid`,
     staffId,
@@ -232,18 +240,16 @@ describe('what the staff form now requires', () => {
   });
 
   it('accepts a janitor with no email, because they never sign in', async () => {
-    const result = await addStaff({
-      name: 'Rafiq',
-      phone: '+923009876543',
-      role: 'JANITOR',
-    });
+    const result = await addStaff(JANITOR);
 
     expect(result.status).toBe(201);
     expect(result.data().hasLogin).toBe(false);
   });
 
   it('refuses a janitor with no phone, same as everybody else', async () => {
-    expect((await addStaff({ name: 'Rafiq', role: 'JANITOR' })).status).toBe(400);
+    expect((await addStaff({ name: 'Rafiq', role: 'PEON', cnic: JANITOR.cnic })).status).toBe(
+      400,
+    );
   });
 
   it('refuses a password, whoever sends it', async () => {
@@ -254,7 +260,7 @@ describe('what the staff form now requires', () => {
 
   it('creates no account for a role that does not use the portal', async () => {
     const janitor = (
-      await addStaff({ name: 'Rafiq', phone: '+923009876543', role: 'JANITOR' })
+      await addStaff(JANITOR)
     ).data();
 
     expect(janitor.hasLogin).toBe(false);
@@ -304,7 +310,7 @@ describe('sending the invitation', () => {
 
   it('refuses a janitor — there is nothing to invite them to', async () => {
     const staff = (
-      await addStaff({ name: 'Rafiq', phone: '+923009876543', role: 'JANITOR' })
+      await addStaff(JANITOR)
     ).data();
 
     expect((await invite(staff.id)).status).toBeGreaterThanOrEqual(400);
@@ -419,6 +425,30 @@ describe('accepting it', () => {
     expect(user['email_verified_at']).not.toBeNull();
   });
 
+  it('asks a new teacher for nothing, because the office already said it', async () => {
+    // `profileCompletedAt` is the portal's "we have what we need from this
+    // person", and for invited staff we do: the office gave us their name,
+    // email and phone when it put them on the payroll.
+    //
+    // Left null, the portal sent them to `/profile/create` — an onboarding
+    // screen built for an owner setting up a school, showing a teacher the
+    // school's own name, address and contact as required fields.
+    const staffId = await invited();
+
+    await acceptInvite('a-known-token');
+
+    expect((await userOf(staffId))['profile_completed_at']).not.toBeNull();
+  });
+
+  it('carries the number the office typed onto the account', async () => {
+    // Otherwise the first thing a new teacher is asked for is a phone number
+    // their school has already given us.
+    const staff = (await addStaff(TEACHER)).data();
+    await invite(staff.id);
+
+    expect((await userOf(staff.id))['phone']).toBe(TEACHER.phone);
+  });
+
   it('lets them sign in with the password they chose, and only that one', async () => {
     await invited();
     await acceptInvite('a-known-token');
@@ -521,9 +551,17 @@ describe('changing a role', () => {
     const { staffId, userId } = await activeTeacher();
     expect(await rolesOf(userId)).toEqual(['TEACHER']);
 
-    expect((await patch(staffId, { role: 'ADMIN' })).status).toBe(200);
+    expect((await patch(staffId, { role: 'OFFICE_STAFF' })).status).toBe(200);
 
-    expect(await rolesOf(userId)).toEqual(['ADMIN']);
+    expect(await rolesOf(userId)).toEqual(['RECEPTION']);
+  });
+
+  it('refuses to promote anybody to Admin — the owner is the only one', async () => {
+    const { staffId, userId } = await activeTeacher();
+
+    expect((await patch(staffId, { role: 'ADMIN' })).status).toBeGreaterThanOrEqual(400);
+
+    expect(await rolesOf(userId)).toEqual(['TEACHER']);
   });
 
   it('takes the old role’s permissions away when somebody is demoted', async () => {
@@ -531,7 +569,7 @@ describe('changing a role', () => {
     // their account is still a head as far as every permission check goes, and
     // the staff list says otherwise — so nobody looking at the screen can tell.
     const { staffId, userId } = await activeTeacher();
-    await patch(staffId, { role: 'HEAD' });
+    await patch(staffId, { role: 'PRINCIPAL' });
     expect(await rolesOf(userId)).toEqual(['PRINCIPAL']);
 
     expect((await patch(staffId, { role: 'TEACHER' })).status).toBe(200);
@@ -542,7 +580,7 @@ describe('changing a role', () => {
   it('disables the account when somebody moves to a role with no portal', async () => {
     const { staffId, userId } = await activeTeacher();
 
-    expect((await patch(staffId, { role: 'JANITOR' })).status).toBe(200);
+    expect((await patch(staffId, { role: 'PEON' })).status).toBe(200);
 
     const rows = await admin.$queryRawUnsafe<{ status: string }[]>(
       `SELECT status::text AS status FROM users WHERE id = $1::uuid`,
@@ -553,7 +591,7 @@ describe('changing a role', () => {
 
   it('refuses to promote somebody who has no email to invite', async () => {
     const janitor = (
-      await addStaff({ name: 'Rafiq', phone: '+923009876543', role: 'JANITOR' })
+      await addStaff(JANITOR)
     ).data();
 
     const result = await patch(janitor.id, { role: 'TEACHER' });
@@ -564,7 +602,7 @@ describe('changing a role', () => {
 
   it('promotes when the email arrives with the role', async () => {
     const janitor = (
-      await addStaff({ name: 'Rafiq', phone: '+923009876543', role: 'JANITOR' })
+      await addStaff(JANITOR)
     ).data();
 
     expect((await patch(janitor.id, { role: 'TEACHER', email: 'rafiq@invite-a.test' })).status).toBe(
@@ -625,7 +663,7 @@ describe('editing the fields the rules are about', () => {
     await addStaff(TEACHER);
 
     const janitor = (
-      await addStaff({ name: 'Rafiq', phone: '+923009876543', role: 'JANITOR' })
+      await addStaff(JANITOR)
     ).data();
 
     expect((await patch(janitor.id, { role: 'TEACHER', email: TEACHER.email })).status).toBe(200);
@@ -719,7 +757,7 @@ describe('adding somebody invites them', () => {
   });
 
   it('still adds a janitor without inviting anybody', async () => {
-    const result = await addStaff({ name: 'Rafiq', phone: '+923009876543', role: 'JANITOR' });
+    const result = await addStaff(JANITOR);
 
     expect(result.status).toBe(201);
 

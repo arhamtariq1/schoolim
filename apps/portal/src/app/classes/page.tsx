@@ -1,8 +1,8 @@
-import { ROUTES, type AcademicSession, type ClassLevel } from '@ilm/contracts';
+import { ROUTES, type AcademicSession, type ClassLevel, type UserProfile } from '@ilm/contracts';
 
 import { ClassesManager } from '@/components/classes-manager';
-import { SchoolShell } from '@/components/school-shell';
 import { apiFetch } from '@/lib/api';
+import { parseSchoolLevels } from '@/lib/parse-school-levels';
 import { getSession } from '@/lib/session';
 
 /**
@@ -19,10 +19,14 @@ export default async function ClassesPage({
   const query = await searchParams;
   const requested = typeof query['sessionId'] === 'string' ? query['sessionId'] : undefined;
 
-  const [session, sessionsResult] = await Promise.all([
+  const [session, sessionsResult, profileResult] = await Promise.all([
     getSession(),
     apiFetch<{ data: AcademicSession[] }>(ROUTES.academics.sessions),
+    apiFetch<{ data: UserProfile }>(ROUTES.me.profile),
   ]);
+
+  const enabledSchoolLevels =
+    profileResult.ok ? parseSchoolLevels(profileResult.data.data.school.schoolLevels) : [];
 
   const sessions = sessionsResult.ok ? sessionsResult.data.data : [];
   const activeSessionId =
@@ -35,15 +39,15 @@ export default async function ClassesPage({
   );
 
   return (
-    <SchoolShell>
-      <ClassesManager
-        classes={classesResult.ok ? classesResult.data.data : []}
-        sessions={sessions}
-        activeSessionId={activeSessionId}
-        error={classesResult.ok ? undefined : classesResult.message}
-        canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
-        canRenumber={session?.permissions.includes('students.student.update') ?? false}
-      />
-    </SchoolShell>
+    <ClassesManager
+      classes={classesResult.ok ? classesResult.data.data : []}
+      sessions={sessions}
+      activeSessionId={activeSessionId}
+      error={classesResult.ok ? undefined : classesResult.message}
+      canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
+      // Roll numbers are GR numbers now; there is nothing left to renumber.
+      canRenumber={false}
+      enabledSchoolLevels={enabledSchoolLevels}
+    />
   );
 }

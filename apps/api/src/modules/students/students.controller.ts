@@ -1,4 +1,5 @@
 import {
+  ROUTES,
   changeStudentStatusSchema,
   createStudentSchema,
   deleteStudentSchema,
@@ -6,13 +7,14 @@ import {
   studentListQuerySchema,
   updateStudentSchema,
   upsertGuardianSchema,
+  type StudentFeePaymentHistory,
   type StudentListItem,
   type StudentProfile,
 } from '@ilm/contracts';
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { type FastifyRequest } from 'fastify';
 
-import { RequirePermission } from '../../shared/rbac/rbac.guard';
+import { RequirePermission, RequireUnscopedPermission } from '../../shared/rbac/rbac.guard';
 
 import { GuardiansService } from './guardians.service';
 import { StudentsService } from './students.service';
@@ -64,6 +66,17 @@ export class StudentsController {
     };
   }
 
+  /**
+   * The classes the list can be filtered by, for **this** caller.
+   *
+   * Declared before `:id` so it can never be read as a student id.
+   */
+  @Get(ROUTES.students.classOptions)
+  @RequirePermission('students.student.read')
+  async classOptions(): Promise<{ data: { id: string; name: string }[] }> {
+    return { data: await this.students.classOptions() };
+  }
+
   @Get('/api/v1/students/:id')
   @RequirePermission('students.student.read')
   async detail(
@@ -97,15 +110,29 @@ export class StudentsController {
     return { data: { ...profile, guardians }, meta: { requestId: request.id } };
   }
 
+  @Get('/api/v1/students/:id/fee-payments')
+  @RequirePermission('fees.voucher.read')
+  async feePayments(
+    @Param('id') id: string,
+    @Req() request: FastifyRequest,
+  ): Promise<{ data: StudentFeePaymentHistory; meta: { requestId: string } }> {
+    return { data: await this.students.feePaymentHistory(id), meta: { requestId: request.id } };
+  }
+
   /**
    * Guardians already on file, for linking a sibling.
    *
    * Behind `students.guardian.read` and never public: it is the school's parent
    * list, and a search endpoint that anyone can call is a contact-list export
    * with extra steps.
+   *
+   * **Unscoped only.** A teacher holds this grant scoped to their classes, and
+   * this search has no class to narrow by — it would hand a teacher every
+   * parent's name and phone in the school. They reach a child's guardians
+   * through that child's page, which is scope-checked.
    */
   @Get('/api/v1/guardians')
-  @RequirePermission('students.guardian.read')
+  @RequireUnscopedPermission('students.guardian.read')
   async searchGuardians(
     @Query('q') term: unknown,
   ): Promise<{ data: { id: string; name: string; phone: string | null; childCount: number }[] }> {

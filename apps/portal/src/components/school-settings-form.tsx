@@ -2,16 +2,22 @@
 
 import {
   ROUTES,
+  SCHOOL_LEVEL_IDS,
   updateSchoolSettingsSchema,
+  type SchoolLevelId,
   type SchoolSettings,
   type UpdateSchoolSettings,
 } from '@ilm/contracts';
 import { Button, Field, Input, SimpleSelect, Textarea, useToast } from '@ilm/ui';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 
+import { PhoneInput } from '@/components/phone-input';
+import { SchoolLevelPicker } from '@/components/school-level-picker';
+import { showFormValidationToast } from '@/lib/form-validation';
 import { mutate } from '@/lib/mutate';
-import { TENANT_MODE } from '@/lib/tenant-mode';
+import { displayPhone, livePhoneError, phoneInputError } from '@/lib/phone-format';
+import { schoolSlugAffixes } from '@/lib/school-slug-preview';
 
 /**
  * Settings › School — the details that sit at the top of every printed page.
@@ -72,6 +78,15 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
   const toast = useToast();
 
   const [draft, setDraft] = useState(() => toDraft(settings));
+  const [schoolLevels, setSchoolLevels] = useState<SchoolLevelId[]>(() =>
+    parseSchoolLevels(settings.schoolLevels),
+  );
+  const [oLevelClassNames, setOLevelClassNames] = useState<string[]>(() => [
+    ...settings.oLevelClassNames,
+  ]);
+  const [aLevelClassNames, setALevelClassNames] = useState<string[]>(() => [
+    ...settings.aLevelClassNames,
+  ]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
@@ -84,7 +99,13 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
     : [{ value: settings.timezone, label: settings.timezone }, ...TIME_ZONES];
 
   const saved = toDraft(settings);
-  const isDirty = (Object.keys(saved) as DraftKey[]).some((key) => draft[key] !== saved[key]);
+  const savedLevels = useMemo(() => parseSchoolLevels(settings.schoolLevels), [settings.schoolLevels]);
+  const isDirty =
+    (Object.keys(saved) as DraftKey[]).some((key) => draft[key] !== saved[key]) ||
+    !levelsEqual(schoolLevels, savedLevels) ||
+    !namesEqual(oLevelClassNames, settings.oLevelClassNames) ||
+    !namesEqual(aLevelClassNames, settings.aLevelClassNames);
+  const slugAffix = schoolSlugAffixes();
 
   function set(key: DraftKey, value: string): void {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -101,15 +122,24 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
 
     // Parsed here as well as on the server so a typo lands beside the input
     // that caused it rather than as one sentence above the whole form.
-    const parsed = updateSchoolSettingsSchema.safeParse(toPayload(draft));
+    const parsed = updateSchoolSettingsSchema.safeParse(
+      toPayload(draft, schoolLevels, oLevelClassNames, aLevelClassNames),
+    );
 
-    if (!parsed.success) {
+    const phoneError = phoneInputError(draft.phone);
+
+    if (!parsed.success || phoneError !== undefined) {
       const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        next[issue.path.join('.')] = issue.message;
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          next[issue.path.join('.')] = issue.message;
+        }
+      }
+      if (phoneError !== undefined) {
+        next['phone'] = phoneError;
       }
       setFieldErrors(next);
-      toast.error('Check the highlighted fields.');
+      showFormValidationToast(toast);
       return;
     }
 
@@ -132,7 +162,7 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
 
   return (
     <form
-      className="rounded-xl border border-border bg-card p-4"
+      className="rounded-xl border border-border/70 bg-card shadow-raised p-4"
       onSubmit={(event) => void save(event)}
       aria-labelledby="school-details"
     >
@@ -174,6 +204,13 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
           </Field>
         </div>
 
+        <SchoolLevelPicker
+          value={schoolLevels}
+          onChange={setSchoolLevels}
+          error={fieldErrors['schoolLevels']}
+          disabled={!canConfigure || isSaving}
+        />
+
         <Field
           label="Street address"
           hint="Optional. Appears on letterhead exactly as typed."
@@ -202,18 +239,14 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
 
           <Field
             label="School phone"
-            hint="Include the country code, or start with 0 and we will add +92."
-            error={fieldErrors['phone']}
+            hint="Digits only, starting with 03 or 02."
+            error={fieldErrors['phone'] ?? livePhoneError(draft.phone)}
             required
           >
-            <Input
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="+92 300 1234567"
+            <PhoneInput
               value={draft.phone}
-              onChange={(event) => {
-                set('phone', event.target.value);
+              onValueChange={(next) => {
+                set('phone', next);
               }}
             />
           </Field>
@@ -264,7 +297,11 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
           </Field>
 
           <Field label="Web address" hint="Fixed. Everyone signs in here.">
-            <Input readOnly value={schoolAddress(settings.slug)} className="font-mono" />
+            <Input
+              readOnly
+              value={`${slugAffix.prefix}${settings.slug}${slugAffix.suffix}`}
+              className="font-mono text-sm"
+            />
           </Field>
         </div>
       </fieldset>
@@ -284,6 +321,9 @@ export function SchoolSettingsForm({ settings, canConfigure, error }: SchoolSett
               tone="ghost"
               onClick={() => {
                 setDraft(saved);
+                setSchoolLevels(savedLevels);
+                setOLevelClassNames([...settings.oLevelClassNames]);
+                setALevelClassNames([...settings.aLevelClassNames]);
                 setFieldErrors({});
                 setFormError(undefined);
               }}
@@ -323,7 +363,7 @@ function toDraft(settings: SchoolSettings): Draft {
     legalName: settings.legalName ?? '',
     address: settings.address ?? '',
     city: settings.city ?? '',
-    phone: settings.phone ?? '',
+    phone: displayPhone(settings.phone ?? ''),
     email: settings.email ?? '',
     timezone: settings.timezone,
     locale: settings.locale === 'ur' ? 'ur' : 'en',
@@ -331,7 +371,12 @@ function toDraft(settings: SchoolSettings): Draft {
 }
 
 /** Form shape → wire shape. Blank optional fields are absent, not empty. */
-function toPayload(draft: Draft): UpdateSchoolSettings {
+function toPayload(
+  draft: Draft,
+  levels: SchoolLevelId[],
+  oLevelClassNames: string[],
+  aLevelClassNames: string[],
+): UpdateSchoolSettings {
   return {
     name: draft.name,
     legalName: draft.legalName.trim() === '' ? null : draft.legalName,
@@ -339,9 +384,34 @@ function toPayload(draft: Draft): UpdateSchoolSettings {
     city: draft.city,
     phone: toE164(draft.phone),
     email: draft.email,
+    schoolLevels: [...levels],
+    oLevelClassNames: [...oLevelClassNames],
+    aLevelClassNames: [...aLevelClassNames],
     timezone: draft.timezone,
     locale: draft.locale === 'ur' ? 'ur' : 'en',
   };
+}
+
+function namesEqual(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return a.every((entry, index) => entry === b[index]);
+}
+
+function parseSchoolLevels(values: readonly string[]): SchoolLevelId[] {
+  return values.filter((value): value is SchoolLevelId =>
+    (SCHOOL_LEVEL_IDS as readonly string[]).includes(value),
+  );
+}
+
+function levelsEqual(a: readonly SchoolLevelId[], b: readonly SchoolLevelId[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  const sortedA = [...a].sort();
+  const sortedB = [...b].sort();
+  return sortedA.every((value, index) => value === sortedB[index]);
 }
 
 /**
@@ -361,7 +431,3 @@ function toE164(input: string): string {
   return digits;
 }
 
-function schoolAddress(slug: string): string {
-  const domain = process.env['NEXT_PUBLIC_APP_DOMAIN'] ?? 'localhost';
-  return TENANT_MODE === 'path' ? `${domain}/${slug}` : `${slug}.${domain}`;
-}

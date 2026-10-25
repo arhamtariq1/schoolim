@@ -148,10 +148,17 @@ export class DefaultersService {
       const from = `
         FROM students s
         JOIN agg ON agg.student_id = s.id
-        LEFT JOIN enrollments e
-          ON e.student_id = s.id
-         AND e.status = 'ENROLLED'
-         AND e.session_id = COALESCE(${sessionExpr}, e.session_id)
+        -- At most one enrolment per child. With no current session the
+        -- COALESCE matches every session, and a child enrolled in two would
+        -- otherwise appear as two rows the total counts once.
+        LEFT JOIN LATERAL (
+          SELECT en.* FROM enrollments en
+           WHERE en.student_id = s.id
+             AND en.status = 'ENROLLED'
+             AND en.session_id = COALESCE(${sessionExpr}, en.session_id)
+           ORDER BY en.created_at DESC
+           LIMIT 1
+        ) e ON true
         LEFT JOIN class_levels cl ON cl.id = e.class_level_id
         LEFT JOIN sections sec ON sec.id = e.section_id
         WHERE ${where.join(' AND ')}

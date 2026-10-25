@@ -107,7 +107,7 @@ function paint(
   voucher: Challan = VOUCHER,
   extra: {
     logoVersion?: string;
-    bankLogoVersion?: string;
+    bankLogos?: { slot: number; version: string }[];
     accentColor?: string;
   } = {},
 ) {
@@ -160,52 +160,72 @@ describe('the three copies', () => {
 describe('the bank at the foot', () => {
   it('prints nothing for a school that collects at its own office', () => {
     paint(DEFAULT_VOUCHER_SETTINGS);
-    expect(screen.queryByText(/deposit at/i)).toBeNull();
+    expect(screen.queryByText('Meezan Bank Ltd.')).toBeNull();
   });
 
-  it('prints the bank’s name on every copy', () => {
+  it('never prints the bank’s name — the uploaded mark stands alone', () => {
     paint({ ...DEFAULT_VOUCHER_SETTINGS, bankName: 'Meezan Bank Ltd.' });
 
-    expect(screen.getAllByText('Meezan Bank Ltd.')).toHaveLength(3);
-    expect(screen.getAllByText(/deposit at/i)).toHaveLength(3);
+    expect(screen.queryByText('Meezan Bank Ltd.')).toBeNull();
   });
 
   it('prints the bank’s mark, versioned so a replacement is not cached', () => {
     paint({ ...DEFAULT_VOUCHER_SETTINGS, bankName: 'Meezan Bank Ltd.' }, VOUCHER, {
-      bankLogoVersion: 'b3',
+      bankLogos: [{ slot: 0, version: 'b3' }],
     });
 
-    const marks = screen.getAllByRole('presentation', { hidden: true });
+    const marks = screen
+      .getAllByRole('presentation', { hidden: true })
+      .filter((img) => img.getAttribute('src')?.includes('v=b3'));
     expect(marks).toHaveLength(3);
-    expect(marks[0]?.getAttribute('src')).toContain('v=b3');
   });
 
-  it('prints the mark even with no name, and the name with no mark', () => {
-    // Either alone is a complete answer to "where does this get deposited".
-    paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, { bankLogoVersion: 'b3' });
-    expect(screen.getAllByText(/deposit at/i)).toHaveLength(3);
+  it('prints the mark even with no name', () => {
+    // A mark alone is a complete answer to "where does this get deposited".
+    paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, { bankLogos: [{ slot: 0, version: 'b3' }] });
+    const marks = screen
+      .getAllByRole('presentation', { hidden: true })
+      .filter((img) => img.getAttribute('src')?.includes('v=b3'));
+    expect(marks).toHaveLength(3);
+  });
+
+  it('prints several banks’ marks in one row, each from its own slot', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, {
+      bankLogos: [
+        { slot: 0, version: 'm1' },
+        { slot: 2, version: 'h1' },
+      ],
+    });
+
+    const marks = screen
+      .getAllByRole('presentation', { hidden: true })
+      .map((img) => img.getAttribute('src') ?? '')
+      .filter((src) => src.includes('bank-logos'));
+    // Two marks on each of three copies, each addressed by its slot.
+    expect(marks).toHaveLength(6);
+    expect(marks.filter((src) => src.endsWith('/bank-logos/0?v=m1'))).toHaveLength(3);
+    expect(marks.filter((src) => src.endsWith('/bank-logos/2?v=h1'))).toHaveLength(3);
   });
 });
 
 describe('printing in black and white', () => {
-  it('has no background fill anywhere on the document', () => {
-    // Most schools print this on a mono laser. A document whose structure is
-    // carried by tints arrives as a blank grid — so rules, weight and spacing
-    // carry it, and the school's colour appears only as borders, which print
-    // whatever the "background graphics" box is set to.
+  it('never reverses type out of a solid fill', () => {
+    // Light washes (total row, badge, bank box) are fine — dark ink on a pale
+    // tint survives a mono laser. White-on-solid does not, so it is banned.
     const { container } = paint(BOTH, VOUCHER, { accentColor: '#013131' });
 
-    const filled = [...container.querySelectorAll('*')].filter((element) =>
-      /(^|\s)bg-(?!white\b)/.test(element.className.toString()),
-    );
-    expect(filled.map((element) => element.className.toString())).toEqual([]);
+    const reversed = [...container.querySelectorAll('*')].filter((element) => {
+      const className = element.className.toString();
+      return /\bbg-(?!white\b|neutral-50\b|neutral-100\b)/.test(className) && /\btext-white\b/.test(className);
+    });
+    expect(reversed).toEqual([]);
   });
 
-  it('draws the school’s colour as a border, not a strip', () => {
-    const { container } = paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, { accentColor: '#013131' });
-
-    const copy = container.querySelector('.challan-copy');
-    expect(copy?.className).toContain('border-t-[var(--challan-accent)]');
+  it('inks each copy in its own theme colour', () => {
+    const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
+    const copies = container.querySelectorAll('.challan-copy');
+    expect(copies).toHaveLength(3);
+    expect(copies[0]?.getAttribute('style')).toContain('--challan-accent');
   });
 });
 
@@ -215,7 +235,7 @@ describe('filling the sheet', () => {
     // once down at 6.5px, which is legible on a screen at 2x and not on paper
     // under a fluorescent light. Anything below this is a figure somebody has
     // to guess at.
-    const { container } = paint(BOTH, VOUCHER, { bankLogoVersion: 'b1' });
+    const { container } = paint(BOTH, VOUCHER, { bankLogos: [{ slot: 0, version: 'b1' }] });
 
     const tooSmall = [...container.querySelectorAll('*')]
       .flatMap((element) => [...element.className.toString().matchAll(/text-\[([\d.]+)px\]/g)])
@@ -225,16 +245,24 @@ describe('filling the sheet', () => {
     expect(tooSmall).toEqual([]);
   });
 
-  it('is sized by its content, not stretched to the height of the sheet', () => {
-    // A forced height produced a hand-span of white between the total and the
-    // signature, because a two-line bill is not 191mm tall however much paper
-    // it is given. Real challans do not fill the sheet either — they end where
-    // the payment block ends, and the rest of the page is where you cut.
+  it('fills the sheet height rather than leaving a blank lower half', () => {
+    // Each copy stretches to the cell; student details flex to absorb slack so
+    // the challan does not look half-empty on A4. min-h matches printable area
+    // when the parent (print page, dialog) does not set an explicit height.
     const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
 
+    const sheet = container.firstElementChild;
     const copy = container.querySelector('.challan-copy');
-    expect(copy?.className).not.toContain('min-h-');
-    expect(container.firstElementChild?.getAttribute('style')).not.toContain('copy-height');
+    expect(sheet?.className).toContain('min-h-[194mm]');
+    expect(copy?.className).toContain('h-full');
+    expect(copy?.className).toContain('justify-between');
+    expect(copy?.className).toContain('flex-col');
+    expect(sheet?.getAttribute('style')).not.toContain('copy-height');
+  });
+
+  it('uses the taller printable area for a four-copy portrait sheet', () => {
+    const { container } = paint({ ...DEFAULT_VOUCHER_SETTINGS, copyCount: 4 });
+    expect(container.firstElementChild?.className).toContain('min-h-[281mm]');
   });
 
   it('prints one row per charge and nothing else', () => {
@@ -250,18 +278,16 @@ describe('filling the sheet', () => {
     expect(copy?.querySelectorAll('tbody tr[aria-hidden]')).toHaveLength(0);
   });
 
-  it('puts the slack above the signature, not inside the bill', () => {
-    // The charges and the total stay together the way an invoice reads; what
-    // is left over lands where a counter stamp goes.
+  it('keeps signatures at the foot of every copy', () => {
     const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
 
     const copy = container.querySelector('.challan-copy');
     const spacer = [...(copy?.children ?? [])].filter((child) =>
       child.className.toString().includes('mt-auto'),
     );
-
     expect(spacer).toHaveLength(1);
-    expect(spacer[0]?.textContent).toContain('Signature');
+    expect(spacer[0]?.textContent).toContain('Receiver');
+    expect(spacer[0]?.textContent).toContain('Student/Parent Signature');
   });
 
   it('grows past the minimum for a bill with many charges', () => {
@@ -321,32 +347,27 @@ describe('the figures', () => {
     paint(DEFAULT_VOUCHER_SETTINGS);
 
     // 500,000 paisa = 5,000; and 600,000 less a 100,000 discount = 5,000 too.
-    expect(screen.getAllByText('5,000.00')).toHaveLength(6);
+    // Two fee rows × three copies. Whole rupees render without trailing zeros.
+    expect(screen.getAllByText('5,000')).toHaveLength(6);
   });
 
-  it('prints the two payable figures separately', () => {
+  it('prints the total payable on every copy', () => {
     paint(DEFAULT_VOUCHER_SETTINGS);
 
-    // Within the due date: 10,000 of charges plus 5,700 of arrears.
-    expect(screen.getAllByText('15,700.00')).toHaveLength(3);
-    // After it: the same plus the 200 surcharge. A challan that prints one
-    // number cannot tell a parent that paying late costs more.
-    expect(screen.getAllByText('15,900.00')).toHaveLength(3);
+    // 10,000 of charges plus 5,700 of arrears. The late-fee surcharge is
+    // explained in the bank note rather than as a second headline figure —
+    // the reference challan carries one total parents can match at the counter.
+    expect(screen.getAllByText('15,700')).toHaveLength(3);
+    expect(screen.getAllByText('Total Payable')).toHaveLength(3);
   });
 
   it('sets every amount in one fixed column rather than a box of its own', () => {
-    // This is the fix for what the first cut got wrong. Three copies across A4
-    // leave each about 90mm, and a box sized to hold "15,900.00" beside a label
-    // like "Amount payable within due date" does not fit — so the figures
-    // overflowed their borders. A single `table-fixed` column is the same width
-    // on every row and cannot be squeezed by a long fee name.
+    // Three copies across A4 leave each about 90mm. A single `table-fixed`
+    // column keeps figures aligned and cannot be squeezed by a long fee name.
     const { container } = paint(DEFAULT_VOUCHER_SETTINGS);
 
     const table = container.querySelector('table');
     expect(table?.className).toContain('table-fixed');
-    expect(table?.querySelectorAll('col')).toHaveLength(2);
-    // Wide enough for a seven-figure fee at the total's type size.
-    expect(table?.querySelectorAll('col')[1]?.className).toContain('38%');
   });
 
   it('prints its own number, so a counter payment can be reconciled', () => {
@@ -379,73 +400,38 @@ describe('the figures', () => {
 });
 
 describe('the logo', () => {
-  it('prints it when the school has one and asked for it', () => {
+  it('prints the school mark when the school has one and asked for it', () => {
     paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, { logoVersion: 'v7' });
 
-    const images = screen.getAllByRole('presentation', { hidden: true });
+    const images = [...document.querySelectorAll('img')].filter((img) =>
+      img.getAttribute('src')?.includes('v=v7'),
+    );
     expect(images).toHaveLength(3);
-    // Versioned, or a replaced mark stays cached on every challan printed since.
-    expect(images[0]?.getAttribute('src')).toContain('v=v7');
   });
 
-  it('prints nothing when the school has never uploaded one', () => {
-    // `showLogo` is on by default, so the absence of an upload — not the
-    // setting — has to be what suppresses it. Otherwise every school that has
-    // not uploaded a mark prints a broken image on every challan.
+  it('falls back to the platform mark when the school has never uploaded one', () => {
+    // A blank header looks unfinished. The platform wordmark fills the gap —
+    // the same fallback the sidebar uses before a school uploads its own.
     paint(DEFAULT_VOUCHER_SETTINGS);
-    expect(screen.queryAllByRole('presentation', { hidden: true })).toHaveLength(0);
+    const marks = screen.getAllByAltText('Ilm');
+    expect(marks).toHaveLength(3);
+    expect(marks[0]?.getAttribute('src')).toContain('lemma-logo');
   });
 
-  it('prints nothing when the school has one but turned it off', () => {
+  it('falls back to the platform mark when the school turned school-logo printing off', () => {
     paint({ ...DEFAULT_VOUCHER_SETTINGS, showLogo: false }, VOUCHER, { logoVersion: 'v7' });
-    expect(screen.queryAllByRole('presentation', { hidden: true })).toHaveLength(0);
+    const marks = screen.getAllByAltText('Ilm');
+    expect(marks).toHaveLength(3);
   });
 });
 
 describe('the payment strip', () => {
-  it('is absent for a school with no arrangement', () => {
-    paint(DEFAULT_VOUCHER_SETTINGS);
-
-    expect(screen.queryByText('Kuickpay')).toBeNull();
-    expect(screen.queryByText(/1LINK/)).toBeNull();
-  });
-
-  it('prints the consumer number derived from the prefix and the GR', () => {
-    paint(KUICKPAY);
-    expect(screen.getAllByText('15140810')).toHaveLength(3);
-  });
-
-  it('lists where a parent may pay', () => {
-    paint(KUICKPAY);
-    expect(screen.getAllByText(/Meezan Bank/)).toHaveLength(3);
-    expect(screen.getAllByText(/JazzCash/)).toHaveLength(3);
-  });
-
-  it('prints the 1LINK number in front of the Kuickpay one', () => {
+  it('is never printed, even for a school that once turned Kuickpay and 1LINK on', () => {
     paint(BOTH);
-    expect(screen.getAllByText('10004715140810')).toHaveLength(3);
-  });
-
-  it('prints no strip at all for a child with no GR number', () => {
-    // There is no consumer number to quote, and half a number is worse than
-    // none: a parent would be turned away at the counter having been given
-    // something that looks payable.
-    paint(BOTH, { ...VOUCHER, grNo: null });
 
     expect(screen.queryByText('Kuickpay')).toBeNull();
     expect(screen.queryByText(/1LINK/)).toBeNull();
-  });
-
-  it('keeps the consumer number legible without its background fill', () => {
-    // A printer with background graphics off, or any photocopier, drops every
-    // tint on the page. The number a parent quotes must survive that, so it
-    // carries its own white ground and dark text rather than being reversed
-    // out of a filled bar.
-    paint(KUICKPAY);
-
-    const chip = screen.getAllByText('15140810')[0]?.parentElement;
-    expect(chip?.className).toContain('bg-white');
-    expect(chip?.className).toContain('text-black');
+    expect(screen.queryByText('15140810')).toBeNull();
   });
 });
 
@@ -465,11 +451,8 @@ describe('the school’s own words', () => {
     paint(DEFAULT_VOUCHER_SETTINGS);
 
     expect(screen.getAllByText('Demo Public School')).toHaveLength(3);
-    // Address and phone share a line, so this matches the element that holds
-    // both rather than either on its own.
-    expect(
-      screen.getAllByText((_, element) => element?.textContent === `${SCHOOL.address}  ·  Ph ${SCHOOL.phone}`),
-    ).not.toHaveLength(0);
+    expect(screen.getAllByText(SCHOOL.address)).toHaveLength(3);
+    expect(screen.getAllByText(SCHOOL.phone)).toHaveLength(3);
   });
 
   it('prints dashes, not blanks, for a child with no section or father recorded', () => {
@@ -477,5 +460,69 @@ describe('the school’s own words', () => {
     // An em dash reads as "nothing recorded", which is what it is.
     paint(DEFAULT_VOUCHER_SETTINGS, { ...VOUCHER, sectionName: null, fatherName: null });
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(6);
+  });
+});
+
+describe('after the due date', () => {
+  it('prints the late fee and the amount payable after the due date on every copy', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS);
+
+    expect(screen.getAllByText('Late fee after 10-10-2026')).toHaveLength(3);
+    expect(screen.getAllByText('Payable after due date')).toHaveLength(3);
+    // 15,700 within the due date + 200 late fee.
+    expect(screen.getAllByText('15,900')).toHaveLength(3);
+  });
+
+  it('prints no after-due-date rows when the voucher carries no late fee', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS, { ...VOUCHER, lateFeeMinor: 0 });
+
+    expect(screen.queryByText('Payable after due date')).toBeNull();
+    expect(screen.queryByText(/Late fee after/)).toBeNull();
+  });
+});
+
+describe('what the school chose to show', () => {
+  it('prints the register details, the dates and the bank marks by default', () => {
+    paint(DEFAULT_VOUCHER_SETTINGS, VOUCHER, { bankLogos: [{ slot: 0, version: 'b1' }] });
+
+    expect(screen.getAllByText('GR No')).toHaveLength(3);
+    expect(screen.getAllByText('Issue Date')).toHaveLength(3);
+    expect(
+      screen
+        .getAllByRole('presentation', { hidden: true })
+        .filter((img) => img.getAttribute('src')?.includes('bank-logos')),
+    ).toHaveLength(3);
+  });
+
+  it('drops GR, class, section and session — but never the names', () => {
+    paint({ ...DEFAULT_VOUCHER_SETTINGS, showStudentDetails: false });
+
+    for (const label of ['GR No', 'Class', 'Section', 'Session']) {
+      expect(screen.queryByText(label)).toBeNull();
+    }
+    expect(screen.getAllByText('Kaneez Fatima')).toHaveLength(3);
+    expect(screen.getAllByText('Student Name')).toHaveLength(3);
+    expect(screen.getAllByText('Father Name')).toHaveLength(3);
+  });
+
+  it('drops the issue and due date rows, but still says when the late fee starts', () => {
+    paint({ ...DEFAULT_VOUCHER_SETTINGS, showDates: false });
+
+    expect(screen.queryByText('Issue Date')).toBeNull();
+    expect(screen.queryByText('Due Date')).toBeNull();
+    // The surcharge line is the figure a parent is charged; its date stays.
+    expect(screen.getAllByText('Late fee after 10-10-2026')).toHaveLength(3);
+  });
+
+  it('drops the bank marks when the school turns them off', () => {
+    paint({ ...DEFAULT_VOUCHER_SETTINGS, showBankLogos: false }, VOUCHER, {
+      bankLogos: [{ slot: 0, version: 'b1' }],
+    });
+
+    expect(
+      screen
+        .queryAllByRole('presentation', { hidden: true })
+        .filter((img) => img.getAttribute('src')?.includes('bank-logos')),
+    ).toHaveLength(0);
   });
 });

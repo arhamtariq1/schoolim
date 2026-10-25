@@ -1,4 +1,4 @@
-import { fromDecimalString, type MinorUnits } from '@ilm/utils';
+import { fromDecimalString, toDecimalString, type MinorUnits } from '@ilm/utils';
 
 /**
  * A rupee amount typed into a form, as integer paisa.
@@ -26,4 +26,15 @@ export function rupeesToMinor(value: string): MinorUnits | undefined {
     // person can produce mid-keystroke.
     return undefined;
   }
+}
+
+/**
+ * Integer paisa back into the rupee string a form shows.
+ *
+ * `toDecimalString` is the exact inverse of `fromDecimalString` and, like it,
+ * never routes the amount through a float — so an amount typed, saved and
+ * reopened is the same amount, to the paisa.
+ */
+export function minorToRupees(amountMinor: number): string {
+  return toDecimalString(amountMinor as MinorUnits);
 }

@@ -18,6 +18,14 @@ export const PlatformRole = {
 export type PlatformRole = (typeof PlatformRole)[keyof typeof PlatformRole]
 
 
+export const BillingCycle = {
+  MONTHLY: 'MONTHLY',
+  YEARLY: 'YEARLY'
+} as const
+
+export type BillingCycle = (typeof BillingCycle)[keyof typeof BillingCycle]
+
+
 export const SchoolStatus = {
   TRIAL: 'TRIAL',
   ACTIVE: 'ACTIVE',
@@ -128,12 +136,13 @@ export type EnrollmentStatus = (typeof EnrollmentStatus)[keyof typeof Enrollment
 
 
 export const StaffRole = {
-  HEAD: 'HEAD',
+  PRINCIPAL: 'PRINCIPAL',
   ADMIN: 'ADMIN',
   OFFICE_STAFF: 'OFFICE_STAFF',
   TEACHER: 'TEACHER',
   SECURITY_GUARD: 'SECURITY_GUARD',
-  JANITOR: 'JANITOR'
+  PEON: 'PEON',
+  OTHERS: 'OTHERS'
 } as const
 
 export type StaffRole = (typeof StaffRole)[keyof typeof StaffRole]
@@ -270,3 +279,64 @@ export const SchoolImageKind = {
 } as const
 
 export type SchoolImageKind = (typeof SchoolImageKind)[keyof typeof SchoolImageKind]
+
+
+export const RequestCategory = {
+  LEAVE: 'LEAVE',
+  FEE: 'FEE',
+  ACADEMIC: 'ACADEMIC',
+  DOCUMENT: 'DOCUMENT',
+  TRANSPORT: 'TRANSPORT',
+  COMPLAINT: 'COMPLAINT',
+  CONCERN: 'CONCERN',
+  OTHER: 'OTHER'
+} as const
+
+export type RequestCategory = (typeof RequestCategory)[keyof typeof RequestCategory]
+
+
+export const RequestPriority = {
+  LOW: 'LOW',
+  NORMAL: 'NORMAL',
+  HIGH: 'HIGH',
+  URGENT: 'URGENT'
+} as const
+
+export type RequestPriority = (typeof RequestPriority)[keyof typeof RequestPriority]
+
+
+export const RequestStatus = {
+  PENDING: 'PENDING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  RESOLVED: 'RESOLVED',
+  REJECTED: 'REJECTED',
+  REOPENED: 'REOPENED'
+} as const
+
+export type RequestStatus = (typeof RequestStatus)[keyof typeof RequestStatus]
+
+
+export const RequestEventKind = {
+  CREATED: 'CREATED',
+  MESSAGE: 'MESSAGE',
+  STATUS_CHANGED: 'STATUS_CHANGED',
+  ASSIGNED: 'ASSIGNED'
+} as const
+
+export type RequestEventKind = (typeof RequestEventKind)[keyof typeof RequestEventKind]
+
+
+export const TimetableKind = {
+  CLASS: 'CLASS',
+  ASSESSMENT: 'ASSESSMENT'
+} as const
+
+export type TimetableKind = (typeof TimetableKind)[keyof typeof TimetableKind]
+
+
+export const TimetableStatus = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED'
+} as const
+
+export type TimetableStatus = (typeof TimetableStatus)[keyof typeof TimetableStatus]

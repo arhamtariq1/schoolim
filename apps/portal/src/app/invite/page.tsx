@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 import { AcceptInviteForm } from '@/components/accept-invite-form';
 import { AuthLayout } from '@/components/auth-layout';
+import { authScreenLayout } from '@/components/auth-screen-props';
 import { apiFetch } from '@/lib/api';
 
 export const metadata: Metadata = { title: `Set your password — ${BRAND.name}` };
@@ -42,6 +43,7 @@ export default async function InvitePage({
   if (result === undefined || !result.ok) {
     return (
       <AuthLayout
+        {...authScreenLayout}
         title="This invitation has expired"
         subtitle="Invitation links work once and last three days."
       >
@@ -65,6 +67,8 @@ export default async function InvitePage({
 
   return (
     <AuthLayout
+      {...authScreenLayout}
+      fitViewport
       title={`Welcome, ${invite.name.split(' ')[0] ?? invite.name}`}
       subtitle={`${invite.schoolName} has added you as ${invite.roleLabel.toLowerCase()}. Choose a password to finish setting up your account.`}
     >

@@ -360,6 +360,13 @@ export type UserWhereInput = {
   invitesSent?: Prisma.InvitationListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
   staffRecord?: Prisma.XOR<Prisma.StaffNullableScalarRelationFilter, Prisma.StaffWhereInput> | null
+  requestsRaised?: Prisma.RequestListRelationFilter
+  requestsAssigned?: Prisma.RequestListRelationFilter
+  requestEvents?: Prisma.RequestEventListRelationFilter
+  requestEventsAssigned?: Prisma.RequestEventListRelationFilter
+  requestAttachments?: Prisma.RequestAttachmentListRelationFilter
+  notifications?: Prisma.NotificationListRelationFilter
+  deviceTokens?: Prisma.DeviceTokenListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -393,6 +400,13 @@ export type UserOrderByWithRelationInput = {
   invitesSent?: Prisma.InvitationOrderByRelationAggregateInput
   invitations?: Prisma.InvitationOrderByRelationAggregateInput
   staffRecord?: Prisma.StaffOrderByWithRelationInput
+  requestsRaised?: Prisma.RequestOrderByRelationAggregateInput
+  requestsAssigned?: Prisma.RequestOrderByRelationAggregateInput
+  requestEvents?: Prisma.RequestEventOrderByRelationAggregateInput
+  requestEventsAssigned?: Prisma.RequestEventOrderByRelationAggregateInput
+  requestAttachments?: Prisma.RequestAttachmentOrderByRelationAggregateInput
+  notifications?: Prisma.NotificationOrderByRelationAggregateInput
+  deviceTokens?: Prisma.DeviceTokenOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -430,6 +444,13 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   invitesSent?: Prisma.InvitationListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
   staffRecord?: Prisma.XOR<Prisma.StaffNullableScalarRelationFilter, Prisma.StaffWhereInput> | null
+  requestsRaised?: Prisma.RequestListRelationFilter
+  requestsAssigned?: Prisma.RequestListRelationFilter
+  requestEvents?: Prisma.RequestEventListRelationFilter
+  requestEventsAssigned?: Prisma.RequestEventListRelationFilter
+  requestAttachments?: Prisma.RequestAttachmentListRelationFilter
+  notifications?: Prisma.NotificationListRelationFilter
+  deviceTokens?: Prisma.DeviceTokenListRelationFilter
 }, "id" | "schoolId_email">
 
 export type UserOrderByWithAggregationInput = {
@@ -518,6 +539,13 @@ export type UserCreateInput = {
   invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -550,6 +578,13 @@ export type UserUncheckedCreateInput = {
   invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -582,6 +617,13 @@ export type UserUpdateInput = {
   invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -614,6 +656,13 @@ export type UserUncheckedUpdateInput = {
   invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -958,6 +1007,108 @@ export type UserUpdateOneWithoutStaffRecordNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutStaffRecordInput, Prisma.UserUpdateWithoutStaffRecordInput>, Prisma.UserUncheckedUpdateWithoutStaffRecordInput>
 }
 
+export type UserCreateNestedOneWithoutRequestsRaisedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRequestsRaisedInput, Prisma.UserUncheckedCreateWithoutRequestsRaisedInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRequestsRaisedInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutRequestsAssignedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRequestsAssignedInput, Prisma.UserUncheckedCreateWithoutRequestsAssignedInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRequestsAssignedInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutRequestsRaisedNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRequestsRaisedInput, Prisma.UserUncheckedCreateWithoutRequestsRaisedInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRequestsRaisedInput
+  upsert?: Prisma.UserUpsertWithoutRequestsRaisedInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRequestsRaisedInput, Prisma.UserUpdateWithoutRequestsRaisedInput>, Prisma.UserUncheckedUpdateWithoutRequestsRaisedInput>
+}
+
+export type UserUpdateOneWithoutRequestsAssignedNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRequestsAssignedInput, Prisma.UserUncheckedCreateWithoutRequestsAssignedInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRequestsAssignedInput
+  upsert?: Prisma.UserUpsertWithoutRequestsAssignedInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRequestsAssignedInput, Prisma.UserUpdateWithoutRequestsAssignedInput>, Prisma.UserUncheckedUpdateWithoutRequestsAssignedInput>
+}
+
+export type UserCreateNestedOneWithoutRequestEventsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRequestEventsInput, Prisma.UserUncheckedCreateWithoutRequestEventsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRequestEventsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutRequestEventsAssignedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRequestEventsAssignedInput, Prisma.UserUncheckedCreateWithoutRequestEventsAssignedInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRequestEventsAssignedInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutRequestEventsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRequestEventsInput, Prisma.UserUncheckedCreateWithoutRequestEventsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRequestEventsInput
+  upsert?: Prisma.UserUpsertWithoutRequestEventsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRequestEventsInput, Prisma.UserUpdateWithoutRequestEventsInput>, Prisma.UserUncheckedUpdateWithoutRequestEventsInput>
+}
+
+export type UserUpdateOneWithoutRequestEventsAssignedNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRequestEventsAssignedInput, Prisma.UserUncheckedCreateWithoutRequestEventsAssignedInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRequestEventsAssignedInput
+  upsert?: Prisma.UserUpsertWithoutRequestEventsAssignedInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRequestEventsAssignedInput, Prisma.UserUpdateWithoutRequestEventsAssignedInput>, Prisma.UserUncheckedUpdateWithoutRequestEventsAssignedInput>
+}
+
+export type UserCreateNestedOneWithoutRequestAttachmentsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRequestAttachmentsInput, Prisma.UserUncheckedCreateWithoutRequestAttachmentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRequestAttachmentsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutRequestAttachmentsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRequestAttachmentsInput, Prisma.UserUncheckedCreateWithoutRequestAttachmentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRequestAttachmentsInput
+  upsert?: Prisma.UserUpsertWithoutRequestAttachmentsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRequestAttachmentsInput, Prisma.UserUpdateWithoutRequestAttachmentsInput>, Prisma.UserUncheckedUpdateWithoutRequestAttachmentsInput>
+}
+
+export type UserCreateNestedOneWithoutNotificationsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutNotificationsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsInput
+  upsert?: Prisma.UserUpsertWithoutNotificationsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutNotificationsInput, Prisma.UserUpdateWithoutNotificationsInput>, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
+}
+
+export type UserCreateNestedOneWithoutDeviceTokensInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDeviceTokensInput, Prisma.UserUncheckedCreateWithoutDeviceTokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDeviceTokensInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutDeviceTokensNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDeviceTokensInput, Prisma.UserUncheckedCreateWithoutDeviceTokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDeviceTokensInput
+  upsert?: Prisma.UserUpsertWithoutDeviceTokensInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutDeviceTokensInput, Prisma.UserUpdateWithoutDeviceTokensInput>, Prisma.UserUncheckedUpdateWithoutDeviceTokensInput>
+}
+
 export type UserCreateWithoutSchoolInput = {
   id?: string
   identityId?: string | null
@@ -987,6 +1138,13 @@ export type UserCreateWithoutSchoolInput = {
   invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSchoolInput = {
@@ -1018,6 +1176,13 @@ export type UserUncheckedCreateWithoutSchoolInput = {
   invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSchoolInput = {
@@ -1102,6 +1267,13 @@ export type UserCreateWithoutRolesInput = {
   invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRolesInput = {
@@ -1133,6 +1305,13 @@ export type UserUncheckedCreateWithoutRolesInput = {
   invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRolesInput = {
@@ -1180,6 +1359,13 @@ export type UserUpdateWithoutRolesInput = {
   invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRolesInput = {
@@ -1211,6 +1397,13 @@ export type UserUncheckedUpdateWithoutRolesInput = {
   invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSessionsInput = {
@@ -1242,6 +1435,13 @@ export type UserCreateWithoutSessionsInput = {
   invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSessionsInput = {
@@ -1273,6 +1473,13 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSessionsInput = {
@@ -1320,6 +1527,13 @@ export type UserUpdateWithoutSessionsInput = {
   invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -1351,6 +1565,13 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutInvitationsInput = {
@@ -1382,6 +1603,13 @@ export type UserCreateWithoutInvitationsInput = {
   emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutUserInput
   invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
   staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutInvitationsInput = {
@@ -1413,6 +1641,13 @@ export type UserUncheckedCreateWithoutInvitationsInput = {
   emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutUserInput
   invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
   staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutInvitationsInput = {
@@ -1449,6 +1684,13 @@ export type UserCreateWithoutInvitesSentInput = {
   emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutUserInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutInvitesSentInput = {
@@ -1480,6 +1722,13 @@ export type UserUncheckedCreateWithoutInvitesSentInput = {
   emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutUserInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutInvitesSentInput = {
@@ -1527,6 +1776,13 @@ export type UserUpdateWithoutInvitationsInput = {
   emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutUserNestedInput
   invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
   staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutInvitationsInput = {
@@ -1558,6 +1814,13 @@ export type UserUncheckedUpdateWithoutInvitationsInput = {
   emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutUserNestedInput
   invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
   staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUpsertWithoutInvitesSentInput = {
@@ -1600,6 +1863,13 @@ export type UserUpdateWithoutInvitesSentInput = {
   emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutUserNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutInvitesSentInput = {
@@ -1631,6 +1901,13 @@ export type UserUncheckedUpdateWithoutInvitesSentInput = {
   emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutUserNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPasswordResetsInput = {
@@ -1662,6 +1939,13 @@ export type UserCreateWithoutPasswordResetsInput = {
   invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPasswordResetsInput = {
@@ -1693,6 +1977,13 @@ export type UserUncheckedCreateWithoutPasswordResetsInput = {
   invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPasswordResetsInput = {
@@ -1740,6 +2031,13 @@ export type UserUpdateWithoutPasswordResetsInput = {
   invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPasswordResetsInput = {
@@ -1771,6 +2069,13 @@ export type UserUncheckedUpdateWithoutPasswordResetsInput = {
   invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAuthHandoffsInput = {
@@ -1802,6 +2107,13 @@ export type UserCreateWithoutAuthHandoffsInput = {
   invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAuthHandoffsInput = {
@@ -1833,6 +2145,13 @@ export type UserUncheckedCreateWithoutAuthHandoffsInput = {
   invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAuthHandoffsInput = {
@@ -1880,6 +2199,13 @@ export type UserUpdateWithoutAuthHandoffsInput = {
   invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuthHandoffsInput = {
@@ -1911,6 +2237,13 @@ export type UserUncheckedUpdateWithoutAuthHandoffsInput = {
   invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutEmailVerificationsInput = {
@@ -1942,6 +2275,13 @@ export type UserCreateWithoutEmailVerificationsInput = {
   invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutEmailVerificationsInput = {
@@ -1973,6 +2313,13 @@ export type UserUncheckedCreateWithoutEmailVerificationsInput = {
   invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
   staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutEmailVerificationsInput = {
@@ -2020,6 +2367,13 @@ export type UserUpdateWithoutEmailVerificationsInput = {
   invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutEmailVerificationsInput = {
@@ -2051,6 +2405,13 @@ export type UserUncheckedUpdateWithoutEmailVerificationsInput = {
   invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutStaffRecordInput = {
@@ -2082,6 +2443,13 @@ export type UserCreateWithoutStaffRecordInput = {
   emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutUserInput
   invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutStaffRecordInput = {
@@ -2113,6 +2481,13 @@ export type UserUncheckedCreateWithoutStaffRecordInput = {
   emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutUserInput
   invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutStaffRecordInput = {
@@ -2160,6 +2535,13 @@ export type UserUpdateWithoutStaffRecordInput = {
   emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutUserNestedInput
   invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutStaffRecordInput = {
@@ -2191,6 +2573,1189 @@ export type UserUncheckedUpdateWithoutStaffRecordInput = {
   emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutUserNestedInput
   invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutRequestsRaisedInput = {
+  id?: string
+  identityId?: string | null
+  email: string
+  phone?: string | null
+  name: string
+  passwordHash?: string | null
+  avatarUrl?: string | null
+  status?: $Enums.UserStatus
+  emailVerifiedAt?: Date | string | null
+  mustChangePassword?: boolean
+  profileCompletedAt?: Date | string | null
+  designation?: string | null
+  tokenVersion?: number
+  locale?: string | null
+  lastLoginAt?: Date | string | null
+  failedLoginCount?: number
+  lockedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  school: Prisma.SchoolCreateNestedOneWithoutUsersInput
+  roles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutUserInput
+  authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutUserInput
+  emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutUserInput
+  invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
+  staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutRequestsRaisedInput = {
+  id?: string
+  schoolId: string
+  identityId?: string | null
+  email: string
+  phone?: string | null
+  name: string
+  passwordHash?: string | null
+  avatarUrl?: string | null
+  status?: $Enums.UserStatus
+  emailVerifiedAt?: Date | string | null
+  mustChangePassword?: boolean
+  profileCompletedAt?: Date | string | null
+  designation?: string | null
+  tokenVersion?: number
+  locale?: string | null
+  lastLoginAt?: Date | string | null
+  failedLoginCount?: number
+  lockedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  roles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutUserInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutUserInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutUserInput
+  invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
+  staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutRequestsRaisedInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRequestsRaisedInput, Prisma.UserUncheckedCreateWithoutRequestsRaisedInput>
+}
+
+export type UserCreateWithoutRequestsAssignedInput = {
+  id?: string
+  identityId?: string | null
+  email: string
+  phone?: string | null
+  name: string
+  passwordHash?: string | null
+  avatarUrl?: string | null
+  status?: $Enums.UserStatus
+  emailVerifiedAt?: Date | string | null
+  mustChangePassword?: boolean
+  profileCompletedAt?: Date | string | null
+  designation?: string | null
+  tokenVersion?: number
+  locale?: string | null
+  lastLoginAt?: Date | string | null
+  failedLoginCount?: number
+  lockedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  school: Prisma.SchoolCreateNestedOneWithoutUsersInput
+  roles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutUserInput
+  authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutUserInput
+  emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutUserInput
+  invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
+  staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutRequestsAssignedInput = {
+  id?: string
+  schoolId: string
+  identityId?: string | null
+  email: string
+  phone?: string | null
+  name: string
+  passwordHash?: string | null
+  avatarUrl?: string | null
+  status?: $Enums.UserStatus
+  emailVerifiedAt?: Date | string | null
+  mustChangePassword?: boolean
+  profileCompletedAt?: Date | string | null
+  designation?: string | null
+  tokenVersion?: number
+  locale?: string | null
+  lastLoginAt?: Date | string | null
+  failedLoginCount?: number
+  lockedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  roles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutUserInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutUserInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutUserInput
+  invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
+  staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutRequestsAssignedInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRequestsAssignedInput, Prisma.UserUncheckedCreateWithoutRequestsAssignedInput>
+}
+
+export type UserUpsertWithoutRequestsRaisedInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRequestsRaisedInput, Prisma.UserUncheckedUpdateWithoutRequestsRaisedInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRequestsRaisedInput, Prisma.UserUncheckedCreateWithoutRequestsRaisedInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRequestsRaisedInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRequestsRaisedInput, Prisma.UserUncheckedUpdateWithoutRequestsRaisedInput>
+}
+
+export type UserUpdateWithoutRequestsRaisedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  identityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  profileCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokenVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  school?: Prisma.SchoolUpdateOneRequiredWithoutUsersNestedInput
+  roles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  passwordResets?: Prisma.PasswordResetUpdateManyWithoutUserNestedInput
+  authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutUserNestedInput
+  emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutUserNestedInput
+  invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
+  staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRequestsRaisedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  identityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  profileCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokenVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutUserNestedInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutUserNestedInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutUserNestedInput
+  invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
+  staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserUpsertWithoutRequestsAssignedInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRequestsAssignedInput, Prisma.UserUncheckedUpdateWithoutRequestsAssignedInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRequestsAssignedInput, Prisma.UserUncheckedCreateWithoutRequestsAssignedInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRequestsAssignedInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRequestsAssignedInput, Prisma.UserUncheckedUpdateWithoutRequestsAssignedInput>
+}
+
+export type UserUpdateWithoutRequestsAssignedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  identityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  profileCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokenVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  school?: Prisma.SchoolUpdateOneRequiredWithoutUsersNestedInput
+  roles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  passwordResets?: Prisma.PasswordResetUpdateManyWithoutUserNestedInput
+  authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutUserNestedInput
+  emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutUserNestedInput
+  invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
+  staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRequestsAssignedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  identityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  profileCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokenVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutUserNestedInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutUserNestedInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutUserNestedInput
+  invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
+  staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutRequestEventsInput = {
+  id?: string
+  identityId?: string | null
+  email: string
+  phone?: string | null
+  name: string
+  passwordHash?: string | null
+  avatarUrl?: string | null
+  status?: $Enums.UserStatus
+  emailVerifiedAt?: Date | string | null
+  mustChangePassword?: boolean
+  profileCompletedAt?: Date | string | null
+  designation?: string | null
+  tokenVersion?: number
+  locale?: string | null
+  lastLoginAt?: Date | string | null
+  failedLoginCount?: number
+  lockedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  school: Prisma.SchoolCreateNestedOneWithoutUsersInput
+  roles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutUserInput
+  authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutUserInput
+  emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutUserInput
+  invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
+  staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutRequestEventsInput = {
+  id?: string
+  schoolId: string
+  identityId?: string | null
+  email: string
+  phone?: string | null
+  name: string
+  passwordHash?: string | null
+  avatarUrl?: string | null
+  status?: $Enums.UserStatus
+  emailVerifiedAt?: Date | string | null
+  mustChangePassword?: boolean
+  profileCompletedAt?: Date | string | null
+  designation?: string | null
+  tokenVersion?: number
+  locale?: string | null
+  lastLoginAt?: Date | string | null
+  failedLoginCount?: number
+  lockedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  roles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutUserInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutUserInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutUserInput
+  invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
+  staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutRequestEventsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRequestEventsInput, Prisma.UserUncheckedCreateWithoutRequestEventsInput>
+}
+
+export type UserCreateWithoutRequestEventsAssignedInput = {
+  id?: string
+  identityId?: string | null
+  email: string
+  phone?: string | null
+  name: string
+  passwordHash?: string | null
+  avatarUrl?: string | null
+  status?: $Enums.UserStatus
+  emailVerifiedAt?: Date | string | null
+  mustChangePassword?: boolean
+  profileCompletedAt?: Date | string | null
+  designation?: string | null
+  tokenVersion?: number
+  locale?: string | null
+  lastLoginAt?: Date | string | null
+  failedLoginCount?: number
+  lockedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  school: Prisma.SchoolCreateNestedOneWithoutUsersInput
+  roles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutUserInput
+  authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutUserInput
+  emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutUserInput
+  invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
+  staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutRequestEventsAssignedInput = {
+  id?: string
+  schoolId: string
+  identityId?: string | null
+  email: string
+  phone?: string | null
+  name: string
+  passwordHash?: string | null
+  avatarUrl?: string | null
+  status?: $Enums.UserStatus
+  emailVerifiedAt?: Date | string | null
+  mustChangePassword?: boolean
+  profileCompletedAt?: Date | string | null
+  designation?: string | null
+  tokenVersion?: number
+  locale?: string | null
+  lastLoginAt?: Date | string | null
+  failedLoginCount?: number
+  lockedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  roles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutUserInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutUserInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutUserInput
+  invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
+  staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutRequestEventsAssignedInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRequestEventsAssignedInput, Prisma.UserUncheckedCreateWithoutRequestEventsAssignedInput>
+}
+
+export type UserUpsertWithoutRequestEventsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRequestEventsInput, Prisma.UserUncheckedUpdateWithoutRequestEventsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRequestEventsInput, Prisma.UserUncheckedCreateWithoutRequestEventsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRequestEventsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRequestEventsInput, Prisma.UserUncheckedUpdateWithoutRequestEventsInput>
+}
+
+export type UserUpdateWithoutRequestEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  identityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  profileCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokenVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  school?: Prisma.SchoolUpdateOneRequiredWithoutUsersNestedInput
+  roles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  passwordResets?: Prisma.PasswordResetUpdateManyWithoutUserNestedInput
+  authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutUserNestedInput
+  emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutUserNestedInput
+  invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
+  staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRequestEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  identityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  profileCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokenVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutUserNestedInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutUserNestedInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutUserNestedInput
+  invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
+  staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserUpsertWithoutRequestEventsAssignedInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRequestEventsAssignedInput, Prisma.UserUncheckedUpdateWithoutRequestEventsAssignedInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRequestEventsAssignedInput, Prisma.UserUncheckedCreateWithoutRequestEventsAssignedInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRequestEventsAssignedInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRequestEventsAssignedInput, Prisma.UserUncheckedUpdateWithoutRequestEventsAssignedInput>
+}
+
+export type UserUpdateWithoutRequestEventsAssignedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  identityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  profileCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokenVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  school?: Prisma.SchoolUpdateOneRequiredWithoutUsersNestedInput
+  roles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  passwordResets?: Prisma.PasswordResetUpdateManyWithoutUserNestedInput
+  authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutUserNestedInput
+  emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutUserNestedInput
+  invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
+  staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRequestEventsAssignedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  identityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  profileCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokenVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutUserNestedInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutUserNestedInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutUserNestedInput
+  invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
+  staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutRequestAttachmentsInput = {
+  id?: string
+  identityId?: string | null
+  email: string
+  phone?: string | null
+  name: string
+  passwordHash?: string | null
+  avatarUrl?: string | null
+  status?: $Enums.UserStatus
+  emailVerifiedAt?: Date | string | null
+  mustChangePassword?: boolean
+  profileCompletedAt?: Date | string | null
+  designation?: string | null
+  tokenVersion?: number
+  locale?: string | null
+  lastLoginAt?: Date | string | null
+  failedLoginCount?: number
+  lockedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  school: Prisma.SchoolCreateNestedOneWithoutUsersInput
+  roles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutUserInput
+  authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutUserInput
+  emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutUserInput
+  invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
+  staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutRequestAttachmentsInput = {
+  id?: string
+  schoolId: string
+  identityId?: string | null
+  email: string
+  phone?: string | null
+  name: string
+  passwordHash?: string | null
+  avatarUrl?: string | null
+  status?: $Enums.UserStatus
+  emailVerifiedAt?: Date | string | null
+  mustChangePassword?: boolean
+  profileCompletedAt?: Date | string | null
+  designation?: string | null
+  tokenVersion?: number
+  locale?: string | null
+  lastLoginAt?: Date | string | null
+  failedLoginCount?: number
+  lockedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  roles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutUserInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutUserInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutUserInput
+  invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
+  staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutRequestAttachmentsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRequestAttachmentsInput, Prisma.UserUncheckedCreateWithoutRequestAttachmentsInput>
+}
+
+export type UserUpsertWithoutRequestAttachmentsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRequestAttachmentsInput, Prisma.UserUncheckedUpdateWithoutRequestAttachmentsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRequestAttachmentsInput, Prisma.UserUncheckedCreateWithoutRequestAttachmentsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRequestAttachmentsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRequestAttachmentsInput, Prisma.UserUncheckedUpdateWithoutRequestAttachmentsInput>
+}
+
+export type UserUpdateWithoutRequestAttachmentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  identityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  profileCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokenVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  school?: Prisma.SchoolUpdateOneRequiredWithoutUsersNestedInput
+  roles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  passwordResets?: Prisma.PasswordResetUpdateManyWithoutUserNestedInput
+  authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutUserNestedInput
+  emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutUserNestedInput
+  invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
+  staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRequestAttachmentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  identityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  profileCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokenVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutUserNestedInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutUserNestedInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutUserNestedInput
+  invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
+  staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutNotificationsInput = {
+  id?: string
+  identityId?: string | null
+  email: string
+  phone?: string | null
+  name: string
+  passwordHash?: string | null
+  avatarUrl?: string | null
+  status?: $Enums.UserStatus
+  emailVerifiedAt?: Date | string | null
+  mustChangePassword?: boolean
+  profileCompletedAt?: Date | string | null
+  designation?: string | null
+  tokenVersion?: number
+  locale?: string | null
+  lastLoginAt?: Date | string | null
+  failedLoginCount?: number
+  lockedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  school: Prisma.SchoolCreateNestedOneWithoutUsersInput
+  roles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutUserInput
+  authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutUserInput
+  emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutUserInput
+  invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
+  staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutNotificationsInput = {
+  id?: string
+  schoolId: string
+  identityId?: string | null
+  email: string
+  phone?: string | null
+  name: string
+  passwordHash?: string | null
+  avatarUrl?: string | null
+  status?: $Enums.UserStatus
+  emailVerifiedAt?: Date | string | null
+  mustChangePassword?: boolean
+  profileCompletedAt?: Date | string | null
+  designation?: string | null
+  tokenVersion?: number
+  locale?: string | null
+  lastLoginAt?: Date | string | null
+  failedLoginCount?: number
+  lockedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  roles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutUserInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutUserInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutUserInput
+  invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
+  staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutNotificationsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+}
+
+export type UserUpsertWithoutNotificationsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutNotificationsInput, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutNotificationsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutNotificationsInput, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
+}
+
+export type UserUpdateWithoutNotificationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  identityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  profileCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokenVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  school?: Prisma.SchoolUpdateOneRequiredWithoutUsersNestedInput
+  roles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  passwordResets?: Prisma.PasswordResetUpdateManyWithoutUserNestedInput
+  authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutUserNestedInput
+  emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutUserNestedInput
+  invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
+  staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutNotificationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  identityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  profileCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokenVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutUserNestedInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutUserNestedInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutUserNestedInput
+  invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
+  staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutDeviceTokensInput = {
+  id?: string
+  identityId?: string | null
+  email: string
+  phone?: string | null
+  name: string
+  passwordHash?: string | null
+  avatarUrl?: string | null
+  status?: $Enums.UserStatus
+  emailVerifiedAt?: Date | string | null
+  mustChangePassword?: boolean
+  profileCompletedAt?: Date | string | null
+  designation?: string | null
+  tokenVersion?: number
+  locale?: string | null
+  lastLoginAt?: Date | string | null
+  failedLoginCount?: number
+  lockedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  school: Prisma.SchoolCreateNestedOneWithoutUsersInput
+  roles?: Prisma.UserRoleCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutUserInput
+  authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutUserInput
+  emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutUserInput
+  invitesSent?: Prisma.InvitationCreateNestedManyWithoutInviterInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutUserInput
+  staffRecord?: Prisma.StaffCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutDeviceTokensInput = {
+  id?: string
+  schoolId: string
+  identityId?: string | null
+  email: string
+  phone?: string | null
+  name: string
+  passwordHash?: string | null
+  avatarUrl?: string | null
+  status?: $Enums.UserStatus
+  emailVerifiedAt?: Date | string | null
+  mustChangePassword?: boolean
+  profileCompletedAt?: Date | string | null
+  designation?: string | null
+  tokenVersion?: number
+  locale?: string | null
+  lastLoginAt?: Date | string | null
+  failedLoginCount?: number
+  lockedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  roles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutUserInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutUserInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutUserInput
+  invitesSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutUserInput
+  staffRecord?: Prisma.StaffUncheckedCreateNestedOneWithoutUserInput
+  requestsRaised?: Prisma.RequestUncheckedCreateNestedManyWithoutCreatorInput
+  requestsAssigned?: Prisma.RequestUncheckedCreateNestedManyWithoutAssigneeInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutActorInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedCreateNestedManyWithoutAssigneeInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutUploaderInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutDeviceTokensInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutDeviceTokensInput, Prisma.UserUncheckedCreateWithoutDeviceTokensInput>
+}
+
+export type UserUpsertWithoutDeviceTokensInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutDeviceTokensInput, Prisma.UserUncheckedUpdateWithoutDeviceTokensInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutDeviceTokensInput, Prisma.UserUncheckedCreateWithoutDeviceTokensInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutDeviceTokensInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutDeviceTokensInput, Prisma.UserUncheckedUpdateWithoutDeviceTokensInput>
+}
+
+export type UserUpdateWithoutDeviceTokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  identityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  profileCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokenVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  school?: Prisma.SchoolUpdateOneRequiredWithoutUsersNestedInput
+  roles?: Prisma.UserRoleUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  passwordResets?: Prisma.PasswordResetUpdateManyWithoutUserNestedInput
+  authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutUserNestedInput
+  emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutUserNestedInput
+  invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
+  staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutDeviceTokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  identityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  profileCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  designation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokenVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lockedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roles?: Prisma.UserRoleUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutUserNestedInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutUserNestedInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutUserNestedInput
+  invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
+  staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManySchoolInput = {
@@ -2245,6 +3810,13 @@ export type UserUpdateWithoutSchoolInput = {
   invitesSent?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSchoolInput = {
@@ -2276,6 +3848,13 @@ export type UserUncheckedUpdateWithoutSchoolInput = {
   invitesSent?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutUserNestedInput
   staffRecord?: Prisma.StaffUncheckedUpdateOneWithoutUserNestedInput
+  requestsRaised?: Prisma.RequestUncheckedUpdateManyWithoutCreatorNestedInput
+  requestsAssigned?: Prisma.RequestUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutActorNestedInput
+  requestEventsAssigned?: Prisma.RequestEventUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutUploaderNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutSchoolInput = {
@@ -2314,6 +3893,13 @@ export type UserCountOutputType = {
   emailVerifications: number
   invitesSent: number
   invitations: number
+  requestsRaised: number
+  requestsAssigned: number
+  requestEvents: number
+  requestEventsAssigned: number
+  requestAttachments: number
+  notifications: number
+  deviceTokens: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2324,6 +3910,13 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   emailVerifications?: boolean | UserCountOutputTypeCountEmailVerificationsArgs
   invitesSent?: boolean | UserCountOutputTypeCountInvitesSentArgs
   invitations?: boolean | UserCountOutputTypeCountInvitationsArgs
+  requestsRaised?: boolean | UserCountOutputTypeCountRequestsRaisedArgs
+  requestsAssigned?: boolean | UserCountOutputTypeCountRequestsAssignedArgs
+  requestEvents?: boolean | UserCountOutputTypeCountRequestEventsArgs
+  requestEventsAssigned?: boolean | UserCountOutputTypeCountRequestEventsAssignedArgs
+  requestAttachments?: boolean | UserCountOutputTypeCountRequestAttachmentsArgs
+  notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
+  deviceTokens?: boolean | UserCountOutputTypeCountDeviceTokensArgs
 }
 
 /**
@@ -2385,6 +3978,55 @@ export type UserCountOutputTypeCountInvitationsArgs<ExtArgs extends runtime.Type
   where?: Prisma.InvitationWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRequestsRaisedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RequestWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRequestsAssignedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RequestWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRequestEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RequestEventWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRequestEventsAssignedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RequestEventWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRequestAttachmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RequestAttachmentWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountDeviceTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeviceTokenWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2417,6 +4059,13 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   invitesSent?: boolean | Prisma.User$invitesSentArgs<ExtArgs>
   invitations?: boolean | Prisma.User$invitationsArgs<ExtArgs>
   staffRecord?: boolean | Prisma.User$staffRecordArgs<ExtArgs>
+  requestsRaised?: boolean | Prisma.User$requestsRaisedArgs<ExtArgs>
+  requestsAssigned?: boolean | Prisma.User$requestsAssignedArgs<ExtArgs>
+  requestEvents?: boolean | Prisma.User$requestEventsArgs<ExtArgs>
+  requestEventsAssigned?: boolean | Prisma.User$requestEventsAssignedArgs<ExtArgs>
+  requestAttachments?: boolean | Prisma.User$requestAttachmentsArgs<ExtArgs>
+  notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
+  deviceTokens?: boolean | Prisma.User$deviceTokensArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -2505,6 +4154,13 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   invitesSent?: boolean | Prisma.User$invitesSentArgs<ExtArgs>
   invitations?: boolean | Prisma.User$invitationsArgs<ExtArgs>
   staffRecord?: boolean | Prisma.User$staffRecordArgs<ExtArgs>
+  requestsRaised?: boolean | Prisma.User$requestsRaisedArgs<ExtArgs>
+  requestsAssigned?: boolean | Prisma.User$requestsAssignedArgs<ExtArgs>
+  requestEvents?: boolean | Prisma.User$requestEventsArgs<ExtArgs>
+  requestEventsAssigned?: boolean | Prisma.User$requestEventsAssignedArgs<ExtArgs>
+  requestAttachments?: boolean | Prisma.User$requestAttachmentsArgs<ExtArgs>
+  notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
+  deviceTokens?: boolean | Prisma.User$deviceTokensArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2526,6 +4182,13 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     invitesSent: Prisma.$InvitationPayload<ExtArgs>[]
     invitations: Prisma.$InvitationPayload<ExtArgs>[]
     staffRecord: Prisma.$StaffPayload<ExtArgs> | null
+    requestsRaised: Prisma.$RequestPayload<ExtArgs>[]
+    requestsAssigned: Prisma.$RequestPayload<ExtArgs>[]
+    requestEvents: Prisma.$RequestEventPayload<ExtArgs>[]
+    requestEventsAssigned: Prisma.$RequestEventPayload<ExtArgs>[]
+    requestAttachments: Prisma.$RequestAttachmentPayload<ExtArgs>[]
+    notifications: Prisma.$NotificationPayload<ExtArgs>[]
+    deviceTokens: Prisma.$DeviceTokenPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2976,6 +4639,13 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   invitesSent<T extends Prisma.User$invitesSentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$invitesSentArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   invitations<T extends Prisma.User$invitationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$invitationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   staffRecord<T extends Prisma.User$staffRecordArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$staffRecordArgs<ExtArgs>>): Prisma.Prisma__StaffClient<runtime.Types.Result.GetResult<Prisma.$StaffPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  requestsRaised<T extends Prisma.User$requestsRaisedArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$requestsRaisedArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  requestsAssigned<T extends Prisma.User$requestsAssignedArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$requestsAssignedArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  requestEvents<T extends Prisma.User$requestEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$requestEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RequestEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  requestEventsAssigned<T extends Prisma.User$requestEventsAssignedArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$requestEventsAssignedArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RequestEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  requestAttachments<T extends Prisma.User$requestAttachmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$requestAttachmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RequestAttachmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  notifications<T extends Prisma.User$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  deviceTokens<T extends Prisma.User$deviceTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$deviceTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeviceTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3611,6 +5281,174 @@ export type User$staffRecordArgs<ExtArgs extends runtime.Types.Extensions.Intern
    */
   include?: Prisma.StaffInclude<ExtArgs> | null
   where?: Prisma.StaffWhereInput
+}
+
+/**
+ * User.requestsRaised
+ */
+export type User$requestsRaisedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Request
+   */
+  select?: Prisma.RequestSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Request
+   */
+  omit?: Prisma.RequestOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RequestInclude<ExtArgs> | null
+  where?: Prisma.RequestWhereInput
+  orderBy?: Prisma.RequestOrderByWithRelationInput | Prisma.RequestOrderByWithRelationInput[]
+  cursor?: Prisma.RequestWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RequestScalarFieldEnum | Prisma.RequestScalarFieldEnum[]
+}
+
+/**
+ * User.requestsAssigned
+ */
+export type User$requestsAssignedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Request
+   */
+  select?: Prisma.RequestSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Request
+   */
+  omit?: Prisma.RequestOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RequestInclude<ExtArgs> | null
+  where?: Prisma.RequestWhereInput
+  orderBy?: Prisma.RequestOrderByWithRelationInput | Prisma.RequestOrderByWithRelationInput[]
+  cursor?: Prisma.RequestWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RequestScalarFieldEnum | Prisma.RequestScalarFieldEnum[]
+}
+
+/**
+ * User.requestEvents
+ */
+export type User$requestEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RequestEvent
+   */
+  select?: Prisma.RequestEventSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RequestEvent
+   */
+  omit?: Prisma.RequestEventOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RequestEventInclude<ExtArgs> | null
+  where?: Prisma.RequestEventWhereInput
+  orderBy?: Prisma.RequestEventOrderByWithRelationInput | Prisma.RequestEventOrderByWithRelationInput[]
+  cursor?: Prisma.RequestEventWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RequestEventScalarFieldEnum | Prisma.RequestEventScalarFieldEnum[]
+}
+
+/**
+ * User.requestEventsAssigned
+ */
+export type User$requestEventsAssignedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RequestEvent
+   */
+  select?: Prisma.RequestEventSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RequestEvent
+   */
+  omit?: Prisma.RequestEventOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RequestEventInclude<ExtArgs> | null
+  where?: Prisma.RequestEventWhereInput
+  orderBy?: Prisma.RequestEventOrderByWithRelationInput | Prisma.RequestEventOrderByWithRelationInput[]
+  cursor?: Prisma.RequestEventWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RequestEventScalarFieldEnum | Prisma.RequestEventScalarFieldEnum[]
+}
+
+/**
+ * User.requestAttachments
+ */
+export type User$requestAttachmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RequestAttachment
+   */
+  select?: Prisma.RequestAttachmentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RequestAttachment
+   */
+  omit?: Prisma.RequestAttachmentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RequestAttachmentInclude<ExtArgs> | null
+  where?: Prisma.RequestAttachmentWhereInput
+  orderBy?: Prisma.RequestAttachmentOrderByWithRelationInput | Prisma.RequestAttachmentOrderByWithRelationInput[]
+  cursor?: Prisma.RequestAttachmentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RequestAttachmentScalarFieldEnum | Prisma.RequestAttachmentScalarFieldEnum[]
+}
+
+/**
+ * User.notifications
+ */
+export type User$notificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Notification
+   */
+  select?: Prisma.NotificationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Notification
+   */
+  omit?: Prisma.NotificationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationInclude<ExtArgs> | null
+  where?: Prisma.NotificationWhereInput
+  orderBy?: Prisma.NotificationOrderByWithRelationInput | Prisma.NotificationOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
+}
+
+/**
+ * User.deviceTokens
+ */
+export type User$deviceTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeviceToken
+   */
+  select?: Prisma.DeviceTokenSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeviceToken
+   */
+  omit?: Prisma.DeviceTokenOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeviceTokenInclude<ExtArgs> | null
+  where?: Prisma.DeviceTokenWhereInput
+  orderBy?: Prisma.DeviceTokenOrderByWithRelationInput | Prisma.DeviceTokenOrderByWithRelationInput[]
+  cursor?: Prisma.DeviceTokenWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeviceTokenScalarFieldEnum | Prisma.DeviceTokenScalarFieldEnum[]
 }
 
 /**

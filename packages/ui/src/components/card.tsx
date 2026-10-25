@@ -2,6 +2,10 @@ import type { ComponentProps } from 'react';
 
 import { cn } from '../lib/cn';
 
+/** Card surface — white ground, hairline border, very light elevation. */
+export const cardSurfaceClassName =
+  'rounded-xl border border-border/70 bg-card text-card-foreground shadow-xs';
+
 /**
  * The surface everything sits on.
  *
@@ -10,20 +14,10 @@ import { cn } from '../lib/cn';
  * `p-4`, some `p-6`, some a shadow, some not. One card component is the
  * difference between a product and a set of pages.
  *
- * Elevation is a token (`shadow-raised`), never a Tailwind palette shadow, so
- * dark mode gets a border-led treatment instead of a black blur that is
- * invisible on a dark ground.
+ * Elevation is the `shadow-raised` token only — never a raw Tailwind shadow.
  */
 export function Card({ className, ...props }: ComponentProps<'div'>) {
-  return (
-    <div
-      className={cn(
-        'rounded-xl border border-border bg-card text-card-foreground shadow-raised',
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <div className={cn(cardSurfaceClassName, className)} {...props} />;
 }
 
 export function CardHeader({ className, ...props }: ComponentProps<'div'>) {

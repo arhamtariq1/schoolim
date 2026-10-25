@@ -1,5 +1,6 @@
 import {
   bulkDeleteVouchersSchema,
+  bulkRecordPaymentSchema,
   MAX_BULK_VOUCHERS,
   cancelVoucherSchema,
   challanBatchSchema,
@@ -14,6 +15,7 @@ import {
   type GenerationResult,
   type StudentLookupResult,
   type BulkDeleteResult,
+  type BulkPaymentResult,
   type Challan,
   type VoucherIds,
   type VoucherDetail,
@@ -37,7 +39,10 @@ import { type FastifyRequest } from 'fastify';
 
 import { RequirePermission } from '../../shared/rbac/rbac.guard';
 
+import { NotificationsModule } from '../notifications/notifications.module';
+
 import { VoucherGenerationService } from './voucher-generation.service';
+import { VoucherNumberController, VoucherNumberService } from './voucher-number.service';
 import { VouchersService } from './vouchers.service';
 
 /**
@@ -184,6 +189,20 @@ export class VouchersController {
     return { data: { ok: true } };
   }
 
+  /**
+   * Settle a selection in full. Same permission as a single payment — it is
+   * the same act, done for several families at once.
+   */
+  @Post(ROUTES.vouchers.bulkPay)
+  @RequirePermission('fees.payment.create')
+  async bulkPay(
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+  ): Promise<{ data: BulkPaymentResult }> {
+    const input = bulkRecordPaymentSchema.parse(body);
+    return { data: await this.vouchers.payMany(input, request.claims?.sub) };
+  }
+
   @Post('/api/v1/fee-vouchers/:id/payments')
   @RequirePermission('fees.payment.create')
   async pay(
@@ -208,7 +227,8 @@ export class VouchersController {
 }
 
 @Module({
-  controllers: [VouchersController],
-  providers: [VouchersService, VoucherGenerationService],
+  imports: [NotificationsModule],
+  controllers: [VouchersController, VoucherNumberController],
+  providers: [VouchersService, VoucherGenerationService, VoucherNumberService],
 })
 export class VouchersModule {}

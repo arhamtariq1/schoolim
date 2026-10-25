@@ -3,6 +3,7 @@ import {
   createHolidaySchema,
   createSectionSchema,
   createSessionSchema,
+  holidaysListQuerySchema,
   promotionPreviewQuerySchema,
   runPromotionSchema,
   ROUTES,
@@ -12,6 +13,7 @@ import {
   updateSectionSchema,
   updateSessionSchema,
   type AcademicSession,
+  type ClassTeacher,
   type ClassLevel,
   type ClassLevelWithSections,
   type CurrentSession,
@@ -23,7 +25,7 @@ import {
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { type FastifyRequest } from 'fastify';
 
-import { RequirePermission } from '../../shared/rbac/rbac.guard';
+import { RequirePermission, RequireUnscopedPermission } from '../../shared/rbac/rbac.guard';
 
 import { AcademicsService } from './academics.service';
 import { HolidaysService } from './holidays.service';
@@ -145,7 +147,8 @@ export class AcademicsController {
    * anyone who may see the structure; running it is a different permission.
    */
   @Get(ROUTES.academics.promotionPreview)
-  @RequirePermission('academics.structure.read')
+  // School-wide counts of who moves where: the office's, never a teacher's.
+  @RequireUnscopedPermission('academics.structure.read')
   async promotionPreview(@Query() query: unknown): Promise<{ data: PromotionPreview }> {
     return { data: await this.promotions.preview(promotionPreviewQuerySchema.parse(query)) };
   }
@@ -162,6 +165,13 @@ export class AcademicsController {
   @RequirePermission('academics.structure.read')
   async listClasses(@Query('sessionId') sessionId?: string): Promise<{ data: ClassLevel[] }> {
     return { data: await this.structure.listClasses(emptyToUndefined(sessionId)) };
+  }
+
+  /** Declared before the `:id` routes so "teachers" is never read as an id. */
+  @Get('/api/v1/academics/classes/:id/teachers')
+  @RequirePermission('academics.structure.read')
+  async classTeachers(@Param('id') id: string): Promise<{ data: ClassTeacher[] }> {
+    return { data: await this.structure.teachersOf(id) };
   }
 
   @Post(ROUTES.academics.classes)
@@ -222,8 +232,9 @@ export class AcademicsController {
 
   @Get(ROUTES.academics.holidays)
   @RequirePermission('academics.structure.read')
-  async listHolidays(@Query('sessionId') sessionId?: string): Promise<{ data: Holiday[] }> {
-    return { data: await this.holidays.list(emptyToUndefined(sessionId)) };
+  async listHolidays(@Query() query: unknown): Promise<{ data: Holiday[] }> {
+    const parsed = holidaysListQuerySchema.parse(query);
+    return { data: await this.holidays.list(emptyToUndefined(parsed.sessionId)) };
   }
 
   @Post(ROUTES.academics.holidays)

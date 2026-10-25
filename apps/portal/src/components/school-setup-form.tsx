@@ -9,12 +9,30 @@ import {
   type UploadSchoolLogo,
 } from '@ilm/contracts';
 import { Button, Field, Input, useToast } from '@ilm/ui';
-import { ErrorIcon, ICON_SIZE, SpinnerIcon, SuccessIcon } from '@ilm/ui/icons';
+import {
+  EmailIcon,
+  ErrorIcon,
+  ICON_SIZE,
+  LocationIcon,
+  PhoneIcon,
+  SchoolIcon,
+  SpinnerIcon,
+  SuccessIcon,
+  WebIcon,
+} from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
 import { LogoPicker } from './logo-picker';
 
+import {
+  fieldErrorsFromZod,
+  showApiErrorToast,
+  showFormValidationToast,
+  showNetworkErrorToast,
+} from '@/lib/form-validation';
+import { PhoneInput } from '@/components/phone-input';
+import { livePhoneError, phoneInputError } from '@/lib/phone-format';
 import { clearSignupDraft } from '@/lib/signup-draft';
 import { TENANT_MODE } from '@/lib/tenant-mode';
 
@@ -97,13 +115,14 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
       ...(logo === undefined ? {} : { logo }),
     });
 
-    if (!parsed.success) {
-      const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        next[issue.path.join('.')] = issue.message;
-      }
-      setFieldErrors(next);
-      toast.error(parsed.error.issues[0]?.message ?? 'Check the highlighted fields.');
+    const phoneError = phoneInputError(schoolPhone);
+
+    if (!parsed.success || phoneError !== undefined) {
+      setFieldErrors({
+        ...(parsed.success ? {} : fieldErrorsFromZod(parsed.error)),
+        ...(phoneError === undefined ? {} : { 'school.phone': phoneError }),
+      });
+      showFormValidationToast(toast);
       return;
     }
 
@@ -122,21 +141,26 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
           code?: string;
         };
         if (problem.code === 'SIGNUP_EMAIL_UNVERIFIED' || problem.code === 'SIGNUP_SESSION_REQUIRED') {
-          toast.error(problem.detail ?? 'Confirm your email first.');
+          showApiErrorToast(toast, 'Email not verified', problem.detail, 'Confirm your email first.');
           router.replace('/signup');
           return;
         }
-        toast.error(problem.detail ?? 'Could not create your school. Try again.');
+        showApiErrorToast(
+          toast,
+          'School not created',
+          problem.detail,
+          'Could not create your school. Try again.',
+        );
         setIsPending(false);
         return;
       }
 
       const body = (await response.json()) as { data: SignupResult };
       clearSignupDraft();
-      toast.success('School created', 'Sign in to open your portal.');
+      toast.success('School created successfully.');
       window.location.assign(body.data.loginUrl);
     } catch {
-      toast.error('Could not reach the server. Check your connection and try again.');
+      showNetworkErrorToast(toast);
       setIsPending(false);
     }
   }
@@ -159,7 +183,12 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
 
       <fieldset disabled={isPending} className="space-y-4">
 
-        <Field label="School name" error={fieldErrors['school.name']} required>
+        <Field
+          label="School name"
+          error={fieldErrors['school.name']}
+          required
+          leadingIcon={SchoolIcon}
+        >
           <Input
             name="schoolName"
             autoComplete="organization"
@@ -176,6 +205,7 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
           error={fieldErrors['school.slug']}
           hint="Permanent. This is where your staff and parents will sign in."
           required
+          leadingIcon={WebIcon}
         >
           <Input
             name="slug"
@@ -204,7 +234,7 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="City" error={fieldErrors['school.city']} required>
+          <Field label="City" error={fieldErrors['school.city']} required leadingIcon={LocationIcon}>
             <Input
               name="city"
               autoComplete="address-level2"
@@ -217,21 +247,12 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
 
           <Field
             label="School phone"
-            error={fieldErrors['school.phone']}
-            hint="Include the country code, or start with 0 and we will add +92."
+            error={fieldErrors['school.phone'] ?? livePhoneError(schoolPhone)}
+            hint="Digits only, starting with 03 or 02."
             required
+            leadingIcon={PhoneIcon}
           >
-            <Input
-              name="schoolPhone"
-              type="tel"
-              autoComplete="tel"
-              inputMode="tel"
-              placeholder="+92 300 1234567"
-              value={schoolPhone}
-              onChange={(event) => {
-                setSchoolPhone(event.target.value);
-              }}
-            />
+            <PhoneInput name="schoolPhone" value={schoolPhone} onValueChange={setSchoolPhone} />
           </Field>
         </div>
 
@@ -240,6 +261,7 @@ export function SchoolSetupForm({ ownerEmail }: { readonly ownerEmail?: string }
           error={fieldErrors['school.email']}
           hint="The school’s public address — the one on the prospectus, not your login."
           required
+          leadingIcon={EmailIcon}
         >
           <Input
             name="schoolEmail"

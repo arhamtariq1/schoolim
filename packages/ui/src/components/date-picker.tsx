@@ -225,7 +225,7 @@ export function DatePicker({
           }
         }}
         className={cn(
-          'flex h-10 w-full rounded-md border border-input bg-background ps-3 text-base tabular-nums',
+          'flex h-10 w-full rounded-md border border-input bg-field ps-3 text-base tabular-nums',
           clearable && value !== '' ? 'pe-16' : 'pe-10',
           'placeholder:text-muted-foreground',
           'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
@@ -397,7 +397,7 @@ export function MonthPicker({
           id={id}
           disabled={disabled}
           className={cn(
-            'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-sm',
+            'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-field px-3 text-sm',
             'transition-colors hover:bg-muted/50',
             'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
             'disabled:cursor-not-allowed disabled:opacity-50',

@@ -1,8 +1,8 @@
-import { MAX_PAGE_LIMIT, ROUTES, type StudentListItem } from '@ilm/contracts';
+import { MAX_PAGE_LIMIT, ROUTES, type StudentListItem, type StudentListQuery } from '@ilm/contracts';
 
-import { AppShell } from '@/components/app-shell';
 import { StudentsTable } from '@/components/students-table';
 import { apiFetch } from '@/lib/api';
+import { DEFAULT_LIST_PAGE_SIZE, parseNewestFirstOrder } from '@/lib/list-page';
 import { getSession } from '@/lib/session';
 
 /**
@@ -42,8 +42,17 @@ export default async function StudentsPage({
   // 100,000 must not reach the API as-is.
   const limit = clampInt(params['limit'], PAGE_LIMIT, 1, MAX_PAGE_LIMIT);
   const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
+  const sort = parseSort(params['sort']);
+  // Newest admission first until somebody picks a column — the same rule the
+  // voucher list uses, from the one place that states it.
+  const order = parseNewestFirstOrder(params);
 
-  const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  const query = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    sort,
+    order,
+  });
   if (search !== '') {
     query.set('q', search);
   }
@@ -68,7 +77,9 @@ export default async function StudentsPage({
         aggregates: Record<string, number>;
       };
     }>(`${ROUTES.students.list}?${query.toString()}`),
-    apiFetch<{ data: { classes: { id: string; name: string }[] } }>(ROUTES.academics.setup),
+    // Scoped on the server: a teacher is offered only their own classes, and
+    // reception (who cannot read the academic structure) is offered all of them.
+    apiFetch<{ data: { id: string; name: string }[] }>(ROUTES.students.classOptions),
   ]);
 
   const isFiltered = search !== '' || status !== '' || classLevelId !== '';
@@ -83,15 +94,7 @@ export default async function StudentsPage({
   };
 
   return (
-    <AppShell
-      user={{ name: session.name, email: session.email, roleLabel: session.roles.join(', ') }}
-      school={{ name: session.school.name }}
-      permissions={session.permissions}
-      profileCompleted={session.profileCompleted}
-      unverifiedEmail={session.emailVerified ? undefined : session.email}
-      brandColor={session.school.primaryColor ?? undefined}
-    >
-      <StudentsTable
+    <StudentsTable
         rows={result.ok ? result.data.data : []}
         total={result.ok ? result.data.meta.page.total : 0}
         aggregates={result.ok ? result.data.meta.aggregates : {}}
@@ -99,13 +102,14 @@ export default async function StudentsPage({
         search={search}
         status={status}
         classLevelId={classLevelId}
-        classes={setup.ok ? setup.data.data.classes.map((entry) => ({ id: entry.id, name: entry.name })) : []}
+        classes={setup.ok ? setup.data.data : []}
         isFiltered={isFiltered}
         limit={result.ok ? result.data.meta.page.limit : limit}
         offset={result.ok ? result.data.meta.page.offset : offset}
+        sort={sort}
+        order={order}
         can={can}
       />
-    </AppShell>
   );
 }
 
@@ -124,7 +128,22 @@ function SignedOut() {
 }
 
 /** Rows per page. Well under the API's cap of 200 (docs/11 §5). */
-const PAGE_LIMIT = 25;
+const PAGE_LIMIT = DEFAULT_LIST_PAGE_SIZE;
+
+const SORTABLE: readonly StudentListQuery['sort'][] = [
+  'name',
+  'grNo',
+  'studentCode',
+  'className',
+  'createdAt',
+];
+
+function parseSort(raw: string | string[] | undefined): StudentListQuery['sort'] {
+  const value = typeof raw === 'string' ? raw : '';
+  return SORTABLE.includes(value as StudentListQuery['sort'])
+    ? (value as StudentListQuery['sort'])
+    : 'createdAt';
+}
 
 /**
  * Read a query-string integer that a person may have typed.

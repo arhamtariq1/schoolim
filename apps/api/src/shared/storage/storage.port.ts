@@ -31,6 +31,11 @@ export interface PutAssetInput {
   readonly kind: AssetKind;
   /** The tenant. Every key is scoped by it, so paths cannot collide or be guessed across schools. */
   readonly schoolId: string;
+  /**
+   * Which of several assets of this kind, for a kind a school can hold more
+   * than one of (bank marks). Omitted or 0 is the original, un-suffixed key.
+   */
+  readonly slot?: number;
   readonly bytes: Buffer;
   readonly mimeType: string;
   /**

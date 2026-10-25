@@ -1,9 +1,18 @@
-import { type CreateHoliday, type Holiday, type UpdateHoliday } from '@ilm/contracts';
+import {
+  SCHOOL_ROLES,
+  HOLIDAY_COLOR_KEYS,
+  type CreateHoliday,
+  type Holiday,
+  type HolidayColorKey,
+  type UpdateHoliday,
+} from '@ilm/contracts';
 import { calendarDate, daysBetween } from '@ilm/utils';
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
+import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /**
  * The school calendar.
@@ -14,7 +23,11 @@ import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-err
  */
 @Injectable()
 export class HolidaysService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly context: TenantContextService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /**
    * The calendar for one session, earliest first.
@@ -44,6 +57,7 @@ export class HolidaysService {
           appliesTo: true,
           startDate: true,
           endDate: true,
+          colorKey: true,
           notes: true,
         },
       });
@@ -76,6 +90,7 @@ export class HolidaysService {
           appliesTo: input.appliesTo,
           startDate: start,
           endDate: end,
+          colorKey: input.colorKey ?? 'rose',
           ...(input.notes === undefined || input.notes === '' ? {} : { notes: input.notes }),
         } as never,
         select: {
@@ -86,8 +101,31 @@ export class HolidaysService {
           appliesTo: true,
           startDate: true,
           endDate: true,
+          colorKey: true,
           notes: true,
         },
+      });
+
+      const audience =
+        input.appliesTo === 'STUDENTS'
+          ? await this.notifications.userIdsWithRoles(tx, ['PARENT', 'STUDENT'])
+          : input.appliesTo === 'STAFF'
+            ? await this.notifications.userIdsWithRoles(
+                tx,
+                SCHOOL_ROLES.filter((role) => role !== 'PARENT' && role !== 'STUDENT'),
+              )
+            : await this.notifications.allActiveUserIds(tx);
+      await this.notifications.notify(tx, {
+        recipientIds: audience,
+        exceptUserId: this.context.userId,
+        kind: 'holiday.announced',
+        title: `Holiday: ${input.name}`,
+        body:
+          input.endDate === undefined || input.endDate === input.startDate
+            ? input.startDate
+            : `${input.startDate} to ${input.endDate}`,
+        entityType: 'holiday',
+        entityId: created.id,
       });
 
       return toHoliday(created);
@@ -129,6 +167,7 @@ export class HolidaysService {
           ...(input.appliesTo === undefined ? {} : { appliesTo: input.appliesTo }),
           ...(input.startDate === undefined ? {} : { startDate: start }),
           ...(input.endDate === undefined ? {} : { endDate: end }),
+          ...(input.colorKey === undefined ? {} : { colorKey: input.colorKey }),
           ...(input.notes === undefined ? {} : { notes: input.notes }),
         },
         select: {
@@ -139,6 +178,7 @@ export class HolidaysService {
           appliesTo: true,
           startDate: true,
           endDate: true,
+          colorKey: true,
           notes: true,
         },
       });
@@ -184,7 +224,7 @@ function assertWithinSession(
   }
 }
 
-function toHoliday(row: {
+export function toHoliday(row: {
   id: string;
   sessionId: string;
   name: string;
@@ -192,6 +232,7 @@ function toHoliday(row: {
   appliesTo: Holiday['appliesTo'];
   startDate: Date;
   endDate: Date;
+  colorKey: string;
   notes: string | null;
 }): Holiday {
   return {
@@ -202,6 +243,7 @@ function toHoliday(row: {
     appliesTo: row.appliesTo,
     startDate: iso(row.startDate),
     endDate: iso(row.endDate),
+    colorKey: parseColorKey(row.colorKey ?? 'rose'),
     notes: row.notes,
     // Inclusive: 1 June to 1 June is one day, not zero.
     //
@@ -215,4 +257,11 @@ function toHoliday(row: {
 /** `@db.Date` comes back at UTC midnight; the calendar day is its ISO prefix. */
 function iso(value: Date): string {
   return value.toISOString().slice(0, 10);
+}
+
+function parseColorKey(value: string): HolidayColorKey {
+  if ((HOLIDAY_COLOR_KEYS as readonly string[]).includes(value)) {
+    return value as HolidayColorKey;
+  }
+  return 'rose';
 }

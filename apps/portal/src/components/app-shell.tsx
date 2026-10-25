@@ -1,8 +1,7 @@
 'use client';
 
-import { ROUTES } from '@ilm/contracts';
+import { ROUTES, type SchoolLogoInfo } from '@ilm/contracts';
 import {
-  Button,
   ConfirmDialog,
   DropdownMenu,
   DropdownMenuContent,
@@ -11,36 +10,40 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Hint,
-  Separator,
+  StatusBadge,
   TooltipProvider,
   cn,
   useToast,
 } from '@ilm/ui';
 import {
+  AccountIcon,
   ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   CloseIcon,
-  EditIcon,
+  FinanceIcon,
   ICON_SIZE,
   MenuIcon,
-  MessagesIcon,
-  NotificationsIcon,
-  SchoolIcon,
   SearchIcon,
   SettingsIcon,
   SignOutIcon,
-  ViewIcon,
+  TrendUpIcon,
 } from '@ilm/ui/icons';
-import { BRAND } from '@ilm/utils';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { AppSearch } from '@/components/app-search';
 import { BrandTheme } from '@/components/brand-theme';
+import { FEE_SETTINGS_ITEMS } from '@/components/fee-settings-nav';
 import { NAV_ICONS } from '@/components/nav-icons';
+import { NotificationsMenu } from '@/components/notifications-menu';
+import { SidebarBrandMark } from '@/components/sidebar-brand-mark';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { VerifyEmailBanner } from '@/components/verify-email-banner';
-import { NAV_ITEMS, visibleNavItems, type NavItem } from '@/lib/navigation';
+import { NAV_ITEMS, visibleNavItems, visibleSettingsMenuItems, type NavItem } from '@/lib/navigation';
+import { disablePush } from '@/lib/push';
+import { SCHOOL_COLOUR_UPDATED_EVENT, SCHOOL_LOGO_UPDATED_EVENT } from '@/lib/school-logo-shell';
 import { useCanonicalPathname, useTenantHref } from '@/lib/use-tenant-href';
 
 /**
@@ -78,17 +81,27 @@ const NAV_LEAF_HREFS: readonly string[] = (() => {
  * **the API decides** — every route behind these is permission-checked on the
  * server regardless.
  *
- * Until `profileCompleted` is true, every nav item except Set up profile is
- * visually disabled and non-navigable; the proxy enforces the same gate on URLs.
+ * Until `profileCompleted` is true, nav items stay visible but disabled; the
+ * proxy sends incomplete profiles to `/profile/create` (not listed in the sidebar).
  */
+/**
+ * The gutter every workspace screen sits in.
+ *
+ * `pb-24` on small screens clears the bottom tab bar; from `md` the bar is
+ * gone and the padding is even on all four sides.
+ */
+const SIDEBAR_COLLAPSED_KEY = 'ilm:sidebar-collapsed';
+
+const CONTENT_PADDING = 'px-3 pt-3 pb-20 md:px-4 md:pt-4 md:pb-5';
+
 
 export interface AppShellProps {
-  user: { name: string; email?: string; roleLabel: string };
+  user: { name: string; email?: string; roleLabel: string; avatarUrl?: string | null };
   school: { name: string };
   permissions: readonly string[];
   /**
-   * False until the first-login profile form is saved. Disables every nav item
-   * except Set up profile and keeps the person on `/profile/create`.
+   * False until the first-login profile form is saved. Disables sidebar nav
+   * until onboarding is done; `/profile/create` is reached via login/proxy only.
    */
   profileCompleted?: boolean;
   /**
@@ -108,17 +121,14 @@ export interface AppShellProps {
    * page, and the shell already has the session in its hands.
    */
   brandColor?: string | undefined;
+  /** Latest school logo metadata — loaded with the shell, updated in place on upload. */
+  schoolLogo?: SchoolLogoInfo | undefined;
   children: ReactNode;
 }
 
-const PROFILE_SETUP_ITEM: NavItem = {
-  href: '/profile/create',
-  label: 'Set up profile',
-  icon: 'AccountIcon',
-  // Permission is ignored while the profile is incomplete — the item is
-  // injected explicitly so every role can finish onboarding.
-  permission: 'dashboard.workspace.read',
-};
+/** Header icon buttons that are visible but not interactive yet. */
+const HEADER_ICON_DISABLED =
+  'inline-flex size-10 cursor-not-allowed items-center justify-center rounded-lg text-muted-foreground opacity-50';
 
 export function AppShell({
   user,
@@ -126,15 +136,91 @@ export function AppShell({
   permissions,
   profileCompleted = true,
   unverifiedEmail,
-  brandColor,
+  brandColor: serverBrandColor,
+  schoolLogo: initialSchoolLogo,
   children,
 }: AppShellProps) {
-  const baseItems = visibleNavItems(permissions);
-  const items = profileCompleted ? baseItems : [PROFILE_SETUP_ITEM, ...baseItems];
+  const items = visibleNavItems(permissions);
   const pathname = usePathname();
+  const canonicalPath = useCanonicalPathname();
+  /** Lock nav only on the setup gate; after redirect home, links work even if RSC session props lag. */
+  const navLocked = !profileCompleted && canonicalPath === '/profile/create';
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  // Fee settings has a menu of its own beside the page, so the main sidebar steps aside
+  // there: folded on arrival, and the arrow opens it for this visit. Leaving the area
+  // forgets that, and the person's own remembered choice applies again everywhere else.
+  const inFeeSettings = FEE_SETTINGS_ITEMS.some((item) => item.href === canonicalPath);
+  const [openInFeeSettings, setOpenInFeeSettings] = useState(false);
+  useEffect(() => {
+    if (!inFeeSettings) {
+      setOpenInFeeSettings(false);
+    }
+  }, [inFeeSettings]);
+
+  // Remembered per browser. Read after mount so the server and first client
+  // render agree; storage can be blocked, so every access is guarded.
+  useEffect(() => {
+    try {
+      setCollapsed(window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1');
+    } catch {
+      // Private mode or blocked storage: start expanded.
+    }
+  }, []);
+
+  function toggleSidebar(): void {
+    if (inFeeSettings) {
+      setOpenInFeeSettings((current) => !current);
+      return;
+    }
+    setCollapsed((current) => {
+      const next = !current;
+      try {
+        window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? '1' : '0');
+      } catch {
+        // Not persisted; still works for this visit.
+      }
+      return next;
+    });
+  }
+  const sidebarCollapsed = inFeeSettings ? !openInFeeSettings : collapsed;
+  const [schoolLogo, setSchoolLogo] = useState(initialSchoolLogo);
   const scrollport = useRef<HTMLElement>(null);
+
+  const [brandColor, setBrandColor] = useState(serverBrandColor);
+
+  useEffect(() => {
+    setBrandColor(serverBrandColor);
+  }, [serverBrandColor]);
+
+  useEffect(() => {
+    function onColourUpdated(event: Event): void {
+      const detail = (event as CustomEvent<string | null>).detail;
+      setBrandColor(detail ?? undefined);
+    }
+    window.addEventListener(SCHOOL_COLOUR_UPDATED_EVENT, onColourUpdated);
+    return () => {
+      window.removeEventListener(SCHOOL_COLOUR_UPDATED_EVENT, onColourUpdated);
+    };
+  }, []);
+
+  useEffect(() => {
+    setSchoolLogo(initialSchoolLogo);
+  }, [initialSchoolLogo]);
+
+  useEffect(() => {
+    function onLogoUpdated(event: Event): void {
+      const detail = (event as CustomEvent<SchoolLogoInfo>).detail;
+      if (detail !== undefined) {
+        setSchoolLogo(detail);
+      }
+    }
+    window.addEventListener(SCHOOL_LOGO_UPDATED_EVENT, onLogoUpdated);
+    return () => {
+      window.removeEventListener(SCHOOL_LOGO_UPDATED_EVENT, onLogoUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     setDrawerOpen(false);
@@ -169,13 +255,14 @@ export function AppShell({
         on a phone the bottom tab bar would sit behind the browser's URL bar.
         Auth has nothing anchored to the bottom and does not care; this does.
       */}
-      <div className="fixed inset-x-0 top-0 flex h-dvh overflow-hidden bg-background">
+      <div className="fixed inset-x-0 top-0 flex h-dvh overflow-hidden bg-workspace-canvas">
         <Sidebar
           className="hidden md:flex"
+          collapsed={sidebarCollapsed}
           items={items}
-          school={school}
-          user={user}
+          schoolLogo={schoolLogo}
           profileCompleted={profileCompleted}
+          navLocked={navLocked}
         />
 
         {drawerOpen ? (
@@ -191,9 +278,9 @@ export function AppShell({
             <Sidebar
               className="relative flex h-full animate-in fade-in-0 slide-in-from-left-2"
               items={items}
-              school={school}
-              user={user}
+              schoolLogo={schoolLogo}
               profileCompleted={profileCompleted}
+              navLocked={navLocked}
               onClose={() => {
                 setDrawerOpen(false);
               }}
@@ -206,14 +293,23 @@ export function AppShell({
             schoolName={school.name}
             user={user}
             permissions={permissions}
-            profileCompleted={profileCompleted}
+            settingsEnabled={!navLocked}
+            sidebarCollapsed={sidebarCollapsed}
+            onToggleSidebar={toggleSidebar}
             onOpenMenu={() => {
               setDrawerOpen(true);
             }}
           />
 
-          <main ref={scrollport} className="min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
-            <div className="mx-auto w-full max-w-7xl space-y-6 p-4 pb-24 md:p-6 md:pb-6">
+          <main
+            ref={scrollport}
+            className="scrollbar-hidden min-w-0 flex-1 overflow-y-auto overscroll-y-contain bg-workspace-canvas"
+          >
+            {/* Padding is decided here and nowhere else. Workspace pages use the
+                full width beside the sidebar — tables and dashboards need the
+                room on large monitors, and a centred max-width column left half
+                the canvas empty. */}
+            <div className={`w-full space-y-4 ${CONTENT_PADDING}`}>
               {unverifiedEmail === undefined ? null : <VerifyEmailBanner email={unverifiedEmail} />}
               {children}
             </div>
@@ -221,15 +317,10 @@ export function AppShell({
 
           <nav
             aria-label="Main"
-            className="flex shrink-0 items-center justify-around border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+            className="flex shrink-0 items-center justify-around border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
           >
             {items.slice(0, 5).map((item) => (
-              <NavLink
-                key={item.href}
-                item={firstLeaf(item)}
-                compact
-                disabled={!profileCompleted && item.href !== PROFILE_SETUP_ITEM.href}
-              />
+              <NavLink key={item.href} item={firstLeaf(item)} compact disabled={navLocked} />
             ))}
           </nav>
         </div>
@@ -242,114 +333,172 @@ function AppHeader({
   schoolName,
   user,
   permissions,
-  profileCompleted,
+  settingsEnabled = false,
+  sidebarCollapsed,
+  onToggleSidebar,
   onOpenMenu,
 }: {
   schoolName: string;
-  user: { name: string; email?: string; roleLabel: string };
+  user: { name: string; email?: string; roleLabel: string; avatarUrl?: string | null };
   permissions: readonly string[];
-  profileCompleted: boolean;
+  settingsEnabled?: boolean;
+  sidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
   onOpenMenu: () => void;
 }) {
-  const tenantHref = useTenantHref();
-  const toast = useToast();
-
+  const ToggleIcon = sidebarCollapsed ? ChevronRightIcon : ChevronLeftIcon;
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-surface px-3 md:px-4">
+    <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border/50 bg-header px-3 md:gap-4 md:px-5">
       <button
         type="button"
         aria-label="Open menu"
         onClick={onOpenMenu}
-        className="-ms-1 inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:hidden"
+        className="-ms-1 inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:hidden"
       >
         <MenuIcon className={ICON_SIZE.nav} aria-hidden="true" />
       </button>
 
+      <button
+        type="button"
+        aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-pressed={sidebarCollapsed}
+        title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        onClick={onToggleSidebar}
+        className="-ms-1 hidden size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:inline-flex"
+      >
+        <ToggleIcon className={ICON_SIZE.nav} aria-hidden="true" />
+      </button>
+
       <span className="truncate text-sm font-semibold md:hidden">{schoolName}</span>
 
-      <AppSearch permissions={permissions}>
-        {(openSearch) => (
-          <button
-            type="button"
-            onClick={openSearch}
-            disabled={!profileCompleted}
-            className="hidden h-9 w-full max-w-sm items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm text-muted-foreground transition-colors hover:border-input hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 md:flex"
-          >
-            <SearchIcon className="size-4 shrink-0" aria-hidden="true" />
-            <span>Search pages, students…</span>
-            <kbd className="ms-auto rounded border border-border bg-muted px-1.5 font-mono text-xs text-muted-foreground">
-              ⌘K
-            </kbd>
-          </button>
-        )}
-      </AppSearch>
-
-      <div className="ms-auto flex items-center gap-0.5">
-        <ThemeToggle />
-
-        <Hint label="Messages">
-          <button
-            type="button"
-            aria-label="Messages"
-            onClick={() => {
-              toast.warning('Messages', 'Coming soon.');
-            }}
-            className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            <MessagesIcon className="size-4" aria-hidden="true" />
-          </button>
-        </Hint>
-
-        <Hint label="Notifications">
-          <button
-            type="button"
-            aria-label="Notifications"
-            onClick={() => {
-              toast.warning('Notifications', 'Coming soon.');
-            }}
-            className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            <NotificationsIcon className="size-4" aria-hidden="true" />
-          </button>
-        </Hint>
-
-        <Hint label="Settings">
-          {profileCompleted ? (
-            <Link
-              href={tenantHref('/settings')}
-              aria-label="Settings"
-              className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            >
-              <SettingsIcon className="size-4" aria-hidden="true" />
-            </Link>
-          ) : (
+      <div className="hidden min-w-0 flex-1 md:block md:max-w-xl">
+        <AppSearch permissions={permissions}>
+          {(openSearch) => (
             <button
               type="button"
-              aria-label="Settings"
-              disabled
-              className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground opacity-50"
+              aria-label="Search pages and students"
+              onClick={openSearch}
+              className="flex h-10 w-full cursor-pointer items-center gap-2.5 rounded-xl border border-border bg-muted/40 px-3.5 text-sm text-muted-foreground transition-colors hover:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
-              <SettingsIcon className="size-4" aria-hidden="true" />
+              <SearchIcon className="size-4 shrink-0 opacity-80" aria-hidden="true" />
+              <span className="truncate text-start">Search pages, students…</span>
+              <kbd className="ms-auto hidden rounded-md border border-border bg-background px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground lg:inline">
+                ⌘K
+              </kbd>
             </button>
           )}
-        </Hint>
+        </AppSearch>
+      </div>
 
-        <ProfileMenu user={user} profileCompleted={profileCompleted} />
+      <div className="ms-auto flex items-center gap-1 md:gap-2">
+        <StatusBadge tone="success" className="me-1 hidden shrink-0 md:inline-flex">
+          {user.roleLabel}
+        </StatusBadge>
+
+        <NotificationsMenu />
+
+        <HeaderSettingsMenu permissions={permissions} disabled={!settingsEnabled} />
+
+        <ThemeToggle />
+
+        <span aria-hidden="true" className="mx-1 hidden h-8 w-px bg-border sm:block" />
+
+        <ProfileMenu user={user} canManagePlan={permissions.includes('settings.billing.manage')} />
       </div>
     </header>
   );
 }
 
+function HeaderSettingsMenu({
+  permissions,
+  disabled,
+}: {
+  permissions: readonly string[];
+  disabled: boolean;
+}) {
+  const tenantHref = useTenantHref();
+  const items = visibleSettingsMenuItems(permissions);
+  const hasItems = items.length > 0;
+
+  // Nothing to configure, nothing to show: a parent or a teacher has no settings, and a
+  // greyed-out gear would only ask what it is for.
+  if (!hasItems) {
+    return null;
+  }
+
+  if (disabled) {
+    return (
+      <Hint label="Complete setup to open settings">
+        <button type="button" disabled aria-label="Settings" className={HEADER_ICON_DISABLED}>
+          <SettingsIcon className={HEADER_ICON_CLASS} aria-hidden="true" />
+        </button>
+      </Hint>
+    );
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" aria-label="Settings" className={HEADER_ACTION_CLASS}>
+          <SettingsIcon className={HEADER_ICON_CLASS} aria-hidden="true" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={6} className="min-w-44 p-1">
+        {items.map((item) => {
+          const Icon = NAV_ICONS[item.icon] ?? SettingsIcon;
+          return (
+            <DropdownMenuItem key={item.href} asChild className="rounded-md px-2.5 py-2">
+              <Link href={tenantHref(item.href)} className="cursor-pointer">
+                <Icon aria-hidden="true" className="text-muted-foreground" />
+                {item.label}
+              </Link>
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+const HEADER_ICON_CLASS = 'size-5 shrink-0';
+
+const HEADER_ACTION_CLASS =
+  'inline-flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
+
+/** The signed-in person's photo, or their initials until they add one. */
+function HeaderAvatar({
+  user,
+  className,
+}: {
+  user: { name: string; avatarUrl?: string | null };
+  className?: string;
+}) {
+  const shown = user.avatarUrl !== undefined && user.avatarUrl !== null && user.avatarUrl !== '';
+  return (
+    <span
+      aria-hidden="true"
+      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-semibold text-primary ${className ?? ''}`}
+    >
+      {shown ? (
+        // eslint-disable-next-line @next/next/no-img-element -- may be a data URL
+        <img src={user.avatarUrl ?? ''} alt="" className="size-full object-cover" />
+      ) : (
+        initials(user.name)
+      )}
+    </span>
+  );
+}
+
 function ProfileMenu({
   user,
-  profileCompleted,
+  canManagePlan,
 }: {
-  user: { name: string; email?: string };
-  profileCompleted: boolean;
+  user: { name: string; email?: string; roleLabel: string; avatarUrl?: string | null };
+  /** Pricing and Billing are the school's dealings with the platform: the Admin's alone. */
+  canManagePlan: boolean;
 }) {
   const tenantHref = useTenantHref();
   const [askingSignOut, setAskingSignOut] = useState(false);
-
   return (
     <>
       <DropdownMenu>
@@ -357,49 +506,65 @@ function ProfileMenu({
           <button
             type="button"
             aria-label="Account menu"
-            className="ms-1 inline-flex size-9 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="inline-flex items-center gap-2.5 rounded-lg py-1 ps-0.5 pe-2 transition-colors hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
-            {initials(user.name)}
+            <HeaderAvatar user={user} className="size-10" />
+            <span className="hidden min-w-0 text-start md:block">
+              <span className="block text-sm font-medium whitespace-nowrap text-foreground">
+                {user.name}
+              </span>
+              {user.email === undefined || user.email === '' ? null : (
+                <span className="block text-xs whitespace-nowrap text-muted-foreground">
+                  {user.email}
+                </span>
+              )}
+            </span>
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel className="font-normal">
-            <span className="block truncate text-sm font-medium text-foreground">{user.name}</span>
-            {user.email === undefined || user.email === '' ? null : (
-              <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
-            )}
+        <DropdownMenuContent align="end" sideOffset={6} className="min-w-52 p-1">
+          <DropdownMenuLabel className="px-2.5 py-2 font-normal">
+            <span className="flex items-center gap-3">
+              <HeaderAvatar user={user} className="size-9" />
+              <span className="min-w-0 flex-1 text-start">
+                <span className="block truncate text-sm font-medium text-foreground">{user.name}</span>
+                {user.email === undefined || user.email === '' ? null : (
+                  <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
+                )}
+              </span>
+            </span>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {profileCompleted ? (
+          <DropdownMenuSeparator className="mx-0" />
+          <DropdownMenuItem asChild className="rounded-md px-2.5 py-2">
+            <Link href={tenantHref('/profile')} className="cursor-pointer">
+              <AccountIcon aria-hidden="true" className="text-muted-foreground" />
+              Profile
+            </Link>
+          </DropdownMenuItem>
+          {canManagePlan ? (
             <>
-              <DropdownMenuItem asChild>
-                <Link href={tenantHref('/profile')} className="cursor-pointer">
-                  <ViewIcon className="size-4" aria-hidden="true" />
-                  View Profile
+              <DropdownMenuItem asChild className="rounded-md px-2.5 py-2">
+                <Link href={tenantHref('/pricing')} className="cursor-pointer">
+                  <TrendUpIcon aria-hidden="true" className="text-muted-foreground" />
+                  Pricing
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={tenantHref('/profile/edit')} className="cursor-pointer">
-                  <EditIcon className="size-4" aria-hidden="true" />
-                  Edit Profile
+              <DropdownMenuItem asChild className="rounded-md px-2.5 py-2">
+                <Link href={tenantHref('/billing')} className="cursor-pointer">
+                  <FinanceIcon aria-hidden="true" className="text-muted-foreground" />
+                  Billing
                 </Link>
               </DropdownMenuItem>
             </>
-          ) : (
-            <DropdownMenuItem asChild>
-              <Link href={tenantHref('/profile/create')} className="cursor-pointer">
-                <EditIcon className="size-4" aria-hidden="true" />
-                Set up profile
-              </Link>
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuSeparator />
+          ) : null}
+          <DropdownMenuSeparator className="mx-0" />
           <DropdownMenuItem
+            destructive
+            className="rounded-md px-2.5 py-2"
             onSelect={() => {
               setAskingSignOut(true);
             }}
           >
-            <SignOutIcon className="size-4" aria-hidden="true" />
+            <SignOutIcon aria-hidden="true" />
             Logout
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -412,112 +577,82 @@ function ProfileMenu({
 
 function Sidebar({
   items,
-  school,
-  user,
+  schoolLogo,
   profileCompleted,
+  navLocked,
   className,
+  collapsed = false,
   onClose,
 }: {
+  collapsed?: boolean;
   items: readonly NavItem[];
-  school: { name: string };
-  user: { name: string; email?: string; roleLabel: string };
+  schoolLogo: SchoolLogoInfo | undefined;
   profileCompleted: boolean;
+  navLocked: boolean;
   className?: string;
   onClose?: () => void;
 }) {
+  const tenantHref = useTenantHref();
+
   return (
     <aside
-      className={cn('w-64 shrink-0 flex-col border-e border-border bg-surface md:flex', className)}
+      className={cn(
+        'flex shrink-0 flex-col border-e border-border/50 bg-sidebar transition-[width] duration-200 ease-in-out motion-reduce:transition-none md:flex',
+        collapsed ? 'w-16' : 'w-56',
+        className,
+      )}
     >
-      <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-border px-3">
-        <span
-          aria-hidden="true"
-          className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+      <div
+        className={cn(
+          'relative flex h-16 shrink-0 items-center border-b border-border/50 bg-sidebar px-3',
+          collapsed ? 'justify-center' : 'justify-start',
+        )}
+      >
+        <Link
+          href={tenantHref('/')}
+          className={cn(
+            'inline-flex items-center rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+            collapsed ? 'size-10 justify-center overflow-hidden' : 'max-w-[148px] justify-start ps-3',
+          )}
+          aria-label="Home"
         >
-          <SchoolIcon className="size-4" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm leading-tight font-semibold" title={school.name}>
-            {school.name}
-          </span>
-          <span className="block truncate text-xs leading-tight text-muted-foreground">
-            {BRAND.name}
-          </span>
-        </span>
+          <SidebarBrandMark
+            schoolLogo={
+              schoolLogo ?? {
+                present: false,
+                mimeType: null,
+                byteSize: null,
+                version: null,
+              }
+            }
+            profileCompleted={profileCompleted}
+            className={collapsed ? 'w-10' : undefined}
+          />
+        </Link>
         {onClose === undefined ? null : (
           <button
             type="button"
             aria-label="Close menu"
             onClick={onClose}
-            className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="absolute end-3 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             <CloseIcon className="size-4" aria-hidden="true" />
           </button>
         )}
       </div>
 
-      <nav aria-label="Main" className="flex-1 space-y-0.5 overflow-y-auto p-2">
+      <nav
+        aria-label="Main"
+        className={cn(
+          'scrollbar-hidden flex flex-1 flex-col gap-1 overflow-y-auto py-4',
+          collapsed ? 'items-center px-2' : 'px-3',
+        )}
+      >
         {items.map((item) => (
-          <NavBranch
-            key={item.href}
-            item={item}
-            disabled={!profileCompleted && item.href !== PROFILE_SETUP_ITEM.href}
-          />
+          <NavBranch key={item.href} item={item} disabled={navLocked} collapsed={collapsed} />
         ))}
       </nav>
-
-      <AccountBlock user={user} />
     </aside>
-  );
-}
-
-function AccountBlock({ user }: { user: { name: string; roleLabel: string } }) {
-  return (
-    <div className="shrink-0 p-2">
-      <Separator className="mb-2" />
-      <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-          {initials(user.name)}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm leading-tight font-medium" title={user.name}>
-            {user.name}
-          </span>
-          <span
-            className="block truncate text-xs leading-tight text-muted-foreground"
-            title={user.roleLabel}
-          >
-            {roleLabel(user.roleLabel)}
-          </span>
-        </span>
-      </div>
-      <div className="mt-1.5">
-        <SignOutButton />
-      </div>
-    </div>
-  );
-}
-
-function SignOutButton({ compact = false }: { compact?: boolean }) {
-  const [asking, setAsking] = useState(false);
-
-  return (
-    <>
-      <Button
-        type="button"
-        tone={compact ? 'ghost' : 'outline'}
-        size={compact ? 'sm' : 'default'}
-        className={compact ? undefined : 'w-full'}
-        onClick={() => {
-          setAsking(true);
-        }}
-      >
-        <SignOutIcon className="size-4" aria-hidden="true" />
-        Sign out
-      </Button>
-
-      <SignOutConfirm open={asking} onOpenChange={setAsking} />
-    </>
   );
 }
 
@@ -530,8 +665,11 @@ function SignOutConfirm({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const tenantHref = useTenantHref();
 
   async function signOut() {
+    // Before the session ends, while the API can still tell who is asking.
+    await disablePush(tenantHref('/').replace(/\/+$/, ''));
     try {
       const response = await fetch(ROUTES.auth.logout, {
         method: 'POST',
@@ -543,7 +681,7 @@ function SignOutConfirm({
         return;
       }
     } catch {
-      toast.error('Could not reach the server. You are still signed in.');
+      toast.error('You are still signed in. Try again when you are back online.');
       return;
     }
 
@@ -555,9 +693,10 @@ function SignOutConfirm({
     <ConfirmDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Sign out?"
-      description="Anything you have typed and not saved will be lost."
-      confirmLabel="Sign out"
+      title="Are you sure you want to log out?"
+      description="You will need to sign in again to continue."
+      confirmLabel="Logout"
+      cancelLabel="Cancel"
       tone="primary"
       onConfirm={signOut}
     />
@@ -574,28 +713,37 @@ function initials(name: string): string {
   return (first + last).toUpperCase();
 }
 
-function roleLabel(raw: string): string {
-  return raw
-    .split(',')
-    .map((role) => role.trim())
-    .filter(Boolean)
-    .map((role) => role.charAt(0) + role.slice(1).toLowerCase().replace('_', ' '))
-    .join(' · ');
+function navDepthPadding(depth: number): string {
+  if (depth <= 0) {
+    return 'ps-3';
+  }
+  if (depth === 1) {
+    return 'ps-6';
+  }
+  return 'ps-9';
 }
 
 function NavLink({
   item,
   compact = false,
   disabled = false,
+  depth = 0,
+  collapsed = false,
+  forceActive = false,
 }: {
+  collapsed?: boolean;
+  /** A collapsed group stays lit while any of its pages is open. */
+  forceActive?: boolean;
   item: NavItem;
   compact?: boolean;
   disabled?: boolean;
+  depth?: number;
 }) {
   const pathname = useCanonicalPathname();
   const tenantHref = useTenantHref();
-  const isActive = isCurrent(item.href, pathname);
+  const isActive = forceActive || isCurrent(item.href, pathname);
   const Icon = NAV_ICONS[item.icon];
+  const nested = depth > 0;
 
   if (disabled) {
     return (
@@ -603,12 +751,20 @@ function NavLink({
         aria-disabled="true"
         title="Complete your profile to unlock this"
         className={cn(
-          'group relative flex cursor-not-allowed items-center gap-3 rounded-lg text-sm font-medium text-muted-foreground/50',
-          compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : 'px-3 py-2',
+          'group relative flex cursor-not-allowed items-center gap-2.5 rounded-lg text-sm font-medium text-muted-foreground/50',
+          compact
+            ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs'
+            : collapsed
+              ? 'size-10 justify-center'
+              : cn('py-2 pe-3', navDepthPadding(depth)),
         )}
       >
-        {Icon === undefined ? null : <Icon className="size-5 shrink-0" />}
-        <span className={compact ? 'truncate' : undefined}>{item.label}</span>
+        {Icon === undefined ? null : (
+          <Icon className={cn('shrink-0 opacity-60', nested ? 'size-4' : ICON_SIZE.nav)} aria-hidden />
+        )}
+        <span className={cn('truncate', nested ? 'text-xs' : undefined, collapsed && 'sr-only')}>
+          {item.label}
+        </span>
       </span>
     );
   }
@@ -617,22 +773,40 @@ function NavLink({
     <Link
       href={tenantHref(item.href)}
       aria-current={isActive ? 'page' : undefined}
+      title={collapsed ? item.label : undefined}
       className={cn(
-        'group relative flex items-center gap-3 rounded-lg text-sm font-medium transition-colors duration-150',
-        compact ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs' : 'px-3 py-2',
+        'relative flex items-center gap-2.5 rounded-lg text-sm transition-colors duration-150',
+        compact
+          ? 'min-h-12 flex-1 flex-col justify-center gap-1 py-2 text-xs'
+          : collapsed
+            ? 'size-10 justify-center'
+            : cn('py-2 pe-3', navDepthPadding(depth)),
+        nested ? 'font-normal' : 'font-medium',
         isActive
           ? 'bg-primary/10 text-primary'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+          : 'text-muted-foreground hover:bg-card/70 hover:text-foreground',
       )}
     >
-      {isActive && !compact ? (
-        <span
-          aria-hidden="true"
-          className="absolute inset-y-1.5 start-0 w-0.5 rounded-full bg-primary"
+      {Icon === undefined ? null : (
+        <Icon
+          className={cn(
+            'shrink-0',
+            nested ? 'size-4' : ICON_SIZE.nav,
+            isActive ? 'text-primary' : 'opacity-80',
+          )}
+          aria-hidden
         />
-      ) : null}
-      {Icon === undefined ? null : <Icon className="size-5 shrink-0" />}
-      <span className={compact ? 'truncate' : undefined}>{item.label}</span>
+      )}
+      <span
+        className={cn(
+          'truncate',
+          nested ? 'text-xs' : undefined,
+          isActive && 'text-primary',
+          collapsed && 'sr-only',
+        )}
+      >
+        {item.label}
+      </span>
     </Link>
   );
 }
@@ -641,10 +815,12 @@ function NavBranch({
   item,
   depth = 0,
   disabled = false,
+  collapsed = false,
 }: {
   item: NavItem;
   depth?: number;
   disabled?: boolean;
+  collapsed?: boolean;
 }) {
   const pathname = useCanonicalPathname();
   const children = item.children ?? [];
@@ -654,13 +830,26 @@ function NavBranch({
   const isOpen = overridden ?? containsCurrent;
 
   if (children.length === 0) {
-    return <NavLink item={item} disabled={disabled} />;
+    return <NavLink item={item} disabled={disabled} depth={depth} collapsed={collapsed} />;
+  }
+
+  // Collapsed: a group is one icon that opens its first page, and stays lit
+  // while any page inside it is the current one.
+  if (collapsed) {
+    return (
+      <NavLink
+        item={{ ...firstLeaf(item), label: item.label, icon: item.icon }}
+        disabled={disabled}
+        collapsed
+        forceActive={containsCurrent}
+      />
+    );
   }
 
   const Icon = NAV_ICONS[item.icon];
 
   return (
-    <div>
+    <div className="flex flex-col gap-0.5">
       <button
         type="button"
         aria-expanded={isOpen}
@@ -669,19 +858,36 @@ function NavBranch({
           setOverridden(!isOpen);
         }}
         className={cn(
-          'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150',
+          'flex w-full items-center gap-2.5 rounded-lg py-2 pe-2 text-sm font-medium transition-colors duration-150',
+          navDepthPadding(depth),
           disabled
             ? 'cursor-not-allowed text-muted-foreground/50'
             : containsCurrent
-              ? 'text-foreground'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              ? 'text-primary'
+              : 'text-muted-foreground hover:bg-card/70 hover:text-foreground',
         )}
       >
-        {Icon === undefined ? null : <Icon className="size-5 shrink-0" />}
-        <span className="flex-1 text-start">{item.label}</span>
+        {Icon === undefined ? null : (
+          <Icon
+            className={cn(
+              'shrink-0',
+              depth > 0 ? 'size-4' : ICON_SIZE.nav,
+              containsCurrent ? 'text-primary' : 'opacity-80',
+            )}
+            aria-hidden
+          />
+        )}
+        <span
+          className={cn(
+            'flex-1 truncate text-start',
+            containsCurrent && !disabled ? 'text-primary' : undefined,
+          )}
+        >
+          {item.label}
+        </span>
         <ChevronDownIcon
           className={cn(
-            'size-4 shrink-0 transition-transform duration-150',
+            'size-4 shrink-0 opacity-60 transition-transform duration-150',
             isOpen ? '' : '-rotate-90',
           )}
           aria-hidden="true"
@@ -689,12 +895,7 @@ function NavBranch({
       </button>
 
       {isOpen && !disabled ? (
-        <div
-          className={cn(
-            'mt-0.5 space-y-0.5 border-s border-border',
-            depth === 0 ? 'ms-5 ps-2' : 'ms-3 ps-2',
-          )}
-        >
+        <div className="flex flex-col gap-0.5">
           {children.map((child) => (
             <NavBranch key={child.href} item={child} depth={depth + 1} disabled={disabled} />
           ))}

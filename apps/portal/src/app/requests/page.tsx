@@ -1,39 +1,94 @@
-import { EmptyState } from '@ilm/ui';
+import {
+  MAX_PAGE_LIMIT,
+  REQUEST_SORT_FIELDS,
+  ROUTES,
+  type RequestAssigneeOption,
+  type RequestListItem,
+  type RequestSummary,
+} from '@ilm/contracts';
+import type { Metadata } from 'next';
 
-import { AppShell } from '@/components/app-shell';
-import { PageHeader } from '@/components/page-header';
+import { RequestsView } from '@/components/requests-view';
+import { apiFetch } from '@/lib/api';
+import { DEFAULT_LIST_PAGE_SIZE, parseSortField, parseSortOrder } from '@/lib/list-page';
+import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
 
+export const metadata: Metadata = { title: 'Requests' };
+
+const EMPTY_SUMMARY: RequestSummary = {
+  total: 0,
+  pending: 0,
+  inProgress: 0,
+  resolved: 0,
+  rejected: 0,
+  reopened: 0,
+};
+
 /**
- * Requests — not built yet, but reachable from the sidebar, so it has to be a
- * real screen.
+ * Requests.
  *
- * It rendered a bare `<EmptyState>` with no shell before this: navigating to it
- * from the sidebar dropped a person onto a page with no navigation, no school
- * name and no way back except the browser's Back button. An unbuilt module is a
- * fine thing to say; stranding somebody is not.
+ * One route, two screens. Anyone who holds `workflow.request.manage` — the
+ * Admin, Principal and Office Staff — gets **Manage Requests**, the school's
+ * whole queue; everyone else gets **My Requests**. The server reads the same
+ * permission to decide what the API returns, so this only chooses the title and
+ * the columns: it is not what keeps one parent out of another's requests.
+ *
+ * Filters, sort and paging live in the query string, and the server does the
+ * filtering, so "unassigned and urgent" is a link.
  */
-export default async function RequestsPage() {
+export default async function RequestsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
   const session = await getSession();
+  const canManage = session?.permissions.includes('workflow.request.manage') ?? false;
+
+  const filters = {
+    q: readParam(params, 'q'),
+    status: readParam(params, 'status'),
+    category: readParam(params, 'category'),
+    priority: readParam(params, 'priority'),
+    assignee: canManage ? readParam(params, 'assignee') : '',
+  };
+  const limit = clampInt(params['limit'], DEFAULT_LIST_PAGE_SIZE, 1, MAX_PAGE_LIMIT);
+  const offset = clampInt(params['offset'], 0, 0, Number.MAX_SAFE_INTEGER);
+  const sort = parseSortField(params['sort'], REQUEST_SORT_FIELDS, 'lastActivityAt');
+  // Newest activity first by default; a column header flips it.
+  const order = params['order'] === undefined ? 'desc' : parseSortOrder(params['order']);
+
+  const query = new URLSearchParams({ limit: String(limit), offset: String(offset), sort, order });
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== '') {
+      query.set(key, value);
+    }
+  }
+
+  const [listResult, summaryResult, assigneesResult] = await Promise.all([
+    apiFetch<{ data: RequestListItem[]; meta: { page: { total: number } } }>(
+      `${ROUTES.requests.list}?${query.toString()}`,
+    ),
+    apiFetch<{ data: RequestSummary }>(ROUTES.requests.summary),
+    canManage
+      ? apiFetch<{ data: RequestAssigneeOption[] }>(ROUTES.requests.assignees)
+      : Promise.resolve(undefined),
+  ]);
 
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <PageHeader
-        title="Requests"
-        description="Leave, transfers and approvals — the things a school routes to somebody for a decision."
-      />
-
-      <EmptyState
-        title="Requests is not built yet"
-        description="The foundations are in place — tenant isolation, authentication and the permission model. This module arrives with its phase in docs/14."
-      />
-    </AppShell>
+    <RequestsView
+      mode={canManage ? 'manage' : 'mine'}
+      rows={listResult.ok ? listResult.data.data : []}
+      total={listResult.ok ? listResult.data.meta.page.total : 0}
+      summary={summaryResult.ok ? summaryResult.data.data : EMPTY_SUMMARY}
+      filters={filters}
+      sort={sort}
+      order={order}
+      limit={limit}
+      offset={offset}
+      assignees={assigneesResult?.ok === true ? assigneesResult.data.data : []}
+      error={listResult.ok ? undefined : listResult.message}
+    />
   );
 }

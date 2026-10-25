@@ -29,6 +29,13 @@ export interface NavItem {
   /** Shown only when the user holds this. */
   readonly permission: Permission;
   /**
+   * A different label for people who hold another permission, for one door that
+   * leads to two screens: Requests reads "My Requests" to a parent and
+   * "Manage Requests" to the office. The page makes the same choice from the
+   * same permission, and the API enforces it.
+   */
+  readonly labelWhenHeld?: { readonly permission: Permission; readonly label: string };
+  /**
    * Nested items, up to two levels deep.
    *
    * A section only earns children when it has genuinely distinct screens that
@@ -46,14 +53,28 @@ export interface NavItem {
 export const NAV_ITEMS: readonly NavItem[] = [
   {
     href: '/',
-    label: 'Home',
+    label: 'Dashboard',
     icon: 'DashboardIcon',
     permission: 'dashboard.workspace.read',
   },
   {
+    // A guardian's whole portal: their children, one at a time, read-only.
+    href: '/parent',
+    label: 'My children',
+    icon: 'StudentsIcon',
+    permission: 'parent.child.read',
+  },
+  {
+    // The fee vouchers of a guardian's own children: preview, and download as PDF.
+    href: '/parent/vouchers',
+    label: 'Fee vouchers',
+    icon: 'FeesIcon',
+    permission: 'parent.voucher.read',
+  },
+  {
     href: '/students/new',
     label: 'Add admission',
-    icon: 'CreateIcon',
+    icon: 'AdmissionIcon',
     permission: 'students.student.create',
   },
   {
@@ -95,7 +116,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
         // First, because it is where anyone opening "Fees" actually wants to
         // be: what has been billed, and what is owed.
         href: '/fees/vouchers',
-        label: 'Fee vouchers',
+        label: 'Fee Vouchers',
         icon: 'FeesIcon',
         permission: 'fees.voucher.read',
       },
@@ -152,9 +173,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
             href: '/attendance/mark/teachers',
             label: 'Staff',
             icon: 'AccountIcon',
-            permission: 'attendance.record.read',
+            permission: 'attendance.staff.read',
           },
         ],
+      },
+      {
+        href: '/attendance/my',
+        label: 'My attendance',
+        icon: 'AccountIcon',
+        permission: 'attendance.own.read',
       },
       {
         href: '/attendance/reports',
@@ -172,11 +199,17 @@ export const NAV_ITEMS: readonly NavItem[] = [
             href: '/attendance/reports/teachers',
             label: 'Staff',
             icon: 'AccountIcon',
-            permission: 'attendance.report.read',
+            permission: 'attendance.staff.read',
           },
         ],
       },
     ],
+  },
+  {
+    href: '/marks',
+    label: 'Marks',
+    icon: 'ClassIcon',
+    permission: 'exams.result.read',
   },
   {
     href: '/academics',
@@ -194,24 +227,32 @@ export const NAV_ITEMS: readonly NavItem[] = [
         href: '/academics/sessions',
         label: 'Sessions',
         icon: 'SessionIcon',
-        permission: 'academics.structure.read',
+        // The office's. A teacher reads Classes (their own) and nothing school-wide.
+        permission: 'academics.session.configure',
       },
       {
         href: '/academics/promote',
         label: 'Promote students',
         icon: 'ForwardIcon',
-        // Readable by anyone who may see the structure — the preview answers
-        // "why is next year empty", which is a question a receptionist asks
-        // too. Running it is `academics.structure.configure`.
-        permission: 'academics.structure.read',
-      },
-      {
-        href: '/academics/holidays',
-        label: 'Calendar',
-        icon: 'HolidayIcon',
-        permission: 'academics.structure.read',
+        // School-wide counts of who moves where, so the office's: a teacher's
+        // read of the structure is limited to their own classes.
+        permission: 'academics.session.configure',
       },
     ],
+  },
+  {
+    // Weekly periods and dated tests and exams. The office makes them; teachers,
+    // parents and students read the published ones that concern them (ADR-0017).
+    href: '/timetables',
+    label: 'Timetables',
+    icon: 'CalendarIcon',
+    permission: 'academics.timetable.read',
+  },
+  {
+    href: '/academics/holidays',
+    label: 'Calendar',
+    icon: 'HolidayIcon',
+    permission: 'academics.structure.read',
   },
   {
     href: '/staff',
@@ -223,49 +264,59 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/finance',
     label: 'Finance',
     icon: 'FinanceIcon',
+    // The lowest bar of its children: every role that sees Revenue or
+    // Salaries can read expenses too, so nobody loses a child to the parent.
     permission: 'finance.expense.read',
-  },
-  {
-    href: '/requests',
-    label: 'Requests',
-    icon: 'RequestsIcon',
-    permission: 'workflow.request.create',
-  },
-  {
-    href: '/settings',
-    label: 'Settings',
-    icon: 'SettingsIcon',
-    // The section opens for anyone who may configure *something* under it. The
-    // index filters itself by each entry's own permission, and every page
-    // behind it is checked again on the server.
-    permission: 'settings.school.configure',
+    // Money in, money out, and the largest part of money out. Three separate
+    // errands: what the school earned, what it spent, and who it paid.
     children: [
       {
-        href: '/settings/school',
-        label: 'School',
-        icon: 'SchoolIcon',
-        // Reading the school's own name and phone number is not a privilege —
-        // it is on the letterhead. Changing them needs
-        // `settings.school.configure`, which the form and the API both check.
-        permission: 'dashboard.workspace.read',
+        href: '/finance/revenue',
+        label: 'Revenue',
+        icon: 'TrendUpIcon',
+        // The school's earnings are the owner's alone (roles.ts).
+        permission: 'finance.revenue.read',
       },
       {
-        href: '/settings/fees',
-        label: 'Fee types',
-        icon: 'FeesIcon',
-        permission: 'fees.plan.read',
+        href: '/finance/expenses',
+        label: 'Expense',
+        icon: 'ExpenseIcon',
+        permission: 'finance.expense.read',
       },
       {
-        href: '/settings/voucher',
-        label: 'Fee challan',
-        icon: 'PrintIcon',
-        // Whoever may print a challan may see how it is laid out; changing it
-        // needs `settings.school.configure`, checked by the form and the API.
-        permission: 'fees.voucher.read',
+        href: '/salaries',
+        label: 'Salaries',
+        icon: 'SalaryIcon',
+        permission: 'staff.salary.read',
       },
     ],
   },
+  {
+    href: '/requests',
+    label: 'My Requests',
+    icon: 'RequestsIcon',
+    permission: 'workflow.request.create',
+    labelWhenHeld: { permission: 'workflow.request.manage', label: 'Manage Requests' },
+  },
 ];
+
+/**
+ * Settings lives in the header menu, not the sidebar (docs/08: hourly work in
+ * the capped nav; configuration in the gear).
+ */
+export const SETTINGS_MENU_ITEMS: readonly NavItem[] = [
+  {
+    href: '/settings/fees',
+    label: 'Fee Settings',
+    icon: 'FeesIcon',
+    permission: 'fees.plan.read',
+  },
+];
+
+export function visibleSettingsMenuItems(permissions: readonly string[]): readonly NavItem[] {
+  const held = new Set(permissions);
+  return SETTINGS_MENU_ITEMS.filter((item) => held.has(item.permission));
+}
 
 /**
  * The items a set of permissions reveals.
@@ -290,6 +341,11 @@ export function visibleNavItems(permissions: readonly string[]): readonly NavIte
 function prune(items: readonly NavItem[], held: ReadonlySet<string>): readonly NavItem[] {
   return items
     .filter((item) => held.has(item.permission))
+    .map((item) =>
+      item.labelWhenHeld !== undefined && held.has(item.labelWhenHeld.permission)
+        ? { ...item, label: item.labelWhenHeld.label }
+        : item,
+    )
     .map((item) => {
       if (item.children === undefined) {
         return item;
@@ -310,4 +366,9 @@ function hasOnlyChildren(item: NavItem): boolean {
   return CONTAINER_ONLY.has(item.href);
 }
 
-const CONTAINER_ONLY: ReadonlySet<string> = new Set(['/attendance', '/fees', '/academics']);
+const CONTAINER_ONLY: ReadonlySet<string> = new Set([
+  '/attendance',
+  '/fees',
+  '/academics',
+  '/finance',
+]);

@@ -1,61 +1,69 @@
 'use client';
 
 import {
-  createStaffSchema,
   ROUTES,
+  ASSIGNABLE_STAFF_ROLES,
   STAFF_ROLE_LABELS,
-  STAFF_ROLES,
   staffRoleCanSignIn,
+  type BulkDeleteStaffResult,
   type StaffInviteResult,
   type StaffListItem,
-  type StaffRole,
 } from '@ilm/contracts';
 import {
   Button,
   ConfirmDialog,
-  DataTable,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Field,
-  Input,
+  DateDisplay,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Money,
-  Pagination,
   SimpleSelect,
   StatusBadge,
+  TwoLineCell,
   useToast,
-  type Column,
+  type CardTableColumn,
 } from '@ilm/ui';
 import {
+  AccountIcon,
+  CalendarIcon,
   CreateIcon,
+  DesignationIcon,
   DeleteIcon,
   EditIcon,
+  FeesIcon,
   ICON_SIZE,
-  SearchIcon,
+  MoreIcon,
   SendIcon,
+  StudentsIcon,
+  ViewIcon,
 } from '@ilm/ui/icons';
 import { minorUnits } from '@ilm/utils';
+import type { Route } from 'next';
+import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useState, useTransition, type FormEvent } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 
+import { ListDataTable } from '@/components/list-data-table';
+import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
+import { ListTableScreen } from '@/components/list-table-screen';
+import { TableSelectionBar } from '@/components/table-selection-bar';
+import { useDebouncedSearchFilter } from '@/components/fees/fee-list-shared';
+import { ListPageToolbar } from '@/components/list-page-toolbar';
+import { nextSortParams } from '@/lib/list-page';
+import { GENDER_TONE, STAFF_ROLE_TONE } from '@/lib/staff-badge-tones';
+import { listTableSelectColumn, useRowSelection } from '@/lib/use-row-selection';
+import { StaffDialog } from '@/components/staff-dialog';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { pageIntro } from '@/lib/page-copy';
 import { mutate } from '@/lib/mutate';
+import { useTenantHref } from '@/lib/use-tenant-href';
 
-/**
- * Staff — everybody the school employs.
- *
- * ## Roles here are jobs, not permissions
- *
- * A janitor and a security guard are on the payroll and have no reason to sign
- * in; a head and an admin need both. The form reflects that directly: choosing
- * a role that does not use the portal removes the password field rather than
- * leaving it there to be filled in and quietly ignored.
- */
-
-const ROLE_OPTIONS = STAFF_ROLES.map((value) => ({ value, label: STAFF_ROLE_LABELS[value] }));
+// The school owner (Admin) is not on the staff list, so is not a filter either.
+const ROLE_OPTIONS = ASSIGNABLE_STAFF_ROLES.map((value) => ({
+  value,
+  label: STAFF_ROLE_LABELS[value],
+}));
 
 const GENDER_OPTIONS = [
   { value: 'MALE', label: 'Male' },
@@ -71,6 +79,9 @@ export interface StaffTableProps {
   error?: string | undefined;
   search: string;
   role: string;
+  gender: string;
+  sort: 'name' | 'employeeNo' | 'role' | 'createdAt';
+  order: 'asc' | 'desc';
   canManage: boolean;
 }
 
@@ -82,6 +93,9 @@ export function StaffTable({
   error,
   search,
   role,
+  gender,
+  sort,
+  order,
   canManage,
 }: StaffTableProps) {
   const router = useRouter();
@@ -94,19 +108,18 @@ export function StaffTable({
   const [editing, setEditing] = useState<StaffListItem | undefined>(undefined);
   const [deleting, setDeleting] = useState<StaffListItem | undefined>(undefined);
   const [inviting, setInviting] = useState<string | undefined>(undefined);
+  const [pendingBulkDelete, setPendingBulkDelete] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
-  /**
-   * Send, or re-send, somebody's invitation to the portal.
-   *
-   * Re-sending is not a second invitation: the server supersedes the previous
-   * one, so a link that was forwarded or left in a mailbox stops working the
-   * moment this is pressed. That is usually the reason it is being pressed.
-   *
-   * `sent: false` is reported as a warning, not an error. The invitation was
-   * created; what failed was a mail server, and telling a school "that did not
-   * work" about something that half-worked sends them to look for a problem
-   * that is not theirs.
-   */
+  const {
+    selected,
+    clearSelection,
+    allOnPageSelected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  } = useRowSelection(rows, (row) => row.id);
+
   async function sendInvite(row: StaffListItem) {
     setInviting(row.id);
     const result = await mutate<StaffInviteResult>(ROUTES.staff.invite(row.id), 'POST');
@@ -118,19 +131,14 @@ export function StaffTable({
     }
 
     if (result.data.sent) {
-      toast.success(`Invitation sent to ${result.data.email}`, 'The link works once, for 3 days.');
+      toast.success(`Invitation sent to ${result.data.email}.`);
     } else {
-      toast.warning(
-        'Invitation created, but the email did not go',
-        'Check the mail settings, then press Re-send.',
-      );
+      toast.warning('Invitation created, but the email did not send.');
     }
 
     router.refresh();
   }
 
-  // Filters live in the URL: a filtered view is then a link someone can send,
-  // it survives a refresh, and Back does what it should.
   function apply(next: Record<string, string>) {
     const query = new URLSearchParams(params.toString());
     for (const [key, value] of Object.entries(next)) {
@@ -141,15 +149,50 @@ export function StaffTable({
       }
     }
 
-    // Changing a filter returns to the first page — see the same note in the
-    // students table. Paging is exempt or it would undo itself.
     if (!Object.hasOwn(next, 'offset')) {
       query.delete('offset');
+      clearSelection();
     }
 
     startTransition(() => {
       router.push(`${pathname}?${query.toString()}`);
     });
+  }
+
+  const { searchQuery, onSearchQueryChange } = useDebouncedSearchFilter(search, (value) => {
+    apply({ q: value });
+  });
+
+  function toggleSort(columnKey: string) {
+    const next = nextSortParams(sort, order, columnKey);
+    apply({ sort: next.sort, order: next.order });
+  }
+
+  function clearFilters(): void {
+    apply({ q: '', role: '', gender: '' });
+  }
+
+  async function confirmBulkDelete() {
+    setIsBulkDeleting(true);
+    const result = await mutate<BulkDeleteStaffResult>(ROUTES.staff.bulkDelete, 'POST', {
+      ids: [...selected],
+      reason: 'Removed from the staff list',
+    });
+    setIsBulkDeleting(false);
+    setPendingBulkDelete(false);
+
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+
+    const { deleted, skipped } = result.data;
+    toast.success(deleted === 1 ? '1 staff member removed.' : `${String(deleted)} staff members removed.`);
+    if (skipped.length > 0) {
+      toast.warning(`${String(skipped.length)} were already removed.`);
+    }
+    clearSelection();
+    router.refresh();
   }
 
   async function confirmDelete() {
@@ -168,240 +211,282 @@ export function StaffTable({
     }
 
     toast.success(
-      `${deleting.name} removed`,
-      deleting.hasLogin ? 'Their portal access was revoked immediately.' : undefined,
+      deleting.hasLogin
+        ? `${deleting.name} removed and portal access revoked.`
+        : `${deleting.name} removed.`,
     );
     setDeleting(undefined);
     router.refresh();
   }
 
-  const columns: Column<StaffListItem>[] = [
-    {
-      key: 'employeeNo',
-      header: 'ID',
-      render: (row) => <span className="font-mono text-xs select-all">{row.employeeNo}</span>,
-    },
-    {
-      key: 'name',
-      header: 'Name',
-      render: (row) => (
-        <div className="min-w-0">
-          <p className="truncate font-medium text-foreground">{row.name}</p>
-          {row.email === null ? null : (
-            <p className="truncate text-xs text-muted-foreground">{row.email}</p>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'role',
-      header: 'Role',
-      render: (row) => (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span>{STAFF_ROLE_LABELS[row.role]}</span>
-          {/*
-            Three states, and the office acts differently on each: nobody to
-            chase, somebody to chase, nobody to chase for a different reason.
-            One "Login" badge covering the last two would say nothing now that
-            every teacher gets an account the moment they are added.
-          */}
-          {row.invitePending ? (
-            <StatusBadge tone="warning">Invited</StatusBadge>
-          ) : row.hasLogin ? (
-            <StatusBadge tone="neutral">Login</StatusBadge>
-          ) : null}
-        </div>
-      ),
-    },
-    {
-      key: 'gender',
-      header: 'Gender',
-      hideOnMobile: true,
-      render: (row) =>
-        row.gender === null ? (
-          <span className="text-muted-foreground">—</span>
-        ) : (
-          <span>{row.gender.charAt(0) + row.gender.slice(1).toLowerCase()}</span>
-        ),
-    },
-    {
-      key: 'casual',
-      header: 'Casual',
-      align: 'end',
-      hideOnMobile: true,
-      render: (row) => <span className="font-mono text-sm tabular-nums">{row.casualLeaves}</span>,
-    },
-    {
-      key: 'sick',
-      header: 'Sick',
-      align: 'end',
-      hideOnMobile: true,
-      render: (row) => <span className="font-mono text-sm tabular-nums">{row.sickLeaves}</span>,
-    },
-    {
-      key: 'salary',
-      header: 'Salary',
-      align: 'end',
-      render: (row) => <Money valueMinor={minorUnits(row.basicSalaryMinor)} dashOnZero />,
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'end',
-      render: (row) =>
-        !canManage ? null : (
-          <div className="flex items-center justify-end gap-1">
-            {/*
-              Only for the roles that use the portal, and only once there is an
-              address to send to. A janitor has nothing to be invited to, and a
-              teacher with no email has nowhere to be invited at — showing the
-              button in either case is offering an action that always fails.
-            */}
-            {!staffRoleCanSignIn(row.role) || row.email === null || row.email === '' ? null : (
-              <Button
-                tone="ghost"
-                size="sm"
-                isPending={inviting === row.id}
-                disabled={inviting !== undefined}
-                onClick={() => {
-                  void sendInvite(row);
-                }}
-              >
-                <SendIcon className={ICON_SIZE.inline} aria-hidden />
-                {row.hasLogin ? 'Re-send' : 'Invite'}
-                <span className="sr-only">
-                  {row.invitePending
-                    ? ' invitation — they have not set a password yet'
-                    : ' invitation'}
-                </span>
-              </Button>
-            )}
-            <Button
-              tone="ghost"
-              size="sm"
-              onClick={() => {
-                setEditing(row);
-                setDialogOpen(true);
-              }}
-            >
-              <EditIcon className={ICON_SIZE.inline} aria-hidden />
-              Edit
-            </Button>
-            <Button
-              tone="ghost"
-              size="sm"
-              aria-label={`Remove ${row.name}`}
-              onClick={() => {
-                setDeleting(row);
-              }}
-            >
-              <DeleteIcon className={`${ICON_SIZE.inline} text-danger`} aria-hidden />
-            </Button>
-          </div>
-        ),
-    },
-  ];
+  const isFiltered = search !== '' || role !== '' || gender !== '';
 
-  return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Staff</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {total} {total === 1 ? 'person' : 'people'} on the payroll
-          </p>
-        </div>
-
-        {canManage ? (
-          <Button
-            onClick={() => {
-              setEditing(undefined);
+  const columns = useMemo((): CardTableColumn<StaffListItem>[] => {
+    return [
+      listTableSelectColumn({
+        selected,
+        allOnPageSelected,
+        someOnPageSelected,
+        toggleAllOnPage,
+        toggleRowSelected,
+        getRowId: (row) => row.id,
+        rowAriaLabel: (row) => row.name,
+        selectAllAriaLabel: 'Select every staff member on this page',
+      }),
+      {
+        key: 'name',
+        label: 'Name',
+        icon: AccountIcon,
+        width: 'w-[22%]',
+        sortable: true,
+        render: (row) => (
+          <TwoLineCell
+            primary={row.name}
+            secondary={row.email === null || row.email === '' ? '—' : row.email}
+          />
+        ),
+      },
+      {
+        key: 'role',
+        label: 'Role',
+        icon: StudentsIcon,
+        width: 'w-[12%]',
+        sortable: true,
+        render: (row) => <StatusBadge tone={STAFF_ROLE_TONE[row.role]}>{STAFF_ROLE_LABELS[row.role]}</StatusBadge>,
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        icon: AccountIcon,
+        width: 'w-[13%]',
+        render: (row) => <StaffStatusCell row={row} />,
+      },
+      {
+        key: 'gender',
+        label: 'Gender',
+        icon: AccountIcon,
+        width: 'w-[9%]',
+        hideOnMobile: true,
+        render: (row) =>
+          row.gender === null ? (
+            <span className="text-sm text-muted-foreground">—</span>
+          ) : (
+            <StatusBadge tone={GENDER_TONE[row.gender as 'MALE' | 'FEMALE' | 'OTHER']}>
+              {row.gender.charAt(0) + row.gender.slice(1).toLowerCase()}
+            </StatusBadge>
+          ),
+      },
+      {
+        key: 'casual',
+        label: 'Casual',
+        icon: AccountIcon,
+        width: 'w-[8%]',
+        hideOnMobile: true,
+        render: (row) => <span className="text-sm tabular-nums">{row.casualLeaves}</span>,
+      },
+      {
+        key: 'sick',
+        label: 'Sick',
+        icon: AccountIcon,
+        width: 'w-[8%]',
+        hideOnMobile: true,
+        render: (row) => <span className="text-sm tabular-nums">{row.sickLeaves}</span>,
+      },
+      {
+        key: 'salary',
+        label: 'Salary',
+        icon: FeesIcon,
+        width: 'w-[11%]',
+        render: (row) => (
+          <span className="text-sm">
+            <Money valueMinor={minorUnits(row.basicSalaryMinor)} dashOnZero />
+          </span>
+        ),
+      },
+      {
+        key: 'createdAt',
+        label: 'Created at',
+        icon: CalendarIcon,
+        width: 'w-[10%]',
+        hideOnMobile: true,
+        sortable: true,
+        render: (row) => (
+          <span className="text-sm text-foreground">
+            <DateDisplay value={row.createdAt} />
+          </span>
+        ),
+      },
+      {
+        key: 'actions',
+        label: 'Actions',
+        width: 'w-[7%]',
+        render: (row) => (
+          <StaffRowActions
+            row={row}
+            canManage={canManage}
+            inviting={inviting === row.id}
+            busy={inviting !== undefined}
+            onInvite={() => {
+              void sendInvite(row);
+            }}
+            onEdit={() => {
+              setEditing(row);
               setDialogOpen(true);
             }}
-          >
-            <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-            Add staff
-          </Button>
-        ) : null}
-      </header>
-
-      <form
-        className="flex flex-wrap items-end gap-3"
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          const value = new FormData(event.currentTarget).get('q');
-          apply({ q: typeof value === 'string' ? value : '' });
-        }}
-      >
-        <div className="relative min-w-56 flex-1">
-          <SearchIcon
-            className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            name="q"
-            defaultValue={search}
-            placeholder="Name, email or ID"
-            aria-label="Search staff"
-            className="ps-9"
-          />
-        </div>
-
-        <div className="w-44">
-          <SimpleSelect
-            value={role}
-            onValueChange={(next) => {
-              apply({ role: next });
+            onDelete={() => {
+              setDeleting(row);
             }}
-            options={ROLE_OPTIONS}
-            ariaLabel="Filter by role"
-            emptyOption={{ value: '', label: 'Any role' }}
           />
+        ),
+      },
+    ];
+  }, [
+    allOnPageSelected,
+    canManage,
+    inviting,
+    selected,
+    someOnPageSelected,
+    toggleAllOnPage,
+    toggleRowSelected,
+  ]);
+
+  return (
+    <div className="w-full space-y-6">
+      <WorkspacePageHeader title="Staff" description={pageIntro('/staff')} />
+
+      {error !== undefined ? (
+        <div
+          role="alert"
+          className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+        >
+          {error}
         </div>
+      ) : null}
 
-        <Button type="submit" tone="outline">
-          Search
-        </Button>
-      </form>
+      <ListTableScreen
+        tableTitle="All staff"
+        filters={
+          <ListPageToolbar
+            searchQuery={searchQuery}
+            onSearchQueryChange={onSearchQueryChange}
+            searchPlaceholder="Name or email"
+            searchAriaLabel="Search staff"
+            filters={
+              <>
+                <SimpleSelect
+                  className="w-full min-w-32 sm:w-36"
+                  value={role}
+                  triggerIcon={DesignationIcon}
+                  onValueChange={(next) => {
+                    apply({ role: next });
+                  }}
+                  options={ROLE_OPTIONS}
+                  ariaLabel="Filter by role"
+                  emptyOption={{ value: '', label: 'Any role' }}
+                />
+                <SimpleSelect
+                  className="w-full min-w-32 sm:w-36"
+                  value={gender}
+                  triggerIcon={StudentsIcon}
+                  onValueChange={(next) => {
+                    apply({ gender: next });
+                  }}
+                  options={GENDER_OPTIONS}
+                  ariaLabel="Filter by gender"
+                  emptyOption={{ value: '', label: 'Any gender' }}
+                />
+                {canManage ? (
+                  <Button
+                    className="w-full sm:w-auto"
+                    onClick={() => {
+                      setEditing(undefined);
+                      setDialogOpen(true);
+                    }}
+                  >
+                    <CreateIcon className={ICON_SIZE.inline} aria-hidden />
+                    Add staff
+                  </Button>
+                ) : null}
+              </>
+            }
+          />
+        }
+        footer={
+          <ListTablePaginationFooter
+            total={total}
+            limit={limit}
+            offset={offset}
+            label="staff"
+            onPageChange={(next) => {
+              apply({ offset: next === 0 ? '' : String(next) });
+            }}
+            onLimitChange={(next) => {
+              apply({ limit: next, offset: '' });
+            }}
+          />
+        }
+      >
+        <ListDataTable
+          title="All staff"
+          caption="Staff"
+          rows={rows}
+          columns={columns}
+          rowKey={(row) => row.id}
+          isFiltered={isFiltered}
+          onClearFilters={clearFilters}
+          sort={{
+            key: sort,
+            direction: order,
+            onToggle: toggleSort,
+          }}
+          empty={{
+            title: 'Nobody on the staff list yet',
+            description:
+              'Add the people who work here — teachers, office staff, and anyone else on the payroll. Only some roles need a portal login.',
+            action: canManage ? (
+              <Button
+                onClick={() => {
+                  setEditing(undefined);
+                  setDialogOpen(true);
+                }}
+              >
+                <CreateIcon className={ICON_SIZE.inline} aria-hidden />
+                Add the first person
+              </Button>
+            ) : undefined,
+          }}
+          renderMobileRow={(row) => (
+            <div className="px-4 py-3">
+              <TwoLineCell
+                primary={row.name}
+                secondary={STAFF_ROLE_LABELS[row.role]}
+              />
+            </div>
+          )}
+        />
+      </ListTableScreen>
 
-      <DataTable
-        rows={rows}
-        columns={columns}
-        rowKey={(row) => row.id}
-        error={error}
-        isFiltered={search !== '' || role !== ''}
-        onClearFilters={() => {
-          apply({ q: '', role: '' });
-        }}
-        caption="Staff"
-        empty={{
-          title: 'Nobody on the staff list yet',
-          description:
-            'Add the people who work here — teachers, office staff, and anyone else on the payroll. Only some roles need a portal login.',
-          action: canManage ? (
+      {canManage ? (
+        <TableSelectionBar
+          count={selected.size}
+          noun="staff member"
+          onClear={clearSelection}
+          actions={
             <Button
+              tone="danger"
+              size="sm"
+              disabled={isBulkDeleting}
               onClick={() => {
-                setEditing(undefined);
-                setDialogOpen(true);
+                setPendingBulkDelete(true);
               }}
             >
-              <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-              Add the first person
+              <DeleteIcon className={ICON_SIZE.inline} aria-hidden />
+              Delete selected
             </Button>
-          ) : undefined,
-        }}
-      />
-
-      {total === 0 ? null : (
-        <Pagination
-          total={total}
-          limit={limit}
-          offset={offset}
-          label="staff"
-          onChange={(next) => {
-            apply({ offset: next === 0 ? '' : String(next) });
-          }}
+          }
         />
+      ) : (
+        <TableSelectionBar count={selected.size} noun="staff member" onClear={clearSelection} />
       )}
 
       {dialogOpen ? (
@@ -414,6 +499,26 @@ export function StaffTable({
           }}
         />
       ) : null}
+
+      <ConfirmDialog
+        open={pendingBulkDelete}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingBulkDelete(false);
+          }
+        }}
+        title={
+          selected.size === 1
+            ? 'Remove 1 staff member?'
+            : `Remove ${String(selected.size)} staff members?`
+        }
+        description="Their employment records are kept for payroll history, but any portal access they have ends immediately."
+        confirmLabel="Remove"
+        tone="danger"
+        onConfirm={() => {
+          void confirmBulkDelete();
+        }}
+      />
 
       <ConfirmDialog
         open={deleting !== undefined}
@@ -436,273 +541,105 @@ export function StaffTable({
   );
 }
 
-function StaffDialog({
-  editing,
-  onClose,
-}: {
-  editing: StaffListItem | undefined;
-  onClose: () => void;
-}) {
-  const router = useRouter();
-  const toast = useToast();
-
-  const [name, setName] = useState(editing?.name ?? '');
-  const [email, setEmail] = useState(editing?.email ?? '');
-  const [phone, setPhone] = useState(editing?.phone ?? '');
-  const [gender, setGender] = useState<string>(editing?.gender ?? '');
-  const [role, setRole] = useState<StaffRole>(editing?.role ?? 'TEACHER');
-  const [casual, setCasual] = useState(String(editing?.casualLeaves ?? 0));
-  const [sick, setSick] = useState(String(editing?.sickLeaves ?? 0));
-  const [salary, setSalary] = useState(
-    editing === undefined ? '0' : (editing.basicSalaryMinor / 100).toFixed(2),
-  );
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [formError, setFormError] = useState<string | undefined>(undefined);
-  const [isPending, setIsPending] = useState(false);
-
-  const canSignIn = staffRoleCanSignIn(role);
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setFieldErrors({});
-    setFormError(undefined);
-
-    const rupees = Number(salary);
-    if (!Number.isFinite(rupees) || rupees < 0) {
-      setFieldErrors({ basicSalaryMinor: 'Enter an amount, for example 40000.' });
-      return;
-    }
-
-    const payload = {
-      name,
-      role,
-      casualLeaves: Number(casual) || 0,
-      sickLeaves: Number(sick) || 0,
-      // Rounded here rather than trusted: a fractional paisa would be rejected
-      // by the schema with a message about a field nobody typed.
-      basicSalaryMinor: Math.trunc(rupees * 100 + 0.5),
-      ...(email.trim() === '' ? {} : { email }),
-      ...(phone.trim() === '' ? {} : { phone: toE164(phone) }),
-      ...(gender === '' ? {} : { gender }),
-    };
-
-    if (editing === undefined) {
-      const parsed = createStaffSchema.safeParse(payload);
-      if (!parsed.success) {
-        const next: Record<string, string> = {};
-        for (const issue of parsed.error.issues) {
-          next[issue.path.join('.')] = issue.message;
-        }
-        setFieldErrors(next);
-        setFormError('Check the highlighted fields.');
-        return;
-      }
-    }
-
-    setIsPending(true);
-    const result =
-      editing === undefined
-        ? await mutate(ROUTES.staff.create, 'POST', payload)
-        : await mutate(ROUTES.staff.update(editing.id), 'PATCH', payload);
-    setIsPending(false);
-
-    if (!result.ok) {
-      setFormError(result.message);
-      setFieldErrors(result.fieldErrors);
-      return;
-    }
-
-    toast.success(editing === undefined ? `${name} added` : `${name} saved`);
-    onClose();
-    router.refresh();
+function StaffStatusCell({ row }: { row: StaffListItem }) {
+  if (row.invitePending) {
+    return <StatusBadge tone="warning">Invited</StatusBadge>;
   }
-
-  return (
-    <Dialog
-      open
-      onOpenChange={(next) => {
-        if (!next) {
-          onClose();
-        }
-      }}
-    >
-      <DialogContent>
-        <form
-          onSubmit={(event) => {
-            void submit(event);
-          }}
-          noValidate
-        >
-          <DialogHeader>
-            <DialogTitle>
-              {editing === undefined ? 'Add staff' : `Edit ${editing.name}`}
-            </DialogTitle>
-            <DialogDescription>
-              Roles that use the portal can be given a login. Security guards and janitors are on
-              the payroll without one.
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogBody className="space-y-4">
-            {formError === undefined ? null : (
-              <div
-                role="alert"
-                className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
-              >
-                {formError}
-              </div>
-            )}
-
-            <Field label="Name" error={fieldErrors['name']} required>
-              <Input
-                value={name}
-                autoFocus
-                onChange={(event) => {
-                  setName(event.target.value);
-                }}
-              />
-            </Field>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Role" error={fieldErrors['role']} required>
-                <SimpleSelect
-                  value={role}
-                  onValueChange={(next) => {
-                    setRole(next as StaffRole);
-                  }}
-                  options={ROLE_OPTIONS}
-                  ariaLabel="Role"
-                />
-              </Field>
-              <Field label="Gender" error={fieldErrors['gender']}>
-                <SimpleSelect
-                  value={gender}
-                  onValueChange={setGender}
-                  options={GENDER_OPTIONS}
-                  ariaLabel="Gender"
-                  emptyOption={{ value: '', label: 'Not recorded' }}
-                />
-              </Field>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                label="Email"
-                error={fieldErrors['email']}
-                hint={
-                  canSignIn
-                    ? 'The invitation to set up their portal login is sent here.'
-                    : 'Optional — this role does not use the portal.'
-                }
-                required={canSignIn}
-              >
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(event) => {
-                    setEmail(event.target.value);
-                  }}
-                />
-              </Field>
-              <Field
-                label="Phone"
-                error={fieldErrors['phone']}
-                hint="Start with 0 and we will add +92."
-                required
-              >
-                <Input
-                  type="tel"
-                  inputMode="tel"
-                  placeholder="0300 1234567"
-                  value={phone}
-                  onChange={(event) => {
-                    setPhone(event.target.value);
-                  }}
-                />
-              </Field>
-            </div>
-
-            {/*
-              No password field, on purpose.
-
-              An administrator typing one in is how a school ends up with a
-              shared password behind the counter: somebody has to say it out
-              loud to hand it over. Staff who use the portal are sent an
-              invitation and choose their own, which nobody else ever sees.
-            */}
-            {!canSignIn ? null : (
-              <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                {editing === undefined
-                  ? 'An invitation is emailed as soon as you save. They choose their own password — nobody here ever sees it.'
-                  : editing.invitePending
-                    ? 'Invited, but they have not set a password yet. Re-send from the staff list if the link went astray.'
-                    : editing.hasLogin
-                      ? 'They have set their own password. Re-send an invitation only if they have lost access.'
-                      : 'No portal login yet. Send an invitation from the staff list.'}
-              </p>
-            )}
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              <Field label="Casual leaves" error={fieldErrors['casualLeaves']}>
-                <Input
-                  value={casual}
-                  inputMode="numeric"
-                  className="text-right font-mono tabular-nums"
-                  onChange={(event) => {
-                    setCasual(event.target.value);
-                  }}
-                />
-              </Field>
-              <Field label="Sick leaves" error={fieldErrors['sickLeaves']}>
-                <Input
-                  value={sick}
-                  inputMode="numeric"
-                  className="text-right font-mono tabular-nums"
-                  onChange={(event) => {
-                    setSick(event.target.value);
-                  }}
-                />
-              </Field>
-              <Field label="Salary (PKR)" error={fieldErrors['basicSalaryMinor']}>
-                <Input
-                  value={salary}
-                  inputMode="decimal"
-                  className="text-right font-mono tabular-nums"
-                  onChange={(event) => {
-                    setSalary(event.target.value);
-                  }}
-                />
-              </Field>
-            </div>
-          </DialogBody>
-
-          <DialogFooter>
-            <Button type="button" tone="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" isPending={isPending}>
-              {editing === undefined ? 'Add staff' : 'Save changes'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
+  if (row.hasLogin) {
+    return <StatusBadge tone="success">Active</StatusBadge>;
+  }
+  if (staffRoleCanSignIn(row.role)) {
+    return <StatusBadge tone="neutral">No login</StatusBadge>;
+  }
+  return <StatusBadge tone="neutral">Payroll only</StatusBadge>;
 }
 
-/**
- * Input assistance, not validation.
- *
- * Pakistani numbers are written `0300 1234567` everywhere, and `phoneSchema`
- * wants E.164. Rejecting the form people know is a bad first impression.
- */
-function toE164(input: string): string {
-  const digits = input.replace(/[\s()-]/g, '');
-  if (digits.startsWith('+')) {
-    return digits;
-  }
-  if (digits.startsWith('0')) {
-    return `+92${digits.slice(1)}`;
-  }
-  return digits;
+function StaffRowActions({
+  row,
+  canManage,
+  inviting,
+  busy,
+  onInvite,
+  onEdit,
+  onDelete,
+}: {
+  row: StaffListItem;
+  canManage: boolean;
+  inviting: boolean;
+  busy: boolean;
+  onInvite: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const tenantHref = useTenantHref();
+  const profileHref = tenantHref(`/staff/${row.id}` as Route);
+  // Only while there is something to send: no account yet, or one still waiting
+  // on its password. Once they have signed in the invitation has done its job.
+  const canInvite =
+    canManage &&
+    staffRoleCanSignIn(row.role) &&
+    row.email !== null &&
+    row.email !== '' &&
+    (row.invitePending || !row.hasLogin);
+
+  return (
+    <div className="flex justify-start" data-stop-row-click>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            tone="ghost"
+            size="icon"
+            className="size-8 text-muted-foreground hover:text-foreground"
+            disabled={busy}
+            aria-label={`Actions for ${row.name}`}
+          >
+            <MoreIcon className="size-4" aria-hidden="true" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem asChild>
+            <Link href={profileHref}>
+              <ViewIcon className="size-4" aria-hidden="true" />
+              View profile
+            </Link>
+          </DropdownMenuItem>
+          {canInvite ? (
+            <DropdownMenuItem
+              disabled={busy}
+              onSelect={() => {
+                onInvite();
+              }}
+            >
+              <SendIcon className="size-4" aria-hidden="true" />
+              {inviting ? 'Sending…' : row.invitePending ? 'Re-send invite' : 'Send invite'}
+            </DropdownMenuItem>
+          ) : null}
+          {canManage ? (
+            <>
+              <DropdownMenuItem
+                disabled={busy}
+                onSelect={() => {
+                  onEdit();
+                }}
+              >
+                <EditIcon className="size-4" aria-hidden="true" />
+                Edit staff
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={busy}
+                className="text-danger focus:text-danger"
+                onSelect={() => {
+                  onDelete();
+                }}
+              >
+                <DeleteIcon className="size-4" aria-hidden="true" />
+                Remove staff
+              </DropdownMenuItem>
+            </>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
 }

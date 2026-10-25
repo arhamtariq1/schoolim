@@ -1,0 +1,61 @@
+import {
+  ROUTES,
+  type ClassLevel,
+  type FeeHead,
+} from '@ilm/contracts';
+
+import { FeeHeadsManager } from '@/components/fee-heads-manager';
+import { WorkspacePageHeader } from '@/components/workspace-page-header';
+import { apiFetch } from '@/lib/api';
+import { getSession } from '@/lib/session';
+
+/**
+ * Settings › Fees — the catalogue a school charges from, and the late fee.
+ *
+ * The first screen in the fee flow and deliberately so: an admission form
+ * cannot autofill anything until this list exists, so a school sets its prices
+ * once here and then never retypes them per child.
+ *
+ * The late fee sits below the catalogue rather than inside it. It is not a
+ * charge anybody is assigned — it is what happens when a due date passes — so
+ * it is one setting for the school instead of a row in the price list.
+ *
+ * Fetched on the server so the first paint carries real rows — a settings page
+ * that opens on a spinner, then a table, then a re-layout is three states for
+ * data that was one query away (docs/16 §7).
+ */
+export default async function FeeSettingsPage() {
+  const [session, result, classesResult] = await Promise.all([
+    getSession(),
+    apiFetch<{ data: FeeHead[] }>(ROUTES.fees.heads),
+    // Class levels, not setup: setup returns [] when there is no current
+    // session, and fee applicability is about the class catalogue itself.
+    apiFetch<{ data: ClassLevel[] }>(ROUTES.academics.classes),
+  ]);
+
+  // A school that has never set one charges nothing, which is also what the
+  // columns default to — so a failed fetch renders the same thing the database
+  // would have said, with the reason beside it.
+  const classes = (classesResult.ok ? classesResult.data.data : []).map((entry) => ({
+    id: entry.id,
+    name: entry.name,
+  }));
+
+  const canConfigure = session?.permissions.includes('fees.plan.configure') ?? false;
+
+  return (
+    <>
+      <WorkspacePageHeader
+        title="All Fees"
+        description="Define fee types for admissions and monthly collection. Changes to amounts apply to new admissions only."
+      />
+
+      <FeeHeadsManager
+        initialHeads={result.ok ? result.data.data : []}
+        classes={classes}
+        error={result.ok ? undefined : result.message}
+        canConfigure={canConfigure}
+      />
+    </>
+  );
+}

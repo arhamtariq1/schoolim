@@ -53,6 +53,9 @@ const VALID = {
   legalName: 'Renamed Public School (Pvt) Ltd',
   address: 'Plot 22, Block 6, PECHS',
   city: 'Karachi',
+  // Required since `20261006120000_school_levels`: a school says which levels
+  // it teaches, and at least one of them.
+  schoolLevels: ['primary', 'middle'],
   phone: '+922134528800',
   email: 'office@renamed.test',
   timezone: 'Asia/Dubai',
@@ -184,7 +187,7 @@ async function write(body: Record<string, unknown>, jar = ownerA, host = HOST_A)
 async function row(schoolId: string): Promise<Record<string, unknown>> {
   const rows = await admin.$queryRawUnsafe<Record<string, unknown>[]>(
     `SELECT name, slug, legal_name, address, city, phone, email, timezone, locale,
-            currency, country, status, primary_color
+            currency, country, status, primary_color, school_levels
        FROM schools WHERE id = $1::uuid`,
     schoolId,
   );
@@ -316,6 +319,20 @@ describe('validation', () => {
   it('rejects a blank name — it is the top line of every challan', async () => {
     expect((await write({ ...VALID, name: '   ' })).status).toBe(400);
     expect((await row(SCHOOL_A))['name']).toBe(BASELINE.name);
+  });
+
+  it('insists a school says which levels it teaches', async () => {
+    // Empty is what every school created before this column existed has, so
+    // "save without choosing" is the common path, not an edge case. It is
+    // refused rather than silently stored, because the levels are what the
+    // product will reason about when it decides which classes a school runs.
+    expect((await write({ ...VALID, schoolLevels: [] })).status).toBe(400);
+    expect((await write({ ...VALID, schoolLevels: ['sixth-form'] })).status).toBe(400);
+  });
+
+  it('stores the levels it was given, in order', async () => {
+    expect((await write({ ...VALID, schoolLevels: ['o-level', 'a-level'] })).status).toBe(200);
+    expect((await row(SCHOOL_A))['school_levels']).toEqual(['o-level', 'a-level']);
   });
 
   it('rejects an over-long address rather than truncating it', async () => {

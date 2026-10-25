@@ -551,3 +551,71 @@ describe('the fee history dialog', () => {
     expect(response.statusCode).toBe(404);
   });
 });
+
+describe('the student’s fee structure after an increment', () => {
+  interface Structure {
+    fees: { feeHeadId: string; amountMinor: number; payableMinor: number }[];
+    totals: { grossMinor: number; payableMinor: number };
+  }
+
+  async function structure(studentId: string): Promise<Structure> {
+    const response = await app.inject({
+      method: 'GET',
+      url: ROUTES.fees.studentFees(studentId),
+      headers: { host: HOST_A, cookie: jar },
+    });
+    expect(response.statusCode).toBe(200);
+    return response.json<{ data: Structure }>().data;
+  }
+
+  async function save(studentId: string, lines: Record<string, unknown>[]) {
+    return app.inject({
+      method: 'PUT',
+      url: ROUTES.fees.studentFees(studentId),
+      headers: { host: HOST_A, cookie: jar },
+      payload: { lines },
+    });
+  }
+
+  it('shows each fee once, at the amount in force today', async () => {
+    // A rise that has already started, and one still to come.
+    await apply({ studentIds: [AASIA], effectiveFrom: '2026-06-01' });
+    await apply({ studentIds: [AASIA], effectiveFrom: STILL_PENDING });
+
+    const { fees, totals } = await structure(AASIA);
+    expect(fees.filter((fee) => fee.feeHeadId === HEAD_TUITION)).toEqual([
+      expect.objectContaining({ amountMinor: 550_000 }),
+    ]);
+    // 5,500 tuition + 2,000 transport — not three tuition rows summed.
+    expect(totals.grossMinor).toBe(750_000);
+  });
+
+  it('keeps the timeline when the structure is saved', async () => {
+    await apply({ studentIds: [AASIA], effectiveFrom: STILL_PENDING });
+
+    // The fee dialog saves every line, changed or not; this changes transport.
+    const saved = await save(AASIA, [
+      { feeHeadId: HEAD_TUITION, amountMinor: 500_000 },
+      { feeHeadId: HEAD_TRANSPORT, amountMinor: 250_000 },
+    ]);
+    expect(saved.statusCode).toBe(200);
+
+    const timeline = await history(AASIA);
+    const tuition = timeline.entries.filter((entry) => entry.feeHeadId === HEAD_TUITION);
+    // The scheduled rise survives, and the agreement still starts when it did.
+    expect(tuition.map((entry) => entry.effectiveFrom)).toEqual([STILL_PENDING, AGREED_FROM]);
+    const transport = timeline.entries.filter((entry) => entry.feeHeadId === HEAD_TRANSPORT);
+    expect(transport).toEqual([
+      expect.objectContaining({ effectiveFrom: AGREED_FROM, amountMinor: 250_000 }),
+    ]);
+  });
+
+  it('removes a fee taken off the structure, and nothing else', async () => {
+    const saved = await save(AASIA, [{ feeHeadId: HEAD_TUITION, amountMinor: 500_000 }]);
+    expect(saved.statusCode).toBe(200);
+
+    const timeline = await history(AASIA);
+    expect(timeline.entries.map((entry) => entry.feeHeadId)).toEqual([HEAD_TUITION]);
+    expect(timeline.entries[0]?.effectiveFrom).toBe(AGREED_FROM);
+  });
+});

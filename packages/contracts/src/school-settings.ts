@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 import { emailSchema, phoneSchema, textSchema, timeZoneSchema } from './primitives';
+import { levelClassNamesSchema } from './school-level-classes';
+import { schoolLevelsSchema } from './school-levels';
 
 /**
  * The school's own details — what it is called, where it is, how to reach it.
@@ -36,6 +38,9 @@ export const schoolSettingsSchema = z.object({
   slug: z.string(),
   address: z.string().nullable(),
   city: z.string().nullable(),
+  schoolLevels: z.array(z.string()),
+  oLevelClassNames: z.array(z.string()),
+  aLevelClassNames: z.array(z.string()),
   phone: z.string().nullable(),
   email: z.string().nullable(),
   timezone: z.string(),
@@ -75,6 +80,8 @@ export const updateSchoolSettingsSchema = z
     /** Street address. Multi-line — it goes on letterhead as typed. */
     address: optionalTextSchema(240),
     city: textSchema(80),
+    schoolLevels: schoolLevelsSchema,
+    ...levelClassNamesSchema.shape,
     phone: phoneSchema,
     email: emailSchema,
     timezone: timeZoneSchema,

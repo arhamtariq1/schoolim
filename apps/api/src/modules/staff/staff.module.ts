@@ -1,11 +1,20 @@
 import {
+  bulkDeleteStaffSchema,
   createStaffSchema,
   deleteStaffSchema,
+  addSalaryAdjustmentSchema,
+  recordSalaryPaymentSchema,
+  staffSalaryListQuerySchema,
   ROUTES,
   staffListQuerySchema,
   updateStaffSchema,
+  type BulkDeleteStaffResult,
   type StaffInviteResult,
   type StaffListItem,
+  type StaffProfile,
+  type StaffSalaryDetail,
+  type StaffSalaryList,
+  type StaffSalaryReceipt,
 } from '@ilm/contracts';
 import {
   Body,
@@ -24,8 +33,10 @@ import { type FastifyRequest } from 'fastify';
 
 import { RequirePermission } from '../../shared/rbac/rbac.guard';
 import { CLOCK, clockProvider, type Clock } from '../../shared/time/clock.provider';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 import { StaffInviteService } from './staff-invite.service';
+import { StaffSalaryService } from './staff-salary.service';
 import { StaffService } from './staff.service';
 
 /**
@@ -43,6 +54,7 @@ export class StaffController {
   constructor(
     private readonly staff: StaffService,
     private readonly invites: StaffInviteService,
+    private readonly salary: StaffSalaryService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -73,6 +85,23 @@ export class StaffController {
     return { data: await this.staff.create(createStaffSchema.parse(body)) };
   }
 
+  /**
+   * Declared before the `:id` routes: `POST /staff/bulk-delete` must not be read
+   * as an operation on a staff member whose id is "bulk-delete".
+   */
+  @Post(ROUTES.staff.bulkDelete)
+  @RequirePermission('staff.record.update')
+  async bulkDelete(@Body() body: unknown): Promise<{ data: BulkDeleteStaffResult }> {
+    const input = bulkDeleteStaffSchema.parse(body);
+    return { data: await this.staff.removeMany(input.ids, input.reason) };
+  }
+
+  @Get('/api/v1/staff/:id')
+  @RequirePermission('staff.record.read')
+  async get(@Param('id') id: string): Promise<{ data: StaffProfile }> {
+    return { data: await this.staff.getProfile(id) };
+  }
+
   @Patch('/api/v1/staff/:id')
   @RequirePermission('staff.record.update')
   async update(@Param('id') id: string, @Body() body: unknown): Promise<{ data: StaffListItem }> {
@@ -95,6 +124,57 @@ export class StaffController {
     return { data: await this.invites.invite(id, this.clock.now()) };
   }
 
+  /**
+   * What somebody was paid, month by month.
+   *
+   * Its own permission rather than riding on the staff row: `staff.salary.read`
+   * is held by the owner, the principal and the accountant, and not by a role
+   * that may merely open the staff list.
+   */
+  @Get('/api/v1/staff/:id/salary')
+  @RequirePermission('staff.salary.read')
+  async salaryDetail(@Param('id') id: string): Promise<{ data: StaffSalaryDetail }> {
+    return { data: await this.salary.detail(id) };
+  }
+
+  /**
+   * Record a payment — full or part — against one month's salary. Append-only:
+   * there is no edit and no delete, and it cannot exceed what is still owed.
+   */
+  @Post('/api/v1/staff/:id/salary-payments')
+  @RequirePermission('staff.salary.pay')
+  async recordSalary(
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<{ data: StaffSalaryDetail }> {
+    return { data: await this.salary.record(id, recordSalaryPaymentSchema.parse(body)) };
+  }
+
+  /** A bonus, allowance, deduction or manual adjustment, with a reason. Append-only. */
+  @Post('/api/v1/staff/:id/salary-adjustments')
+  @RequirePermission('staff.salary.pay')
+  async adjustSalary(
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<{ data: StaffSalaryDetail }> {
+    return { data: await this.salary.adjust(id, addSalaryAdjustmentSchema.parse(body)) };
+  }
+
+  /** Every person's salary for a month — the Salaries page. */
+  @Get('/api/v1/staff-salaries')
+  @RequirePermission('staff.salary.read')
+  async salaryList(@Query() rawQuery: unknown): Promise<{ data: StaffSalaryList }> {
+    return { data: await this.salary.list(staffSalaryListQuerySchema.parse(rawQuery)) };
+  }
+
+  @Get('/api/v1/staff-salaries/payments/:paymentId/receipt')
+  @RequirePermission('staff.salary.read')
+  async salaryReceipt(
+    @Param('paymentId') paymentId: string,
+  ): Promise<{ data: StaffSalaryReceipt }> {
+    return { data: await this.salary.receipt(paymentId) };
+  }
+
   @Delete('/api/v1/staff/:id')
   @RequirePermission('staff.record.update')
   async remove(@Param('id') id: string, @Body() body: unknown): Promise<{ data: { ok: true } }> {
@@ -105,8 +185,9 @@ export class StaffController {
 }
 
 @Module({
+  imports: [NotificationsModule],
   controllers: [StaffController],
-  providers: [clockProvider, StaffService, StaffInviteService],
+  providers: [clockProvider, StaffService, StaffInviteService, StaffSalaryService],
   exports: [StaffInviteService],
 })
 export class StaffModule {}

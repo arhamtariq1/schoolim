@@ -89,6 +89,12 @@ export const copyCountSchema = z.union([z.literal(3), z.literal(4)]);
 
 export const voucherSettingsSchema = z.object({
   showLogo: z.boolean(),
+  /** The uploaded bank marks, in one row at the foot of each copy. */
+  showBankLogos: z.boolean(),
+  /** Issue and due date, beside the student details. */
+  showDates: z.boolean(),
+  /** GR number, class, section and session. The name always prints. */
+  showStudentDetails: z.boolean(),
   footerNote: z.string().nullable(),
   copyCount: copyCountSchema,
   copyLabels: z.array(z.string()),
@@ -113,6 +119,11 @@ export type VoucherSettings = z.infer<typeof voucherSettingsSchema>;
 export const updateVoucherSettingsSchema = z
   .object({
     showLogo: z.boolean(),
+    // Default on: a client written before these switches existed keeps
+    // printing exactly what it printed.
+    showBankLogos: z.boolean().default(true),
+    showDates: z.boolean().default(true),
+    showStudentDetails: z.boolean().default(true),
     /** Blank is stored as null: "no note" has one representation, not two. */
     footerNote: z
       .string()
@@ -161,6 +172,9 @@ export type UpdateVoucherSettings = z.infer<typeof updateVoucherSettingsSchema>;
 /** The product's challan, for a school that has never opened the settings. */
 export const DEFAULT_VOUCHER_SETTINGS: VoucherSettings = {
   showLogo: true,
+  showBankLogos: true,
+  showDates: true,
+  showStudentDetails: true,
   footerNote: null,
   copyCount: DEFAULT_COPY_COUNT,
   copyLabels: [...DEFAULT_COPY_LABELS[DEFAULT_COPY_COUNT]],

@@ -11,7 +11,7 @@ export function Input({ className, ...props }: ComponentProps<'input'>) {
   return (
     <input
       className={cn(
-        'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base',
+        'flex h-10 w-full rounded-md border border-input bg-field px-3 py-2 text-base',
         // Explicit opacity — some browsers wash muted placeholders out against
         // a white field until they are effectively invisible.
         'placeholder:text-muted-foreground/80 placeholder:opacity-100',

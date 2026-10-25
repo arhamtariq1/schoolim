@@ -1,5 +1,8 @@
 import {
   type BulkDeleteResult,
+  type BulkPaymentResult,
+  type BulkPaySkipReason,
+  type BulkRecordPayment,
   type Challan,
   type VoucherIds,
   type BulkSkipReason,
@@ -14,14 +17,23 @@ import {
   type VoucherTotals,
   type WaiveVoucher,
 } from '@ilm/contracts';
-import { fromDecimalString, minorUnits, systemClock, toDecimalString } from '@ilm/utils';
+import {
+  DEFAULT_TIMEZONE,
+  fromDecimalString,
+  minorUnits,
+  systemClock,
+  toDecimalString,
+  today as todayIn,
+} from '@ilm/utils';
 import { Injectable } from '@nestjs/common';
 
 import { type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
+import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
-import { computeLateFee } from './voucher-generation.service';
+import { computeLateFee, lateFeeBaseMinor } from './voucher-generation.service';
 import { firstOfMonth, monthLabel } from './voucher-planner';
 
 /**
@@ -56,7 +68,11 @@ import { firstOfMonth, monthLabel } from './voucher-planner';
  */
 @Injectable()
 export class VouchersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly context: TenantContextService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   // --- Reading --------------------------------------------------------------
 
@@ -153,13 +169,6 @@ export class VouchersService {
               sortOrder: true,
             },
           },
-          arrears: {
-            select: {
-              sourceVoucherId: true,
-              amount: true,
-              source: { select: { voucherNo: true, billMonths: true } },
-            },
-          },
           allocations: {
             select: {
               amount: true,
@@ -196,12 +205,16 @@ export class VouchersService {
           discountMinor: minorUnits(decimalToMinor(line.discount)),
           sortOrder: line.sortOrder,
         })),
-        arrears: row.arrears.map((arrear) => ({
-          sourceVoucherId: arrear.sourceVoucherId,
-          sourceVoucherNo: arrear.source.voucherNo,
-          sourceBillMonths: arrear.source.billMonths.map(isoDate),
-          amountMinor: minorUnits(decimalToMinor(arrear.amount)),
-        })),
+        // Only what is still owed, at what is still owed: a voucher carrying a
+        // month paid at the counter since must not ask for it again.
+        arrears: row.arrears
+          .map((arrear) => ({
+            sourceVoucherId: arrear.sourceVoucherId,
+            sourceVoucherNo: arrear.source.voucherNo,
+            sourceBillMonths: arrear.source.billMonths.map(isoDate),
+            amountMinor: minorUnits(liveArrearMinor(arrear.source)),
+          }))
+          .filter((arrear) => arrear.amountMinor > 0),
         payments: row.allocations.map((allocation) => ({
           id: allocation.payment.id,
           receiptNo: allocation.payment.receiptNo,
@@ -322,6 +335,7 @@ export class VouchersService {
           issueDate: true,
           dueDate: true,
           validTill: true,
+          lateFeeAuto: true,
         },
       });
       if (voucher === null) {
@@ -373,11 +387,18 @@ export class VouchersService {
         discount = decimalToMinor(totals._sum.discount);
       }
 
-      const arrears = decimalToMinor(voucher.arrearsAmount);
+      // The voucher's own charge. Arrears are carried beside it in
+      // `arrears_amount`, never inside it — the database CHECK is
+      // `net = gross - discount - waiver`, and folding them in counted the same
+      // debt on two vouchers (migration 20260907020000).
       const waiver = decimalToMinor(voucher.waiverAmount);
-      const net = gross - discount - waiver + arrears;
+      const net = gross - discount - waiver;
 
-      const lateFee = input.applyLateFee === false ? 0 : await recomputeLateFee(tx, net);
+      // An edit that does not mention the switch keeps the voucher's own
+      // setting. Treating "not sent" as "on" quietly added a surcharge to a
+      // voucher generated without one the first time its due date was moved.
+      const lateFeeOn = input.applyLateFee ?? voucher.lateFeeAuto;
+      const lateFee = lateFeeOn ? await recomputeLateFee(tx, id) : 0;
 
       await tx.feeVoucher.update({
         where: { id },
@@ -396,6 +417,8 @@ export class VouchersService {
             : {}),
         },
       });
+
+      await this.announceChange(tx, id, 'was updated', 'Check the new amount and due date before you pay.');
     });
 
     return this.detail(id);
@@ -629,6 +652,12 @@ export class VouchersService {
         'This voucher collected a security deposit, so it cannot be deleted. Refund or clear the deposit first.',
       );
     }
+    if (skip.reason === 'HAS_WAIVER') {
+      throw new BusinessRuleError(
+        'FEES_VOUCHER_HAS_WAIVER',
+        'A waiver was given on this voucher, so it is kept as the record of that waiver.',
+      );
+    }
     throw new BusinessRuleError(
       'FEES_VOUCHER_ALREADY_PAID',
       'Money has been received against this voucher, so it cannot be deleted. Reverse the payment first.',
@@ -674,7 +703,7 @@ export class VouchersService {
     return this.prisma.tenant(async (tx) => {
       const vouchers = await tx.feeVoucher.findMany({
         where: { id: { in: unique } },
-        select: { id: true, voucherNo: true, paidAmount: true },
+        select: { id: true, voucherNo: true, paidAmount: true, waiverAmount: true, studentId: true },
       });
 
       const found = new Set(vouchers.map((voucher) => voucher.id));
@@ -690,6 +719,11 @@ export class VouchersService {
       for (const voucher of vouchers) {
         if (decimalToMinor(voucher.paidAmount) > 0) {
           skipped.push({ id: voucher.id, voucherNo: voucher.voucherNo, reason: 'ALREADY_PAID' });
+        } else if (decimalToMinor(voucher.waiverAmount) > 0) {
+          // A waiver is money the school chose not to take, with a reason
+          // against it. Deleting the voucher would delete that record too, and
+          // the year's waivers would stop adding up.
+          skipped.push({ id: voucher.id, voucherNo: voucher.voucherNo, reason: 'HAS_WAIVER' });
         } else {
           candidates.push(voucher);
         }
@@ -787,6 +821,33 @@ export class VouchersService {
       await tx.feeVoucherPeriod.deleteMany({ where: { voucherId: { in: deletable } } });
       const removed = await tx.feeVoucher.deleteMany({ where: { id: { in: deletable } } });
 
+      // Tell each family their voucher is gone, so the one in their bell does not
+      // lead nowhere. Same transaction: nothing is announced that did not happen.
+      const gone = candidates.filter((voucher) => removing.has(voucher.id));
+      const guardians = await this.notifications.guardianUserIdsByStudent(
+        tx,
+        gone.map((voucher) => voucher.studentId),
+      );
+      await this.notifications.notifyMany(
+        tx,
+        gone.flatMap((voucher) => {
+          const recipientIds = guardians.get(voucher.studentId) ?? [];
+          return recipientIds.length === 0
+            ? []
+            : [
+                {
+                  recipientIds,
+                  exceptUserId: this.context.userId,
+                  kind: 'voucher.cancelled' as const,
+                  title: `Fee voucher ${voucher.voucherNo} was cancelled`,
+                  body: 'Nothing is owed on it. A corrected voucher may follow.',
+                  entityType: 'voucher' as const,
+                  entityId: voucher.id,
+                },
+              ];
+        }),
+      );
+
       return { deleted: removed.count, skipped };
     });
   }
@@ -839,13 +900,6 @@ export class VouchersService {
               sortOrder: true,
             },
           },
-          arrears: {
-            select: {
-              sourceVoucherId: true,
-              amount: true,
-              source: { select: { voucherNo: true, billMonths: true } },
-            },
-          },
         },
       });
 
@@ -863,12 +917,16 @@ export class VouchersService {
           discountMinor: minorUnits(decimalToMinor(line.discount)),
           sortOrder: line.sortOrder,
         })),
-        arrears: row.arrears.map((arrear) => ({
-          sourceVoucherId: arrear.sourceVoucherId,
-          sourceVoucherNo: arrear.source.voucherNo,
-          sourceBillMonths: arrear.source.billMonths.map(isoDate),
-          amountMinor: minorUnits(decimalToMinor(arrear.amount)),
-        })),
+        // Only what is still owed, at what is still owed: a voucher carrying a
+        // month paid at the counter since must not ask for it again.
+        arrears: row.arrears
+          .map((arrear) => ({
+            sourceVoucherId: arrear.sourceVoucherId,
+            sourceVoucherNo: arrear.source.voucherNo,
+            sourceBillMonths: arrear.source.billMonths.map(isoDate),
+            amountMinor: minorUnits(liveArrearMinor(arrear.source)),
+          }))
+          .filter((arrear) => arrear.amountMinor > 0),
       }));
 
       // Sorted here rather than in the query: class and section hang off the
@@ -899,150 +957,352 @@ export class VouchersService {
    * between, and settling it twice would take money for a debt already cleared.
    */
   async pay(id: string, input: RecordPayment, actorId: string | undefined): Promise<VoucherDetail> {
-    await this.prisma.tenant(async (tx) => {
-      const replay = await tx.feePayment.findFirst({
-        where: { idempotencyKey: input.idempotencyKey },
-        select: { id: true },
-      });
-      if (replay !== null) {
-        // A double-submitted form is one payment.
-        return;
-      }
+    await this.prisma.tenant(async (tx) => this.recordPayment(tx, id, input, actorId));
+    return this.detail(id);
+  }
 
-      const voucher = await tx.feeVoucher.findUnique({
+  /**
+   * Settle many vouchers in full — the bulk bar's Record payment.
+   *
+   * ## One transaction per voucher, not one for the batch
+   *
+   * A selection of forty will routinely hold one that was paid at the counter
+   * a minute ago. Rolling back thirty-nine receipts for it would make the
+   * operator find it, untick it and start again; instead it is skipped and
+   * named, and the rest are recorded. Each voucher is the same transaction the
+   * single Pay button runs, so the arrears re-read and the late-fee rule are
+   * not reimplemented here.
+   *
+   * ## Oldest due date first
+   *
+   * October may carry September as arrears. Paying September first leaves
+   * October owing only its own month; the other order settles September
+   * through October's allocation and then finds September already paid. Both
+   * add up to the same money, but this order gives each voucher its own receipt.
+   *
+   * ## Idempotent, and so resumable
+   *
+   * Each payment is keyed `{batch key}:{voucher id}`. Resending the batch —
+   * after a double click, or after a run that died half way — finds the
+   * payments already made and records only the rest.
+   */
+  async payMany(input: BulkRecordPayment, actorId: string | undefined): Promise<BulkPaymentResult> {
+    const found = await this.prisma.tenant(async (tx) =>
+      tx.feeVoucher.findMany({
+        where: { id: { in: input.ids } },
+        select: { id: true, voucherNo: true },
+        orderBy: [{ dueDate: 'asc' }, { voucherNo: 'asc' }],
+      }),
+    );
+
+    const skipped: BulkPaymentResult['skipped'] = input.ids
+      .filter((id) => !found.some((voucher) => voucher.id === id))
+      .map((id) => ({ id, voucherNo: null, reason: 'NOT_FOUND' as const }));
+
+    let paid = 0;
+    let total = 0;
+
+    for (const voucher of found) {
+      try {
+        const amount = await this.prisma.tenant(async (tx) =>
+          this.recordPayment(
+            tx,
+            voucher.id,
+            {
+              method: input.method,
+              paidOn: input.paidOn,
+              ...(input.reference === undefined ? {} : { reference: input.reference }),
+              idempotencyKey: `${input.idempotencyKey}:${voucher.id}`,
+            },
+            actorId,
+          ),
+        );
+        paid += 1;
+        total += amount;
+      } catch (error) {
+        const reason = bulkPaySkipReason(error);
+        if (reason === undefined) {
+          // Not a property of this voucher — the database is down, the
+          // school went read-only. Everything recorded so far is committed
+          // and keyed, so resending the batch picks up from here.
+          throw error;
+        }
+        skipped.push({ id: voucher.id, voucherNo: voucher.voucherNo, reason });
+      }
+    }
+
+    return { paid, totalMinor: minorUnits(total), skipped };
+  }
+
+  /**
+   * One payment, inside the caller's transaction. Returns what was recorded.
+   */
+  private async recordPayment(
+    tx: TransactionClient,
+    id: string,
+    input: RecordPayment,
+    actorId: string | undefined,
+  ): Promise<number> {
+    const replay = await tx.feePayment.findFirst({
+      where: { idempotencyKey: input.idempotencyKey },
+      select: { amount: true },
+    });
+    if (replay !== null) {
+      // A double-submitted form is one payment.
+      return decimalToMinor(replay.amount);
+    }
+
+    // Money cannot arrive tomorrow. A typo of 2027 for 2026 would otherwise
+    // drop the payment out of this month's collection and every report until
+    // that day came. Judged on the school's own calendar, not the server's.
+    const school = await tx.school.findFirst({
+      select: { lateFeeGraceDays: true, timezone: true },
+    });
+    if (input.paidOn > todayIn(systemClock, school?.timezone ?? DEFAULT_TIMEZONE)) {
+      throw new BusinessRuleError(
+        'FEES_PAYMENT_IN_FUTURE',
+        'The payment date cannot be in the future.',
+      );
+    }
+
+    // Lock the voucher and every voucher it carries before reading a balance.
+    // Two clerks paying 3,000 each on a 6,000 voucher at the same moment would
+    // otherwise both read "nothing paid", both write "3,000 paid", and leave
+    // two receipts against one recorded payment. One statement, in id order,
+    // so two payments that share vouchers always lock them in the same order.
+    await tx.$queryRawUnsafe(
+      `SELECT v.id FROM fee_vouchers v
+        WHERE v.id = $1::uuid
+           OR v.id IN (SELECT source_voucher_id FROM fee_voucher_arrears WHERE voucher_id = $1::uuid)
+        ORDER BY v.id
+        FOR UPDATE`,
+      id,
+    );
+
+    const voucher = await tx.feeVoucher.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        studentId: true,
+        status: true,
+        grossAmount: true,
+        netPayable: true,
+        paidAmount: true,
+        dueDate: true,
+        lateFeeAmount: true,
+        arrears: { select: { sourceVoucherId: true } },
+      },
+    });
+    if (voucher === null) {
+      throw new NotFoundError('voucher');
+    }
+    if (voucher.status === 'CANCELLED') {
+      throw new BusinessRuleError(
+        'FEES_VOUCHER_CANCELLED',
+        'That voucher was cancelled. Nothing is owed on it.',
+      );
+    }
+    // Refused before the late-fee step, not after it. A voucher paid on time
+    // and selected again in a later bulk payment would otherwise "pay late",
+    // gain a surcharge it never owed, and take that surcharge as a new receipt.
+    if (voucher.status === 'PAID' || voucher.status === 'WAIVED') {
+      throw new BusinessRuleError(
+        'FEES_VOUCHER_ALREADY_PAID',
+        'That voucher is already settled.',
+      );
+    }
+
+    // The vouchers this one carries, re-read rather than trusted. The parent
+    // may have paid September at the counter since October was printed, and
+    // settling it twice would take money for a debt already cleared.
+    const carried =
+      voucher.arrears.length === 0
+        ? []
+        : await tx.feeVoucher.findMany({
+            where: {
+              id: { in: voucher.arrears.map((arrear) => arrear.sourceVoucherId) },
+              status: { in: ['UNPAID', 'PARTIALLY_PAID'] },
+            },
+            orderBy: { dueDate: 'asc' },
+            select: { id: true, netPayable: true, paidAmount: true },
+          });
+
+    const arrearsOutstanding = carried.reduce(
+      (sum, source) =>
+        sum + decimalToMinor(source.netPayable) - decimalToMinor(source.paidAmount),
+      0,
+    );
+
+    // Paying after the due date (plus any grace days) owes the surcharge, and
+    // at that point it becomes a real charge on this voucher rather than a
+    // number in a box.
+    const graceDays = school?.lateFeeGraceDays ?? 0;
+    const lateFrom = new Date(voucher.dueDate);
+    lateFrom.setUTCDate(lateFrom.getUTCDate() + graceDays);
+    const paidLate = new Date(input.paidOn) > lateFrom;
+    // A second, part payment must not raise the surcharge again: once the
+    // LATE_FEE line exists it is already inside `netPayable`.
+    const alreadyCharged =
+      (await tx.feeVoucherLine.count({ where: { voucherId: id, kind: 'LATE_FEE' } })) > 0;
+    const lateFee = paidLate && !alreadyCharged ? decimalToMinor(voucher.lateFeeAmount) : 0;
+
+    if (lateFee > 0) {
+      await tx.feeVoucherLine.create({
+        data: {
+          voucherId: id,
+          kind: 'LATE_FEE',
+          label: 'Late payment surcharge',
+          amount: toDecimalString(minorUnits(lateFee)),
+          sortOrder: 900,
+        } as never,
+      });
+      // Raised on gross as well as payable, so `net = gross - discount -
+      // waiver` still holds. The database refuses anything else.
+      await tx.feeVoucher.update({
         where: { id },
-        select: {
-          id: true,
-          studentId: true,
-          status: true,
-          grossAmount: true,
-          netPayable: true,
-          paidAmount: true,
-          dueDate: true,
-          lateFeeAmount: true,
-          arrears: { select: { sourceVoucherId: true } },
+        data: {
+          grossAmount: toDecimalString(minorUnits(decimalToMinor(voucher.grossAmount) + lateFee)),
+          netPayable: toDecimalString(minorUnits(decimalToMinor(voucher.netPayable) + lateFee)),
         },
       });
-      if (voucher === null) {
-        throw new NotFoundError('voucher');
-      }
-      if (voucher.status === 'CANCELLED') {
-        throw new BusinessRuleError(
-          'FEES_VOUCHER_CANCELLED',
-          'That voucher was cancelled. Nothing is owed on it.',
-        );
-      }
+    }
 
-      // The vouchers this one carries, re-read rather than trusted. The parent
-      // may have paid September at the counter since October was printed, and
-      // settling it twice would take money for a debt already cleared.
-      const carried =
-        voucher.arrears.length === 0
-          ? []
-          : await tx.feeVoucher.findMany({
-              where: {
-                id: { in: voucher.arrears.map((arrear) => arrear.sourceVoucherId) },
-                status: { in: ['UNPAID', 'PARTIALLY_PAID'] },
-              },
-              orderBy: { dueDate: 'asc' },
-              select: { id: true, netPayable: true, paidAmount: true },
-            });
-
-      const arrearsOutstanding = carried.reduce(
-        (sum, source) =>
-          sum + decimalToMinor(source.netPayable) - decimalToMinor(source.paidAmount),
-        0,
+    const ownBalance =
+      decimalToMinor(voucher.netPayable) + lateFee - decimalToMinor(voucher.paidAmount);
+    if (ownBalance + arrearsOutstanding <= 0) {
+      throw new BusinessRuleError(
+        'FEES_VOUCHER_ALREADY_PAID',
+        'That voucher is already settled.',
       );
+    }
 
-      // Paying after the due date owes the surcharge, and at that point it
-      // becomes a real charge on this voucher rather than a number in a box.
-      const paidLate = new Date(input.paidOn) > voucher.dueDate;
-      const lateFee = paidLate ? decimalToMinor(voucher.lateFeeAmount) : 0;
+    const due = ownBalance + arrearsOutstanding;
+    const amount = input.amountMinor ?? due;
 
-      if (lateFee > 0) {
-        await tx.feeVoucherLine.create({
-          data: {
-            voucherId: id,
-            kind: 'LATE_FEE',
-            label: 'Late payment surcharge',
-            amount: toDecimalString(minorUnits(lateFee)),
-            sortOrder: 900,
-          } as never,
-        });
-        // Raised on gross as well as payable, so `net = gross - discount -
-        // waiver` still holds. The database refuses anything else.
-        await tx.feeVoucher.update({
-          where: { id },
-          data: {
-            grossAmount: toDecimalString(minorUnits(decimalToMinor(voucher.grossAmount) + lateFee)),
-            netPayable: toDecimalString(minorUnits(decimalToMinor(voucher.netPayable) + lateFee)),
-          },
-        });
-      }
+    if (amount > due) {
+      throw new BusinessRuleError(
+        'FEES_PAYMENT_EXCEEDS_BALANCE',
+        `That is more than the ${formatRupees(due)} outstanding. Overpayment is not recorded here.`,
+      );
+    }
 
-      const ownBalance =
-        decimalToMinor(voucher.netPayable) + lateFee - decimalToMinor(voucher.paidAmount);
-      if (ownBalance + arrearsOutstanding <= 0) {
-        throw new BusinessRuleError(
-          'FEES_VOUCHER_ALREADY_PAID',
-          'That voucher is already settled.',
-        );
-      }
-
-      const due = ownBalance + arrearsOutstanding;
-      const amount = input.amountMinor ?? due;
-
-      if (amount > due) {
-        throw new BusinessRuleError(
-          'FEES_PAYMENT_EXCEEDS_BALANCE',
-          `That is more than the ${formatRupees(due)} outstanding. Overpayment is not recorded here.`,
-        );
-      }
-
-      const receiptNo = await nextReceiptNo(tx);
-      const payment = await tx.feePayment.create({
-        data: {
-          studentId: voucher.studentId,
-          receiptNo,
-          amount: toDecimalString(minorUnits(amount)),
-          method: input.method,
-          paidOn: new Date(input.paidOn),
-          idempotencyKey: input.idempotencyKey,
-          ...(input.reference === undefined ? {} : { reference: input.reference }),
-          ...(actorId === undefined ? {} : { createdBy: actorId }),
-        } as never,
-        select: { id: true },
-      });
-
-      /**
-       * Oldest first, across the vouchers this one carries, then whatever is
-       * left to the voucher in hand — docs §7, "allocation is oldest-first".
-       *
-       * A part payment therefore closes September before it touches October,
-       * which is both what an accountant expects and what stops the oldest
-       * debt ageing indefinitely while newer ones are settled.
-       */
-      let remaining = amount;
-
-      for (const source of carried) {
-        if (remaining <= 0) {
-          break;
-        }
-        const owed = decimalToMinor(source.netPayable) - decimalToMinor(source.paidAmount);
-        if (owed <= 0) {
-          continue;
-        }
-        const applied = Math.min(owed, remaining);
-        await this.applyToVoucher(tx, payment.id, source.id, applied);
-        remaining -= applied;
-      }
-
-      if (remaining > 0) {
-        await this.applyToVoucher(tx, payment.id, id, Math.min(remaining, ownBalance));
-      }
+    const receiptNo = await nextReceiptNo(tx);
+    const payment = await tx.feePayment.create({
+      data: {
+        studentId: voucher.studentId,
+        receiptNo,
+        amount: toDecimalString(minorUnits(amount)),
+        method: input.method,
+        paidOn: new Date(input.paidOn),
+        idempotencyKey: input.idempotencyKey,
+        ...(input.reference === undefined ? {} : { reference: input.reference }),
+        ...(actorId === undefined ? {} : { createdBy: actorId }),
+      } as never,
+      select: { id: true },
     });
 
-    return this.detail(id);
+    /**
+     * Oldest first, across the vouchers this one carries, then whatever is
+     * left to the voucher in hand — docs §7, "allocation is oldest-first".
+     *
+     * A part payment therefore closes September before it touches October,
+     * which is both what an accountant expects and what stops the oldest
+     * debt ageing indefinitely while newer ones are settled.
+     */
+    let remaining = amount;
+
+    for (const source of carried) {
+      if (remaining <= 0) {
+        break;
+      }
+      const owed = decimalToMinor(source.netPayable) - decimalToMinor(source.paidAmount);
+      if (owed <= 0) {
+        continue;
+      }
+      const applied = Math.min(owed, remaining);
+      await this.applyToVoucher(tx, payment.id, source.id, applied, input.paidOn, actorId);
+      remaining -= applied;
+    }
+
+    if (remaining > 0) {
+      await this.applyToVoucher(
+        tx,
+        payment.id,
+        id,
+        Math.min(remaining, ownBalance),
+        input.paidOn,
+        actorId,
+      );
+    }
+
+    await this.announcePayment(tx, id, voucher.studentId, amount, receiptNo, actorId);
+
+    return amount;
+  }
+
+  /** The family hears that their voucher changed — never about a change nobody can see. */
+  private async announceChange(
+    tx: TransactionClient,
+    voucherId: string,
+    what: string,
+    detail: string,
+  ): Promise<void> {
+    const voucher = await tx.feeVoucher.findUnique({
+      where: { id: voucherId },
+      select: { voucherNo: true, studentId: true },
+    });
+    if (voucher === null) {
+      return;
+    }
+    const guardians = await this.notifications.guardianUserIdsByStudent(tx, [voucher.studentId]);
+    await this.notifications.notify(tx, {
+      recipientIds: guardians.get(voucher.studentId) ?? [],
+      exceptUserId: this.context.userId,
+      kind: 'voucher.updated',
+      title: `Fee voucher ${voucher.voucherNo} ${what}`,
+      body: detail,
+      entityType: 'voucher',
+      entityId: voucherId,
+    });
+  }
+
+  /** The family hears that money was received, with the receipt number. */
+  private async announcePayment(
+    tx: TransactionClient,
+    voucherId: string,
+    studentId: string,
+    amountMinor: number,
+    receiptNo: string,
+    actorId: string | undefined,
+  ): Promise<void> {
+    const guardians = await this.notifications.guardianUserIdsByStudent(tx, [studentId]);
+    const voucher = await tx.feeVoucher.findUnique({
+      where: { id: voucherId },
+      select: { voucherNo: true, student: { select: { firstName: true, lastName: true } } },
+    });
+    const child = `${voucher?.student.firstName ?? ''} ${voucher?.student.lastName ?? ''}`.trim();
+
+    // The family, with the receipt number.
+    await this.notifications.notify(tx, {
+      recipientIds: guardians.get(studentId) ?? [],
+      exceptUserId: actorId,
+      kind: 'voucher.payment_received',
+      title: `Payment received: ${formatRupees(amountMinor)}`,
+      body: `${child} · Voucher ${voucher?.voucherNo ?? ''} · Receipt ${receiptNo}`.trim(),
+      entityType: 'voucher',
+      entityId: voucherId,
+    });
+
+    // The people who watch the school's income, when somebody else took the money.
+    await this.notifications.notify(tx, {
+      recipientIds: await this.notifications.userIdsWithPermission(tx, 'finance.revenue.read'),
+      exceptUserId: actorId,
+      kind: 'voucher.payment_recorded',
+      title: `Payment recorded: ${formatRupees(amountMinor)}`,
+      body: `${child} · Voucher ${voucher?.voucherNo ?? ''} · Receipt ${receiptNo}`.trim(),
+      entityType: 'voucher',
+      entityId: voucherId,
+    });
   }
 
   /**
@@ -1059,6 +1319,10 @@ export class VouchersService {
     actorId: string | undefined,
   ): Promise<VoucherDetail> {
     await this.prisma.tenant(async (tx) => {
+      // Locked for the same reason a payment locks it: a waiver and a payment
+      // landing together must not both be computed from the same balance.
+      await tx.$queryRawUnsafe(`SELECT id FROM fee_vouchers WHERE id = $1::uuid FOR UPDATE`, id);
+
       const voucher = await tx.feeVoucher.findUnique({
         where: { id },
         select: {
@@ -1115,17 +1379,27 @@ export class VouchersService {
       });
 
       void actorId;
+
+      await this.announceChange(tx, id, 'was reduced', `A waiver of ${formatRupees(amount)} has been applied.`);
     });
 
     return this.detail(id);
   }
 
-  /** One allocation, and the voucher status that follows from it. */
+  /**
+   * One allocation, and the voucher status that follows from it.
+   *
+   * `paidOn` is the day the money arrived, as the operator entered it. It is
+   * what the voucher records as its paid date: a payment backdated to the 20th
+   * was paid on the 20th, not on the day somebody typed it in.
+   */
   private async applyToVoucher(
     tx: TransactionClient,
     paymentId: string,
     voucherId: string,
     amountMinor: number,
+    paidOn: string,
+    actorId: string | undefined,
   ): Promise<void> {
     if (amountMinor <= 0) {
       return;
@@ -1137,7 +1411,7 @@ export class VouchersService {
 
     const target = await tx.feeVoucher.findUniqueOrThrow({
       where: { id: voucherId },
-      select: { netPayable: true, paidAmount: true },
+      select: { netPayable: true, paidAmount: true, studentId: true, voucherNo: true },
     });
 
     const net = decimalToMinor(target.netPayable);
@@ -1158,15 +1432,77 @@ export class VouchersService {
       data: {
         paidAmount: toDecimalString(minorUnits(paid)),
         status: paid >= net ? 'PAID' : 'PARTIALLY_PAID',
-        ...(paid >= net ? { paidOn: systemClock.now() } : {}),
+        ...(paid >= net ? { paidOn: new Date(paidOn) } : {}),
       },
+    });
+
+    if (paid >= net) {
+      await this.holdDeposit(tx, voucherId, target.studentId, target.voucherNo, paidOn, actorId);
+    }
+  }
+
+  /**
+   * A security deposit billed on a voucher becomes a held deposit once the
+   * voucher is paid in full — docs/modules/fees-and-finance.md §10: received
+   * through a normal payment, booked to `security_deposits`.
+   *
+   * ## Only on full payment
+   *
+   * A payment is allocated to a voucher, not to its lines, so a part payment
+   * says nothing about whether the deposit or the tuition beside it was
+   * covered. Paid in full, every line was — so that is the moment the school is
+   * holding the money.
+   *
+   * The amount is what the voucher charged for the deposit, after any discount
+   * on that line. A deposit already recorded against the voucher (by hand at
+   * the counter, or a retried payment) is left as it is: the unique index
+   * allows one per voucher, and booking the float twice is the error it exists
+   * to prevent.
+   */
+  private async holdDeposit(
+    tx: TransactionClient,
+    voucherId: string,
+    studentId: string,
+    voucherNo: string,
+    paidOn: string,
+    actorId: string | undefined,
+  ): Promise<void> {
+    const lines = await tx.feeVoucherLine.findMany({
+      where: { voucherId, kind: 'FEE', feeHead: { type: 'SECURITY' } },
+      select: { amount: true, discount: true },
+    });
+    const depositMinor = lines.reduce(
+      (sum, line) => sum + decimalToMinor(line.amount) - decimalToMinor(line.discount),
+      0,
+    );
+    if (depositMinor <= 0) {
+      return;
+    }
+
+    const existing = await tx.securityDeposit.findFirst({
+      where: { voucherId },
+      select: { id: true },
+    });
+    if (existing !== null) {
+      return;
+    }
+
+    await tx.securityDeposit.create({
+      data: {
+        studentId,
+        voucherId,
+        amount: toDecimalString(minorUnits(depositMinor)),
+        receivedOn: new Date(`${paidOn}T00:00:00.000Z`),
+        note: `Collected on voucher ${voucherNo}`,
+        ...(actorId === undefined ? {} : { createdBy: actorId }),
+      } as never,
     });
   }
 }
 
 // --- Shared shapes ----------------------------------------------------------
 
-const VOUCHER_SUMMARY_SELECT = {
+export const VOUCHER_SUMMARY_SELECT = {
   id: true,
   voucherNo: true,
   status: true,
@@ -1185,6 +1521,24 @@ const VOUCHER_SUMMARY_SELECT = {
   paidAmount: true,
   paidOn: true,
   session: { select: { name: true } },
+  // The vouchers this one carries, with their live balances. `arrearsAmount`
+  // is what was carried when the voucher was cut; a source paid at the counter
+  // since then is no longer owed, and must not be printed or collected again.
+  arrears: {
+    select: {
+      sourceVoucherId: true,
+      amount: true,
+      source: {
+        select: {
+          voucherNo: true,
+          billMonths: true,
+          status: true,
+          netPayable: true,
+          paidAmount: true,
+        },
+      },
+    },
+  },
   student: {
     select: {
       firstName: true,
@@ -1207,7 +1561,7 @@ const VOUCHER_SUMMARY_SELECT = {
   },
 } as const;
 
-type VoucherRow = {
+export type VoucherRow = {
   id: string;
   voucherNo: string;
   status: VoucherSummary['status'];
@@ -1226,6 +1580,17 @@ type VoucherRow = {
   paidAmount: unknown;
   paidOn: Date | null;
   session: { name: string };
+  arrears: {
+    sourceVoucherId: string;
+    amount: unknown;
+    source: {
+      voucherNo: string;
+      billMonths: Date[];
+      status: VoucherSummary['status'];
+      netPayable: unknown;
+      paidAmount: unknown;
+    };
+  }[];
   student: {
     firstName: string;
     lastName: string;
@@ -1235,10 +1600,22 @@ type VoucherRow = {
   };
 };
 
-function toSummary(row: VoucherRow): VoucherSummary {
+/**
+ * What a carried voucher still owes today — zero once it is paid, waived or
+ * cancelled. The same rule `recordPayment` settles by, so the figure on the
+ * screen is the figure the Pay button will accept.
+ */
+export function liveArrearMinor(source: VoucherRow['arrears'][number]['source']): number {
+  if (source.status !== 'UNPAID' && source.status !== 'PARTIALLY_PAID') {
+    return 0;
+  }
+  return Math.max(0, decimalToMinor(source.netPayable) - decimalToMinor(source.paidAmount));
+}
+
+export function toSummary(row: VoucherRow): VoucherSummary {
   const net = decimalToMinor(row.netPayable);
   const paid = decimalToMinor(row.paidAmount);
-  const arrears = decimalToMinor(row.arrearsAmount);
+  const arrears = row.arrears.reduce((sum, link) => sum + liveArrearMinor(link.source), 0);
 
   return {
     id: row.id,
@@ -1333,20 +1710,34 @@ function buildWhere(query: VoucherListQuery): Record<string, unknown> {
   };
 }
 
-/** Allow-listed, never interpolated from client input. */
-function orderFor(sort: string, order: 'asc' | 'desc'): Record<string, unknown> {
-  switch (sort) {
-    case 'dueDate':
-      return { dueDate: order };
-    case 'voucherNo':
-      return { voucherNo: order };
-    case 'amount':
-      return { netPayable: order };
-    case 'studentName':
-      return { student: { firstName: order } };
-    default:
-      return { issueDate: order };
-  }
+/**
+ * Allow-listed, never interpolated from client input.
+ *
+ * Always ends on the voucher's own id. Sorting by a column many rows share —
+ * status, an issue date — leaves the order between them up to the database, and
+ * with paging that means a row can appear on two pages and another on none.
+ */
+function orderFor(sort: string, order: 'asc' | 'desc'): Record<string, unknown>[] {
+  const primary: Record<string, unknown>[] = (() => {
+    switch (sort) {
+      case 'dueDate':
+        return [{ dueDate: order }];
+      case 'voucherNo':
+        return [{ voucherNo: order }];
+      case 'amount':
+        return [{ netPayable: order }];
+      case 'status':
+        return [{ status: order }];
+      case 'studentName':
+        return [{ student: { firstName: order } }, { student: { lastName: order } }];
+      default:
+        return [{ issueDate: order }];
+    }
+  })();
+
+  // The id is UUIDv7, so it sorts by creation: within one issue date the voucher
+  // generated last comes first when newest-first, and a page boundary never splits ties.
+  return [...primary, { id: order }];
 }
 
 /**
@@ -1411,12 +1802,27 @@ async function agreedAmountFor(
   };
 }
 
-async function recomputeLateFee(tx: TransactionClient, netMinor: number): Promise<number> {
+async function recomputeLateFee(tx: TransactionClient, voucherId: string): Promise<number> {
   const school = await tx.school.findFirstOrThrow({
     select: { lateFeePercent: true, lateFeeFlat: true },
   });
+  const [lines, heads] = await Promise.all([
+    tx.feeVoucherLine.findMany({
+      where: { voucherId, kind: 'FEE' },
+      select: { feeHeadId: true, amount: true, discount: true },
+    }),
+    tx.feeHead.findMany({ where: { lateFeeApplies: true }, select: { id: true } }),
+  ]);
+  const base = lateFeeBaseMinor(
+    lines.map((line) => ({
+      feeHeadId: line.feeHeadId,
+      amountMinor: decimalToMinor(line.amount),
+      discountMinor: decimalToMinor(line.discount),
+    })),
+    new Set(heads.map((head) => head.id)),
+  );
   return computeLateFee(
-    netMinor,
+    base,
     fromDecimalString(school.lateFeePercent.toFixed(2)),
     fromDecimalString(school.lateFeeFlat.toFixed(2)),
   );
@@ -1448,7 +1854,7 @@ async function nextReceiptNo(tx: TransactionClient): Promise<string> {
  * "value.trim is not a function" and turns a list into a 500. Narrowing here
  * once is cheaper than remembering at thirty call sites.
  */
-function decimalToMinor(value: unknown): number {
+export function decimalToMinor(value: unknown): number {
   if (value === null || value === undefined) {
     return 0;
   }
@@ -1469,4 +1875,23 @@ function isoDate(value: Date): string {
 
 function formatRupees(minor: number): string {
   return `PKR ${(minor / 100).toLocaleString('en-PK', { minimumFractionDigits: 0 })}`;
+}
+
+/**
+ * Whether a failure belongs to one voucher in a bulk payment — and so skips it —
+ * or to the whole run. Only the voucher's own state is a skip.
+ */
+function bulkPaySkipReason(error: unknown): BulkPaySkipReason | undefined {
+  if (error instanceof NotFoundError) {
+    return 'NOT_FOUND';
+  }
+  if (error instanceof BusinessRuleError) {
+    if (error.code === 'FEES_VOUCHER_ALREADY_PAID') {
+      return 'ALREADY_PAID';
+    }
+    if (error.code === 'FEES_VOUCHER_CANCELLED') {
+      return 'CANCELLED';
+    }
+  }
+  return undefined;
 }

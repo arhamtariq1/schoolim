@@ -11,8 +11,11 @@ import { Button, Field, OtpInput, useToast } from '@ilm/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
+import { AuthFormActions } from './auth-form-actions';
+import { AuthInlineLink, AuthSecondaryNav } from './auth-inline-link';
 import { SIGNUP_CONTEXT } from './signup-step-gate';
 
+import { showApiErrorToast, showNetworkErrorToast } from '@/lib/form-validation';
 import { clearSignupDraft } from '@/lib/signup-draft';
 
 /** Query `context` for the forgot-password OTP step. */
@@ -64,7 +67,7 @@ export function OtpVerificationForm({
   }) {
     if (result.sent) {
       setCooldownSeconds(0);
-      toast.success('Code sent', 'Check your inbox for a new code.');
+      toast.success('New verification code sent.');
       return;
     }
 
@@ -73,7 +76,7 @@ export function OtpVerificationForm({
       return;
     }
 
-    toast.warning('Could not send another code just yet.');
+    toast.warning('Please wait before requesting another code.');
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -84,7 +87,7 @@ export function OtpVerificationForm({
 
     setFieldErrors({});
     if (!/^\d{6}$/.test(digits)) {
-      const message = 'Enter the 6-digit code.';
+      const message = 'Enter the 6-digit code from your email.';
       setFieldErrors({ code: message });
       toast.error(message);
       return;
@@ -92,7 +95,7 @@ export function OtpVerificationForm({
 
     if (isPasswordReset) {
       if (email === undefined || email === '') {
-        toast.error('Start again from forgot password.');
+        toast.error('Session expired. Start again from forgot password.');
         router.replace('/forgot-password');
         return;
       }
@@ -112,21 +115,26 @@ export function OtpVerificationForm({
             code?: string;
           };
           if (problem.code === 'AUTH_EMAIL_NOT_FOUND') {
-            toast.error(problem.detail ?? 'No account uses that email.');
+            showApiErrorToast(
+              toast,
+              'Email not found',
+              problem.detail,
+              'No account uses that email address.',
+            );
             router.replace('/forgot-password');
             return;
           }
-          toast.error(problem.detail ?? 'That code is not correct.');
+          showApiErrorToast(toast, 'Incorrect code', problem.detail, 'Check the code and try again.');
           return;
         }
 
         const body = (await response.json()) as { data: ForgotPasswordVerifyOtpResult };
-        toast.success('Code confirmed');
+        toast.success('Code confirmed.');
         router.push(
           `/new-password?email=${encodeURIComponent(body.data.email)}&token=${encodeURIComponent(body.data.resetToken)}`,
         );
       } catch {
-        toast.error('Could not reach the server. Check your connection and try again.');
+        showNetworkErrorToast(toast);
       } finally {
         setIsPending(false);
       }
@@ -134,7 +142,7 @@ export function OtpVerificationForm({
     }
 
     if (!isSignup) {
-      toast.error('Open this page from forgot password or signup.');
+      toast.error('Open this page from signup or forgot password.');
       router.replace('/forgot-password');
       return;
     }
@@ -154,22 +162,20 @@ export function OtpVerificationForm({
           code?: string;
         };
         if (problem.code === 'SIGNUP_SESSION_REQUIRED') {
-          toast.error(problem.detail ?? 'Start signup again.');
+          showApiErrorToast(toast, 'Signup expired', problem.detail, 'Start signup again.');
           router.replace('/signup');
           return;
         }
-        toast.error(problem.detail ?? 'That code is not correct.');
+        showApiErrorToast(toast, 'Incorrect code', problem.detail, 'Check the code and try again.');
         return;
       }
 
       const body = (await response.json()) as { data: SignupVerifyOtpResult };
       clearSignupDraft();
-      toast.success('Email confirmed', 'Opening your school portal…');
-      // Cross-host handoff (ADR-0009) — must be a full navigation so the
-      // session cookies land on the school host, not the apex.
-      window.location.assign(body.data.continueTo.continueUrl);
+      toast.success('Email verified. Opening your school…');
+      window.location.assign(body.data.continueUrl);
     } catch {
-      toast.error('Could not reach the server. Check your connection and try again.');
+      showNetworkErrorToast(toast);
     } finally {
       setIsPending(false);
     }
@@ -201,18 +207,23 @@ export function OtpVerificationForm({
             code?: string;
           };
           if (problem.code === 'AUTH_EMAIL_NOT_FOUND') {
-            toast.error(problem.detail ?? 'No account uses that email.');
+            showApiErrorToast(
+              toast,
+              'Email not found',
+              problem.detail,
+              'No account uses that email address.',
+            );
             router.replace('/forgot-password');
             return;
           }
-          toast.error(problem.detail ?? 'Could not resend the code.');
+          showApiErrorToast(toast, 'Could not resend code', problem.detail, 'Try again in a moment.');
           return;
         }
 
         const body = (await response.json()) as { data: ForgotPasswordResendOtpResult };
         applyResendResult(body.data);
       } catch {
-        toast.error('Could not reach the server. Check your connection and try again.');
+        showNetworkErrorToast(toast);
       } finally {
         setIsResending(false);
       }
@@ -237,18 +248,18 @@ export function OtpVerificationForm({
           code?: string;
         };
         if (problem.code === 'SIGNUP_SESSION_REQUIRED') {
-          toast.error(problem.detail ?? 'Start signup again.');
+          showApiErrorToast(toast, 'Signup expired', problem.detail, 'Start signup again.');
           router.replace('/signup');
           return;
         }
-        toast.error(problem.detail ?? 'Could not resend the code.');
+        showApiErrorToast(toast, 'Could not resend code', problem.detail, 'Try again in a moment.');
         return;
       }
 
       const body = (await response.json()) as { data: SignupResendOtpResult };
       applyResendResult(body.data);
     } catch {
-      toast.error('Could not reach the server. Check your connection and try again.');
+      showNetworkErrorToast(toast);
     } finally {
       setIsResending(false);
     }
@@ -263,7 +274,7 @@ export function OtpVerificationForm({
         void submit(event);
       }}
       noValidate
-      className="space-y-6"
+      className="space-y-3.5"
     >
       {email === undefined ? null : (
         <div className="rounded-lg border border-border/70 bg-muted/35 px-4 py-3">
@@ -297,7 +308,15 @@ export function OtpVerificationForm({
         />
       </Field>
 
-      <div className="space-y-4">
+      <AuthFormActions
+        nav={
+          <AuthSecondaryNav
+            left={<AuthInlineLink href="/login">Sign in</AuthInlineLink>}
+            right={<AuthInlineLink href="/signup">Create account</AuthInlineLink>}
+          />
+        }
+        showDivider={false}
+      >
         <Button
           type="submit"
           isPending={isPending}
@@ -307,8 +326,9 @@ export function OtpVerificationForm({
         >
           {isPending ? 'Verifying…' : 'Verify code'}
         </Button>
+      </AuthFormActions>
 
-        <p className="text-center text-sm text-muted-foreground">
+      <p className="text-center text-sm text-muted-foreground">
           {cooldownSeconds > 0 ? (
             <>
               Didn&apos;t get it?{' '}
@@ -332,7 +352,6 @@ export function OtpVerificationForm({
             </>
           )}
         </p>
-      </div>
     </form>
   );
 }

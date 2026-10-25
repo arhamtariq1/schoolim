@@ -56,7 +56,7 @@ export function DialogContent({
       <DialogPrimitive.Content
         className={cn(
           'fixed start-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2',
-          'rounded-lg border border-border bg-background shadow-lg',
+          'rounded-lg border border-border bg-field shadow-lg',
           // A long form must scroll inside the dialog, never take the page with
           // it, and never push its own footer off the bottom of a laptop.
           'flex max-h-[calc(100dvh-2rem)] flex-col',

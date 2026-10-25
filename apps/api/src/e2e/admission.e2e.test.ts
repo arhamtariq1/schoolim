@@ -203,6 +203,9 @@ beforeEach(async () => {
   }
   await admin.$executeRaw`DELETE FROM students WHERE school_id = ${SCHOOL_A}::uuid`;
   await admin.$executeRaw`DELETE FROM number_sequences WHERE school_id = ${SCHOOL_A}::uuid`;
+  // GR numbering has to be configured before anybody can be admitted. Starting at
+  // one keeps every assertion below exact; the not-configured case has its own suite.
+  await setGrStart(1);
 });
 
 afterAll(async () => {
@@ -210,6 +213,17 @@ afterAll(async () => {
   await wipe();
   await admin.$disconnect();
 });
+
+/** What an administrator does under Settings › GR numbers, straight to the counter. */
+async function setGrStart(next: number): Promise<void> {
+  await admin.$executeRawUnsafe(
+    `INSERT INTO number_sequences (id, school_id, kind, next_value, updated_at)
+     VALUES (gen_random_uuid(), $1::uuid, 'gr', $2, now())
+     ON CONFLICT (school_id, kind) DO UPDATE SET next_value = EXCLUDED.next_value`,
+    SCHOOL_A,
+    next,
+  );
+}
 
 async function admit(body: Record<string, unknown>, jar = ownerA, host = HOST_A) {
   const response = await app.inject({
@@ -341,7 +355,7 @@ describe('the roll number', () => {
     expect(await rolls(SECTION_CURRENT)).toEqual([1, 2]);
   });
 
-  it('counts separately in each section — a roll is a place on one register', async () => {
+  it('is the GR number, whichever section the child is in', async () => {
     await admit(VALID);
     await admit({
       ...VALID,
@@ -353,9 +367,10 @@ describe('the roll number', () => {
       },
     });
 
-    // Both are roll 1. They are on different registers, so they must be.
+    // GR 1 and GR 2. A child has one number, so a second section does not
+    // restart it.
     expect(await rolls(SECTION_CURRENT)).toEqual([1]);
-    expect(await rolls(SECTION_PLANNED)).toEqual([1]);
+    expect(await rolls(SECTION_PLANNED)).toEqual([2]);
   });
 
   it('gives no roll to a child placed in no section', async () => {
@@ -405,22 +420,9 @@ describe('the roll number', () => {
 });
 
 describe('renumbering a register', () => {
-  /** Admit three children whose names sort differently from their arrival. */
-  async function admitThreeOutOfOrder(): Promise<void> {
-    await admit({ ...VALID, firstName: 'Zara', lastName: 'Zafar' });
-    await admit({ ...VALID, firstName: 'Ahmed', lastName: 'Ahmed' });
-    await admit({ ...VALID, firstName: 'Maryam', lastName: 'Malik' });
-  }
-
-  it('puts the register into name order, one to n', async () => {
-    await admitThreeOutOfOrder();
-
-    // Admission order: Zafar 1, Ahmed 2, Malik 3.
-    expect(await rollsByName(SECTION_CURRENT)).toEqual([
-      ['Zafar', 1],
-      ['Ahmed', 2],
-      ['Malik', 3],
-    ]);
+  it('is refused — a roll number is the GR number and does not change', async () => {
+    await admit(VALID);
+    await admit({ ...VALID, firstName: 'Bilal' });
 
     const response = await app.inject({
       method: 'POST',
@@ -428,40 +430,11 @@ describe('renumbering a register', () => {
       headers: { host: HOST_A, cookie: ownerA },
     });
 
-    expect(response.statusCode).toBe(201);
-    expect(response.json<{ data: { renumbered: number } }>().data.renumbered).toBe(3);
-
-    expect(await rollsByName(SECTION_CURRENT)).toEqual([
-      ['Ahmed', 1],
-      ['Malik', 2],
-      ['Zafar', 3],
-    ]);
+    expect(response.statusCode).toBeGreaterThanOrEqual(400);
+    expect(await rolls(SECTION_CURRENT)).toEqual([1, 2]);
   });
 
-  it('survives being run twice', async () => {
-    await admitThreeOutOfOrder();
-    await renumber(SECTION_CURRENT);
-    await renumber(SECTION_CURRENT);
-
-    expect(await rolls(SECTION_CURRENT)).toEqual([1, 2, 3]);
-  });
-
-  it('keeps admitting correctly afterwards — the next child gets n + 1', async () => {
-    await admitThreeOutOfOrder();
-    await renumber(SECTION_CURRENT);
-    await admit({ ...VALID, firstName: 'Bilal', lastName: 'Butt' });
-
-    expect(await rolls(SECTION_CURRENT)).toEqual([1, 2, 3, 4]);
-  });
-
-  it('reports nothing to do for an empty section', async () => {
-    const response = await renumber(SECTION_PLANNED);
-
-    expect(response.statusCode).toBe(201);
-    expect(response.json<{ data: { renumbered: number } }>().data.renumbered).toBe(0);
-  });
-
-  it('refuses another school’s section', async () => {
+  it('refuses another school’s section as not found', async () => {
     const response = await app.inject({
       method: 'POST',
       url: ROUTES.academics.renumberSection(SECTION_CURRENT),
@@ -637,6 +610,12 @@ describe('tenant isolation', () => {
   });
 
   it('refuses to enrol into another school’s class', async () => {
+    // B has to be configured for its owner to get as far as naming a class.
+    await admin.$executeRaw`
+      INSERT INTO number_sequences (id, school_id, kind, next_value, updated_at)
+      VALUES (gen_random_uuid(), ${SCHOOL_B}::uuid, 'gr', 1, now())
+      ON CONFLICT (school_id, kind) DO NOTHING`;
+
     const result = await admit({
       ...VALID,
       enrollment: { sessionId: SESSION_A_CURRENT, classLevelId: CLASS_A },
@@ -650,6 +629,8 @@ describe('tenant isolation', () => {
       SCHOOL_B,
     );
     expect(Number(rows[0]?.n ?? 0)).toBe(0);
+
+    await admin.$executeRaw`DELETE FROM number_sequences WHERE school_id = ${SCHOOL_B}::uuid AND kind = 'gr'`;
   });
 
   it('says the same thing for a foreign id as for one that never existed', async () => {
@@ -726,5 +707,175 @@ describe('admitting into the right year', () => {
     for (const row of rows) {
       expect(row.effective_from).toBe('2026-05-04');
     }
+  });
+});
+
+describe('GR number settings', () => {
+  async function put(body: unknown, jar = ownerA, host = HOST_A) {
+    return putGr(body, jar, host);
+  }
+
+  async function putGr(body: unknown, jar = ownerA, host = HOST_A) {
+    const response = await app.inject({
+      method: 'PUT',
+      url: ROUTES.school.grNumber,
+      headers: { host, cookie: jar },
+      payload: body as object,
+    });
+    return {
+      status: response.statusCode,
+      data: () =>
+        (JSON.parse(response.body) as { data: Record<string, unknown> }).data,
+    };
+  }
+
+  async function read(jar = ownerA, host = HOST_A) {
+    const response = await app.inject({
+      method: 'GET',
+      url: ROUTES.school.grNumber,
+      headers: { host, cookie: jar },
+    });
+    return (JSON.parse(response.body) as { data: Record<string, unknown> }).data;
+  }
+
+  async function grs(): Promise<string[]> {
+    const rows = await admin.$queryRawUnsafe<{ gr_no: string }[]>(
+      `SELECT gr_no FROM students WHERE school_id = $1::uuid ORDER BY gr_no`,
+      SCHOOL_A,
+    );
+    return rows.map((row) => row.gr_no);
+  }
+
+  async function unconfigure(): Promise<void> {
+    await admin.$executeRaw`DELETE FROM number_sequences WHERE school_id = ${SCHOOL_A}::uuid AND kind = 'gr'`;
+  }
+
+  it('refuses to admit anybody until a starting number is set — and invents none', async () => {
+    await unconfigure();
+
+    const result = await admit(VALID);
+
+    expect(result.status).toBeGreaterThanOrEqual(400);
+    expect(await grs()).toEqual([]);
+
+    // The refusal must not have created the counter at 1 on its way out.
+    expect(await read()).toMatchObject({ configured: false, nextNumber: null });
+  });
+
+  it('numbers admissions from the configured start, one after another', async () => {
+    await unconfigure();
+    expect((await put({ startingNumber: '1001' })).status).toBe(200);
+
+    await admit(VALID);
+    await admit({ ...VALID, firstName: 'Bilal' });
+    await admit({ ...VALID, firstName: 'Sara' });
+
+    expect(await grs()).toEqual(['1001', '1002', '1003']);
+    expect(await read()).toMatchObject({ configured: true, nextNumber: 1004, highestIssued: 1003 });
+  });
+
+  it('gives the child a roll number equal to their GR number', async () => {
+    await unconfigure();
+    await put({ startingNumber: '4213' });
+
+    await admit(VALID);
+
+    expect(await rolls(SECTION_CURRENT)).toEqual([4213]);
+  });
+
+  it('will not move the counter back onto a number already issued', async () => {
+    await put({ startingNumber: '50' });
+    await admit(VALID);
+    await admit({ ...VALID, firstName: 'Bilal' });
+    // GR 50 and 51 exist. 51 or lower would hand one out a second time.
+    expect((await put({ startingNumber: '51' })).status).toBeGreaterThanOrEqual(400);
+    expect((await put({ startingNumber: '10' })).status).toBeGreaterThanOrEqual(400);
+    expect(await read()).toMatchObject({ nextNumber: 52 });
+
+    // Forward is fine, and the sequence carries on from there.
+    expect((await put({ startingNumber: '200' })).status).toBe(200);
+    await admit({ ...VALID, firstName: 'Sara' });
+    expect(await grs()).toEqual(['200', '50', '51']);
+  });
+
+  it('refuses a start that is not a positive whole number', async () => {
+    for (const startingNumber of [0, 5, '0', 'abc', '1A', 'A-', '', '123456789', 'X'.repeat(31) + '-1']) {
+      expect((await put({ startingNumber })).status).toBe(400);
+    }
+    expect((await put({})).status).toBe(400);
+    expect((await put({ startingNumber: '5', extra: true })).status).toBe(400);
+  });
+
+  it('keeps every school’s numbering to itself', async () => {
+    await put({ startingNumber: '900' });
+
+    // School B never configured anything, and school A's number is not its own.
+    expect(await read(ownerB, HOST_B)).toMatchObject({ configured: false, nextNumber: null });
+  });
+
+  it('never lets two children in one school share a GR number, even past the service', async () => {
+    await admit(VALID);
+
+    await expect(
+      admin.$executeRawUnsafe(
+        `INSERT INTO students (id, school_id, gr_no, student_code, first_name, last_name, status, custom, created_at, updated_at)
+         SELECT gen_random_uuid(), school_id, gr_no, 'DUP-0001', 'Twin', 'Twin', 'ACTIVE', '{}', now(), now()
+           FROM students WHERE school_id = $1::uuid LIMIT 1`,
+        SCHOOL_A,
+      ),
+    ).rejects.toThrow();
+  });
+});
+
+describe('GR numbers with letters', () => {
+  async function putPrefixed(startingNumber: string) {
+    const response = await app.inject({
+      method: 'PUT',
+      url: ROUTES.school.grNumber,
+      headers: { host: HOST_A, cookie: ownerA },
+      payload: { startingNumber },
+    });
+    return response.statusCode;
+  }
+
+  async function storedGrs(): Promise<string[]> {
+    const rows = await admin.$queryRawUnsafe<{ gr_no: string }[]>(
+      `SELECT gr_no FROM students WHERE school_id = $1::uuid ORDER BY created_at`,
+      SCHOOL_A,
+    );
+    return rows.map((row) => row.gr_no);
+  }
+
+  it('counts up after a letter prefix, and the roll number is the digits', async () => {
+    expect(await putPrefixed('A-1001')).toBe(200);
+
+    await admit(VALID);
+    await admit({ ...VALID, firstName: 'Bilal' });
+
+    expect(await storedGrs()).toEqual(['A-1001', 'A-1002']);
+    expect(await rolls(SECTION_CURRENT)).toEqual([1001, 1002]);
+  });
+
+  it('takes any pattern that ends in the number, exactly as typed', async () => {
+    expect(await putPrefixed('ITGS-F-001')).toBe(200);
+    await admit(VALID);
+    await admit({ ...VALID, firstName: 'Bilal' });
+    expect(await storedGrs()).toEqual(['ITGS-F-001', 'ITGS-F-002']);
+    expect(await rolls(SECTION_CURRENT)).toEqual([1, 2]);
+  });
+
+  it('accepts a slash, and keeps the prefix the administrator typed', async () => {
+    expect(await putPrefixed('GR/0457')).toBe(200);
+    await admit(VALID);
+    expect(await storedGrs()).toEqual(['GR/0457']);
+  });
+
+  it('compares only the digits when deciding a number was already used', async () => {
+    await putPrefixed('A-100');
+    await admit(VALID);
+
+    // A different prefix does not make 100 a free number: the roll would clash.
+    expect(await putPrefixed('B-100')).toBeGreaterThanOrEqual(400);
+    expect(await putPrefixed('B-101')).toBe(200);
   });
 });

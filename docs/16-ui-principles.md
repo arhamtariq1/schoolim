@@ -232,8 +232,9 @@ a review rejection.
 Non-negotiable, because getting these wrong is what makes software look untrustworthy to an
 accountant.
 
-- **Money** renders only through `<Money valueMinor={…} />` from `@ilm/ui`: monospace,
-  right-aligned, currency symbol, thousands separators, exactly two decimals, never truncated.
+- **Money** renders only through `<Money valueMinor={…} />` from `@ilm/ui`: sans tabular
+  figures, right-aligned where columnar, currency symbol when needed, thousands separators,
+  whole rupees without “.00”, paisa with two decimals when needed, never truncated.
   Negative in red **and** parentheses. The component takes **minor units** — a raw number formatted
   by hand in a component is a review rejection.
 - **Dates** render only through `<DateDisplay />`, in the school's timezone and locale, with the

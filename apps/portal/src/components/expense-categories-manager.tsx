@@ -1,20 +1,45 @@
 'use client';
 
-import { createExpenseCategorySchema, ROUTES, type ExpenseCategory } from '@ilm/contracts';
+import {
+  createExpenseCategorySchema,
+  ROUTES,
+  type ExpenseCategory,
+  type ExpenseTotals,
+} from '@ilm/contracts';
 import {
   Button,
+  Card,
+  CardTable,
   ConfirmDialog,
-  DataTable,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Field,
   Input,
   StatusBadge,
   useToast,
-  type Column,
+  type CardTableColumn,
 } from '@ilm/ui';
-import { CreateIcon, DeleteIcon, EditIcon, ICON_SIZE } from '@ilm/ui/icons';
+import { CreateIcon, DeleteIcon, EditIcon, ExpenseIcon, ICON_SIZE, MoreIcon } from '@ilm/ui/icons';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent, type ReactElement } from 'react';
 
+import { ExpenseWorkspaceShell } from '@/components/expense-workspace-shell';
+import {
+  FEE_LIST_TABLE_CELL,
+  afterMenuAction,
+  feeListTableHeader,
+} from '@/components/fees/fee-list-shared';
 import { mutate } from '@/lib/mutate';
 
 /**
@@ -29,12 +54,18 @@ import { mutate } from '@/lib/mutate';
  */
 export interface ExpenseCategoriesManagerProps {
   categories: ExpenseCategory[];
+  totals: ExpenseTotals;
+  monthTotals: ExpenseTotals;
+  lastMonthTotals: ExpenseTotals;
   error?: string | undefined;
   canManage: boolean;
 }
 
 export function ExpenseCategoriesManager({
   categories,
+  totals,
+  monthTotals,
+  lastMonthTotals,
   error,
   canManage,
 }: ExpenseCategoriesManagerProps) {
@@ -43,6 +74,7 @@ export function ExpenseCategoriesManager({
 
   const [editing, setEditing] = useState<ExpenseCategory | undefined>(undefined);
   const [deleting, setDeleting] = useState<ExpenseCategory | undefined>(undefined);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
 
   async function toggleActive(category: ExpenseCategory) {
@@ -75,116 +107,135 @@ export function ExpenseCategoriesManager({
     router.refresh();
   }
 
-  const columns: Column<ExpenseCategory>[] = [
-    {
-      key: 'name',
-      header: 'Category',
-      render: (row) => <span className="font-medium text-foreground">{row.name}</span>,
-    },
-    {
-      key: 'expenses',
-      header: 'Entries',
-      align: 'end',
-      render: (row) => (
-        <span className="font-mono text-sm text-muted-foreground tabular-nums">
-          {row.expenseCount === 0 ? '—' : row.expenseCount}
-        </span>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (row) => (
-        <StatusBadge tone={row.isActive ? 'success' : 'neutral'}>
-          {row.isActive ? 'On' : 'Off'}
-        </StatusBadge>
-      ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'end',
-      render: (row) =>
-        !canManage ? null : (
-          <div className="flex items-center justify-end gap-1">
-            <Button
-              tone="ghost"
-              size="sm"
-              disabled={isBusy}
-              onClick={() => {
-                setEditing(row);
+  function openCreate() {
+    setEditing(undefined);
+    setDialogOpen(true);
+  }
+
+  function openEdit(row: ExpenseCategory) {
+    setEditing(row);
+    setDialogOpen(true);
+  }
+
+  const columns = useMemo((): CardTableColumn<ExpenseCategory>[] => {
+    return [
+      {
+        key: 'name',
+        label: 'Category',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[40%]',
+        headerCell: feeListTableHeader('Category', ExpenseIcon),
+        render: (row) => <span className="font-medium text-foreground">{row.name}</span>,
+      },
+      {
+        key: 'expenses',
+        label: 'Entries',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[20%]',
+        headerCell: feeListTableHeader('Entries'),
+        render: (row) => (
+          <span className="font-mono text-sm text-muted-foreground tabular-nums">
+            {row.expenseCount === 0 ? '—' : row.expenseCount}
+          </span>
+        ),
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[20%]',
+        headerCell: feeListTableHeader('Status'),
+        render: (row) => (
+          <StatusBadge tone={row.isActive ? 'success' : 'neutral'}>
+            {row.isActive ? 'On' : 'Off'}
+          </StatusBadge>
+        ),
+      },
+      {
+        key: 'actions',
+        label: 'Actions',
+        ...FEE_LIST_TABLE_CELL,
+        width: 'w-[12%]',
+        headerCell: feeListTableHeader('Actions'),
+        render: (row) =>
+          !canManage ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <CategoryRowActions
+              row={row}
+              isBusy={isBusy}
+              onEdit={() => {
+                openEdit(row);
               }}
-            >
-              <EditIcon className={ICON_SIZE.inline} aria-hidden />
-              Edit
-            </Button>
-            <Button
-              tone="ghost"
-              size="sm"
-              disabled={isBusy}
-              onClick={() => {
+              onToggle={() => {
                 void toggleActive(row);
               }}
-            >
-              {row.isActive ? 'Turn off' : 'Turn on'}
-            </Button>
-            {/* Absent once anything is booked against it — the server refuses,
-                and offering a control that always fails is worse than not
-                offering it (docs/16 §7). */}
-            {row.expenseCount === 0 ? (
-              <Button
-                tone="ghost"
-                size="sm"
-                disabled={isBusy}
-                aria-label={`Delete ${row.name}`}
-                onClick={() => {
-                  setDeleting(row);
-                }}
-              >
-                <DeleteIcon className={`${ICON_SIZE.inline} text-danger`} aria-hidden />
-              </Button>
-            ) : null}
-          </div>
-        ),
-    },
-  ];
+              onDelete={() => {
+                setDeleting(row);
+              }}
+            />
+          ),
+      },
+    ];
+  }, [canManage, isBusy]);
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-xl font-semibold text-foreground">Expense types</h1>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          How spending is grouped. Once a type has entries against it, it can be turned off but not
-          deleted — removing it would take that spending out of totals already reported.
-        </p>
-      </header>
+    <>
+      <ExpenseWorkspaceShell
+        totals={totals}
+        monthTotals={monthTotals}
+        lastMonthTotals={lastMonthTotals}
+        canManage={canManage}
+      >
+        <Card className="overflow-hidden rounded-lg shadow-raised">
+          {canManage ? (
+            <div className="flex justify-end border-b border-border p-4">
+              <Button onClick={openCreate}>
+                <CreateIcon className={ICON_SIZE.inline} aria-hidden />
+                Add type
+              </Button>
+            </div>
+          ) : null}
+          <CardTable
+            title="All types"
+            surface="embedded"
+            showHeader={false}
+            caption="Expense types"
+            rows={categories}
+            columns={columns}
+            rowKey={(row) => row.id}
+            minWidthClass="min-w-[32rem]"
+            error={error}
+            empty={{
+              title: 'No expense types yet',
+              description:
+                'Add the ones you use — Utilities, Salaries, Maintenance, Transport. Every expense is booked against one.',
+              action: canManage ? (
+                <Button onClick={openCreate}>
+                  <CreateIcon className={ICON_SIZE.inline} aria-hidden />
+                  Add the first type
+                </Button>
+              ) : undefined,
+            }}
+          />
+        </Card>
+      </ExpenseWorkspaceShell>
 
-      {canManage ? (
-        <CategoryForm
+      {dialogOpen ? (
+        <CategoryDialog
           key={editing?.id ?? 'create'}
           editing={editing}
-          onDone={() => {
+          onClose={() => {
+            setDialogOpen(false);
+            setEditing(undefined);
+          }}
+          onSaved={() => {
+            setDialogOpen(false);
             setEditing(undefined);
             router.refresh();
           }}
-          onCancelEdit={() => {
-            setEditing(undefined);
-          }}
         />
       ) : null}
-
-      <DataTable
-        rows={categories}
-        columns={columns}
-        rowKey={(row) => row.id}
-        error={error}
-        caption="Expense types"
-        empty={{
-          title: 'No expense types yet',
-          description:
-            'Add the ones you use — Utilities, Salaries, Maintenance, Transport. Every expense is booked against one.',
-        }}
-      />
 
       <ConfirmDialog
         open={deleting !== undefined}
@@ -199,18 +250,72 @@ export function ExpenseCategoriesManager({
         tone="danger"
         onConfirm={confirmDelete}
       />
-    </div>
+    </>
   );
 }
 
-function CategoryForm({
+function CategoryRowActions({
+  row,
+  isBusy,
+  onEdit,
+  onToggle,
+  onDelete,
+}: {
+  readonly row: ExpenseCategory;
+  readonly isBusy: boolean;
+  readonly onEdit: () => void;
+  readonly onToggle: () => void;
+  readonly onDelete: () => void;
+}): ReactElement {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button tone="ghost" size="sm" aria-label={`Actions for ${row.name}`} disabled={isBusy}>
+          <MoreIcon className={ICON_SIZE.inline} aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>{row.name}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={() => {
+            afterMenuAction(onEdit);
+          }}
+        >
+          <EditIcon className={ICON_SIZE.inline} aria-hidden />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => {
+            afterMenuAction(onToggle);
+          }}
+        >
+          {row.isActive ? 'Turn off' : 'Turn on'}
+        </DropdownMenuItem>
+        {row.expenseCount === 0 ? (
+          <DropdownMenuItem
+            destructive
+            onSelect={() => {
+              afterMenuAction(onDelete);
+            }}
+          >
+            <DeleteIcon className={ICON_SIZE.inline} aria-hidden />
+            Delete
+          </DropdownMenuItem>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function CategoryDialog({
   editing,
-  onDone,
-  onCancelEdit,
+  onClose,
+  onSaved,
 }: {
   editing: ExpenseCategory | undefined;
-  onDone: () => void;
-  onCancelEdit: () => void;
+  onClose: () => void;
+  onSaved: () => void;
 }) {
   const toast = useToast();
 
@@ -250,64 +355,64 @@ function CategoryForm({
     toast.success(
       editing === undefined ? `${parsed.data.name} added` : `${parsed.data.name} saved`,
     );
-    setName('');
-    onDone();
+    onSaved();
   }
 
   return (
-    <form
-      onSubmit={(event) => {
-        void submit(event);
+    <Dialog
+      open
+      onOpenChange={(next) => {
+        if (!next) {
+          onClose();
+        }
       }}
-      noValidate
-      className="rounded-xl border border-border bg-card p-4 sm:p-6"
     >
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-base font-medium text-foreground">
-          {editing === undefined ? 'Add a type' : `Edit ${editing.name}`}
-        </h2>
-        {editing === undefined ? null : (
-          <Button type="button" tone="ghost" size="sm" onClick={onCancelEdit}>
-            Cancel
-          </Button>
-        )}
-      </div>
-
-      {formError === undefined ? null : (
-        <div
-          role="alert"
-          className="mt-4 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
+      <DialogContent className="max-w-md">
+        <form
+          onSubmit={(event) => {
+            void submit(event);
+          }}
+          noValidate
         >
-          {formError}
-        </div>
-      )}
+          <DialogHeader>
+            <DialogTitle>{editing === undefined ? 'Add a type' : `Edit ${editing.name}`}</DialogTitle>
+            <DialogDescription>
+              Every expense is booked against one of these types so totals group into something
+              meaningful.
+            </DialogDescription>
+          </DialogHeader>
 
-      {/* Field on one row, action beneath — so a validation message growing the
-          cell cannot push the button out of alignment. */}
-      <div className="mt-4 max-w-md">
-        <Field label="Name" error={fieldErrors['name']} required>
-          <Input
-            value={name}
-            placeholder="Utilities"
-            onChange={(event) => {
-              setName(event.target.value);
-            }}
-          />
-        </Field>
-      </div>
+          <DialogBody>
+            {formError === undefined ? null : (
+              <div
+                role="alert"
+                className="mb-4 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
+              >
+                {formError}
+              </div>
+            )}
+            <Field label="Name" error={fieldErrors['name']} required>
+              <Input
+                value={name}
+                autoFocus
+                placeholder="Utilities"
+                onChange={(event) => {
+                  setName(event.target.value);
+                }}
+              />
+            </Field>
+          </DialogBody>
 
-      <div className="mt-4 flex justify-end">
-        <Button type="submit" isPending={isPending} size="touch">
-          {editing === undefined ? (
-            <>
-              <CreateIcon className={ICON_SIZE.inline} aria-hidden />
-              Add type
-            </>
-          ) : (
-            'Save changes'
-          )}
-        </Button>
-      </div>
-    </form>
+          <DialogFooter>
+            <Button type="button" tone="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" isPending={isPending}>
+              {editing === undefined ? 'Add type' : 'Save changes'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

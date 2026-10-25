@@ -28,10 +28,12 @@ export type AggregateNumberSequence = {
 
 export type NumberSequenceAvgAggregateOutputType = {
   nextValue: number | null
+  pad: number | null
 }
 
 export type NumberSequenceSumAggregateOutputType = {
   nextValue: number | null
+  pad: number | null
 }
 
 export type NumberSequenceMinAggregateOutputType = {
@@ -39,6 +41,8 @@ export type NumberSequenceMinAggregateOutputType = {
   schoolId: string | null
   kind: string | null
   nextValue: number | null
+  prefix: string | null
+  pad: number | null
   updatedAt: Date | null
 }
 
@@ -47,6 +51,8 @@ export type NumberSequenceMaxAggregateOutputType = {
   schoolId: string | null
   kind: string | null
   nextValue: number | null
+  prefix: string | null
+  pad: number | null
   updatedAt: Date | null
 }
 
@@ -55,6 +61,8 @@ export type NumberSequenceCountAggregateOutputType = {
   schoolId: number
   kind: number
   nextValue: number
+  prefix: number
+  pad: number
   updatedAt: number
   _all: number
 }
@@ -62,10 +70,12 @@ export type NumberSequenceCountAggregateOutputType = {
 
 export type NumberSequenceAvgAggregateInputType = {
   nextValue?: true
+  pad?: true
 }
 
 export type NumberSequenceSumAggregateInputType = {
   nextValue?: true
+  pad?: true
 }
 
 export type NumberSequenceMinAggregateInputType = {
@@ -73,6 +83,8 @@ export type NumberSequenceMinAggregateInputType = {
   schoolId?: true
   kind?: true
   nextValue?: true
+  prefix?: true
+  pad?: true
   updatedAt?: true
 }
 
@@ -81,6 +93,8 @@ export type NumberSequenceMaxAggregateInputType = {
   schoolId?: true
   kind?: true
   nextValue?: true
+  prefix?: true
+  pad?: true
   updatedAt?: true
 }
 
@@ -89,6 +103,8 @@ export type NumberSequenceCountAggregateInputType = {
   schoolId?: true
   kind?: true
   nextValue?: true
+  prefix?: true
+  pad?: true
   updatedAt?: true
   _all?: true
 }
@@ -184,6 +200,8 @@ export type NumberSequenceGroupByOutputType = {
   schoolId: string
   kind: string
   nextValue: number
+  prefix: string
+  pad: number
   updatedAt: Date
   _count: NumberSequenceCountAggregateOutputType | null
   _avg: NumberSequenceAvgAggregateOutputType | null
@@ -215,6 +233,8 @@ export type NumberSequenceWhereInput = {
   schoolId?: Prisma.UuidFilter<"NumberSequence"> | string
   kind?: Prisma.StringFilter<"NumberSequence"> | string
   nextValue?: Prisma.IntFilter<"NumberSequence"> | number
+  prefix?: Prisma.StringFilter<"NumberSequence"> | string
+  pad?: Prisma.IntFilter<"NumberSequence"> | number
   updatedAt?: Prisma.DateTimeFilter<"NumberSequence"> | Date | string
   school?: Prisma.XOR<Prisma.SchoolScalarRelationFilter, Prisma.SchoolWhereInput>
 }
@@ -224,6 +244,8 @@ export type NumberSequenceOrderByWithRelationInput = {
   schoolId?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   nextValue?: Prisma.SortOrder
+  prefix?: Prisma.SortOrder
+  pad?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   school?: Prisma.SchoolOrderByWithRelationInput
 }
@@ -237,6 +259,8 @@ export type NumberSequenceWhereUniqueInput = Prisma.AtLeast<{
   schoolId?: Prisma.UuidFilter<"NumberSequence"> | string
   kind?: Prisma.StringFilter<"NumberSequence"> | string
   nextValue?: Prisma.IntFilter<"NumberSequence"> | number
+  prefix?: Prisma.StringFilter<"NumberSequence"> | string
+  pad?: Prisma.IntFilter<"NumberSequence"> | number
   updatedAt?: Prisma.DateTimeFilter<"NumberSequence"> | Date | string
   school?: Prisma.XOR<Prisma.SchoolScalarRelationFilter, Prisma.SchoolWhereInput>
 }, "id" | "schoolId_kind">
@@ -246,6 +270,8 @@ export type NumberSequenceOrderByWithAggregationInput = {
   schoolId?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   nextValue?: Prisma.SortOrder
+  prefix?: Prisma.SortOrder
+  pad?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.NumberSequenceCountOrderByAggregateInput
   _avg?: Prisma.NumberSequenceAvgOrderByAggregateInput
@@ -262,6 +288,8 @@ export type NumberSequenceScalarWhereWithAggregatesInput = {
   schoolId?: Prisma.UuidWithAggregatesFilter<"NumberSequence"> | string
   kind?: Prisma.StringWithAggregatesFilter<"NumberSequence"> | string
   nextValue?: Prisma.IntWithAggregatesFilter<"NumberSequence"> | number
+  prefix?: Prisma.StringWithAggregatesFilter<"NumberSequence"> | string
+  pad?: Prisma.IntWithAggregatesFilter<"NumberSequence"> | number
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"NumberSequence"> | Date | string
 }
 
@@ -269,6 +297,8 @@ export type NumberSequenceCreateInput = {
   id?: string
   kind: string
   nextValue?: number
+  prefix?: string
+  pad?: number
   updatedAt?: Date | string
   school: Prisma.SchoolCreateNestedOneWithoutNumberSequencesInput
 }
@@ -278,6 +308,8 @@ export type NumberSequenceUncheckedCreateInput = {
   schoolId: string
   kind: string
   nextValue?: number
+  prefix?: string
+  pad?: number
   updatedAt?: Date | string
 }
 
@@ -285,6 +317,8 @@ export type NumberSequenceUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   nextValue?: Prisma.IntFieldUpdateOperationsInput | number
+  prefix?: Prisma.StringFieldUpdateOperationsInput | string
+  pad?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   school?: Prisma.SchoolUpdateOneRequiredWithoutNumberSequencesNestedInput
 }
@@ -294,6 +328,8 @@ export type NumberSequenceUncheckedUpdateInput = {
   schoolId?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   nextValue?: Prisma.IntFieldUpdateOperationsInput | number
+  prefix?: Prisma.StringFieldUpdateOperationsInput | string
+  pad?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -302,6 +338,8 @@ export type NumberSequenceCreateManyInput = {
   schoolId: string
   kind: string
   nextValue?: number
+  prefix?: string
+  pad?: number
   updatedAt?: Date | string
 }
 
@@ -309,6 +347,8 @@ export type NumberSequenceUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   nextValue?: Prisma.IntFieldUpdateOperationsInput | number
+  prefix?: Prisma.StringFieldUpdateOperationsInput | string
+  pad?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -317,6 +357,8 @@ export type NumberSequenceUncheckedUpdateManyInput = {
   schoolId?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   nextValue?: Prisma.IntFieldUpdateOperationsInput | number
+  prefix?: Prisma.StringFieldUpdateOperationsInput | string
+  pad?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -340,11 +382,14 @@ export type NumberSequenceCountOrderByAggregateInput = {
   schoolId?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   nextValue?: Prisma.SortOrder
+  prefix?: Prisma.SortOrder
+  pad?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type NumberSequenceAvgOrderByAggregateInput = {
   nextValue?: Prisma.SortOrder
+  pad?: Prisma.SortOrder
 }
 
 export type NumberSequenceMaxOrderByAggregateInput = {
@@ -352,6 +397,8 @@ export type NumberSequenceMaxOrderByAggregateInput = {
   schoolId?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   nextValue?: Prisma.SortOrder
+  prefix?: Prisma.SortOrder
+  pad?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
@@ -360,11 +407,14 @@ export type NumberSequenceMinOrderByAggregateInput = {
   schoolId?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   nextValue?: Prisma.SortOrder
+  prefix?: Prisma.SortOrder
+  pad?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type NumberSequenceSumOrderByAggregateInput = {
   nextValue?: Prisma.SortOrder
+  pad?: Prisma.SortOrder
 }
 
 export type NumberSequenceCreateNestedManyWithoutSchoolInput = {
@@ -413,6 +463,8 @@ export type NumberSequenceCreateWithoutSchoolInput = {
   id?: string
   kind: string
   nextValue?: number
+  prefix?: string
+  pad?: number
   updatedAt?: Date | string
 }
 
@@ -420,6 +472,8 @@ export type NumberSequenceUncheckedCreateWithoutSchoolInput = {
   id?: string
   kind: string
   nextValue?: number
+  prefix?: string
+  pad?: number
   updatedAt?: Date | string
 }
 
@@ -457,6 +511,8 @@ export type NumberSequenceScalarWhereInput = {
   schoolId?: Prisma.UuidFilter<"NumberSequence"> | string
   kind?: Prisma.StringFilter<"NumberSequence"> | string
   nextValue?: Prisma.IntFilter<"NumberSequence"> | number
+  prefix?: Prisma.StringFilter<"NumberSequence"> | string
+  pad?: Prisma.IntFilter<"NumberSequence"> | number
   updatedAt?: Prisma.DateTimeFilter<"NumberSequence"> | Date | string
 }
 
@@ -464,6 +520,8 @@ export type NumberSequenceCreateManySchoolInput = {
   id?: string
   kind: string
   nextValue?: number
+  prefix?: string
+  pad?: number
   updatedAt?: Date | string
 }
 
@@ -471,6 +529,8 @@ export type NumberSequenceUpdateWithoutSchoolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   nextValue?: Prisma.IntFieldUpdateOperationsInput | number
+  prefix?: Prisma.StringFieldUpdateOperationsInput | string
+  pad?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -478,6 +538,8 @@ export type NumberSequenceUncheckedUpdateWithoutSchoolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   nextValue?: Prisma.IntFieldUpdateOperationsInput | number
+  prefix?: Prisma.StringFieldUpdateOperationsInput | string
+  pad?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -485,6 +547,8 @@ export type NumberSequenceUncheckedUpdateManyWithoutSchoolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.StringFieldUpdateOperationsInput | string
   nextValue?: Prisma.IntFieldUpdateOperationsInput | number
+  prefix?: Prisma.StringFieldUpdateOperationsInput | string
+  pad?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -495,6 +559,8 @@ export type NumberSequenceSelect<ExtArgs extends runtime.Types.Extensions.Intern
   schoolId?: boolean
   kind?: boolean
   nextValue?: boolean
+  prefix?: boolean
+  pad?: boolean
   updatedAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["numberSequence"]>
@@ -504,6 +570,8 @@ export type NumberSequenceSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   schoolId?: boolean
   kind?: boolean
   nextValue?: boolean
+  prefix?: boolean
+  pad?: boolean
   updatedAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["numberSequence"]>
@@ -513,6 +581,8 @@ export type NumberSequenceSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   schoolId?: boolean
   kind?: boolean
   nextValue?: boolean
+  prefix?: boolean
+  pad?: boolean
   updatedAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["numberSequence"]>
@@ -522,10 +592,12 @@ export type NumberSequenceSelectScalar = {
   schoolId?: boolean
   kind?: boolean
   nextValue?: boolean
+  prefix?: boolean
+  pad?: boolean
   updatedAt?: boolean
 }
 
-export type NumberSequenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "kind" | "nextValue" | "updatedAt", ExtArgs["result"]["numberSequence"]>
+export type NumberSequenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "kind" | "nextValue" | "prefix" | "pad" | "updatedAt", ExtArgs["result"]["numberSequence"]>
 export type NumberSequenceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
 }
@@ -549,6 +621,14 @@ export type $NumberSequencePayload<ExtArgs extends runtime.Types.Extensions.Inte
      */
     kind: string
     nextValue: number
+    /**
+     * Letters printed before the number — only the `gr` counter uses it.
+     */
+    prefix: string
+    /**
+     * Digits the number is zero-padded to.
+     */
+    pad: number
     updatedAt: Date
   }, ExtArgs["result"]["numberSequence"]>
   composites: {}
@@ -978,6 +1058,8 @@ export interface NumberSequenceFieldRefs {
   readonly schoolId: Prisma.FieldRef<"NumberSequence", 'String'>
   readonly kind: Prisma.FieldRef<"NumberSequence", 'String'>
   readonly nextValue: Prisma.FieldRef<"NumberSequence", 'Int'>
+  readonly prefix: Prisma.FieldRef<"NumberSequence", 'String'>
+  readonly pad: Prisma.FieldRef<"NumberSequence", 'Int'>
   readonly updatedAt: Prisma.FieldRef<"NumberSequence", 'DateTime'>
 }
     

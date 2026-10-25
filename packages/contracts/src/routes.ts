@@ -26,6 +26,8 @@ export const ROUTES = {
     forgotPasswordVerifyOtp: `${API_PREFIX}/auth/forgot-password/verify-otp`,
     forgotPasswordResendOtp: `${API_PREFIX}/auth/forgot-password/resend-otp`,
     resetPassword: `${API_PREFIX}/auth/reset-password`,
+    /** Signed-in user sets a new password (profile or forced-change gate). */
+    changePassword: `${API_PREFIX}/auth/change-password`,
     /**
      * Redeem a handoff token for cookies, on the school's own hostname.
      *
@@ -57,6 +59,8 @@ export const ROUTES = {
    */
   public: {
     signup: `${API_PREFIX}/public/signup`,
+    /** The plans shown on the landing page. Read-only, no session. */
+    plans: `${API_PREFIX}/public/plans`,
     signupStart: `${API_PREFIX}/public/signup/start`,
     signupVerifyOtp: `${API_PREFIX}/public/signup/verify-otp`,
     signupResendOtp: `${API_PREFIX}/public/signup/resend-otp`,
@@ -69,6 +73,10 @@ export const ROUTES = {
     signupCancel: `${API_PREFIX}/public/signup/cancel`,
     slugAvailable: `${API_PREFIX}/public/slug-available`,
   },
+  /** The home screen's data, shaped by the caller's role. */
+  dashboard: {
+    summary: `${API_PREFIX}/dashboard`,
+  },
   students: {
     list: `${API_PREFIX}/students`,
     create: `${API_PREFIX}/students`,
@@ -80,6 +88,14 @@ export const ROUTES = {
     remove: (id: string) => `${API_PREFIX}/students/${id}`,
     /** The 360 page: details, guardians and enrolment history in one call. */
     profile: (id: string) => `${API_PREFIX}/students/${id}/profile`,
+    /** Confirmed fee receipts for the Fees tab payment history table. */
+    feePayments: (id: string) => `${API_PREFIX}/students/${id}/fee-payments`,
+    /**
+     * The classes this caller may filter students by: every active class for
+     * somebody with the unscoped grant, only their assigned ones for a teacher.
+     * Its own route because teachers hold no `academics.structure.read`.
+     */
+    classOptions: `${API_PREFIX}/students/class-options`,
     guardians: (id: string) => `${API_PREFIX}/students/${id}/guardians`,
     /** Search existing guardians, so a sibling links rather than duplicates. */
     guardianSearch: `${API_PREFIX}/guardians`,
@@ -126,8 +142,13 @@ export const ROUTES = {
    * logo's URL — which appears on every page — was assembled at each call site.
    */
   bankLogo: {
+    /** Slot 0. Kept so a challan printed before slots existed still resolves. */
     image: `${API_PREFIX}/schools/bank-logo`,
     info: `${API_PREFIX}/schools/bank-logo/info`,
+    /** Every filled slot, in print order. */
+    list: `${API_PREFIX}/schools/bank-logos`,
+    /** One slot's image — GET serves it, PUT replaces it, DELETE clears it. */
+    slot: (slot: number) => `${API_PREFIX}/schools/bank-logos/${String(slot)}`,
   },
 
   /**
@@ -143,6 +164,10 @@ export const ROUTES = {
     appearance: `${API_PREFIX}/schools/appearance`,
     /** How the fee challan is laid out, and which payment channels it prints. */
     voucherSettings: `${API_PREFIX}/schools/voucher-settings`,
+    /** Where GR (and so roll) numbering starts. Admin-only. */
+    grNumber: `${API_PREFIX}/schools/gr-number`,
+    /** Where fee voucher numbering starts. Admin-only. */
+    voucherNumber: `${API_PREFIX}/schools/voucher-number`,
   },
 
   /**
@@ -195,6 +220,8 @@ export const ROUTES = {
     cancel: (id: string) => `${API_PREFIX}/fee-vouchers/${id}/cancel`,
     /** Remove many at once, in one transaction, reporting what could not go. */
     bulkDelete: `${API_PREFIX}/fee-vouchers/bulk-delete`,
+    /** Settle many vouchers in full at once. Per-voucher results, never all-or-nothing. */
+    bulkPay: `${API_PREFIX}/fee-vouchers/bulk-payments`,
     /**
      * Just the ids behind a set of filters, for "select all matching".
      *
@@ -227,6 +254,8 @@ export const ROUTES = {
     studentReport: (classLevelId: string) =>
       `${API_PREFIX}/attendance/reports/classes/${classLevelId}`,
     staffReport: `${API_PREFIX}/attendance/reports/staff`,
+    /** The signed-in member of staff's own attendance — no id, so nobody else's. */
+    myReport: `${API_PREFIX}/attendance/me`,
   },
   academics: {
     /**
@@ -253,6 +282,8 @@ export const ROUTES = {
     promotionPreview: `${API_PREFIX}/academics/promotions/preview`,
     promotions: `${API_PREFIX}/academics/promotions`,
     classes: `${API_PREFIX}/academics/classes`,
+    /** The teachers assigned to one class, with their photographs. */
+    classTeachers: (classLevelId: string) => `${API_PREFIX}/academics/classes/${classLevelId}/teachers`,
     class: (id: string) => `${API_PREFIX}/academics/classes/${id}`,
     sections: `${API_PREFIX}/academics/sections`,
     section: (id: string) => `${API_PREFIX}/academics/sections/${id}`,
@@ -267,6 +298,10 @@ export const ROUTES = {
     holidays: `${API_PREFIX}/academics/holidays`,
     holiday: (id: string) => `${API_PREFIX}/academics/holidays/${id}`,
   },
+  /** Fee payments received, with deposits held taken out — Finance › Revenue. */
+  revenue: {
+    list: `${API_PREFIX}/finance/revenue`,
+  },
   expenses: {
     list: `${API_PREFIX}/expenses`,
     create: `${API_PREFIX}/expenses`,
@@ -280,8 +315,99 @@ export const ROUTES = {
     detail: (id: string) => `${API_PREFIX}/staff/${id}`,
     update: (id: string) => `${API_PREFIX}/staff/${id}`,
     remove: (id: string) => `${API_PREFIX}/staff/${id}`,
+    /** Remove several staff members in one request. */
+    bulkDelete: `${API_PREFIX}/staff/bulk-delete`,
     /** Send, or re-send, the invitation that lets them set their own password. */
     invite: (id: string) => `${API_PREFIX}/staff/${id}/invite`,
+    /** Month-by-month salary, paid and due. */
+    salary: (id: string) => `${API_PREFIX}/staff/${id}/salary`,
+    /** Record a payment (full or part) against a month's salary. Append-only. */
+    salaryPayments: (id: string) => `${API_PREFIX}/staff/${id}/salary-payments`,
+    /** Add a bonus, allowance, deduction or manual adjustment to a month's salary. */
+    salaryAdjustments: (id: string) => `${API_PREFIX}/staff/${id}/salary-adjustments`,
+  },
+  /** The Salaries page: every person's salary for a month. */
+  staffSalaries: {
+    list: `${API_PREFIX}/staff-salaries`,
+    receipt: (paymentId: string) => `${API_PREFIX}/staff-salaries/payments/${paymentId}/receipt`,
+  },
+  marks: {
+    subjects: `${API_PREFIX}/marks/subjects`,
+    subject: (id: string) => `${API_PREFIX}/marks/subjects/${id}`,
+    assessmentTypes: `${API_PREFIX}/marks/assessment-types`,
+    assessmentType: (id: string) => `${API_PREFIX}/marks/assessment-types/${id}`,
+    assessments: `${API_PREFIX}/marks/assessments`,
+    assessment: (id: string) => `${API_PREFIX}/marks/assessments/${id}`,
+    /** The class list a new assessment's entry grid starts from. */
+    roster: `${API_PREFIX}/marks/roster`,
+    student: (studentId: string) => `${API_PREFIX}/marks/students/${studentId}`,
+    /** Subjects and assessment types as used in one class. */
+    classSummary: (classLevelId: string) => `${API_PREFIX}/marks/classes/${classLevelId}/summary`,
+    /** Add (POST) a subject to a class; remove (DELETE) one. */
+    classSubjects: (classLevelId: string) => `${API_PREFIX}/marks/classes/${classLevelId}/subjects`,
+    classSubject: (classLevelId: string, subjectId: string) =>
+      `${API_PREFIX}/marks/classes/${classLevelId}/subjects/${subjectId}`,
+    /** Choose (PUT) or clear the teacher who takes a subject in a class. */
+    classSubjectTeacher: (classLevelId: string, subjectId: string) =>
+      `${API_PREFIX}/marks/classes/${classLevelId}/subjects/${subjectId}/teacher`,
+    classAssessmentTypes: (classLevelId: string) =>
+      `${API_PREFIX}/marks/classes/${classLevelId}/assessment-types`,
+    classAssessmentType: (classLevelId: string, typeId: string) =>
+      `${API_PREFIX}/marks/classes/${classLevelId}/assessment-types/${typeId}`,
+  },
+  parent: {
+    children: `${API_PREFIX}/parent/children`,
+    child: (id: string) => `${API_PREFIX}/parent/children/${id}`,
+    attendance: (id: string) => `${API_PREFIX}/parent/children/${id}/attendance`,
+    marks: (id: string) => `${API_PREFIX}/parent/children/${id}/marks`,
+    /** The parent's own children's vouchers, filtered and paged. */
+    vouchers: `${API_PREFIX}/parent/vouchers`,
+    /** One voucher and the letterhead its challan prints under. */
+    voucher: (id: string) => `${API_PREFIX}/parent/vouchers/${id}`,
+    /** The school's and the bank's marks for a challan, readable by a guardian. */
+    schoolLogo: `${API_PREFIX}/parent/voucher-assets/school-logo`,
+    bankLogo: (slot: number) => `${API_PREFIX}/parent/voucher-assets/bank-logos/${String(slot)}`,
+  },
+  /**
+   * Requests and concerns (ADR-0016).
+   *
+   * The fixed paths (`summary`, `students`, `assignees`, `attachments/:id`) are
+   * declared ahead of `:id` in the controller so none can be read as an id.
+   */
+  requests: {
+    list: `${API_PREFIX}/requests`,
+    summary: `${API_PREFIX}/requests/summary`,
+    /** Children the caller may raise a request about. */
+    students: `${API_PREFIX}/requests/students`,
+    /** Staff a request can be assigned to. */
+    assignees: `${API_PREFIX}/requests/assignees`,
+    detail: (id: string) => `${API_PREFIX}/requests/${id}`,
+    status: (id: string) => `${API_PREFIX}/requests/${id}/status`,
+    assign: (id: string) => `${API_PREFIX}/requests/${id}/assign`,
+    /** POST one picture onto the event that raised the request. */
+    eventAttachments: (id: string, eventId: string) =>
+      `${API_PREFIX}/requests/${id}/events/${eventId}/attachments`,
+    /** GET serves the picture itself, so it can be an image source. */
+    attachment: (attachmentId: string) => `${API_PREFIX}/requests/attachments/${attachmentId}`,
+  },
+  /**
+   * Timetables (ADR-0017). Fixed paths are declared ahead of `:id` in the
+   * controller so none can be read as an id.
+   */
+  timetables: {
+    list: `${API_PREFIX}/timetables`,
+    options: `${API_PREFIX}/timetables/options`,
+    calendar: `${API_PREFIX}/timetables/calendar`,
+    detail: (id: string) => `${API_PREFIX}/timetables/${id}`,
+    publish: (id: string) => `${API_PREFIX}/timetables/${id}/publish`,
+    unpublish: (id: string) => `${API_PREFIX}/timetables/${id}/unpublish`,
+  },
+  /** The signed-in person's own notifications. */
+  notifications: {
+    list: `${API_PREFIX}/notifications`,
+    read: `${API_PREFIX}/notifications/read`,
+    /** Register (POST) or remove (DELETE) this browser for push. */
+    devices: `${API_PREFIX}/notifications/devices`,
   },
   health: `${API_PREFIX}/health`,
 
@@ -309,6 +435,14 @@ export const ROUTES = {
       login: `${PLATFORM_PREFIX}/auth/login`,
       logout: `${PLATFORM_PREFIX}/auth/logout`,
       session: `${PLATFORM_PREFIX}/auth/session`,
+    },
+    overview: `${PLATFORM_PREFIX}/overview`,
+    plans: {
+      list: `${PLATFORM_PREFIX}/plans`,
+      create: `${PLATFORM_PREFIX}/plans`,
+      update: (id: string) => `${PLATFORM_PREFIX}/plans/${id}`,
+      archive: (id: string) => `${PLATFORM_PREFIX}/plans/${id}/archive`,
+      restore: (id: string) => `${PLATFORM_PREFIX}/plans/${id}/restore`,
     },
     schools: {
       list: `${PLATFORM_PREFIX}/schools`,

@@ -1,19 +1,24 @@
 import {
+  formatGrNo,
   grantFor,
+  grNumericPart,
   type ChangeStudentStatus,
   type CreateStudent,
   type SchoolRole,
   type StudentListItem,
+  type StudentFeePaymentHistory,
+  type StudentFeePaymentHistoryEntry,
   type StudentListQuery,
   type StudentProfile,
   type UpdateStudent,
 } from '@ilm/contracts';
-import { DEFAULT_TIMEZONE, fromDecimalString, today } from '@ilm/utils';
+import { DEFAULT_TIMEZONE, fromDecimalString, minorUnits, today } from '@ilm/utils';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { Prisma, type TransactionClient } from '../../prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/domain-error';
+import { ClassScopeService } from '../../shared/rbac/class-scope.service';
 import { TenantContextService } from '../../shared/tenancy/tenant-context.service';
 import { CLOCK, type Clock } from '../../shared/time/clock.provider';
 import {
@@ -22,7 +27,9 @@ import {
   readStructure,
   toRow as toFeeRow,
 } from '../fees/student-fees.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
+import { ParentInviteService } from './parent-invite.service';
 import { StudentsRepository, type StudentRow, type StudentScope } from './students.repository';
 
 /** Statuses that end a child's current enrolment when they are set. */
@@ -42,6 +49,9 @@ export class StudentsService {
     private readonly prisma: PrismaService,
     private readonly context: TenantContextService,
     private readonly students: StudentsRepository,
+    private readonly parents: ParentInviteService,
+    private readonly classScope: ClassScopeService,
+    private readonly notifications: NotificationsService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -49,14 +59,19 @@ export class StudentsService {
    * Turn a scoped permission into a data restriction.
    *
    * docs/04 §5: scope is **data**, compiled into the query, not a code branch.
-   * A holder of the unscoped grant gets no restriction; a teacher gets their
-   * sections; a parent gets their children.
+   * A holder of the unscoped grant gets no restriction; a teacher gets the
+   * classes assigned to them (ADR-0014); a parent gets their children.
    *
-   * The empty-scope case matters: a teacher assigned no sections yet must see
+   * The empty-scope case matters: a teacher assigned no classes yet must see
    * **nothing**, not everything. Returning an empty restriction here would be
    * a cross-tenant-shaped bug inside a single tenant.
+   *
+   * Takes the caller's transaction, so the assignments are read in the same
+   * snapshot as the rows they narrow.
    */
-  private scopeFor(roles: readonly SchoolRole[]): StudentScope {
+  private async scopeFor(tx: TransactionClient): Promise<StudentScope> {
+    const roles = this.context.roles as readonly SchoolRole[];
+
     if (grantFor(roles, 'students.student.read') === 'all') {
       return {};
     }
@@ -64,9 +79,9 @@ export class StudentsService {
     const userId = this.context.userId;
 
     if (roles.includes('TEACHER') || roles.includes('COORDINATOR')) {
-      // Section assignments land with the staff module in Phase 1; until then a
-      // scoped teacher sees nothing rather than everything.
-      return { sectionIds: [] };
+      return {
+        classLevelIds: (await this.classScope.classLevelIds(tx, 'students.student.read')) ?? [],
+      };
     }
     if (roles.includes('PARENT')) {
       return { guardianUserId: userId };
@@ -76,21 +91,54 @@ export class StudentsService {
     }
 
     // A scoped grant with no rule to compile is a denial, not a free pass.
-    return { sectionIds: [] };
+    return { classLevelIds: [] };
+  }
+
+  /**
+   * The classes this caller may filter the student list by.
+   *
+   * Everyone with the unscoped grant gets every active class; a teacher gets
+   * only theirs. It exists because the list's class filter used to be filled
+   * from the academic-structure endpoint, which a teacher (correctly) cannot
+   * call — so the filter was empty for them, and for reception too.
+   */
+  /**
+   * Whether this caller may see what a child is charged.
+   *
+   * Voucher-read is the existing line between "academic" and "financial" (a
+   * teacher holds neither it nor any fees permission), so it is reused rather
+   * than inventing a second definition of money access.
+   */
+  private canSeeFees(): boolean {
+    return grantFor(this.context.roles as readonly SchoolRole[], 'fees.voucher.read') !== undefined;
+  }
+
+  async classOptions(): Promise<{ id: string; name: string }[]> {
+    return this.prisma.tenant(async (tx) => {
+      const ids = await this.classScope.classLevelIds(tx, 'students.student.read');
+
+      return tx.classLevel.findMany({
+        where: { isActive: true, ...(ids === undefined ? {} : { id: { in: [...ids] } }) },
+        orderBy: { numericOrder: 'asc' },
+        select: { id: true, name: true },
+      });
+    });
   }
 
   async list(
     query: StudentListQuery,
   ): Promise<{ items: StudentListItem[]; total: number; aggregates: Record<string, number> }> {
-    const roles = this.context.roles as readonly SchoolRole[];
-    const scope = this.scopeFor(roles);
-
     return this.prisma.tenant(async (tx) => {
+      const scope = await this.scopeFor(tx);
       const { rows, total } = await this.students.list(tx, query, scope);
-      const counts = await this.students.countByStatus(tx);
+      const showFees = this.canSeeFees();
+      const counts = await this.students.countByStatus(tx, scope);
 
       return {
-        items: rows.map(toListItem),
+        items: rows.map((row) => {
+          const item = toListItem(row);
+          return showFees ? item : { ...item, tuitionFeeMinor: null };
+        }),
         total,
         aggregates: {
           totalActive: counts['ACTIVE'] ?? 0,
@@ -109,8 +157,15 @@ export class StudentsService {
    * number, and a school that finds two children sharing one stops trusting the
    * register entirely.
    */
-  async create(input: CreateStudent): Promise<{ id: string; grNo: string; studentCode: string }> {
-    return this.prisma.tenant(async (tx) => {
+  async create(input: CreateStudent): Promise<{
+    id: string;
+    grNo: string;
+    studentCode: string;
+    /** Present when the guardian was sent a portal invitation. */
+    parentInvite?: { sent: boolean; email: string };
+  }> {
+    const { result, invitation } = await this.prisma.tenant(async (tx) => {
+      let invitation: Awaited<ReturnType<ParentInviteService['linkOrInvite']>>;
       // The year on the Student ID is the year the child was **admitted**, in
       // the school's own calendar.
       //
@@ -126,7 +181,7 @@ export class StudentsService {
       // Both numbers come from locked counters inside this same transaction. If
       // anything below fails, neither is consumed, and the register is left
       // with no gap where a child never was.
-      const grNo = await this.nextNumber(tx, 'gr', (value) => String(value).padStart(4, '0'));
+      const grNo = await this.allocateGrNo(tx);
       const studentCode = await this.nextNumber(
         tx,
         'student',
@@ -142,6 +197,9 @@ export class StudentsService {
           ...(input.gender === undefined ? {} : { gender: input.gender }),
           ...(input.dateOfBirth === undefined ? {} : { dateOfBirth: new Date(input.dateOfBirth) }),
           ...(input.bFormNo === undefined ? {} : { bFormNo: input.bFormNo }),
+          ...(input.photoUrl === undefined || input.photoUrl === null || input.photoUrl === ''
+            ? {}
+            : { photoUrl: input.photoUrl }),
           ...(input.religion === undefined ? {} : { religion: input.religion }),
           ...(input.bloodGroup === undefined ? {} : { bloodGroup: input.bloodGroup }),
           ...(input.nationality === undefined ? {} : { nationality: input.nationality }),
@@ -158,13 +216,18 @@ export class StudentsService {
       if (input.enrollment !== undefined) {
         await assertEnrollmentTarget(tx, input.enrollment, admissionDate);
 
-        const rollNo = await nextRollNo(tx, input.enrollment);
+        // The roll number *is* the GR number: one number per child, so the same
+        // child is never "GR 4213" on one document and "roll 7" on another. A
+        // child with no section has no register to hold a roll, so none is set.
+        const rollNo =
+          input.enrollment.sectionId === undefined ? undefined : grNumericPart(grNo);
 
         await tx.enrollment.create({
           data: {
             studentId: student.id,
             sessionId: input.enrollment.sessionId,
             classLevelId: input.enrollment.classLevelId,
+            enrolledOn: new Date(admissionDate),
             ...(input.enrollment.sectionId === undefined
               ? {}
               : { sectionId: input.enrollment.sectionId }),
@@ -173,8 +236,38 @@ export class StudentsService {
         });
       }
 
+      // A named sibling must be a real student of this school. Row-level security
+      // already confines the lookup to the school; a missing row means the id was
+      // wrong, removed, or somebody else's.
+      const sibling =
+        input.siblingOfStudentId === undefined
+          ? null
+          : await tx.student.findFirst({
+              where: { id: input.siblingOfStudentId, deletedAt: null },
+              select: { id: true },
+            });
+      if (input.siblingOfStudentId !== undefined && sibling === null) {
+        throw new BusinessRuleError(
+          'BUSINESS_RULE_VIOLATION',
+          'The selected sibling could not be found in this school. Search for them again.',
+        );
+      }
+
       if (input.guardian !== undefined) {
-        const guardian = await tx.guardian.create({
+        // One guardian per email. A second child of the same family links to the
+        // guardian the first one created, so the family is one record, one
+        // portal login and one sibling group — not three look-alikes.
+        const known =
+          input.guardian.email === undefined
+            ? null
+            : await tx.guardian.findFirst({
+                where: { email: input.guardian.email, deletedAt: null },
+                select: { id: true, name: true, email: true, phone: true },
+              });
+
+        const guardian =
+          known ??
+          (await tx.guardian.create({
           data: {
             name: input.guardian.name,
             relation: input.guardian.relation,
@@ -186,7 +279,7 @@ export class StudentsService {
               : { occupation: input.guardian.occupation }),
             address: input.guardian.address,
           } as never,
-        });
+          }));
 
         await tx.studentGuardian.create({
           data: {
@@ -196,6 +289,45 @@ export class StudentsService {
             isFeePayer: true,
           } as never,
         });
+
+        // The family link. If the guardian typed in is the sibling's own (same
+        // email, so the lookup above found them) the new child is already on the
+        // family record. If it was edited to somebody else, the sibling's
+        // guardians are attached as well — not as primary, not as fee payer — so
+        // the two children still belong to one family and a sibling search
+        // finds both. The sibling's own record is never changed.
+        if (sibling !== null) {
+          const familyLinks = await tx.studentGuardian.findMany({
+            where: { studentId: sibling.id, guardianId: { not: guardian.id } },
+            select: { guardianId: true },
+          });
+          for (const link of familyLinks) {
+            await tx.studentGuardian.create({
+              data: {
+                studentId: student.id,
+                guardianId: link.guardianId,
+                isPrimary: false,
+                isFeePayer: false,
+              } as never,
+            });
+          }
+        }
+
+        // Give the guardian a parent login, or link to the one they already
+        // have. Same transaction, so a child is never admitted with a guardian
+        // whose account half-exists.
+        if (input.guardian.email !== undefined) {
+          invitation = await this.parents.linkOrInvite(
+            tx,
+            {
+              id: guardian.id,
+              name: guardian.name,
+              email: input.guardian.email,
+              phone: guardian.phone ?? null,
+            },
+            this.clock.now(),
+          );
+        }
       }
 
       // The fee structure, in the same transaction as the child.
@@ -211,7 +343,7 @@ export class StudentsService {
       // a staff child, and the two must not collapse into each other.
       const lines =
         input.fees ??
-        (await defaultFeeLines(tx)).map((line) => ({
+        (await defaultFeeLines(tx, input.enrollment.classLevelId)).map((line) => ({
           feeHeadId: line.feeHeadId,
           amountMinor: line.amountMinor,
         }));
@@ -231,8 +363,35 @@ export class StudentsService {
         });
       }
 
-      return { id: student.id, grNo, studentCode };
+      // Tell the office, in this transaction: a notification exists exactly when
+      // the admission does. The person who admitted the child already knows.
+      await this.notifications.notify(tx, {
+        recipientIds: [
+          ...(await this.notifications.userIdsWithPermission(tx, 'students.student.create')),
+          // The class teachers meet the new child on their register.
+          ...(input.enrollment === undefined
+            ? []
+            : await this.notifications.teacherUserIdsOfClass(tx, input.enrollment.classLevelId)),
+        ],
+        exceptUserId: this.context.userId,
+        kind: 'student.admitted',
+        title: `New admission: ${input.firstName} ${input.lastName}`,
+        body: `GR ${grNo} · Student ID ${studentCode}`,
+        entityType: 'student',
+        entityId: student.id,
+      });
+
+      return { result: { id: student.id, grNo, studentCode }, invitation };
     });
+
+    // After commit: a mail server is slow and outside the database's control,
+    // and a failure to deliver is not a reason to refuse to admit a child. The
+    // account and its invitation exist either way.
+    if (invitation === undefined) {
+      return result;
+    }
+    const delivery = await this.parents.deliver(invitation);
+    return { ...result, parentInvite: { sent: delivery.sent, email: delivery.email } };
   }
 
   /**
@@ -309,6 +468,8 @@ export class StudentsService {
       input.effectiveOn === undefined ? this.clock.now() : new Date(input.effectiveOn);
 
     await this.prisma.tenant(async (tx) => {
+      // Read before the enrolment is closed below, or leaving would hide the class.
+      const classLevelId = await this.notifications.currentClassOf(tx, id);
       await tx.student.update({
         where: { id },
         data: {
@@ -336,6 +497,23 @@ export class StudentsService {
           },
         });
       }
+
+      const guardians = await this.notifications.guardianUserIdsByStudent(tx, [id]);
+      await this.notifications.notify(tx, {
+        recipientIds: [
+          ...(await this.notifications.userIdsWithPermission(tx, 'students.student.update')),
+          ...(guardians.get(id) ?? []),
+          ...(classLevelId === null
+            ? []
+            : await this.notifications.teacherUserIdsOfClass(tx, classLevelId)),
+        ],
+        exceptUserId: this.context.userId,
+        kind: 'student.status_changed',
+        title: `${current.firstName} ${current.lastName} is now ${input.status.toLowerCase().replace('_', ' ')}`,
+        ...(input.reason === undefined ? {} : { body: input.reason }),
+        entityType: 'student',
+        entityId: id,
+      });
     });
 
     return this.findOne(id);
@@ -372,10 +550,9 @@ export class StudentsService {
   }
 
   async findOne(id: string): Promise<StudentListItem> {
-    const roles = this.context.roles as readonly SchoolRole[];
-    const scope = this.scopeFor(roles);
-
     return this.prisma.tenant(async (tx) => {
+      const scope = await this.scopeFor(tx);
+
       // Re-uses the list query with the id pushed into the same WHERE clause,
       // so scope is applied identically. A separate "find by id" path is where
       // scope rules diverge and a teacher ends up able to open a student they
@@ -392,7 +569,8 @@ export class StudentsService {
         // would confirm the record exists (docs/11 §4).
         throw new NotFoundError('student');
       }
-      return toListItem(found);
+      const item = toListItem(found);
+      return this.canSeeFees() ? item : { ...item, tuitionFeeMinor: null };
     });
   }
 
@@ -432,7 +610,12 @@ export class StudentsService {
 
       // Read inside the same transaction as the rest of the page, so the fees
       // shown and the details shown are the same instant.
-      const { fees, totals } = await readStructure(tx, id);
+      // Not read at all for a caller who may not see money, rather than read
+      // and blanked: the cheapest way to be sure it cannot leak is to never
+      // have it in hand.
+      const { fees, totals } = this.canSeeFees()
+        ? await readStructure(tx, id)
+        : { fees: [], totals: { grossMinor: 0, discountMinor: 0, payableMinor: 0 } };
 
       const enrollments = await tx.enrollment.findMany({
         where: { studentId: id },
@@ -444,6 +627,8 @@ export class StudentsService {
           status: true,
           enrolledOn: true,
           endedOn: true,
+          sessionId: true,
+          classLevelId: true,
           session: { select: { name: true } },
           classLevel: { select: { name: true } },
           section: { select: { name: true } },
@@ -469,7 +654,9 @@ export class StudentsService {
         guardians: [],
         enrollments: enrollments.map((entry) => ({
           id: entry.id,
+          sessionId: entry.sessionId,
           sessionName: entry.session.name,
+          classLevelId: entry.classLevelId,
           className: entry.classLevel.name,
           sectionName: entry.section?.name ?? null,
           rollNo: entry.rollNo,
@@ -479,6 +666,100 @@ export class StudentsService {
         })),
         fees,
         feeTotals: totals,
+      };
+    });
+  }
+
+  /**
+   * Every confirmed fee receipt for this child, newest first.
+   *
+   * Scope follows `findOne`: if the caller cannot list this student, they
+   * cannot read their payments either.
+   */
+  async feePaymentHistory(id: string): Promise<StudentFeePaymentHistory> {
+    const listRow = await this.findOne(id);
+
+    return this.prisma.tenant(async (tx) => {
+      const payments = await tx.feePayment.findMany({
+        where: {
+          studentId: id,
+          status: 'CONFIRMED',
+          reversesPaymentId: null,
+        },
+        orderBy: [{ paidOn: 'desc' }, { createdAt: 'desc' }],
+        take: 500,
+        select: {
+          id: true,
+          receiptNo: true,
+          amount: true,
+          method: true,
+          paidOn: true,
+          allocations: {
+            select: {
+              voucher: {
+                select: {
+                  voucherNo: true,
+                  billMonths: true,
+                  lines: {
+                    orderBy: { sortOrder: 'asc' },
+                    select: { label: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const entries: StudentFeePaymentHistoryEntry[] = payments.map((payment) => {
+        const labels = new Set<string>();
+        const voucherNos = new Set<string>();
+        const monthKeys = new Set<string>();
+
+        for (const allocation of payment.allocations) {
+          voucherNos.add(allocation.voucher.voucherNo);
+          for (const line of allocation.voucher.lines) {
+            labels.add(line.label);
+          }
+          for (const month of allocation.voucher.billMonths) {
+            monthKeys.add(month.toISOString().slice(0, 7));
+          }
+        }
+
+        const feePart = [...labels].join(', ');
+        const periodPart =
+          monthKeys.size === 0
+            ? ''
+            : [...monthKeys]
+                .sort()
+                .map((key) => formatBillMonth(key))
+                .join(', ');
+        const description =
+          feePart === ''
+            ? periodPart === ''
+              ? 'Fee payment'
+              : periodPart
+            : periodPart === ''
+              ? feePart
+              : `${feePart} · ${periodPart}`;
+
+        const voucherNo =
+          voucherNos.size === 0 ? null : voucherNos.size === 1 ? [...voucherNos][0]! : 'Multiple';
+
+        return {
+          id: payment.id,
+          receiptNo: payment.receiptNo,
+          paidOn: asCalendarDate(payment.paidOn) ?? payment.paidOn.toISOString().slice(0, 10),
+          amountMinor: minorUnits(fromDecimalString(payment.amount.toString())),
+          method: payment.method,
+          voucherNo,
+          description,
+        };
+      });
+
+      return {
+        studentId: listRow.id,
+        entries,
       };
     });
   }
@@ -494,11 +775,40 @@ export class StudentsService {
    * slightly differently from the admission counter" is exactly the drift that
    * surfaces a year later as two children sharing a register number.
    */
+  /**
+   * The next GR number — and refuse if the school has not chosen where they start.
+   *
+   * An UPDATE, not the upsert `nextNumber` uses: an upsert would create the
+   * counter at 1 on the first admission, which is exactly the default this must
+   * not have. No row means an administrator has not configured numbering, and
+   * the admission stops before anything is written.
+   */
+  private async allocateGrNo(tx: {
+    $queryRawUnsafe: <T>(q: string, ...v: unknown[]) => Promise<T>;
+  }): Promise<string> {
+    const rows = await tx.$queryRawUnsafe<{ next: number; prefix: string; pad: number }[]>(
+      `UPDATE number_sequences
+          SET next_value = next_value + 1, updated_at = now()
+        WHERE kind = 'gr' AND school_id = current_school_id()
+        RETURNING next_value - 1 AS next, prefix, pad`,
+    );
+
+    const value = rows[0]?.next;
+    if (value === undefined) {
+      throw new BusinessRuleError(
+        'BUSINESS_RULE_VIOLATION',
+        'Set the starting GR number under Settings › GR numbers before admitting students.',
+      );
+    }
+
+    return formatGrNo(rows[0]?.prefix ?? '', value, rows[0]?.pad ?? 4);
+  }
+
   private async nextNumber(
     tx: {
       $queryRawUnsafe: <T>(q: string, ...v: unknown[]) => Promise<T>;
     },
-    kind: 'student' | 'gr',
+    kind: 'student',
     format: (value: number) => string,
   ): Promise<string> {
     // `id` is supplied explicitly: Prisma's `@default(uuid(7))` is generated by
@@ -523,55 +833,6 @@ export class StudentsService {
 
     return format(value);
   }
-}
-
-/**
- * The next roll number in a section's register.
- *
- * ## Why a roll belongs to a section, and why no section means no roll
- *
- * A roll number is a child's position in one register: "Grade 4 — A, 2026-2027,
- * number 7". It is not an identifier — it repeats in every section, and it is
- * reassigned every year on promotion. A child not yet placed in a section is
- * not on any register, so there is no position to give them, and inventing one
- * would be a number that means nothing until it silently changes.
- *
- * Which is exactly what the screen was doing before: nothing assigned a roll at
- * all, so every real admission showed a dash, and the attendance roster filled
- * the gap with the row's index — a number that looked recorded, was not, and
- * moved every time somebody joined the class.
- *
- * ## Why the section row is locked
- *
- * `MAX(roll_no) + 1` read by two receptionists admitting into the same section
- * at the same instant returns the same answer to both, and READ COMMITTED does
- * nothing to stop it — the second insert is not blocked by the first, because
- * it is a different row. Locking the section serialises admissions **into that
- * section** and nothing else: a second desk admitting into Grade 5 — B is not
- * held up at all.
- *
- * The unique index added in `20260925010000_enrollment_roll_unique` is the
- * backstop. This lock is what stops anybody meeting it.
- */
-async function nextRollNo(
-  tx: TransactionClient,
-  enrollment: { sessionId: string; sectionId?: string },
-): Promise<number | undefined> {
-  if (enrollment.sectionId === undefined) {
-    return undefined;
-  }
-
-  // RLS applies to this statement as it does to any other, so the lock can only
-  // ever be taken on a section this school owns — and `assertEnrollmentTarget`
-  // has already established that it is one.
-  await tx.$queryRaw`SELECT id FROM sections WHERE id = ${enrollment.sectionId}::uuid FOR UPDATE`;
-
-  const highest = await tx.enrollment.aggregate({
-    where: { sessionId: enrollment.sessionId, sectionId: enrollment.sectionId },
-    _max: { rollNo: true },
-  });
-
-  return (highest._max.rollNo ?? 0) + 1;
 }
 
 /**
@@ -698,6 +959,7 @@ function toListItem(row: StudentRow): StudentListItem {
     // raised by an aunt still needs a name printed next to them.
     fatherName: row.father_name ?? row.guardian_name,
     admittedOn: asCalendarDate(row.admitted_on),
+    photoUrl: row.photo_url,
     tuitionFeeMinor: decimalToMinor(row.tuition_fee),
   };
 }
@@ -734,6 +996,12 @@ function decimalToMinor(value: unknown): number | null {
  * anything timezone-aware shifts a birthday by a day in half the world, so it
  * is sliced rather than converted.
  */
+function formatBillMonth(monthKey: string): string {
+  const [year, month] = monthKey.split('-');
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, 1));
+  return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
 function asCalendarDate(value: Date | null): string | null {
   return value === null ? null : value.toISOString().slice(0, 10);
 }

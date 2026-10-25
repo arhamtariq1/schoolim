@@ -143,7 +143,6 @@ export function AttendanceClassGrid({
                     </div>
                     {!overview.day.isWorkingDay ? null : marked ? (
                       <StatusBadge tone="success">
-                        <SuccessIcon className="size-3.5" aria-hidden />
                         Marked
                       </StatusBadge>
                     ) : (

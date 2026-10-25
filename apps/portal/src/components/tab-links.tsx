@@ -116,5 +116,5 @@ export function AcademicsTabs() {
 }
 
 export function FinanceTabs() {
-  return <TabLinks label="Finance" items={FINANCE} />;
+  return <TabLinks label="Expense" items={FINANCE} />;
 }

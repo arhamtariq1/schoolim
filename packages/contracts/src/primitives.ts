@@ -76,7 +76,7 @@ export const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(25
 export const phoneSchema = z
   .string()
   .trim()
-  .regex(/^\+[1-9]\d{7,14}$/, 'expected an E.164 phone number, for example +923001234567');
+  .regex(/^\+[1-9]\d{7,14}$/, 'Enter a valid phone number, for example 03001234567.');
 
 /** URL-safe identifier used for school subdomains. */
 export const slugSchema = z
@@ -97,7 +97,7 @@ export const slugSchema = z
  * because these primitives are shared, fixing them here fixes every form
  * (docs/11 §4: `detail` is written for a school accountant, not a developer).
  */
-export const nonEmptyString = z.string().trim().min(1, 'This cannot be empty.');
+export const nonEmptyString = z.string().trim().min(1, 'This field is required.');
 
 /** Free-text a person typed: trimmed, length-capped, never unbounded. */
 export function textSchema(max: number) {

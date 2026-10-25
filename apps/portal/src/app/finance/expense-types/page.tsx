@@ -1,9 +1,13 @@
-import { ROUTES, type ExpenseCategory } from '@ilm/contracts';
+import {
+  ROUTES,
+  type Expense,
+  type ExpenseCategory,
+  type ExpenseTotals,
+} from '@ilm/contracts';
 
-import { AppShell } from '@/components/app-shell';
 import { ExpenseCategoriesManager } from '@/components/expense-categories-manager';
-import { FinanceTabs } from '@/components/tab-links';
 import { apiFetch } from '@/lib/api';
+import { calendarMonthRange, previousCalendarMonthRange } from '@/lib/expense-date-range';
 import { getSession } from '@/lib/session';
 
 /**
@@ -14,28 +18,36 @@ import { getSession } from '@/lib/session';
  * hard-coded set is the school-specific branching CLAUDE.md R1 forbids.
  */
 export default async function ExpenseTypesPage() {
-  const [session, result] = await Promise.all([
+  const thisMonth = calendarMonthRange();
+  const lastMonth = previousCalendarMonthRange();
+  const monthQuery = (from: string, to: string) =>
+    new URLSearchParams({ from, to, limit: '1', offset: '0' }).toString();
+
+  const emptyTotals: ExpenseTotals = { totalMinor: 0, count: 0 };
+
+  const [session, result, monthResult, lastMonthResult] = await Promise.all([
     getSession(),
     apiFetch<{ data: ExpenseCategory[] }>(ROUTES.expenses.categories),
+    apiFetch<{
+      data: Expense[];
+      meta: { page: { total: number; limit: number; offset: number }; totals: ExpenseTotals };
+    }>(`${ROUTES.expenses.list}?${monthQuery(thisMonth.from, thisMonth.to)}`),
+    apiFetch<{
+      data: Expense[];
+      meta: { page: { total: number; limit: number; offset: number }; totals: ExpenseTotals };
+    }>(`${ROUTES.expenses.list}?${monthQuery(lastMonth.from, lastMonth.to)}`),
   ]);
 
+  const monthTotals = monthResult.ok ? monthResult.data.meta.totals : emptyTotals;
+
   return (
-    <AppShell
-      user={{ name: session?.name ?? '', email: session?.email ?? '', roleLabel: session?.roles.join(', ') ?? '' }}
-      school={{ name: session?.school.name ?? '' }}
-      permissions={session?.permissions ?? []}
-      profileCompleted={session?.profileCompleted ?? true}
-      unverifiedEmail={session === undefined || session.emailVerified ? undefined : session.email}
-      brandColor={session?.school.primaryColor ?? undefined}
-    >
-      <div className="space-y-6">
-        <FinanceTabs />
-        <ExpenseCategoriesManager
-          categories={result.ok ? result.data.data : []}
-          error={result.ok ? undefined : result.message}
-          canManage={session?.permissions.includes('finance.expense.create') ?? false}
-        />
-      </div>
-    </AppShell>
+    <ExpenseCategoriesManager
+      categories={result.ok ? result.data.data : []}
+      totals={monthTotals}
+      monthTotals={monthTotals}
+      lastMonthTotals={lastMonthResult.ok ? lastMonthResult.data.meta.totals : emptyTotals}
+      error={result.ok ? undefined : result.message}
+      canManage={session?.permissions.includes('finance.expense.create') ?? false}
+    />
   );
 }

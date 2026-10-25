@@ -1,8 +1,15 @@
+import type { LucideIcon } from 'lucide-react';
 import { type ComponentProps, type ReactElement, cloneElement, useId } from 'react';
 
 import { cn } from '../lib/cn';
 
+import { InputIconWrap } from './input-icon-wrap';
 import { Label } from './input';
+import { PasswordInput } from './password-input';
+
+function fieldUsesInlineLeadingIcon(child: ReactElement): boolean {
+  return child.type === PasswordInput;
+}
 
 /**
  * A labelled form field with its error wired up.
@@ -20,8 +27,13 @@ export interface FieldProps extends Omit<ComponentProps<'div'>, 'children'> {
   error?: string | undefined;
   hint?: string | undefined;
   required?: boolean;
+  /** Same inset icon pattern as admission forms (`InputIconWrap`). */
+  leadingIcon?: LucideIcon;
+  /** Use for textareas — icon aligns to the first line. */
+  leadingIconAlignTop?: boolean;
   children: ReactElement<{
     id?: string;
+    className?: string;
     'aria-describedby'?: string;
     'aria-invalid'?: boolean;
     required?: boolean;
@@ -33,6 +45,8 @@ export function Field({
   error,
   hint,
   required = false,
+  leadingIcon,
+  leadingIconAlignTop = false,
   children,
   className,
   ...props
@@ -59,12 +73,28 @@ export function Field({
         ) : null}
       </Label>
 
-      {cloneElement(children, {
-        id,
-        required,
-        'aria-invalid': error !== undefined,
-        ...(describedBy === '' ? {} : { 'aria-describedby': describedBy }),
-      })}
+      {(() => {
+        const passLeadingIcon =
+          leadingIcon !== undefined && fieldUsesInlineLeadingIcon(children)
+            ? { leadingIcon }
+            : {};
+        const control = cloneElement(children, {
+          id,
+          required,
+          'aria-invalid': error !== undefined,
+          ...(describedBy === '' ? {} : { 'aria-describedby': describedBy }),
+          className: children.props.className,
+          ...passLeadingIcon,
+        });
+        if (leadingIcon === undefined || fieldUsesInlineLeadingIcon(children)) {
+          return control;
+        }
+        return (
+          <InputIconWrap icon={leadingIcon} alignTop={leadingIconAlignTop}>
+            {control}
+          </InputIconWrap>
+        );
+      })()}
 
       {hint === undefined ? null : (
         <p id={hintId} className="text-xs text-muted-foreground">
