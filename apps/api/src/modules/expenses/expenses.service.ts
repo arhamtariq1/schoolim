@@ -174,10 +174,18 @@ export class ExpensesService {
     query: ExpenseListQuery,
   ): Promise<{ items: Expense[]; total: number; totals: ExpenseTotals }> {
     return this.prisma.tenant(async (tx) => {
+      // A date range already says which period is meant, so the current
+      // session is assumed only when neither a session nor a date was given.
+      // Assuming it on top of a range made the range lie: with next year's
+      // session marked current, "September" showed nothing at all while the
+      // dashboard, which goes by date, showed September's spending.
+      const hasRange = query.from !== undefined || query.to !== undefined;
       const sessionId =
         query.sessionId ??
-        (await tx.academicSession.findFirst({ where: { isCurrent: true }, select: { id: true } }))
-          ?.id;
+        (hasRange
+          ? undefined
+          : (await tx.academicSession.findFirst({ where: { isCurrent: true }, select: { id: true } }))
+              ?.id);
 
       const where = {
         ...(sessionId === undefined ? {} : { sessionId }),

@@ -516,13 +516,14 @@ export const bulkDeleteVouchersSchema = z
 export type BulkDeleteVouchers = z.infer<typeof bulkDeleteVouchersSchema>;
 
 /** Why one voucher in a bulk selection was left where it was. */
-export const BULK_SKIP_REASONS = ['ALREADY_PAID', 'HAS_DEPOSIT', 'NOT_FOUND'] as const;
+export const BULK_SKIP_REASONS = ['ALREADY_PAID', 'HAS_DEPOSIT', 'HAS_WAIVER', 'NOT_FOUND'] as const;
 export const bulkSkipReasonSchema = z.enum(BULK_SKIP_REASONS);
 export type BulkSkipReason = z.infer<typeof bulkSkipReasonSchema>;
 
 export const BULK_SKIP_REASON_LABELS: Readonly<Record<BulkSkipReason, string>> = {
   ALREADY_PAID: 'Money has been received — reverse the payment first',
   HAS_DEPOSIT: 'Collected a security deposit — refund or clear it first',
+  HAS_WAIVER: 'A waiver was given on it — the record of that waiver is kept',
   NOT_FOUND: 'Already gone',
 };
 

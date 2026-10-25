@@ -35,6 +35,8 @@ const PASSWORD = 'correct-horse-battery-staple';
 const HEAD_TUITION = '77777777-7777-4777-8777-777777777781';
 const HEAD_ADMISSION = '77777777-7777-4777-8777-777777777782';
 const HEAD_ANNUAL = '77777777-7777-4777-8777-777777777783';
+/** Refundable: paid on a voucher, then held rather than earned. */
+const HEAD_SECURITY = '77777777-7777-4777-8777-777777777784';
 
 /** Same class, deliberately different agreed fees. */
 const AASIA = '88888888-8888-4888-8888-888888888881';
@@ -49,6 +51,8 @@ let jar = '';
 async function wipe(): Promise<void> {
   const ids = [SCHOOL_A, SCHOOL_B];
   for (const table of [
+    'security_deposit_refunds',
+    'security_deposits',
     'fee_payment_allocations',
     'fee_payments',
     'fee_voucher_arrears',
@@ -118,6 +122,7 @@ async function seed(): Promise<void> {
     [HEAD_TUITION, 'Tuition Fee', 'TUITION', 'MONTHLY', '5000.00'],
     [HEAD_ADMISSION, 'Admission Fee', 'ADMISSION', 'ONE_TIME', '25000.00'],
     [HEAD_ANNUAL, 'Annual Charges', 'ANNUAL', 'ANNUAL', '6000.00'],
+    [HEAD_SECURITY, 'Security Deposit', 'SECURITY', 'ONE_TIME', '15000.00'],
   ] as const) {
     await admin.$executeRawUnsafe(
       `INSERT INTO fee_heads (id, school_id, type, name, default_amount, frequency, sort_order, late_fee_applies, created_at, updated_at)
@@ -216,6 +221,8 @@ afterAll(async () => {
 /** Clear only the vouchers, so each test starts from the same fixture. */
 beforeEach(async () => {
   for (const table of [
+    'security_deposit_refunds',
+    'security_deposits',
     'fee_payment_allocations',
     'fee_payments',
     'fee_voucher_arrears',
@@ -1476,5 +1483,256 @@ describe('recording payment for a selection', () => {
 
     expect(response.statusCode).toBe(400);
     expect((await listVouchers()).data.every((voucher) => voucher.status !== 'PAID')).toBe(true);
+  });
+});
+
+describe('a security deposit paid on a voucher', () => {
+  interface DepositRows {
+    data: { rows: { voucherId: string | null; depositedMinor: number; receivedOn: string }[] };
+  }
+
+  async function billDeposit(): Promise<string> {
+    await generate({
+      scope: { kind: 'STUDENT', studentId: AASIA },
+      heads: [{ feeHeadId: HEAD_SECURITY, amountMinor: 1_500_000 }],
+    });
+    const { data } = await listVouchers();
+    expect(data).toHaveLength(1);
+    return data[0]?.id ?? '';
+  }
+
+  async function deposits(): Promise<DepositRows['data']['rows']> {
+    const response = await get(ROUTES.securityDeposits.list);
+    expect(response.statusCode).toBe(200);
+    return response.json<DepositRows>().data.rows;
+  }
+
+  it('is held, at the amount charged, once the voucher is paid in full', async () => {
+    const id = await billDeposit();
+
+    const paid = await post(ROUTES.vouchers.pay(id), {
+      method: 'CASH',
+      paidOn: '2026-09-10',
+      idempotencyKey: freshKey(),
+    });
+    expect(paid.statusCode).toBe(201);
+
+    // Paid on the 10th: the register says the 10th, whatever day it was typed in.
+    expect(await deposits()).toEqual([
+      expect.objectContaining({ voucherId: id, depositedMinor: 1_500_000, receivedOn: '2026-09-10' }),
+    ]);
+  });
+
+  it('is not held on a part payment, and is once the rest arrives', async () => {
+    const id = await billDeposit();
+
+    await post(ROUTES.vouchers.pay(id), {
+      amountMinor: 500_000,
+      method: 'CASH',
+      paidOn: '2026-09-05',
+      idempotencyKey: freshKey(),
+    });
+    // A payment is allocated to the voucher, not to a line: a part payment does
+    // not say the deposit was the part that was covered.
+    expect(await deposits()).toEqual([]);
+
+    await post(ROUTES.vouchers.pay(id), {
+      method: 'CASH',
+      paidOn: '2026-09-12',
+      idempotencyKey: freshKey(),
+    });
+    expect(await deposits()).toEqual([
+      expect.objectContaining({ voucherId: id, depositedMinor: 1_500_000, receivedOn: '2026-09-12' }),
+    ]);
+  });
+
+  it('is held once when the same payment is sent twice', async () => {
+    const id = await billDeposit();
+    const payload = { method: 'CASH', paidOn: '2026-09-10', idempotencyKey: freshKey() };
+
+    await post(ROUTES.vouchers.pay(id), payload);
+    await post(ROUTES.vouchers.pay(id), payload);
+
+    expect(await deposits()).toHaveLength(1);
+  });
+
+  it('is not booked a second time when the counter already recorded it', async () => {
+    const id = await billDeposit();
+    const manual = await post(ROUTES.securityDeposits.create, {
+      studentId: AASIA,
+      voucherId: id,
+      amountMinor: 1_500_000,
+      receivedOn: '2026-09-09',
+    });
+    expect(manual.statusCode).toBe(201);
+
+    const paid = await post(ROUTES.vouchers.pay(id), {
+      method: 'CASH',
+      paidOn: '2026-09-10',
+      idempotencyKey: freshKey(),
+    });
+    expect(paid.statusCode).toBe(201);
+
+    expect(await deposits()).toEqual([
+      expect.objectContaining({ voucherId: id, receivedOn: '2026-09-09' }),
+    ]);
+  });
+
+  it('is never booked for a voucher with no deposit on it', async () => {
+    await generate({ scope: { kind: 'STUDENT', studentId: AASIA } });
+    const { data } = await listVouchers();
+
+    await post(ROUTES.vouchers.pay(data[0]?.id ?? ''), {
+      method: 'CASH',
+      paidOn: '2026-09-10',
+      idempotencyKey: freshKey(),
+    });
+
+    expect(await deposits()).toEqual([]);
+  });
+});
+
+describe('the day a voucher was paid', () => {
+  it('is the day the money arrived, not the day it was entered', async () => {
+    await generate({ scope: { kind: 'STUDENT', studentId: AASIA } });
+    const { data } = await listVouchers();
+    const id = data[0]?.id ?? '';
+
+    await post(ROUTES.vouchers.pay(id), {
+      method: 'CASH',
+      paidOn: '2026-09-10',
+      idempotencyKey: freshKey(),
+    });
+
+    const detail = await get(ROUTES.vouchers.detail(id));
+    expect(detail.json<{ data: { paidOn: string | null } }>().data.paidOn).toBe('2026-09-10');
+  });
+});
+
+describe('a settled voucher cannot be charged again', () => {
+  it('refuses a second, late payment without adding a late fee to it', async () => {
+    await generate({ scope: { kind: 'STUDENT', studentId: AASIA } });
+    const { data } = await listVouchers();
+    const id = data[0]?.id ?? '';
+
+    // Paid in full, on time.
+    await post(ROUTES.vouchers.pay(id), { method: 'CASH', paidOn: '2026-09-10', idempotencyKey: freshKey() });
+
+    // Selected again later, past the due date.
+    const again = await post(ROUTES.vouchers.pay(id), {
+      method: 'CASH',
+      paidOn: '2026-10-01',
+      idempotencyKey: freshKey(),
+    });
+    expect(again.statusCode).toBe(409);
+    expect(again.body).toContain('FEES_VOUCHER_ALREADY_PAID');
+
+    const detail = (await get(ROUTES.vouchers.detail(id))).json<{
+      data: { netPayableMinor: number; lines: { kind: string }[]; payments: unknown[] };
+    }>().data;
+    expect(detail.netPayableMinor).toBe(500_000);
+    expect(detail.lines.some((line) => line.kind === 'LATE_FEE')).toBe(false);
+    expect(detail.payments).toHaveLength(1);
+  });
+
+  it('refuses a payment dated in the future', async () => {
+    await generate({ scope: { kind: 'STUDENT', studentId: AASIA } });
+    const { data } = await listVouchers();
+
+    const future = await post(ROUTES.vouchers.pay(data[0]?.id ?? ''), {
+      method: 'CASH',
+      paidOn: '2099-01-01',
+      idempotencyKey: freshKey(),
+    });
+    expect(future.statusCode).toBe(422);
+    expect(future.body).toContain('FEES_PAYMENT_IN_FUTURE');
+    expect((await listVouchers()).data[0]?.status).toBe('UNPAID');
+  });
+});
+
+describe('arrears a voucher carries are what is still owed', () => {
+  async function septemberThenOctober(): Promise<{ september: string; october: string }> {
+    await generate({ scope: { kind: 'STUDENT', studentId: AASIA } });
+    await generate({
+      scope: { kind: 'STUDENT', studentId: AASIA },
+      billMonths: ['2026-10'],
+      issueDate: '2026-10-01',
+      dueDate: '2026-10-15',
+      validTill: '2026-10-25',
+    });
+    const { data } = await listVouchers('?sort=voucherNo&order=asc');
+    return { september: data[0]?.id ?? '', october: data[1]?.id ?? '' };
+  }
+
+  it('drops a carried month once it is paid at the counter', async () => {
+    const { september, october } = await septemberThenOctober();
+    const before = (await listVouchers()).data.find((row) => row.id === october);
+    expect(before?.arrearsMinor).toBe(500_000);
+
+    await post(ROUTES.vouchers.pay(september), {
+      method: 'CASH',
+      paidOn: '2026-10-02',
+      idempotencyKey: freshKey(),
+    });
+
+    const after = (await listVouchers()).data.find((row) => row.id === october);
+    // October no longer asks for September, and its total is its own 5,000.
+    expect(after?.arrearsMinor).toBe(0);
+    expect(after?.totalPayableMinor).toBe(500_000);
+    const detail = (await get(ROUTES.vouchers.detail(october))).json<{
+      data: { arrears: unknown[] };
+    }>().data;
+    expect(detail.arrears).toEqual([]);
+  });
+
+  it('lets a line be added to a voucher that carries arrears', async () => {
+    const { october } = await septemberThenOctober();
+
+    const edited = await app.inject({
+      method: 'PATCH',
+      url: ROUTES.vouchers.update(october),
+      headers: { host: HOST_A, cookie: jar },
+      payload: { addHeads: [{ feeHeadId: HEAD_ANNUAL }] },
+    });
+    expect(edited.statusCode).toBe(200);
+    const data = edited.json<{
+      data: { netPayableMinor: number; arrearsMinor: number; totalPayableMinor: number };
+    }>().data;
+    // Own charge 5,000 + 6,000; arrears beside it, not inside it.
+    expect(data.netPayableMinor).toBe(1_100_000);
+    expect(data.arrearsMinor).toBe(500_000);
+    expect(data.totalPayableMinor).toBe(1_600_000);
+  });
+});
+
+describe('editing a voucher keeps its late-fee setting', () => {
+  it('does not switch the late fee on when only the dates change', async () => {
+    await generate({ scope: { kind: 'STUDENT', studentId: AASIA }, applyLateFee: false });
+    const { data } = await listVouchers();
+    expect(data[0]?.lateFeeMinor).toBe(0);
+
+    const edited = await app.inject({
+      method: 'PATCH',
+      url: ROUTES.vouchers.update(data[0]?.id ?? ''),
+      headers: { host: HOST_A, cookie: jar },
+      payload: { dueDate: '2026-09-20', validTill: '2026-09-30' },
+    });
+    expect(edited.statusCode).toBe(200);
+    expect(edited.json<{ data: { lateFeeMinor: number } }>().data.lateFeeMinor).toBe(0);
+  });
+});
+
+describe('a waived voucher is kept', () => {
+  it('cannot be deleted, so the record of the waiver survives', async () => {
+    await generate({ scope: { kind: 'STUDENT', studentId: AASIA } });
+    const { data } = await listVouchers();
+    const id = data[0]?.id ?? '';
+    await post(ROUTES.vouchers.waive(id), { reason: 'Hardship' });
+
+    const removed = await post(ROUTES.vouchers.bulkDelete, { ids: [id], reason: 'Tidying up' });
+    expect(removed.json<{ data: { deleted: number; skipped: { reason: string }[] } }>().data).toEqual({
+      deleted: 0,
+      skipped: [expect.objectContaining({ reason: 'HAS_WAIVER' })],
+    });
   });
 });

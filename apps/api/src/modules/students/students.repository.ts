@@ -196,10 +196,22 @@ export class StudentsRepository {
                  JOIN guardians gf ON gf.id = sgf.guardian_id
                 WHERE sgf.student_id = s.id AND gf.relation = 'FATHER'
                 LIMIT 1) AS father_name,
+              -- student_fees is a timeline (one row per change), so "the"
+              -- tuition is the row in force today in the school's own zone,
+              -- or, for a child whose fees have not started yet, the first
+              -- one to come. An unordered LIMIT 1 picked either at random.
               (SELECT COALESCE(sf.discounted_amount, sf.amount)
                  FROM student_fees sf
                  JOIN fee_heads fh ON fh.id = sf.fee_head_id
+                 CROSS JOIN (
+                   SELECT (now() AT TIME ZONE COALESCE(
+                             (SELECT timezone FROM schools LIMIT 1), 'Asia/Karachi'))::date AS d
+                 ) today
                 WHERE sf.student_id = s.id AND fh.type = 'TUITION'
+                ORDER BY (sf.effective_from <= today.d) DESC,
+                         CASE WHEN sf.effective_from <= today.d THEN sf.effective_from END DESC,
+                         sf.effective_from ASC,
+                         fh.sort_order ASC
                 LIMIT 1) AS tuition_fee
        ${from}
        ORDER BY ${ORDER[query.sort]} ${direction}
