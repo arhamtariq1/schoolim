@@ -39,7 +39,13 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
-import { afterMenuAction, feeListSortableTableHeader, feeListTableHeader, FEE_LIST_TABLE_CELL, useDebouncedSearchFilter } from '@/components/fees/fee-list-shared';
+import {
+  afterMenuAction,
+  feeListSortableTableHeader,
+  feeListTableHeader,
+  FEE_LIST_TABLE_CELL,
+  useDebouncedSearchFilter,
+} from '@/components/fees/fee-list-shared';
 import { ListDataTable } from '@/components/list-data-table';
 import { ListPageToolbar } from '@/components/list-page-toolbar';
 import { ListTablePaginationFooter } from '@/components/list-table-pagination-footer';
@@ -62,6 +68,11 @@ export interface RequestsFilters {
   readonly assignee: string;
 }
 
+export interface RequestsParent {
+  readonly children: readonly { id: string; name: string }[];
+  readonly selected: { id: string; name: string } | undefined;
+}
+
 export interface RequestsViewProps {
   readonly mode: RequestsMode;
   readonly rows: readonly RequestListItem[];
@@ -74,6 +85,11 @@ export interface RequestsViewProps {
   readonly offset: number;
   /** Who a request can be given to. Empty in "mine" mode. */
   readonly assignees: readonly RequestAssigneeOption[];
+  /**
+   * A parent's children, and the one the header filter has narrowed the list to.
+   * Undefined for anybody who is not a parent.
+   */
+  readonly parent?: RequestsParent | undefined;
   /** A failed read, said in words. The page still renders around it. */
   readonly error?: string | undefined;
 }
@@ -88,7 +104,20 @@ export interface RequestsViewProps {
  * exist at all.
  */
 export function RequestsView(props: RequestsViewProps) {
-  const { mode, rows, total, summary, filters, sort, order, limit, offset, assignees, error } = props;
+  const {
+    mode,
+    rows,
+    total,
+    summary,
+    filters,
+    sort,
+    order,
+    limit,
+    offset,
+    assignees,
+    parent,
+    error,
+  } = props;
   const manage = mode === 'manage';
 
   const router = useRouter();
@@ -148,7 +177,13 @@ export function RequestsView(props: RequestsViewProps) {
         cellClassName: 'px-3 py-2.5',
         width: 'w-[26%]',
         sortable: true,
-        headerCell: feeListSortableTableHeader('Request', 'requestNo', sortState, toggleSort, RequestsIcon),
+        headerCell: feeListSortableTableHeader(
+          'Request',
+          'requestNo',
+          sortState,
+          toggleSort,
+          RequestsIcon,
+        ),
         render: (row) => (
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-foreground">{row.subject}</p>
@@ -223,7 +258,12 @@ export function RequestsView(props: RequestsViewProps) {
         label: 'Last activity',
         ...FEE_LIST_TABLE_CELL,
         sortable: true,
-        headerCell: feeListSortableTableHeader('Last activity', 'lastActivityAt', sortState, toggleSort),
+        headerCell: feeListSortableTableHeader(
+          'Last activity',
+          'lastActivityAt',
+          sortState,
+          toggleSort,
+        ),
         render: (row) => (
           <span className="text-sm text-muted-foreground">
             <DateDisplay value={row.lastActivityAt} precision="datetime" />
@@ -301,6 +341,7 @@ export function RequestsView(props: RequestsViewProps) {
 
       {creating ? (
         <NewRequestDialog
+          parent={parent}
           onClose={() => {
             setCreating(false);
           }}
@@ -309,7 +350,11 @@ export function RequestsView(props: RequestsViewProps) {
 
       {/* The office works from these counts; a person reading their own few requests does not need them. */}
       {manage ? (
-        <SummaryCards summary={summary} active={filters.status} onPick={(status) => pushFilters({ status })} />
+        <SummaryCards
+          summary={summary}
+          active={filters.status}
+          onPick={(status) => pushFilters({ status })}
+        />
       ) : null}
 
       <ListTableScreen
@@ -346,7 +391,10 @@ export function RequestsView(props: RequestsViewProps) {
                   triggerIcon={FilterIcon}
                   emptyOption={{ value: '', label: 'All statuses' }}
                   placeholder="All statuses"
-                  options={REQUEST_STATUSES.map((value) => ({ value, label: REQUEST_STATUS_LABELS[value] }))}
+                  options={REQUEST_STATUSES.map((value) => ({
+                    value,
+                    label: REQUEST_STATUS_LABELS[value],
+                  }))}
                   onValueChange={(next) => {
                     pushFilters({ status: next });
                   }}
@@ -358,7 +406,10 @@ export function RequestsView(props: RequestsViewProps) {
                   triggerIcon={TagIcon}
                   emptyOption={{ value: '', label: 'All categories' }}
                   placeholder="All categories"
-                  options={REQUEST_CATEGORIES.map((value) => ({ value, label: REQUEST_CATEGORY_LABELS[value] }))}
+                  options={REQUEST_CATEGORIES.map((value) => ({
+                    value,
+                    label: REQUEST_CATEGORY_LABELS[value],
+                  }))}
                   onValueChange={(next) => {
                     pushFilters({ category: next });
                   }}
@@ -370,7 +421,10 @@ export function RequestsView(props: RequestsViewProps) {
                   triggerIcon={SessionIcon}
                   emptyOption={{ value: '', label: 'All priorities' }}
                   placeholder="All priorities"
-                  options={REQUEST_PRIORITIES.map((value) => ({ value, label: REQUEST_PRIORITY_LABELS[value] }))}
+                  options={REQUEST_PRIORITIES.map((value) => ({
+                    value,
+                    label: REQUEST_PRIORITY_LABELS[value],
+                  }))}
                   onValueChange={(next) => {
                     pushFilters({ priority: next });
                   }}
@@ -429,12 +483,26 @@ export function RequestsView(props: RequestsViewProps) {
             router.push(tenantHref(`/requests/${row.id}`));
           }}
           renderMobileRow={(row) => <MobileRow row={row} manage={manage} />}
-          empty={{
-            title: manage ? 'No requests yet' : 'You have not sent any requests',
-            description: manage
-              ? 'When a parent or a teacher writes to the school, it appears here and the office is notified.'
-              : 'A question, a complaint or a concern — send it here and follow what happens to it.',
-          }}
+          empty={
+            manage
+              ? {
+                  title: 'No requests yet',
+                  description:
+                    'When a parent or a teacher writes to the school, it appears here and the office is notified.',
+                }
+              : parent?.selected === undefined
+                ? {
+                    title: 'You have not sent any requests',
+                    description:
+                      'A question, a complaint or a concern — send it here and follow what happens to it.',
+                  }
+                : {
+                    // Narrowed by the header's child filter: say so, and where the rest are.
+                    title: `No requests about ${parent.selected.name} yet`,
+                    description:
+                      'Requests that do not name a child are listed under “All children” in the header.',
+                  }
+          }
         />
       </ListTableScreen>
     </div>
@@ -460,9 +528,24 @@ function SummaryCards({
     readonly description: string;
   }[] = [
     { label: 'Total', value: summary.total, status: '', description: 'Every request' },
-    { label: 'Pending', value: summary.pending, status: 'PENDING', description: 'Waiting for a first reply' },
-    { label: 'In progress', value: summary.inProgress, status: 'IN_PROGRESS', description: 'Being worked on' },
-    { label: 'Resolved', value: summary.resolved, status: 'RESOLVED', description: 'Closed with an answer' },
+    {
+      label: 'Pending',
+      value: summary.pending,
+      status: 'PENDING',
+      description: 'Waiting for a first reply',
+    },
+    {
+      label: 'In progress',
+      value: summary.inProgress,
+      status: 'IN_PROGRESS',
+      description: 'Being worked on',
+    },
+    {
+      label: 'Resolved',
+      value: summary.resolved,
+      status: 'RESOLVED',
+      description: 'Closed with an answer',
+    },
   ];
 
   return (

@@ -11,6 +11,7 @@ import type { Metadata } from 'next';
 import { RequestsView } from '@/components/requests-view';
 import { apiFetch } from '@/lib/api';
 import { DEFAULT_LIST_PAGE_SIZE, parseSortField, parseSortOrder } from '@/lib/list-page';
+import { loadParentChildren } from '@/lib/parent-children';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
 
@@ -65,12 +66,23 @@ export default async function RequestsPage({
       query.set(key, value);
     }
   }
+  // A parent who has chosen one child in the header sees requests about that child,
+  // and counts that match. The API narrows inside what they could already see.
+  const family =
+    !canManage && session?.permissions.includes('parent.child.read') === true
+      ? await loadParentChildren()
+      : undefined;
+  const child = family?.selected;
+  const summaryQuery = child === undefined ? '' : `?studentId=${child.id}`;
+  if (child !== undefined) {
+    query.set('studentId', child.id);
+  }
 
   const [listResult, summaryResult, assigneesResult] = await Promise.all([
     apiFetch<{ data: RequestListItem[]; meta: { page: { total: number } } }>(
       `${ROUTES.requests.list}?${query.toString()}`,
     ),
-    apiFetch<{ data: RequestSummary }>(ROUTES.requests.summary),
+    apiFetch<{ data: RequestSummary }>(`${ROUTES.requests.summary}${summaryQuery}`),
     canManage
       ? apiFetch<{ data: RequestAssigneeOption[] }>(ROUTES.requests.assignees)
       : Promise.resolve(undefined),
@@ -88,6 +100,14 @@ export default async function RequestsPage({
       limit={limit}
       offset={offset}
       assignees={assigneesResult?.ok === true ? assigneesResult.data.data : []}
+      parent={
+        family === undefined
+          ? undefined
+          : {
+              children: family.kids.map((kid) => ({ id: kid.id, name: kid.name })),
+              selected: child === undefined ? undefined : { id: child.id, name: child.name },
+            }
+      }
       error={listResult.ok ? undefined : listResult.message}
     />
   );
