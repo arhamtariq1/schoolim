@@ -21,6 +21,7 @@ import {
   type RequestStatus,
   type RequestStudentOption,
   type RequestSummary,
+  type RequestSummaryQuery,
   type SchoolRole,
   type UploadRequestAttachment,
 } from '@ilm/contracts';
@@ -109,11 +110,14 @@ export class RequestsService {
     });
   }
 
-  async summary(): Promise<RequestSummary> {
+  async summary(query: RequestSummaryQuery = {}): Promise<RequestSummary> {
     return this.prisma.tenant(async (tx) => {
       const groups = await tx.request.groupBy({
         by: ['status'],
-        where: this.visible(),
+        where:
+          query.studentId === undefined
+            ? this.visible()
+            : { AND: [this.visible(), { studentId: query.studentId }] },
         _count: { _all: true },
       });
       const count = (status: RequestStatus): number =>
@@ -665,6 +669,9 @@ export class RequestsService {
     }
     if (query.priority !== undefined) {
       filters.push({ priority: query.priority });
+    }
+    if (query.studentId !== undefined) {
+      filters.push({ studentId: query.studentId });
     }
     if (query.assignee === 'unassigned') {
       filters.push({ assignedTo: null });
