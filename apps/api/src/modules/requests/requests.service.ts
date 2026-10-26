@@ -1,6 +1,5 @@
 import {
   allowedNextStatuses,
-  grantFor,
   hasPermission,
   REQUEST_ATTACHMENTS_PER_EVENT,
   REQUEST_CATEGORY_LABELS,
@@ -556,7 +555,7 @@ export class RequestsService {
   }
 
   private isManager(): boolean {
-    return hasPermission(this.context.roles as readonly SchoolRole[], 'workflow.request.manage');
+    return this.context.can('workflow.request.manage');
   }
 
   /**
@@ -603,7 +602,7 @@ export class RequestsService {
     const userId = this.context.userId;
     const none: Prisma.StudentWhereInput = { id: { in: [] } };
 
-    if (grantFor(roles, 'students.student.read') === 'all') {
+    if (this.context.grantFor('students.student.read') === 'all') {
       return {};
     }
     if (userId === undefined) {

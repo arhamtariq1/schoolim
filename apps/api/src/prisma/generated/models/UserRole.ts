@@ -428,10 +428,6 @@ export type UserRoleUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.UserRoleScalarWhereInput | Prisma.UserRoleScalarWhereInput[]
 }
 
-export type EnumSchoolRoleFieldUpdateOperationsInput = {
-  set?: $Enums.SchoolRole
-}
-
 export type UserRoleCreateWithoutSchoolInput = {
   id?: string
   role: $Enums.SchoolRole

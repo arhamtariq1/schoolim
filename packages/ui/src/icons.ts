@@ -150,6 +150,8 @@ export {
   IdCard as StaffIcon,
   /** The whole platform above any one school. */
   Layers as PlatformIcon,
+  /** Who can open what: roles, permissions, a person's access. */
+  KeyRound as AccessIcon,
 } from 'lucide-react';
 
 /** The only permitted icon sizes (docs/16 section 3). */

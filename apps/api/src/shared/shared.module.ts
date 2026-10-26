@@ -12,6 +12,7 @@ import { SmtpMailer } from './mail/smtp.mailer';
 import { FcmPusher, parseServiceAccount } from './push/fcm.pusher';
 import { LogPusher } from './push/log.pusher';
 import { PUSH, type PushPort } from './push/push.port';
+import { AccessGrantsService } from './rbac/access-grants.service';
 import { ClassScopeService } from './rbac/class-scope.service';
 import { CloudinaryStore } from './storage/cloudinary.store';
 import { DatabaseStore } from './storage/database.store';
@@ -74,6 +75,7 @@ function remoteStore(env: Env): StoragePort | undefined {
     TokenService,
     PasswordService,
     ClassScopeService,
+    AccessGrantsService,
     {
       provide: STORAGE,
       // Same shape as MAIL below, and for the same reason (ADR-0011, ADR-0013):
@@ -116,6 +118,7 @@ function remoteStore(env: Env): StoragePort | undefined {
     TokenService,
     PasswordService,
     ClassScopeService,
+    AccessGrantsService,
     MAIL,
     PUSH,
     STORAGE,

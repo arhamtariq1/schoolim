@@ -126,6 +126,10 @@ export const ERROR_CODES = [
   'ATTENDANCE_WINDOW_CLOSED',
   'ATTENDANCE_NOT_A_WORKING_DAY',
 
+  // --- Access customisation (ADR-0025) ---------------------------------------
+  /** Your own role or account, one at or above your rank, or a permission you do not hold yourself. */
+  'ACCESS_CHANGE_REFUSED',
+
   // --- Domain-wide ----------------------------------------------------------
   'BUSINESS_RULE_VIOLATION',
   'IMMUTABLE_RECORD',
@@ -220,6 +224,8 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, number>> = {
   ATTENDANCE_ALREADY_MARKED: 409,
   ATTENDANCE_WINDOW_CLOSED: 422,
   ATTENDANCE_NOT_A_WORKING_DAY: 422,
+
+  ACCESS_CHANGE_REFUSED: 403,
 
   BUSINESS_RULE_VIOLATION: 422,
   IMMUTABLE_RECORD: 409,

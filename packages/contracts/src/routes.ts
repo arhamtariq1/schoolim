@@ -309,6 +309,16 @@ export const ROUTES = {
     categories: `${API_PREFIX}/expenses/categories`,
     category: (id: string) => `${API_PREFIX}/expenses/categories/${id}`,
   },
+  /**
+   * Who can open what, beyond the role defaults (ADR-0025). GET and PUT the same
+   * path per role and per person: each is one set a person edits as a whole.
+   */
+  access: {
+    roles: `${API_PREFIX}/access/roles`,
+    role: (role: string) => `${API_PREFIX}/access/roles/${role}`,
+    users: `${API_PREFIX}/access/users`,
+    user: (id: string) => `${API_PREFIX}/access/users/${id}`,
+  },
   staff: {
     list: `${API_PREFIX}/staff`,
     create: `${API_PREFIX}/staff`,

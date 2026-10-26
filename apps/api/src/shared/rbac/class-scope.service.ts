@@ -1,4 +1,4 @@
-import { grantFor, PERMISSION_GRANT, type Permission, type SchoolRole } from '@ilm/contracts';
+import { PERMISSION_GRANT, type Permission } from '@ilm/contracts';
 import { Injectable } from '@nestjs/common';
 
 import { type TransactionClient } from '../../prisma';
@@ -43,8 +43,7 @@ export class ClassScopeService {
    * answer is read in the same snapshot as the rows it is about to narrow.
    */
   async classLevelIds(tx: TransactionClient, permission: Permission): Promise<ClassScope> {
-    const roles = this.context.roles as readonly SchoolRole[];
-    const grant = grantFor(roles, permission);
+    const grant = this.context.grantFor(permission);
 
     if (grant === PERMISSION_GRANT.ALL) {
       return undefined;
@@ -55,6 +54,7 @@ export class ClassScopeService {
 
     // Scoped. Only a teacher's scope is defined by class assignments; a parent
     // or a student holding a scoped grant reaches nothing through a class.
+    const roles = this.context.roles;
     const userId = this.context.userId;
     if (userId === undefined || !(roles.includes('TEACHER') || roles.includes('COORDINATOR'))) {
       return [];

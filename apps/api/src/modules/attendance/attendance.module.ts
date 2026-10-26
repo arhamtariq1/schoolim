@@ -3,14 +3,12 @@ import {
   markAttendanceSchema,
   markStaffAttendanceSchema,
   monthlyReportQuerySchema,
-  grantFor,
   ROUTES,
   rosterQuerySchema,
   type ClassOverview,
   type MarkResult,
   type MonthlyReport,
   type Roster,
-  type SchoolRole,
   type StaffRoster,
 } from '@ilm/contracts';
 import { Body, Controller, Get, Module, Param, Post, Query, Req } from '@nestjs/common';
@@ -59,15 +57,12 @@ export class AttendanceController {
   /**
    * Whether this caller may edit a register older than the school's window.
    *
-   * Read from the roles in CLS through the same grant table the guard uses,
-   * rather than from a permissions array on the token — one source of truth for
-   * what a role can do, so the two cannot drift.
+   * Read from the grants in CLS, the same answer the guard used, rather than
+   * from a permissions array on the token — one source of truth for what this
+   * person can do, so the two cannot drift.
    */
   private canUnlock(): boolean {
-    return (
-      grantFor(this.context.roles as readonly SchoolRole[], 'attendance.record.unlock') !==
-      undefined
-    );
+    return this.context.can('attendance.record.unlock');
   }
 
   @Get(ROUTES.attendance.classes)

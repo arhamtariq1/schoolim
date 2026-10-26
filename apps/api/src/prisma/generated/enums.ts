@@ -69,6 +69,14 @@ export const SchoolRole = {
 export type SchoolRole = (typeof SchoolRole)[keyof typeof SchoolRole]
 
 
+export const PermissionEffect = {
+  GRANT: 'GRANT',
+  REVOKE: 'REVOKE'
+} as const
+
+export type PermissionEffect = (typeof PermissionEffect)[keyof typeof PermissionEffect]
+
+
 export const AgreementDocument = {
   TERMS_OF_SERVICE: 'TERMS_OF_SERVICE',
   DPA: 'DPA'

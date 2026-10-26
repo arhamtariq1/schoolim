@@ -2,6 +2,7 @@
 
 import { cn } from '@ilm/ui';
 import {
+  AccessIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   DesignationIcon,
@@ -9,7 +10,6 @@ import {
   ICON_SIZE,
   OverdueIcon,
   PrintIcon,
-  SettingsIcon,
 } from '@ilm/ui/icons';
 import Link from 'next/link';
 import { useEffect, useState, type ComponentType } from 'react';
@@ -52,10 +52,10 @@ export const FEE_SETTINGS_ITEMS: readonly FeeSettingsItem[] = [
     permission: 'settings.school.configure',
   },
   {
-    href: '/settings/fees/other',
-    label: 'Other Fee Settings',
-    icon: SettingsIcon,
-    permission: 'dashboard.workspace.read',
+    href: '/settings/access',
+    label: 'Users & Access',
+    icon: AccessIcon,
+    permission: 'settings.user.manage',
   },
 ];
 

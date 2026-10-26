@@ -447,12 +447,11 @@ function HeaderSettingsMenu({
   disabled: boolean;
 }) {
   const tenantHref = useTenantHref();
-  const items = visibleSettingsMenuItems(permissions);
-  const hasItems = items.length > 0;
+  const [first] = visibleSettingsMenuItems(permissions);
 
   // Nothing to configure, nothing to show: a parent or a teacher has no settings, and a
   // greyed-out gear would only ask what it is for.
-  if (!hasItems) {
+  if (first === undefined) {
     return null;
   }
 
@@ -466,27 +465,11 @@ function HeaderSettingsMenu({
     );
   }
 
+  // One destination, so the gear goes straight there rather than opening a one-item menu.
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button type="button" aria-label="Settings" className={HEADER_ACTION_CLASS}>
-          <SettingsIcon className={HEADER_ICON_CLASS} aria-hidden="true" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={6} className="min-w-44 p-1">
-        {items.map((item) => {
-          const Icon = NAV_ICONS[item.icon] ?? SettingsIcon;
-          return (
-            <DropdownMenuItem key={item.href} asChild className="rounded-md px-2.5 py-2">
-              <Link href={tenantHref(item.href)} className="cursor-pointer">
-                <Icon aria-hidden="true" className="text-muted-foreground" />
-                {item.label}
-              </Link>
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Link href={tenantHref(first.href)} aria-label="Settings" className={HEADER_ACTION_CLASS}>
+      <SettingsIcon className={HEADER_ICON_CLASS} aria-hidden="true" />
+    </Link>
   );
 }
 

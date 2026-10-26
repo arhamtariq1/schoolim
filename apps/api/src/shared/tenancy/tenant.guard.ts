@@ -6,6 +6,7 @@ import { ENV, type Env } from '../../config/env';
 import { IS_PUBLIC } from '../auth/auth.guard';
 import { IS_PLATFORM } from '../auth/platform.guard';
 import { SchoolSuspendedError, TenantMismatchError } from '../errors/domain-error';
+import { AccessGrantsService } from '../rbac/access-grants.service';
 
 import { resolveTenantSlug } from './resolve-tenant-slug';
 import { SchoolDirectoryService } from './school-directory.service';
@@ -40,6 +41,7 @@ export class TenantGuard implements CanActivate {
     @Inject(ENV) private readonly env: Env,
     private readonly schools: SchoolDirectoryService,
     private readonly context: TenantContextService,
+    private readonly access: AccessGrantsService,
     private readonly reflector: Reflector,
   ) {}
 
@@ -117,6 +119,10 @@ export class TenantGuard implements CanActivate {
       roles: claims.rol ?? [],
       ...(claims.act === undefined ? {} : { actingPlatformUserId: claims.act }),
     });
+
+    // After the tenant is in context, because the overrides are tenant rows.
+    // Every permission check in the request reads this one answer (ADR-0025).
+    this.context.setGrants(await this.access.resolveForContext());
 
     return true;
   }

@@ -311,6 +311,12 @@ export const SETTINGS_MENU_ITEMS: readonly NavItem[] = [
     icon: 'FeesIcon',
     permission: 'fees.plan.read',
   },
+  {
+    href: '/settings/access',
+    label: 'Users & Access',
+    icon: 'AccessIcon',
+    permission: 'settings.user.manage',
+  },
 ];
 
 export function visibleSettingsMenuItems(permissions: readonly string[]): readonly NavItem[] {

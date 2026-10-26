@@ -1,6 +1,5 @@
 import {
   formatGrNo,
-  grantFor,
   grNumericPart,
   type ChangeStudentStatus,
   type CreateStudent,
@@ -72,7 +71,7 @@ export class StudentsService {
   private async scopeFor(tx: TransactionClient): Promise<StudentScope> {
     const roles = this.context.roles as readonly SchoolRole[];
 
-    if (grantFor(roles, 'students.student.read') === 'all') {
+    if (this.context.grantFor('students.student.read') === 'all') {
       return {};
     }
 
@@ -110,7 +109,7 @@ export class StudentsService {
    * than inventing a second definition of money access.
    */
   private canSeeFees(): boolean {
-    return grantFor(this.context.roles as readonly SchoolRole[], 'fees.voucher.read') !== undefined;
+    return this.context.can('fees.voucher.read');
   }
 
   async classOptions(): Promise<{ id: string; name: string }[]> {

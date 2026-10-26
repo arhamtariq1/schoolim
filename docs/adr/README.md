@@ -22,3 +22,4 @@ future reader would reasonably ask "why on earth did they do it this way".
 | [0016](0016-requests-as-conversations.md)      | Requests are conversations with a status, not an approval engine | Accepted |
 | [0017](0017-timetables-are-the-calendar-source.md) | Timetables are the source of truth; the calendar reads them | Accepted |
 | [0018](0018-parent-fee-vouchers.md)            | Parents read fee vouchers through their own routes           | Accepted |
+| [0025](0025-access-customisation.md)          | Schools customise access per role and per person, downward only | Accepted |

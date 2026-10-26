@@ -2,8 +2,7 @@ import {
   DEFAULT_ASSESSMENT_TYPE_NAMES,
   eventKindForAssessmentType,
   formatTimeOfDay,
-  grantFor,
-  hasUnscopedPermission,
+  PERMISSION_GRANT,
   MAX_CALENDAR_DAYS,
   TIMETABLE_KIND_LABELS,
   timesOverlap,
@@ -410,7 +409,7 @@ export class TimetablesService {
   // --- Who may see what ------------------------------------------------------
 
   private isManager(): boolean {
-    return hasUnscopedPermission(this.context.roles as readonly SchoolRole[], 'academics.timetable.configure');
+    return this.context.grantFor('academics.timetable.configure') === PERMISSION_GRANT.ALL;
   }
 
   /**
@@ -428,7 +427,7 @@ export class TimetablesService {
     const roles = this.context.roles as readonly SchoolRole[];
     const userId = this.context.userId;
     const none: Prisma.TimetableWhereInput = { id: NO_ROWS };
-    if (userId === undefined || grantFor(roles, 'academics.timetable.read') === undefined) {
+    if (userId === undefined || !this.context.can('academics.timetable.read')) {
       return none;
     }
 
