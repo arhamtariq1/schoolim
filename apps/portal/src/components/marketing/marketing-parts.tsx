@@ -172,10 +172,13 @@ export function WordReveal({
   text,
   id,
   startIndex = 0,
+  accent = [],
   className,
 }: {
   as?: 'h1' | 'h2' | 'p';
   text: string;
+  /** Word positions (0-based) set in the primary colour — a marker, never the only signal. */
+  accent?: readonly number[];
   /** For a section's `aria-labelledby` to point at. */
   id?: string;
   /** Where this block's stagger begins, so a subtitle can continue a headline's. */
@@ -195,7 +198,12 @@ export function WordReveal({
       {words.map((word, position) => (
         <Fragment key={`${position}-${word}`}>
           {position === 0 ? null : ' '}
-          <span data-word aria-hidden style={indexStyle('--word-index', startIndex + position)}>
+          <span
+            data-word
+            aria-hidden
+            style={indexStyle('--word-index', startIndex + position)}
+            className={accent.includes(position) ? 'text-primary' : undefined}
+          >
             {word}
           </span>
         </Fragment>

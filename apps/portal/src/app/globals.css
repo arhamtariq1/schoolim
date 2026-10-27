@@ -722,3 +722,100 @@ html.lenis body {
 html.lenis-stopped {
   overflow: hidden;
 }
+
+/* ---------------------------------------------------------------------------
+   Product previews and set pieces — ADR-0019, as amended by the revamp.
+
+   Still the marketing surface only. Every selector below is either a
+   `.marketing`-scoped attribute or a `marketing-` class, so nothing here can
+   reach a screen inside a school.
+--------------------------------------------------------------------------- */
+@theme {
+  /* The product frame's shadow: the same hue as `--shadow-tile`, deeper and
+     wider, because a large window floating over cream needs real depth to read
+     as an object rather than a printed box. */
+  --shadow-frame:
+    0 2px 4px 0 oklch(0.284 0.048 195 / 6%), 0 24px 48px -20px oklch(0.284 0.048 195 / 22%),
+    0 48px 96px -40px oklch(0.284 0.048 195 / 28%);
+}
+
+.dark .marketing {
+  --shadow-frame: 0 2px 4px 0 oklch(0 0 0 / 35%), 0 32px 80px -32px oklch(0 0 0 / 70%);
+}
+
+/* The hero's backdrop: a hairline grid in the border colour, faded out from
+   the top centre so it frames the headline and is gone by the product. */
+.marketing-grid {
+  background-image:
+    linear-gradient(var(--color-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+  background-size: 3.5rem 3.5rem;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 25%, transparent 75%);
+}
+
+.marketing-blob-b {
+  inset-block-start: 4rem;
+  inset-inline-end: -10rem;
+  inline-size: 30rem;
+  block-size: 30rem;
+}
+
+.marketing-blob-c {
+  inset-block-end: -4rem;
+  inset-inline-start: 30%;
+  inline-size: 34rem;
+  block-size: 22rem;
+}
+
+/* --- "One window" -------------------------------------------------------
+   Resting layout (no JS, before hydration, reduced motion): the window in the
+   middle, the old tools placed around it by their custom properties. On a
+   phone there is no room around the window, so the resting tools step aside. */
+.marketing [data-converge-stage] {
+  padding-block: 5rem;
+}
+
+.marketing [data-converge-field] {
+  block-size: 36rem;
+}
+
+.marketing [data-converge-tool] {
+  transform: translate(var(--tool-x, 0), var(--tool-y, 0)) rotate(var(--tool-tilt, 0));
+}
+
+@media (max-width: 47.99rem) {
+  .marketing [data-converge]:not([data-active]) [data-converge-tool] {
+    display: none;
+  }
+}
+
+/* With motion: the section becomes a scroll track and its stage sticks for
+   the length of it, while Motion writes the transforms. */
+.marketing [data-converge][data-active] {
+  block-size: 280vh;
+}
+
+.marketing [data-converge][data-active] [data-converge-stage] {
+  position: sticky;
+  inset-block-start: 0;
+  block-size: 100dvh;
+  padding-block: 7rem 2rem;
+}
+
+.marketing [data-converge][data-active] [data-converge-field] {
+  block-size: auto;
+}
+
+/* --- The feature tour ----------------------------------------------------
+   On large screens each step is most of a viewport tall, so the sticky stage
+   beside it has room to hold one screen per step. */
+@media (min-width: 64rem) {
+  .marketing [data-tour-step] {
+    min-block-size: 72vh;
+  }
+
+  .marketing [data-tour-stage] {
+    inset-block-start: 6rem;
+    block-size: calc(100dvh - 8rem);
+  }
+}

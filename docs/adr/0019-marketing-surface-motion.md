@@ -1,6 +1,7 @@
 # ADR-0019 — Lenis, a display scale and a soft palette, on the marketing surface only
 
-**Status:** Accepted · **Date:** 2026-10-21
+**Status:** Accepted, amended by [ADR-0020](0020-marketing-revamp-motion-and-previews.md) ·
+**Date:** 2026-10-21
 
 ## Context
 

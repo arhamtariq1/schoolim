@@ -1,72 +1,105 @@
 import { TRIAL_DAYS } from '@ilm/contracts';
-import { Button, Money } from '@ilm/ui';
+import { Button, Money, cn } from '@ilm/ui';
 import {
+  AcademicsIcon,
+  AccountIcon,
+  AdmissionIcon,
   AttendanceIcon,
+  CalendarIcon,
   ChevronDownIcon,
+  ClassIcon,
+  ExpenseIcon,
   FeesIcon,
+  FileIcon,
   FinanceIcon,
   ForwardIcon,
+  HistoryIcon,
+  HolidayIcon,
   ICON_SIZE,
+  ListChecksIcon,
+  LockedIcon,
+  MessagesIcon,
+  PrintIcon,
+  RequestsIcon,
+  SalaryIcon,
+  SchoolIcon,
   StudentsIcon,
+  SuccessIcon,
+  WebIcon,
 } from '@ilm/ui/icons';
 import { BRAND, minorUnits } from '@ilm/utils';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { CSSProperties } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 import lemmaLogo from '../../../public/auth/lemma-logo.png';
 
 import { MarketingBootstrap } from '@/components/marketing/marketing-bootstrap';
+import { Converge, type ConvergeTool } from '@/components/marketing/marketing-converge';
+import { HeroStage, type StageFloat } from '@/components/marketing/marketing-hero-stage';
 import { LetterRoll } from '@/components/marketing/marketing-letters';
 import { Manifesto } from '@/components/marketing/marketing-manifesto';
 import { Label, Reveal, Rise, Rule, WordReveal } from '@/components/marketing/marketing-parts';
+import {
+  AttendancePreview,
+  DashboardPreview,
+  DefaulterPreview,
+  FinancePreview,
+  FloatCard,
+  LaunchpadPreview,
+  ResultPreview,
+  SampleTag,
+  TimetablePreview,
+  VoucherPreview,
+} from '@/components/marketing/marketing-previews';
 import { MarketingRevealGuard } from '@/components/marketing/marketing-reveal-guard';
+import { SAMPLE_PAYMENTS } from '@/components/marketing/marketing-sample-school';
+import { ScrollLine } from '@/components/marketing/marketing-scroll-line';
 import { MarketingSmoothScroll } from '@/components/marketing/marketing-smooth-scroll';
 import { MarketingStatus } from '@/components/marketing/marketing-status';
+import { Tour, type TourStep } from '@/components/marketing/marketing-tour';
 import { displayFont } from '@/lib/marketing-fonts';
 import { getPublicPlans } from '@/lib/public-plans';
 
 /**
  * The public landing page, served at the apex — ADR-0010, art-directed per
- * ADR-0019.
+ * ADR-0019 (as amended for the revamp).
  *
  * Reached by a rewrite from `/` (see `src/proxy.ts`), so the address bar reads
  * as the bare domain. This is the only page in the portal with no tenant and no
  * session, which makes it the only page allowed to say anything about the
  * product rather than about a school.
  *
- * ## The art direction, in one paragraph
+ * ## The argument, in one line
  *
- * Type-led and scroll-led. A warm cream ground, Urbanist at a few weights, and
- * almost no boxes — what structures the page is scale, space and sequence. The
- * two set pieces are a manifesto that lights word by word as it is read, and a
- * deck of numbered panels that stick and stack as you pass them. Colour is used
- * four times, as a marker rather than a surface. Nothing floats, spins or
- * slides past on a loop: every piece of motion on this page is something the
- * reader caused.
+ * A school runs on half a dozen places that never agree; this is one window
+ * for all of them. Every section is a version of that sentence: the hero shows
+ * the window, "one window" folds the old tools into it, the bento shows every
+ * module it holds, and the tour shows the four jobs it does daily.
  *
- * ## What is deliberately absent
+ * ## What it shows, and what it still refuses to
  *
- * No testimonials, no customer logos, no usage statistics, no screenshots of
- * invented data. There are no customers to quote yet, and a school reading this
- * page is deciding whether to trust us with its fee collection — manufactured
- * proof is a worse failure here than a plain page. What the page argues from
- * instead is checkable: three challan copies to an A4 sheet, money kept to the
- * paisa, one school's rows unreachable from another's queries.
+ * The product is shown — as previews built from the real `@ilm/ui` parts and
+ * the real navigation, with every number drawn from one sample-school file and
+ * every preview labelled as a sample (`SampleTag`). What is still absent is
+ * anything that would read as proof we do not have: no testimonials, no
+ * customer logos, no usage statistics. A school deciding whether to trust us
+ * with its fee collection can check every claim here by using the trial.
  *
  * ## Motion
  *
  * Reveals are CSS transitions driven by one `IntersectionObserver` in
- * `MarketingBootstrap`; smooth scrolling, the manifesto's lighting and the
- * progress read-out are Lenis, in `MarketingSmoothScroll`. All of it is inert
- * under `prefers-reduced-motion`, and the page is complete as served HTML with
- * no JavaScript at all. ADR-0019 has the reasoning and the failure table.
+ * `MarketingBootstrap`; smooth scrolling and the manifesto are Lenis; the three
+ * set pieces (hero stage, "one window", the tour) are scroll-linked Motion
+ * values. Nothing moves on a timer. Under `prefers-reduced-motion`, or with no
+ * JavaScript, every set piece renders as its finished layout — the page is
+ * complete as served HTML.
  */
 export const metadata: Metadata = {
-  title: `${BRAND.name} — school management for Pakistan`,
+  title: `${BRAND.name} — the all-in-one school management system`,
   description:
-    'Admissions, fees, attendance, exams and accounts in one place. Configure it yourself, in rupees, in an afternoon.',
+    'Admissions, fees, attendance, marks, timetables, staff and finance in one window. One login, one record per student, set up in an afternoon.',
 };
 
 /**
@@ -80,59 +113,164 @@ export const metadata: Metadata = {
 // PLANS_REVALIDATE_SECONDS in lib/public-plans.ts.
 export const revalidate = 30;
 
-/**
- * The deck.
- *
- * `tint` is a complete class name rather than a colour key, because Tailwind
- * finds classes by scanning source text — `bg-tint-${key}` is invisible to it
- * and compiles to nothing at all. Each tint appears once, on a single small
- * marker, which is the whole of this page's use of colour.
- *
- * `detail` is three short facts rather than another paragraph: by the fourth
- * panel a reader is scanning, and a second paragraph is what they skip.
- */
-const CAPABILITIES = [
-  {
-    Icon: StudentsIcon,
-    tint: 'bg-tint-mint',
-    title: 'Admissions and records',
-    body: 'One page answers every question reception is asked on the phone — fees, attendance, guardians, history — so nobody is put on hold while somebody checks a register.',
-    detail: [
-      'Guardians and siblings linked',
-      'Documents on the record',
-      'Full history per student',
-    ],
-  },
-  {
-    Icon: FeesIcon,
-    tint: 'bg-tint-butter',
-    title: 'Fees that reconcile',
-    body: 'Fee heads, plans and discounts you configure yourself. Monthly vouchers generate in one run, and every correction is a reversing entry rather than a quiet edit.',
-    detail: ['Challans print for the bank', 'Arrears carried forward', 'Nothing overwritten'],
-  },
-  {
-    Icon: AttendanceIcon,
-    tint: 'bg-tint-peach',
-    title: 'Attendance as it happens',
-    body: 'Marked from the phone a teacher already owns, by period or by day, and visible to the office the moment it is taken rather than at the end of the month.',
-    detail: ['Works on a 4G phone', 'By period or by day', 'Visible to the office live'],
-  },
-  {
-    Icon: FinanceIcon,
-    tint: 'bg-tint-lavender',
-    title: 'Books that balance',
-    body: 'Collection against expected, ageing by bucket, and a day book the accountant can print and sign. The finance module is the product, not a report bolted onto it.',
-    detail: ['Day book, printed and signed', 'Ageing by bucket', 'Expenses and payroll'],
-  },
-] as const;
+type IconComponent = ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
+
+const NAV = [
+  { href: '#capabilities', label: 'Modules' },
+  { href: '#tour', label: 'How it works' },
+  { href: '#packages', label: 'Packages' },
+  { href: '#questions', label: 'Questions' },
+];
 
 /**
- * The three-beat statement under the hero.
- *
- * It is the shape of the problem, not a feature list: a school's year is one
- * loop of these three verbs, and the product is an attempt to make the loop
- * close. Three because two is a slogan and four stops scanning.
+ * The four facts under the hero. Every one is checkable in this repository —
+ * ADR-0010, ADR-0007, the challan print layout, ADR-0002 — which is the test
+ * any claim on this page has to pass.
  */
+const PROOF = [
+  `${String(TRIAL_DAYS)} days free, no card`,
+  'Paisa-exact accounts',
+  'Challans print three to an A4',
+  'Your data isolated by the database',
+];
+
+/** The tools "one window" replaces. Offsets are viewport units from the stage centre. */
+const TOOLS: ConvergeTool[] = [
+  {
+    label: 'Attendance register',
+    icon: <AttendanceIcon className={ICON_SIZE.inline} aria-hidden />,
+    x: -32,
+    y: -14,
+    tilt: -7,
+  },
+  {
+    label: 'Receipt book',
+    icon: <ExpenseIcon className={ICON_SIZE.inline} aria-hidden />,
+    x: 30,
+    y: -18,
+    tilt: 6,
+  },
+  {
+    label: 'fees-2026.xlsx',
+    icon: <FileIcon className={ICON_SIZE.inline} aria-hidden />,
+    x: -36,
+    y: 10,
+    tilt: 5,
+  },
+  {
+    label: 'Parents’ WhatsApp group',
+    icon: <MessagesIcon className={ICON_SIZE.inline} aria-hidden />,
+    x: 33,
+    y: 9,
+    tilt: -5,
+  },
+  {
+    label: 'Result-card template',
+    icon: <PrintIcon className={ICON_SIZE.inline} aria-hidden />,
+    x: -22,
+    y: 30,
+    tilt: -3,
+  },
+  {
+    label: 'Salary diary',
+    icon: <SalaryIcon className={ICON_SIZE.inline} aria-hidden />,
+    x: 22,
+    y: 30,
+    tilt: 7,
+  },
+];
+
+const SMALL_MODULES: { Icon: IconComponent; title: string; body: string }[] = [
+  {
+    Icon: AdmissionIcon,
+    title: 'Admissions & students',
+    body: 'One record per student — guardians, siblings, documents and the whole history.',
+  },
+  {
+    Icon: AcademicsIcon,
+    title: 'Classes & sessions',
+    body: 'Classes, sections and subjects, and promote a whole year at session end.',
+  },
+  {
+    Icon: HolidayIcon,
+    title: 'Calendar & holidays',
+    body: 'Term dates and holidays the timetable and attendance already know about.',
+  },
+  {
+    Icon: AccountIcon,
+    title: 'Staff & salaries',
+    body: 'Staff records, staff attendance and the monthly salary run, in rupees.',
+  },
+  {
+    Icon: RequestsIcon,
+    title: 'Requests',
+    body: 'Leave, fee and record requests as conversations, not lost slips of paper.',
+  },
+  {
+    Icon: StudentsIcon,
+    title: 'Parent access',
+    body: 'Guardians see their own children’s vouchers and requests — and nothing else.',
+  },
+];
+
+const TOUR: TourStep[] = [
+  {
+    id: 'fees',
+    label: 'Fees',
+    title: 'Collect a fee in under twenty seconds.',
+    body: 'Fee heads, plans and discounts you configure yourself. A month of vouchers generates in one run, and the defaulter list sorts itself by how long each family has owed.',
+    points: [
+      'Monthly vouchers in one run',
+      'Challans print three to an A4 sheet',
+      'Security deposits and fee increments built in',
+    ],
+    screen: (
+      <div className="space-y-4">
+        <VoucherPreview />
+        <DefaulterPreview />
+      </div>
+    ),
+  },
+  {
+    id: 'attendance',
+    label: 'Attendance',
+    title: 'Mark a class from the phone in your pocket.',
+    body: 'Teachers mark by day or by period on the phone they already own, on 4G. The office sees it the moment it is taken — not at the end of the month.',
+    points: ['Students and staff', 'Works on a 4G phone', 'Reports by class, by month, by student'],
+    screen: (
+      <div className="space-y-4">
+        <AttendancePreview />
+        <TimetablePreview />
+      </div>
+    ),
+  },
+  {
+    id: 'results',
+    label: 'Marks & results',
+    title: 'Result cards from the marks you already entered.',
+    body: 'Subjects and assessments you define, marks entered fast enough to do without a mouse, and result cards printed from the very same records.',
+    points: [
+      'Your subjects, your assessments',
+      'Keyboard-fast marks entry',
+      'Result cards ready to print',
+    ],
+    screen: <ResultPreview />,
+  },
+  {
+    id: 'finance',
+    label: 'Finance',
+    title: 'Books that balance, every single day.',
+    body: 'Revenue, expenses and salaries in one ledger. Every rupee lands against a student, a head and a month, and a correction is a reversing entry — never a quiet edit.',
+    points: ['Revenue, expense and salaries', 'Nothing overwritten, ever', 'Every change audited'],
+    screen: (
+      <div className="space-y-4">
+        <FinancePreview />
+        <VoucherPreview />
+      </div>
+    ),
+  },
+];
+
 const PRINCIPLES = [
   {
     verb: 'Record',
@@ -149,17 +287,80 @@ const PRINCIPLES = [
 ] as const;
 
 /**
- * The four facts along the foot of the hero.
- *
- * Every one of them is checkable in this repository, which is the test any
- * claim on this page has to pass. In order: ADR-0010, ADR-0007, the challan
- * print layout in `globals.css`, and ADR-0002.
+ * Who sees what. `tint` is a complete class name — Tailwind finds classes by
+ * scanning source text, so `bg-tint-${key}` would compile to nothing.
  */
-const PROOF = [
-  { term: `${TRIAL_DAYS} days free`, detail: 'No card, no sales call' },
-  { term: 'Paisa-exact', detail: 'Money is never a float' },
-  { term: 'Three to a sheet', detail: 'Challans print on A4' },
-  { term: 'Row-level isolation', detail: 'Enforced by the database' },
+const ROLES = [
+  {
+    Icon: SchoolIcon,
+    tint: 'bg-tint-mint',
+    role: 'Owner & principal',
+    points: [
+      'The whole school on one dashboard',
+      'Collection, attendance and staff at a glance',
+      'Every campus under one sign-in',
+    ],
+  },
+  {
+    Icon: FinanceIcon,
+    tint: 'bg-tint-butter',
+    role: 'Accountant',
+    points: [
+      'Vouchers, payments and deposits',
+      'Revenue, expense and salaries',
+      'Nothing edited, everything reversible',
+    ],
+  },
+  {
+    Icon: ClassIcon,
+    tint: 'bg-tint-peach',
+    role: 'Teacher',
+    points: ['Only their own classes', 'Attendance and marks from a phone', 'The week’s timetable'],
+  },
+  {
+    Icon: StudentsIcon,
+    tint: 'bg-tint-lavender',
+    role: 'Parent',
+    points: [
+      'Their own children, nobody else’s',
+      'Fee vouchers and what is due',
+      'Requests to the school office',
+    ],
+  },
+] as const;
+
+/** The engineering promises, each one a rule this repository enforces. */
+const TRUST: { Icon: IconComponent; title: string; body: string }[] = [
+  {
+    Icon: FinanceIcon,
+    title: 'Paisa-exact',
+    body: 'Money is stored in whole paisa, never as a floating-point number.',
+  },
+  {
+    Icon: HistoryIcon,
+    title: 'Append-only ledger',
+    body: 'A paid voucher is never edited. Corrections are reversing entries with a reason.',
+  },
+  {
+    Icon: LockedIcon,
+    title: 'Row-level isolation',
+    body: 'Every row carries its school, and the database itself refuses anything else.',
+  },
+  {
+    Icon: ListChecksIcon,
+    title: 'Every change audited',
+    body: 'Who changed what, when, and what it was before — on every mutation.',
+  },
+  {
+    Icon: PrintIcon,
+    title: 'Prints for the bank',
+    body: 'Fee challans with your logo and bank details, three copies to an A4 sheet.',
+  },
+  {
+    Icon: WebIcon,
+    title: 'Nothing to install',
+    body: 'A browser is all it needs — including the one on a teacher’s phone.',
+  },
 ];
 
 const STEPS = [
@@ -169,7 +370,7 @@ const STEPS = [
   },
   {
     title: 'Set up what you charge',
-    body: 'Classes, sections, fee heads and plans — in your words and your amounts. This is the part competitors do for you and then bill you for.',
+    body: 'Classes, sections, fee heads and plans — in your words and your amounts. Nobody has to configure it for you.',
   },
   {
     title: 'Invite the people who use it',
@@ -178,11 +379,9 @@ const STEPS = [
 ] as const;
 
 /**
- * Objections, answered.
- *
- * Phrased narrowly on purpose. Where something is not built yet it says so —
- * the interface being English today is the obvious example — because the first
- * promise this page breaks is the last thing a school believes.
+ * Objections, answered. Phrased narrowly on purpose: where something is not
+ * built yet it says so, because the first promise this page breaks is the last
+ * thing a school believes.
  */
 const QUESTIONS = [
   {
@@ -206,25 +405,99 @@ const QUESTIONS = [
     a: 'Yes, and not only by convention. Every row carries the school it belongs to and the database enforces it on every query, so a mistake in the application cannot return another school’s students. It is the first thing we built.',
   },
   {
-    q: `What happens during the ${TRIAL_DAYS} days?`,
+    q: `What happens during the ${String(TRIAL_DAYS)} days?`,
     a: 'You use all of it, with your real students and your real fee structure, and we do not ask for a card. Nothing is charged and nothing auto-renews, because billing is not switched on during a trial at all.',
   },
 ];
 
-const NAV = [
-  { href: '#capabilities', label: 'What it does' },
-  { href: '#how', label: 'How it works' },
-  { href: '#packages', label: 'Packages' },
-  { href: '#questions', label: 'Questions' },
-];
-
-/** The index as a custom property — the stagger and deck offsets are computed values (docs/16 §2). */
-function indexVar(name: '--stack-index', value: number): CSSProperties {
-  return { [name]: value } as CSSProperties;
-}
-
 /** Two digits, so `01` and `04` occupy the same width down a column. */
 const pad = (value: number) => String(value).padStart(2, '0');
+
+const linkClass =
+  'rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
+
+function ModuleTile({
+  Icon,
+  title,
+  body,
+  className,
+  children,
+}: {
+  Icon: IconComponent;
+  title: string;
+  body: string;
+  className?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <article
+      className={cn(
+        'rounded-tile shadow-tile flex flex-col border border-border bg-card p-6 transition-transform duration-200 ease-out hover:-translate-y-1 lg:p-8',
+        className,
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Icon className={ICON_SIZE.nav} aria-hidden />
+        </span>
+        <h3 className="text-lg font-semibold">{title}</h3>
+      </div>
+      <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">{body}</p>
+      {children ? (
+        <div className="mt-6 flex-1 rounded-xl bg-muted p-4" aria-hidden>
+          {children}
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+/**
+ * The hero's floating cards. They sit on the frame's corners and lower edge —
+ * over its title bar and padding, never over a number — so a card never hides
+ * the data it is meant to be an example of.
+ */
+const HERO_FLOATS: StageFloat[] = [
+  {
+    className: 'hidden lg:block -start-12 -top-12 xl:-start-20',
+    drift: -70,
+    node: (
+      <FloatCard
+        Icon={SuccessIcon}
+        title="Fee received"
+        detail={`${SAMPLE_PAYMENTS[0].name} · ${SAMPLE_PAYMENTS[0].section}`}
+      >
+        <Money
+          valueMinor={SAMPLE_PAYMENTS[0].amountMinor}
+          withSymbol
+          className="mt-2 block text-sm font-semibold"
+        />
+      </FloatCard>
+    ),
+  },
+  {
+    className: 'hidden lg:block -end-12 -top-8 xl:-end-20',
+    drift: -130,
+    node: (
+      <FloatCard
+        Icon={AttendanceIcon}
+        title="Attendance marked"
+        detail="Grade 5-A · 32 of 34 present"
+      />
+    ),
+  },
+  {
+    className: 'hidden lg:block -end-8 -bottom-10 xl:-end-16',
+    drift: -50,
+    node: (
+      <FloatCard
+        Icon={PrintIcon}
+        title="Result cards ready"
+        detail="Mid-term · Grade 5-A · 34 to print"
+      />
+    ),
+  },
+];
 
 export default async function WelcomePage() {
   const plans = await getPublicPlans();
@@ -235,8 +508,7 @@ export default async function WelcomePage() {
     >
       {/* Before the content, so the attribute is set before the hero paints. */}
       <MarketingBootstrap />
-      {/* After it, and after hydration: re-observes anything React replaced,
-          which is how the headline could end up invisible for good. */}
+      {/* After it, and after hydration: re-observes anything React replaced. */}
       <MarketingRevealGuard />
       <MarketingSmoothScroll />
 
@@ -247,41 +519,35 @@ export default async function WelcomePage() {
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md">
+      {/* A floating bar rather than a full-width strip: it sits over the page
+          instead of cutting it, and the hero's grid runs behind it. */}
+      <header className="sticky top-0 z-40 px-4 pt-4 lg:px-8">
         <nav
           aria-label="Main"
-          className="mx-auto flex max-w-7xl items-center gap-6 px-6 py-5 lg:px-12"
+          className="shadow-tile mx-auto flex max-w-6xl items-center gap-6 rounded-full border border-border bg-card/85 py-2 ps-5 pe-2 backdrop-blur-md"
         >
-          {/* The same asset the auth screens use, so the page a school lands on
-              and the screen it signs up through carry one mark. It is not a
-              link: this *is* the home page, and a logo that navigates to where
-              you already are is a dead control. */}
+          {/* Not a link: this *is* the home page, and a logo that navigates to
+              where you already are is a dead control. */}
           <Image
             src={lemmaLogo}
             alt={BRAND.name}
             data-logo
-            className="h-9 w-auto object-contain object-left sm:h-10"
+            className="h-8 w-auto object-contain object-left"
             priority
           />
 
           <ul className="mx-auto hidden items-center gap-8 lg:flex">
             {NAV.map((item) => (
               <li key={item.href}>
-                <a
-                  href={item.href}
-                  className="rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                >
+                <a href={item.href} className={linkClass}>
                   <LetterRoll text={item.label} />
                 </a>
               </li>
             ))}
           </ul>
 
-          <div className="ms-auto flex items-center gap-5 lg:ms-0">
-            <Link
-              href="/login"
-              className="hidden rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:inline-flex"
-            >
+          <div className="ms-auto flex items-center gap-4 lg:ms-0">
+            <Link href="/login" className={cn(linkClass, 'hidden sm:inline-flex')}>
               <LetterRoll text="Sign in" />
             </Link>
             <Button asChild size="touch" className="rounded-full px-5">
@@ -293,29 +559,22 @@ export default async function WelcomePage() {
 
       <main id="main">
         {/* ------------------------------------------------------------------
-            Hero.
-
-            One sentence at the largest size the page has, a live status line
-            above it and four facts ruled off below. No image: the alternative
-            was a mocked-up dashboard full of invented students, and a school
-            can tell the difference between a product and a picture of one.
+            Hero — the window itself.
             ------------------------------------------------------------------ */}
-        {/* Full-bleed so the blobs can run to the edges; the measure and the
-            gutters are set on the inner container instead, matching every
-            section below it exactly. Putting the padding on the section as
-            well left the hero's text a gutter out of line with the rest of the
-            page — visible the moment you scroll past it. */}
-        <section className="relative isolate overflow-hidden pt-10 pb-12 lg:pt-20 lg:pb-16">
-          {/* `isolate` is what makes the blobs' `z-index: -1` work: it creates a
-              stacking context, so they sit behind the hero's content but still
-              in front of the page background. `overflow-hidden` because a 26rem
-              circle hanging off the start edge is exactly how a page acquires a
-              horizontal scrollbar on a 360px phone. */}
+        <section className="relative isolate -mt-24 overflow-hidden pt-36 pb-20 lg:pt-44 lg:pb-28">
+          <span aria-hidden className="marketing-grid absolute inset-0 -z-10" />
           <span aria-hidden data-blob className="marketing-blob marketing-blob-a bg-tint-mint" />
+          <span
+            aria-hidden
+            data-blob
+            className="marketing-blob marketing-blob-b bg-tint-lavender"
+          />
 
-          <div className="mx-auto max-w-7xl px-6 lg:px-12">
+          <div className="mx-auto max-w-7xl px-6 text-center lg:px-12">
             <Rise index={0}>
-              <p className="tracking-label text-xs font-medium text-muted-foreground uppercase">
+              <p className="tracking-label inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground uppercase">
+                <span className="text-primary">All-in-one school management</span>
+                <span aria-hidden>·</span>
                 <MarketingStatus place="Built in Pakistan" />
               </p>
             </Rise>
@@ -323,82 +582,225 @@ export default async function WelcomePage() {
             <WordReveal
               as="h1"
               startIndex={1}
-              text="One place for the register, the ledger and the result card."
-              className="text-display-lg mt-10 max-w-5xl font-semibold"
+              accent={[4, 5]}
+              text="Your whole school, in one window."
+              className="text-display-lg mx-auto mt-8 max-w-4xl font-semibold"
             />
 
-            <div className="mt-12 grid gap-10 lg:grid-cols-12 lg:items-end">
-              <Rise index={3} className="lg:col-span-7">
-                <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
-                  Admissions, fees, attendance, exams and accounts — configured by you, not by a
-                  developer. Set your school up in an afternoon and keep the records straight for
-                  the rest of the year.
-                </p>
-              </Rise>
+            <Rise index={3}>
+              <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+                Admissions, fees, attendance, marks, timetables, staff and accounts — one login and
+                one record per student, instead of registers, receipt books and spreadsheets that
+                never quite agree.
+              </p>
+            </Rise>
 
-              <Rise index={4} className="lg:col-span-5">
-                <div className="flex flex-wrap items-center gap-4 lg:justify-end">
-                  <Button asChild size="touch" className="rounded-full px-6">
-                    <Link href="/signup">
-                      Set up your school
-                      <ForwardIcon className={ICON_SIZE.inline} aria-hidden />
-                    </Link>
-                  </Button>
-                  <Link
-                    href="/login"
-                    className="group inline-flex items-center gap-2 rounded-full text-sm font-medium transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                  >
-                    I already have an account
-                    <ForwardIcon
-                      className={`${ICON_SIZE.inline} transition-transform group-hover:translate-x-1`}
-                      aria-hidden
-                    />
+            <Rise index={4}>
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+                <Button asChild size="touch" className="rounded-full px-7">
+                  <Link href="/signup">
+                    Start your {TRIAL_DAYS}-day free trial
+                    <ForwardIcon className={ICON_SIZE.inline} aria-hidden />
                   </Link>
-                </div>
-              </Rise>
-            </div>
+                </Button>
+                <Button asChild size="touch" tone="outline" className="rounded-full bg-card px-7">
+                  <Link href="/login">I already have an account</Link>
+                </Button>
+              </div>
+            </Rise>
 
-            {/* The four facts, ruled off rather than boxed. */}
-            <div className="mt-16">
-              <Rule />
-              <dl className="grid gap-8 py-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">
-                {PROOF.map((fact, position) => (
-                  <Reveal key={fact.term} index={position}>
-                    <dt className="flex items-baseline gap-3 text-sm font-semibold">
-                      <span className="tabular text-xs text-muted-foreground">
-                        {pad(position + 1)}
-                      </span>
-                      {fact.term}
-                    </dt>
-                    <dd className="mt-2 ps-8 text-sm text-muted-foreground">{fact.detail}</dd>
-                  </Reveal>
+            <Rise index={5}>
+              <ul className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
+                {PROOF.map((fact) => (
+                  <li key={fact} className="flex items-center gap-2">
+                    <SuccessIcon className={cn(ICON_SIZE.inline, 'text-primary')} aria-hidden />
+                    {fact}
+                  </li>
                 ))}
-              </dl>
+              </ul>
+            </Rise>
+          </div>
+
+          <div className="mx-auto mt-16 max-w-6xl px-4 lg:mt-20 lg:px-8">
+            <Reveal className="mb-4 flex justify-center">
+              <SampleTag />
+            </Reveal>
+            {/* The whole stage is decorative: its content is the copy above. */}
+            <div aria-hidden>
+              <HeroStage floats={HERO_FLOATS}>
+                <DashboardPreview />
+              </HeroStage>
             </div>
           </div>
         </section>
 
         {/* ------------------------------------------------------------------
-            The manifesto.
+            One window — the old tools fold into the new one.
+            ------------------------------------------------------------------ */}
+        <section aria-labelledby="one-window-heading" className="relative">
+          <Converge
+            tools={TOOLS}
+            before={
+              <>
+                <Label className="text-primary">01 — The problem</Label>
+                <p className="text-display-sm mt-4 font-semibold text-balance">
+                  A school runs on six places that never agree.
+                </p>
+              </>
+            }
+            after={
+              <>
+                <h2 id="one-window-heading" className="text-display-md font-semibold text-balance">
+                  {BRAND.name} is one window for all of it.
+                </h2>
+                <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
+                  Every module shares one record per student — so the office, the accounts and the
+                  parents always see the same answer.
+                </p>
+              </>
+            }
+          >
+            <div aria-hidden>
+              <LaunchpadPreview />
+            </div>
+          </Converge>
+        </section>
 
-            The page's one long statement, set large and lit word by word as it
-            is scrolled through. This is the only place the product is allowed
-            to argue at length, and it earns the room by being the thing the
-            reader is physically moving through.
+        {/* ------------------------------------------------------------------
+            Every module — a bento, each tile carrying its own screen.
+            ------------------------------------------------------------------ */}
+        <section
+          id="capabilities"
+          aria-labelledby="capabilities-heading"
+          className="mx-auto max-w-7xl scroll-mt-28 px-6 py-24 lg:px-12 lg:py-32"
+        >
+          <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-7">
+              <Reveal>
+                <Label className="text-primary">02 — Everything included</Label>
+              </Reveal>
+              <WordReveal
+                as="h2"
+                id="capabilities-heading"
+                text="Every module a school needs, already connected."
+                className="text-display-md mt-6 font-semibold"
+              />
+            </div>
+            <Reveal index={1} className="lg:col-span-5">
+              <p className="text-base leading-relaxed text-muted-foreground">
+                No add-ons to buy and nothing to stitch together. A fee paid at the counter is on
+                the dashboard, the student’s record and the day book in the same moment.
+              </p>
+            </Reveal>
+          </div>
+
+          <div className="mt-16 grid gap-4 lg:grid-cols-3">
+            <Reveal className="lg:col-span-2 lg:row-span-2">
+              <ModuleTile
+                Icon={FeesIcon}
+                title="Fees & vouchers"
+                body="Fee plans, monthly vouchers, discounts, increments and security deposits — and a defaulter list that sorts itself by how long each family has owed."
+                className="h-full"
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <VoucherPreview />
+                  <DefaulterPreview />
+                </div>
+              </ModuleTile>
+            </Reveal>
+            <Reveal index={1}>
+              <ModuleTile
+                Icon={AttendanceIcon}
+                title="Attendance"
+                body="Students and staff, by day or by period, marked from any phone."
+                className="h-full"
+              >
+                <AttendancePreview />
+              </ModuleTile>
+            </Reveal>
+            <Reveal index={2}>
+              <ModuleTile
+                Icon={ClassIcon}
+                title="Marks & result cards"
+                body="Your subjects and assessments, printed as result cards."
+                className="h-full"
+              >
+                <ResultPreview />
+              </ModuleTile>
+            </Reveal>
+            <Reveal index={3}>
+              <ModuleTile
+                Icon={CalendarIcon}
+                title="Timetables"
+                body="Periods, breaks and teachers, the source the calendar reads from."
+                className="h-full"
+              >
+                <TimetablePreview />
+              </ModuleTile>
+            </Reveal>
+            <Reveal index={4} className="lg:col-span-2">
+              <ModuleTile
+                Icon={FinanceIcon}
+                title="Finance"
+                body="Revenue, expenses and salaries in one ledger that reconciles itself."
+                className="h-full"
+              >
+                <FinancePreview />
+              </ModuleTile>
+            </Reveal>
+          </div>
+
+          <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {SMALL_MODULES.map((module, position) => (
+              <li key={module.title}>
+                <Reveal index={position}>
+                  <ModuleTile Icon={module.Icon} title={module.title} body={module.body} />
+                </Reveal>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* ------------------------------------------------------------------
+            The tour — four daily jobs, each with its screen.
+            ------------------------------------------------------------------ */}
+        <section
+          id="tour"
+          aria-labelledby="tour-heading"
+          className="scroll-mt-28 bg-muted py-24 lg:py-32"
+        >
+          <div className="mx-auto max-w-7xl px-6 lg:px-12">
+            <Reveal>
+              <Label className="text-primary">03 — A day at school</Label>
+            </Reveal>
+            <WordReveal
+              as="h2"
+              id="tour-heading"
+              text="Built for the jobs that happen every single day."
+              className="text-display-md mt-6 max-w-3xl font-semibold"
+            />
+            <div className="mt-16 lg:mt-8">
+              <Tour steps={TOUR} />
+            </div>
+          </div>
+        </section>
+
+        {/* ------------------------------------------------------------------
+            The manifesto, lit word by word as it is read.
             ------------------------------------------------------------------ */}
         <section
           aria-labelledby="manifesto-heading"
-          className="mx-auto max-w-7xl scroll-mt-24 px-6 py-20 lg:px-12 lg:py-32"
+          className="mx-auto max-w-7xl px-6 py-24 lg:px-12 lg:py-32"
         >
           <Reveal>
-            <Label id="manifesto-heading">01 — Why it exists</Label>
+            <Label id="manifesto-heading" className="text-primary">
+              04 — Why it exists
+            </Label>
           </Reveal>
-
           <Manifesto
             className="text-display-sm mt-10 max-w-5xl leading-snug font-medium"
             text={`The register is in one cupboard. The receipt book is in another. The spreadsheet lives on somebody's own laptop, and none of it reconciles, because none of it is in the same place. ${BRAND.name} keeps one record for each student, and every rupee, mark and absence hangs off it — so the answer to "has this family paid?" is the same answer in the office, in the accounts, and on the phone.`}
           />
-
           <div className="mt-20 grid gap-12 lg:grid-cols-3 lg:gap-16">
             {PRINCIPLES.map((principle, position) => (
               <Reveal key={principle.verb} index={position}>
@@ -413,133 +815,141 @@ export default async function WelcomePage() {
         </section>
 
         {/* ------------------------------------------------------------------
-            The deck.
-
-            Four panels that stick, each a little lower than the last, so they
-            gather into a stack with every previous panel's edge still showing.
-            The mechanism is `position: sticky` and an offset keyed to the
-            index — no scroll listener, no pinning library, nothing to go out of
-            sync. See the `[data-stack]` rules in `globals.css`.
+            Roles — everyone gets their own window.
             ------------------------------------------------------------------ */}
         <section
-          id="capabilities"
-          aria-labelledby="capabilities-heading"
-          className="mx-auto max-w-7xl scroll-mt-24 px-6 pb-20 lg:px-12 lg:pb-32"
+          aria-labelledby="roles-heading"
+          className="mx-auto max-w-7xl px-6 pb-24 lg:px-12 lg:pb-32"
         >
           <Reveal>
-            <Label>02 — What it does</Label>
+            <Label className="text-primary">05 — Built for every role</Label>
           </Reveal>
           <WordReveal
             as="h2"
-            id="capabilities-heading"
-            text="Built around the four things a school does every single day."
-            className="text-display-sm mt-6 max-w-3xl font-semibold"
+            id="roles-heading"
+            text="Everyone gets their own window."
+            className="text-display-md mt-6 font-semibold"
           />
-
-          <div data-stack className="mt-16">
-            {CAPABILITIES.map(({ Icon, title, body, detail, tint }, position) => (
-              <article
-                key={title}
-                data-stack-item
-                style={indexVar('--stack-index', position)}
-                className="rounded-tile shadow-tile mb-6 border border-border bg-card p-8 lg:p-12"
-              >
-                <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
-                  <div className="lg:col-span-5">
-                    <div className="flex items-center gap-4">
-                      <span
-                        className={`${tint} inline-flex size-12 shrink-0 items-center justify-center rounded-full`}
-                      >
-                        <Icon className={`${ICON_SIZE.heading} text-foreground`} aria-hidden />
-                      </span>
-                      <span className="tabular text-xs font-medium text-muted-foreground">
-                        {pad(position + 1)} / {pad(CAPABILITIES.length)}
-                      </span>
-                    </div>
-                    <h3 className="text-display-xs mt-6 font-semibold text-balance">{title}</h3>
-                  </div>
-
-                  <div className="lg:col-span-7">
-                    <p className="text-base leading-relaxed text-muted-foreground">{body}</p>
-                    <ul className="mt-8 grid gap-3 sm:grid-cols-3">
-                      {detail.map((item) => (
-                        <li key={item} className="text-sm text-muted-foreground">
-                          <span className="mb-2 block h-px w-8 bg-border" aria-hidden />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </article>
+          <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground">
+            The menu is built from each person’s permissions, so nobody wades through screens that
+            are not theirs — and nobody sees a record they should not.
+          </p>
+          <ul className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {ROLES.map(({ Icon, tint, role, points }, position) => (
+              <li key={role}>
+                <Reveal index={position} className={cn('rounded-tile h-full p-6 lg:p-8', tint)}>
+                  <span className="flex size-12 items-center justify-center rounded-full bg-card">
+                    <Icon className={ICON_SIZE.heading} aria-hidden />
+                  </span>
+                  <h3 className="text-display-xs mt-8 font-semibold">{role}</h3>
+                  <ul className="mt-6 space-y-3">
+                    {points.map((point) => (
+                      <li key={point} className="flex gap-3 text-sm leading-relaxed">
+                        <SuccessIcon
+                          className={cn(ICON_SIZE.inline, 'mt-0.5 shrink-0')}
+                          aria-hidden
+                        />
+                        {point}
+                      </li>
+                    ))}
+                  </ul>
+                </Reveal>
+              </li>
             ))}
+          </ul>
+        </section>
+
+        {/* ------------------------------------------------------------------
+            Trust — the one dark band. Each item is a rule the codebase enforces.
+            ------------------------------------------------------------------ */}
+        <section aria-labelledby="trust-heading" className="px-4 lg:px-8">
+          <div className="marketing-invert rounded-tile mx-auto max-w-7xl bg-background px-6 py-20 text-foreground lg:px-16 lg:py-28">
+            <div className="grid gap-10 lg:grid-cols-12">
+              <div className="lg:col-span-5">
+                <Label>06 — Built to be trusted</Label>
+                <h2 id="trust-heading" className="text-display-md mt-6 font-semibold text-balance">
+                  Your fee collection deserves engineering, not a spreadsheet.
+                </h2>
+              </div>
+              <p className="text-base leading-relaxed text-muted-foreground lg:col-span-6 lg:col-start-7 lg:self-end">
+                These are not features on a list. They are rules the software is built on, enforced
+                by the database and checked on every change — and you can see each one at work
+                during your trial.
+              </p>
+            </div>
+            <ul className="mt-16 grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+              {TRUST.map(({ Icon, title, body }, position) => (
+                <li key={title}>
+                  <Reveal index={position}>
+                    <Rule index={position} />
+                    <div className="mt-6 flex items-center gap-3">
+                      <Icon className={cn(ICON_SIZE.heading, 'text-primary')} aria-hidden />
+                      <h3 className="text-lg font-semibold">{title}</h3>
+                    </div>
+                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
+                  </Reveal>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
         {/* ------------------------------------------------------------------
-            How it works. Three rows, numbered, ruled.
+            How it works — three steps, joined by a line that draws as you read.
             ------------------------------------------------------------------ */}
         <section
           id="how"
           aria-labelledby="how-heading"
-          className="mx-auto max-w-7xl scroll-mt-24 px-6 py-20 lg:px-12 lg:py-32"
+          className="mx-auto max-w-7xl scroll-mt-28 px-6 py-24 lg:px-12 lg:py-32"
         >
           <Reveal>
-            <Label>03 — Getting started</Label>
+            <Label className="text-primary">07 — Getting started</Label>
           </Reveal>
           <WordReveal
             as="h2"
             id="how-heading"
             text="Three steps, and one afternoon."
-            className="text-display-sm mt-6 font-semibold"
+            className="text-display-md mt-6 font-semibold"
           />
-
-          <ol className="mt-16">
+          <ScrollLine className="mt-16 hidden lg:block" />
+          <ol className="grid gap-12 lg:mt-10 lg:grid-cols-3 lg:gap-16">
             {STEPS.map((step, position) => (
               <li key={step.title}>
-                <Rule index={position} />
-                <Reveal index={position} className="grid gap-4 py-10 lg:grid-cols-12 lg:gap-12">
-                  <span className="tabular text-sm text-muted-foreground lg:col-span-2">
+                <Reveal index={position}>
+                  <span className="tabular flex size-10 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                     {pad(position + 1)}
                   </span>
-                  <h3 className="text-display-xs font-semibold lg:col-span-4">{step.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground lg:col-span-6">
-                    {step.body}
-                  </p>
+                  <h3 className="text-display-xs mt-6 font-semibold">{step.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
                 </Reveal>
               </li>
             ))}
           </ol>
-          <Rule />
         </section>
 
         {/* ------------------------------------------------------------------
-            Packages.
-
-            Three columns divided by hairlines rather than three cards. The
-            recommended one is marked with a label and a heavier rule, never
-            with colour alone — docs/16 §6 is a rule, and this page is printed
-            and screenshotted as often as any screen in the product.
+            Packages — live from the platform console. The recommended one is
+            marked with a label *and* the dark ground, never colour alone.
             ------------------------------------------------------------------ */}
         <section
           id="packages"
           aria-labelledby="packages-heading"
-          className="mx-auto max-w-7xl scroll-mt-24 px-6 py-20 lg:px-12 lg:py-32"
+          className="mx-auto max-w-7xl scroll-mt-28 px-6 pb-24 lg:px-12 lg:pb-32"
         >
-          <div className="grid gap-10 lg:grid-cols-12">
-            <div className="lg:col-span-6">
+          <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-7">
               <Reveal>
-                <Label>04 — Packages</Label>
+                <Label className="text-primary">08 — Packages</Label>
               </Reveal>
               <WordReveal
                 as="h2"
                 id="packages-heading"
                 text="Priced per campus, billed in rupees."
-                className="text-display-sm mt-6 font-semibold"
+                className="text-display-md mt-6 font-semibold"
               />
             </div>
-            <Reveal index={1} className="lg:col-span-6 lg:self-end">
-              <p className="text-sm leading-relaxed text-muted-foreground">
+            <Reveal index={1} className="lg:col-span-5">
+              <p className="text-base leading-relaxed text-muted-foreground">
                 Every package starts with the same {TRIAL_DAYS}-day trial, and you can change or
                 cancel at any time. Billed in Pakistani rupees, with nothing to sign.
               </p>
@@ -547,10 +957,9 @@ export default async function WelcomePage() {
           </div>
 
           {plans === undefined || plans.length === 0 ? (
-            // No plans to show: either none are published or the list could
-            // not be loaded. Say so and offer the way forward, never an empty
-            // gap where the prices should be.
-            <Reveal className="mt-16 border-t border-border pt-8">
+            // No plans to show: say so and offer the way forward, never an
+            // empty gap where the prices should be.
+            <Reveal className="rounded-tile mt-16 border border-border bg-card p-8">
               <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
                 {plans === undefined
                   ? 'Pricing is unavailable right now. Please check back shortly, or start your free trial and we will confirm the price with you.'
@@ -561,58 +970,65 @@ export default async function WelcomePage() {
               </Button>
             </Reveal>
           ) : (
-            <div className="mt-16 grid gap-12 lg:grid-cols-3 lg:gap-0">
+            <div className="mt-16 grid gap-4 lg:grid-cols-3">
               {plans.map((plan, position) => {
                 const isRecommended = plan.isRecommended;
                 return (
                   <Reveal
                     key={plan.code}
                     index={position}
-                    className={`flex h-full flex-col ${position % 3 === 0 ? 'lg:pe-12' : 'lg:border-s lg:border-border lg:px-12'}`}
+                    className={cn(
+                      'rounded-tile flex h-full flex-col border p-8 lg:p-10',
+                      isRecommended
+                        ? 'marketing-invert shadow-frame border-transparent bg-background text-foreground'
+                        : 'shadow-tile border-border bg-card',
+                    )}
                   >
-                    <Rule index={position} className={isRecommended ? 'bg-primary' : undefined} />
-
-                    <div className="mt-6 flex items-baseline justify-between gap-3">
+                    <div className="flex items-baseline justify-between gap-3">
                       <h3 className="text-display-xs font-semibold">{plan.name}</h3>
-                      {isRecommended ? <Label className="text-primary">Most schools</Label> : null}
+                      {isRecommended ? (
+                        <span className="tracking-label rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground uppercase">
+                          Most schools
+                        </span>
+                      ) : null}
                     </div>
-
                     <p className="mt-2 text-sm text-muted-foreground">{plan.tagline}</p>
-
                     <p className="mt-8 flex items-baseline gap-2">
                       <Money
                         valueMinor={minorUnits(plan.priceMinor)}
                         withSymbol
-                        className="text-display-xs font-semibold"
+                        className="text-display-sm font-semibold"
                       />
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-sm text-muted-foreground">
                         / {plan.billingCycle === 'YEARLY' ? 'year' : 'month'}
                       </span>
                     </p>
-
                     <p className="mt-2 text-xs text-muted-foreground">
                       {plan.studentCap === null
                         ? 'No student limit'
                         : `Up to ${plan.studentCap.toLocaleString('en-PK')} students`}
                     </p>
-
-                    {/* `flex-1` so the button sits on the bottom edge of every
-                      column regardless of how many features are listed — three
-                      buttons at three heights is the detail that makes a
-                      pricing row look unfinished. */}
+                    {/* `flex-1` so every button sits on the bottom edge whatever
+                        the number of features. */}
                     <ul className="mt-8 flex-1 space-y-3 border-t border-border pt-8">
                       {plan.features.map((feature) => (
-                        <li key={feature} className="text-sm leading-relaxed text-muted-foreground">
+                        <li
+                          key={feature}
+                          className="flex gap-3 text-sm leading-relaxed text-muted-foreground"
+                        >
+                          <SuccessIcon
+                            className={cn(ICON_SIZE.inline, 'mt-0.5 shrink-0 text-primary')}
+                            aria-hidden
+                          />
                           {feature}
                         </li>
                       ))}
                     </ul>
-
                     <Button
                       asChild
                       size="touch"
                       tone={isRecommended ? 'primary' : 'outline'}
-                      className="mt-8 w-full rounded-full"
+                      className="mt-10 w-full rounded-full"
                     >
                       <Link href="/signup">Start free trial</Link>
                     </Button>
@@ -624,105 +1040,107 @@ export default async function WelcomePage() {
         </section>
 
         {/* ------------------------------------------------------------------
-            Questions.
-
-            Native `<details>`: keyboard-operable, findable with the browser's
-            own find-in-page, and nought bytes of JavaScript. An accordion
-            component here would be three of those things worse.
+            Questions — native `<details>`: keyboard-operable, searchable with
+            find-in-page, and no JavaScript.
             ------------------------------------------------------------------ */}
         <section
           id="questions"
           aria-labelledby="questions-heading"
-          className="mx-auto max-w-7xl scroll-mt-24 px-6 py-20 lg:px-12 lg:py-32"
+          className="mx-auto max-w-7xl scroll-mt-28 px-6 pb-24 lg:px-12 lg:pb-32"
         >
-          <Reveal>
-            <Label>05 — Questions</Label>
-          </Reveal>
-          <WordReveal
-            as="h2"
-            id="questions-heading"
-            text="Before you sign up."
-            className="text-display-sm mt-6 font-semibold"
-          />
-
-          <div className="mt-16">
-            {QUESTIONS.map((item, position) => (
-              <Reveal key={item.q} index={position}>
-                <Rule index={position} />
-                <details className="group py-6">
-                  <summary className="flex cursor-pointer list-none items-baseline gap-6 rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
-                    <span className="tabular text-xs text-muted-foreground">
-                      {pad(position + 1)}
-                    </span>
-                    <h3 className="flex-1 text-base font-semibold">{item.q}</h3>
-                    <ChevronDownIcon
-                      className={`${ICON_SIZE.inline} shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180`}
-                      aria-hidden
-                    />
-                  </summary>
-                  <p className="mt-4 max-w-2xl ps-10 text-sm leading-relaxed text-muted-foreground">
-                    {item.a}
+          <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-4">
+              <div className="lg:sticky lg:top-28">
+                <Reveal>
+                  <Label className="text-primary">09 — Questions</Label>
+                </Reveal>
+                <WordReveal
+                  as="h2"
+                  id="questions-heading"
+                  text="Before you sign up."
+                  className="text-display-md mt-6 font-semibold"
+                />
+                <Reveal index={1}>
+                  <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+                    Something we have not answered? Write to{' '}
+                    <a
+                      href={`mailto:${BRAND.supportEmail}`}
+                      data-underline
+                      className="text-foreground"
+                    >
+                      {BRAND.supportEmail}
+                    </a>
+                    .
                   </p>
-                </details>
-              </Reveal>
-            ))}
-            <Rule />
+                </Reveal>
+              </div>
+            </div>
+            <div className="space-y-3 lg:col-span-8">
+              {QUESTIONS.map((item, position) => (
+                <Reveal key={item.q} index={position}>
+                  <details className="group rounded-tile open:shadow-tile border border-border bg-card px-6 transition-colors">
+                    <summary className="flex cursor-pointer list-none items-center gap-6 rounded-sm py-6 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+                      <span className="tabular text-xs text-muted-foreground">
+                        {pad(position + 1)}
+                      </span>
+                      <h3 className="flex-1 text-base font-semibold">{item.q}</h3>
+                      <ChevronDownIcon
+                        className={cn(
+                          ICON_SIZE.inline,
+                          'shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180',
+                        )}
+                        aria-hidden
+                      />
+                    </summary>
+                    <p className="max-w-2xl ps-10 pb-6 text-sm leading-relaxed text-muted-foreground">
+                      {item.a}
+                    </p>
+                  </details>
+                </Reveal>
+              ))}
+            </div>
           </div>
         </section>
 
         {/* ------------------------------------------------------------------
-            The one dark moment on the page.
-
-            Flat deep teal rather than the brand gradient, and the colours on
-            it are `.marketing-invert`'s inverted tokens rather than
-            `text-white/70` — see the comment on that class in `globals.css`.
-            One ground colour is one measurable contrast ratio; a gradient is
-            three, and the lightest of them is where the auth panel's own
-            white/70 falls under the line.
+            The close.
             ------------------------------------------------------------------ */}
-        <section aria-labelledby="final-cta" className="px-6 pb-20 lg:px-12 lg:pb-32">
-          <div className="mx-auto max-w-7xl">
-            <Reveal>
-              <div className="marketing-invert rounded-tile bg-background px-6 py-20 text-foreground lg:px-16 lg:py-28">
-                <div className="max-w-3xl">
-                  <Label>{TRIAL_DAYS} days free</Label>
-                  {/* A plain heading, not a `WordReveal`: the panel itself is
-                      already the gesture here, and staggering words inside
-                      something that is simultaneously rising is two animations
-                      arguing over one sentence. */}
-                  <h2 id="final-cta" className="text-display-md mt-8 font-semibold text-balance">
-                    Set your school up this afternoon.
-                  </h2>
-                  <p className="mt-8 max-w-xl text-base leading-relaxed text-muted-foreground">
-                    One form creates your school, your account and your trial. No card, no sales
-                    call, and nobody from us in the middle of it.
-                  </p>
-                  <div className="mt-12">
-                    <Button asChild size="touch" className="rounded-full px-8">
-                      <Link href="/signup">
-                        Set up your school
-                        <ForwardIcon className={ICON_SIZE.inline} aria-hidden />
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
+        <section aria-labelledby="final-cta" className="px-4 pb-20 lg:px-8 lg:pb-28">
+          <Reveal>
+            <div className="marketing-invert rounded-tile relative isolate mx-auto max-w-7xl overflow-hidden bg-background px-6 py-20 text-center text-foreground lg:px-16 lg:py-28">
+              <span aria-hidden className="marketing-grid absolute inset-0 -z-10 opacity-40" />
+              <Label>{TRIAL_DAYS} days free · no card</Label>
+              <h2
+                id="final-cta"
+                className="text-display-lg mx-auto mt-8 max-w-4xl font-semibold text-balance"
+              >
+                Run your whole school from one window — starting this afternoon.
+              </h2>
+              <p className="mx-auto mt-8 max-w-xl text-base leading-relaxed text-muted-foreground">
+                One form creates your school, your account and your trial. No card, no sales call,
+                and nobody from us in the middle of it.
+              </p>
+              <div className="mt-12 flex flex-wrap items-center justify-center gap-4">
+                <Button asChild size="touch" className="rounded-full px-8">
+                  <Link href="/signup">
+                    Set up your school
+                    <ForwardIcon className={ICON_SIZE.inline} aria-hidden />
+                  </Link>
+                </Button>
+                <Link href="/login" className={cn(linkClass, 'inline-flex')}>
+                  <LetterRoll text="Sign in instead" />
+                </Link>
               </div>
-            </Reveal>
-          </div>
+            </div>
+          </Reveal>
         </section>
       </main>
 
       {/* ----------------------------------------------------------------
           Footer.
-
-          Four columns of links that roll letter by letter, an email whose
-          underline sweeps out from the start edge, and a back-to-top whose
-          arrow lifts. Every one of them is a hover state rather than something
-          playing on a loop — the same rule the rest of the page follows.
           ---------------------------------------------------------------- */}
       <footer className="mx-auto max-w-7xl px-6 pb-12 lg:px-12">
         <Rule />
-
         <div className="grid gap-12 pt-12 lg:grid-cols-12 lg:gap-8">
           <Reveal index={0} className="lg:col-span-4">
             <Image
@@ -732,8 +1150,8 @@ export default async function WelcomePage() {
               className="h-9 w-auto object-contain object-left"
             />
             <p className="mt-5 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              School management for Pakistan — admissions, fees, attendance, exams and accounts in
-              one place.
+              The all-in-one school management system for Pakistan — admissions, fees, attendance,
+              marks, timetables, staff and finance in one window.
             </p>
             <p className="tracking-label mt-6 text-xs font-medium text-muted-foreground uppercase">
               <MarketingStatus place="Built in Pakistan" />
@@ -745,10 +1163,7 @@ export default async function WelcomePage() {
             <ul className="mt-5 space-y-3">
               {NAV.map((item) => (
                 <li key={item.href}>
-                  <a
-                    href={item.href}
-                    className="inline-flex rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                  >
+                  <a href={item.href} className={cn(linkClass, 'inline-flex')}>
                     <LetterRoll text={item.label} />
                   </a>
                 </li>
@@ -760,18 +1175,12 @@ export default async function WelcomePage() {
             <Label>Account</Label>
             <ul className="mt-5 space-y-3">
               <li>
-                <Link
-                  href="/signup"
-                  className="inline-flex rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                >
+                <Link href="/signup" className={cn(linkClass, 'inline-flex')}>
                   <LetterRoll text="Start free" />
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/login"
-                  className="inline-flex rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                >
+                <Link href="/login" className={cn(linkClass, 'inline-flex')}>
                   <LetterRoll text="Sign in" />
                 </Link>
               </li>
@@ -781,11 +1190,7 @@ export default async function WelcomePage() {
           <Reveal index={3} className="lg:col-span-3">
             <Label>Support</Label>
             <p className="mt-5">
-              <a
-                href={`mailto:${BRAND.supportEmail}`}
-                data-underline
-                className="rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-              >
+              <a href={`mailto:${BRAND.supportEmail}`} data-underline className={linkClass}>
                 {BRAND.supportEmail}
               </a>
             </p>
@@ -796,21 +1201,19 @@ export default async function WelcomePage() {
         </div>
 
         <Rule className="mt-16" />
-
         <div className="flex flex-wrap items-center justify-between gap-4 pt-6">
           <p className="text-xs text-muted-foreground">
             © {BRAND.name} — school management for Pakistan.
           </p>
-          {/* `#top` is the page container, so this is a real anchor: it works
-              as a plain jump with no JavaScript, and Lenis eases it when there
-              is. */}
-          <a
-            href="#top"
-            className="group inline-flex items-center gap-2 rounded-sm text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
+          {/* `#top` is the page container, so this is a real anchor that works
+              with no JavaScript; Lenis eases it when there is. */}
+          <a href="#top" className={cn(linkClass, 'group inline-flex items-center gap-2 text-xs')}>
             <LetterRoll text="Back to top" />
             <ForwardIcon
-              className={`${ICON_SIZE.inline} -rotate-90 transition-transform duration-300 group-hover:-translate-y-1`}
+              className={cn(
+                ICON_SIZE.inline,
+                '-rotate-90 transition-transform duration-300 group-hover:-translate-y-1',
+              )}
               aria-hidden
             />
           </a>
