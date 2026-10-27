@@ -172,10 +172,13 @@ export function WordReveal({
   text,
   id,
   startIndex = 0,
+  accent = [],
   className,
 }: {
   as?: 'h1' | 'h2' | 'p';
   text: string;
+  /** Word positions (0-based) set in the primary colour — a marker, never the only signal. */
+  accent?: readonly number[];
   /** For a section's `aria-labelledby` to point at. */
   id?: string;
   /** Where this block's stagger begins, so a subtitle can continue a headline's. */
@@ -196,15 +199,20 @@ export function WordReveal({
       className={cn('font-display text-balance', className)}
     >
       {words.map((word, position) => {
-        const accent = word.startsWith('*') && word.lastIndexOf('*') > 0;
-        const [lead, tail] = accent
+        const starred = word.startsWith('*') && word.lastIndexOf('*') > 0;
+        const [lead, tail] = starred
           ? [word.slice(1, word.lastIndexOf('*')), word.slice(word.lastIndexOf('*') + 1)]
           : [word, ''];
         return (
           <Fragment key={`${position}-${word}`}>
             {position === 0 ? null : ' '}
-            <span data-word aria-hidden style={indexStyle('--word-index', startIndex + position)}>
-              {accent ? <span data-accent>{lead}</span> : lead}
+            <span
+              data-word
+              aria-hidden
+              style={indexStyle('--word-index', startIndex + position)}
+              className={accent.includes(position) ? 'text-primary' : undefined}
+            >
+              {starred ? <span data-accent>{lead}</span> : lead}
               {tail}
             </span>
           </Fragment>

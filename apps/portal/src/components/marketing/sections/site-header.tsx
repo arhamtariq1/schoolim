@@ -19,8 +19,14 @@ export const LIGHT_PILL =
  * part-way down would need a scroll listener to decide when; one that is
  * always the colour of the hero needs nothing, and dark-on-light is the
  * contrast every reader already expects of a sticky bar.
+ *
+ * `links` lets a page point the bar at its own sections; it defaults to `NAV`.
  */
-export function SiteHeader() {
+export function SiteHeader({
+  links = NAV,
+}: {
+  links?: readonly { href: string; label: string }[];
+}) {
   return (
     <header className="marketing-ink sticky top-0 z-40 bg-background">
       <nav
@@ -35,7 +41,7 @@ export function SiteHeader() {
         </Link>
 
         <ul className="mx-auto hidden items-center gap-8 lg:flex">
-          {NAV.map((item) => (
+          {links.map((item) => (
             <li key={item.href}>
               <a href={item.href} className={cn(LINK, 'text-foreground/85')}>
                 {item.label}
@@ -60,7 +66,7 @@ export function SiteHeader() {
               <MenuIcon className={ICON_SIZE.nav} aria-hidden />
             </summary>
             <ul className="shadow-tile absolute end-0 top-full mt-2 w-56 rounded-xl border border-border bg-card p-2">
-              {NAV.map((item) => (
+              {links.map((item) => (
                 <li key={item.href}>
                   <a
                     href={item.href}

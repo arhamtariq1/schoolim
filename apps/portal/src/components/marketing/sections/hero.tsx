@@ -28,7 +28,7 @@ export function Hero() {
       <div className="relative mx-auto max-w-7xl px-4 pt-16 sm:px-6 sm:pt-24 lg:px-12">
         <Rise>
           <a
-            href="#portals"
+            href="#capabilities"
             className="inline-flex min-h-11 items-center gap-3 rounded-full border border-foreground/15 bg-foreground/5 py-1 ps-1 pe-4 text-sm text-foreground/85 transition-colors duration-200 hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             <span className="inline-flex items-center gap-2 rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background">
@@ -65,7 +65,7 @@ export function Hero() {
             Start free trial
           </Link>
           <a
-            href="#pricing"
+            href="#packages"
             className="inline-flex min-h-11 items-center gap-2 rounded-full text-sm font-medium text-foreground/85 transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             Explore our pricing
