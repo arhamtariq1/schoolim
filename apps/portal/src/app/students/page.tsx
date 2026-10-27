@@ -1,4 +1,9 @@
-import { MAX_PAGE_LIMIT, ROUTES, type StudentListItem, type StudentListQuery } from '@ilm/contracts';
+import {
+  MAX_PAGE_LIMIT,
+  ROUTES,
+  type StudentListItem,
+  type StudentListQuery,
+} from '@ilm/contracts';
 
 import { StudentsTable } from '@/components/students-table';
 import { apiFetch } from '@/lib/api';
@@ -95,21 +100,21 @@ export default async function StudentsPage({
 
   return (
     <StudentsTable
-        rows={result.ok ? result.data.data : []}
-        total={result.ok ? result.data.meta.page.total : 0}
-        aggregates={result.ok ? result.data.meta.aggregates : {}}
-        error={result.ok ? undefined : result.message}
-        search={search}
-        status={status}
-        classLevelId={classLevelId}
-        classes={setup.ok ? setup.data.data : []}
-        isFiltered={isFiltered}
-        limit={result.ok ? result.data.meta.page.limit : limit}
-        offset={result.ok ? result.data.meta.page.offset : offset}
-        sort={sort}
-        order={order}
-        can={can}
-      />
+      rows={result.ok ? result.data.data : []}
+      total={result.ok ? result.data.meta.page.total : 0}
+      aggregates={result.ok ? result.data.meta.aggregates : {}}
+      error={result.ok ? undefined : result.message}
+      search={search}
+      status={status}
+      classLevelId={classLevelId}
+      classes={setup.ok ? setup.data.data : []}
+      isFiltered={isFiltered}
+      limit={result.ok ? result.data.meta.page.limit : limit}
+      offset={result.ok ? result.data.meta.page.offset : offset}
+      sort={sort}
+      order={order}
+      can={can}
+    />
   );
 }
 

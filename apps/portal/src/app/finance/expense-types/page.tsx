@@ -1,9 +1,4 @@
-import {
-  ROUTES,
-  type Expense,
-  type ExpenseCategory,
-  type ExpenseTotals,
-} from '@ilm/contracts';
+import { ROUTES, type Expense, type ExpenseCategory, type ExpenseTotals } from '@ilm/contracts';
 
 import { ExpenseCategoriesManager } from '@/components/expense-categories-manager';
 import { apiFetch } from '@/lib/api';

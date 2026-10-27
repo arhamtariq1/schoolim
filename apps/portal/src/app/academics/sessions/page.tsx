@@ -13,9 +13,9 @@ export default async function SessionsPage() {
 
   return (
     <SessionsManager
-        sessions={result.ok ? result.data.data : []}
-        error={result.ok ? undefined : result.message}
-        canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
-      />
+      sessions={result.ok ? result.data.data : []}
+      error={result.ok ? undefined : result.message}
+      canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
+    />
   );
 }

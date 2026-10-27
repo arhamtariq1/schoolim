@@ -1,4 +1,9 @@
-import { ROUTES, SALARY_PAYMENT_METHOD_LABELS, STAFF_ROLE_LABELS, type StaffSalaryReceipt } from '@ilm/contracts';
+import {
+  ROUTES,
+  SALARY_PAYMENT_METHOD_LABELS,
+  STAFF_ROLE_LABELS,
+  type StaffSalaryReceipt,
+} from '@ilm/contracts';
 import { EmptyState, Money } from '@ilm/ui';
 import { minorUnits } from '@ilm/utils';
 import { notFound, redirect } from 'next/navigation';
@@ -25,7 +30,9 @@ export default async function SalaryReceiptPage({
   }
 
   const { paymentId } = await params;
-  const result = await apiFetch<{ data: StaffSalaryReceipt }>(ROUTES.staffSalaries.receipt(paymentId));
+  const result = await apiFetch<{ data: StaffSalaryReceipt }>(
+    ROUTES.staffSalaries.receipt(paymentId),
+  );
   if (!result.ok && result.status === 404) {
     notFound();
   }

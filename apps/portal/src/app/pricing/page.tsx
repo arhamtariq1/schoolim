@@ -19,10 +19,7 @@ export default async function PricingPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Pricing"
-        description="Plans and limits for your school on the platform."
-      />
+      <PageHeader title="Pricing" description="Plans and limits for your school on the platform." />
 
       <EmptyState
         title="Plan comparison is not built yet"

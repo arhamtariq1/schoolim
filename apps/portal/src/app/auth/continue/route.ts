@@ -81,8 +81,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   // signup). Absolute URLs and protocol-relative forms are refused so a forged
   // handoff link cannot bounce the browser off-site with a live session cookie.
   const next = safeInternalPath(request.nextUrl.searchParams.get('next'));
-  const destination =
-    TENANT_MODE === 'path' ? `/${slug}${next}` : next;
+  const destination = TENANT_MODE === 'path' ? `/${slug}${next}` : next;
 
   const headers = new Headers({
     location: destination,

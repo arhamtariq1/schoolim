@@ -36,11 +36,11 @@ export default async function MarkStaffAttendancePage({
 
   return (
     <div className="space-y-6">
-        <StaffAttendanceRosterView
-          roster={result.ok ? result.data.data : empty}
-          canMark={session?.permissions.includes('attendance.record.create') ?? false}
-          error={result.ok ? undefined : result.message}
-        />
-      </div>
+      <StaffAttendanceRosterView
+        roster={result.ok ? result.data.data : empty}
+        canMark={session?.permissions.includes('attendance.record.create') ?? false}
+        error={result.ok ? undefined : result.message}
+      />
+    </div>
   );
 }

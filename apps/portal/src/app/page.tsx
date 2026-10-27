@@ -9,11 +9,7 @@ import { loadDashboard } from '@/lib/dashboard-data';
 import { requireSchoolSession } from '@/lib/require-session';
 import { tenantSlugFromHeaders } from '@/lib/tenant-from-request';
 
-async function HomeDashboardContent({
-  verifyOutcome,
-}: {
-  verifyOutcome: string | undefined;
-}) {
+async function HomeDashboardContent({ verifyOutcome }: { verifyOutcome: string | undefined }) {
   const session = await requireSchoolSession();
 
   // A guardian's home is the parent portal, not the school dashboard.
@@ -28,9 +24,7 @@ async function HomeDashboardContent({
   const dashboard = await loadDashboard(session);
 
   if (dashboard.kind === 'error') {
-    return (
-      <EmptyState title="The dashboard did not load" description={dashboard.message} />
-    );
+    return <EmptyState title="The dashboard did not load" description={dashboard.message} />;
   }
 
   if (dashboard.kind === 'teacher') {

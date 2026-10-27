@@ -1,8 +1,4 @@
-import {
-  ROUTES,
-  type ClassLevel,
-  type FeeHead,
-} from '@ilm/contracts';
+import { ROUTES, type ClassLevel, type FeeHead } from '@ilm/contracts';
 
 import { FeeHeadsManager } from '@/components/fee-heads-manager';
 import { WorkspacePageHeader } from '@/components/workspace-page-header';

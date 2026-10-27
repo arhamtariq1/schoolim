@@ -38,5 +38,12 @@ export default async function EditTimetablePage({
     return <ErrorState title="The form did not load" description={options.message} />;
   }
 
-  return <TimetableForm key={id} options={options.data.data} editing={detail.data.data} addPeriod={add === '1'} />;
+  return (
+    <TimetableForm
+      key={id}
+      options={options.data.data}
+      editing={detail.data.data}
+      addPeriod={add === '1'}
+    />
+  );
 }

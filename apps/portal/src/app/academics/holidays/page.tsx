@@ -49,7 +49,10 @@ export default async function HolidaysPage({
       : await apiFetch<{ data: TimetableCalendarEvent[] }>(
           `${ROUTES.timetables.calendar}?${new URLSearchParams({
             from: String(activeSession.startDate).slice(0, 10),
-            to: lastDayWithin(String(activeSession.startDate).slice(0, 10), String(activeSession.endDate).slice(0, 10)),
+            to: lastDayWithin(
+              String(activeSession.startDate).slice(0, 10),
+              String(activeSession.endDate).slice(0, 10),
+            ),
           }).toString()}`,
         );
 
@@ -57,14 +60,14 @@ export default async function HolidaysPage({
 
   return (
     <HolidaysManager
-      holidays={
-        holidaysResult?.ok === true ? holidaysResult.data.data.map(normalizeHoliday) : []
-      }
+      holidays={holidaysResult?.ok === true ? holidaysResult.data.data.map(normalizeHoliday) : []}
       sessions={sessions}
       activeSessionId={activeSessionId}
       scheduled={scheduledResult?.ok === true ? scheduledResult.data.data : []}
       today={todayDate}
-      error={holidaysResult !== undefined && !holidaysResult.ok ? holidaysResult.message : undefined}
+      error={
+        holidaysResult !== undefined && !holidaysResult.ok ? holidaysResult.message : undefined
+      }
       canConfigure={session?.permissions.includes('academics.structure.configure') ?? false}
     />
   );

@@ -15,7 +15,9 @@ export default async function ProfilePage() {
     loadProfileSchoolWorkspace(),
   ]);
 
-  const roleLabel = [...new Set((session?.roles ?? []).map((role) => SCHOOL_ROLE_LABELS[role]))].join(', ');
+  const roleLabel = [
+    ...new Set((session?.roles ?? []).map((role) => SCHOOL_ROLE_LABELS[role])),
+  ].join(', ');
 
   return (
     <ProfilePageLayout title="Profile" description={PROFILE_DESCRIPTION}>

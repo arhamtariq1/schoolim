@@ -59,9 +59,7 @@ export default async function LoginPage({
       fitViewport
       title="Welcome back"
       subtitle={
-        slug === undefined
-          ? 'Sign in to continue to your school portal.'
-          : `Sign in to ${slug}.`
+        slug === undefined ? 'Sign in to continue to your school portal.' : `Sign in to ${slug}.`
       }
       notice={
         notice === undefined ? undefined : (

@@ -33,7 +33,9 @@ export default async function StaffProfilePage({ params }: { params: Promise<{ i
 
   // Names for the classes a teacher takes, from the same list the staff form
   // offers — so what is shown here is what was picked there.
-  const nameOf = new Map((classes.ok ? classes.data.data : []).map((entry) => [entry.id, entry.name]));
+  const nameOf = new Map(
+    (classes.ok ? classes.data.data : []).map((entry) => [entry.id, entry.name]),
+  );
   const classNames = profile.classLevelIds.flatMap((classId) => {
     const name = nameOf.get(classId);
     return name === undefined ? [] : [name];

@@ -4,11 +4,7 @@ import type { Metadata } from 'next';
 
 import { DefaultersView } from '@/components/defaulters-view';
 import { apiFetch } from '@/lib/api';
-import {
-  DEFAULT_LIST_PAGE_SIZE,
-  parseSortField,
-  parseSortOrder,
-} from '@/lib/list-page';
+import { DEFAULT_LIST_PAGE_SIZE, parseSortField, parseSortOrder } from '@/lib/list-page';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
 
@@ -79,14 +75,14 @@ export default async function DefaultersPage({
 
   return (
     <DefaultersView
-        page={listResult.ok ? listResult.data.data : empty}
-        classes={academicsResult.ok ? academicsResult.data.data.classes : []}
-        limit={limit}
-        offset={offset}
-        sort={sort}
-        order={order}
-        filters={filters}
-        error={listResult.ok ? undefined : listResult.message}
-      />
+      page={listResult.ok ? listResult.data.data : empty}
+      classes={academicsResult.ok ? academicsResult.data.data.classes : []}
+      limit={limit}
+      offset={offset}
+      sort={sort}
+      order={order}
+      filters={filters}
+      error={listResult.ok ? undefined : listResult.message}
+    />
   );
 }

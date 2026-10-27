@@ -9,11 +9,7 @@ import type { Metadata } from 'next';
 
 import { FeeIncrementsView } from '@/components/fee-increments-view';
 import { apiFetch } from '@/lib/api';
-import {
-  DEFAULT_LIST_PAGE_SIZE,
-  parseSortField,
-  parseSortOrder,
-} from '@/lib/list-page';
+import { DEFAULT_LIST_PAGE_SIZE, parseSortField, parseSortOrder } from '@/lib/list-page';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
 
@@ -85,17 +81,17 @@ export default async function FeeIncrementsPage({
 
   return (
     <FeeIncrementsView
-        page={page}
-        sessions={sessionsResult.ok ? sessionsResult.data.data : []}
-        classes={academicsResult.ok ? academicsResult.data.data.classes : []}
-        total={page.total}
-        limit={limit}
-        offset={offset}
-        sort={sort}
-        order={order}
-        filters={filters}
-        error={listResult.ok ? undefined : listResult.message}
-        canApply={session?.permissions.includes('fees.increment.generate') ?? false}
-      />
+      page={page}
+      sessions={sessionsResult.ok ? sessionsResult.data.data : []}
+      classes={academicsResult.ok ? academicsResult.data.data.classes : []}
+      total={page.total}
+      limit={limit}
+      offset={offset}
+      sort={sort}
+      order={order}
+      filters={filters}
+      error={listResult.ok ? undefined : listResult.message}
+      canApply={session?.permissions.includes('fees.increment.generate') ?? false}
+    />
   );
 }

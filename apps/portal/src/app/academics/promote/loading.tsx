@@ -1,9 +1,6 @@
 import { Card, Skeleton } from '@ilm/ui';
 
-import {
-  ListTableScreenSkeleton,
-  WorkspacePageHeaderSkeleton,
-} from '@/components/page-skeletons';
+import { ListTableScreenSkeleton, WorkspacePageHeaderSkeleton } from '@/components/page-skeletons';
 
 export default function PromoteStudentsLoading() {
   return (

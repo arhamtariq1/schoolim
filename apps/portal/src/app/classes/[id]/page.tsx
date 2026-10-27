@@ -57,7 +57,8 @@ export default async function ClassDetailPage({
     sessionList.find((entry) => entry.isCurrent) ??
     sessionList[0];
 
-  const sessionParam = activeSession === undefined ? '' : `sessionId=${encodeURIComponent(activeSession.id)}`;
+  const sessionParam =
+    activeSession === undefined ? '' : `sessionId=${encodeURIComponent(activeSession.id)}`;
   const canReadMarks = session?.permissions.includes('exams.result.read') ?? false;
 
   const [classes, students, summary, assessments] = await Promise.all([

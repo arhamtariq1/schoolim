@@ -42,13 +42,13 @@ export default async function StudentReportPage({
 
   return (
     <div className="space-y-6">
-        <MonthlyAttendanceReportView
-          variant="student"
-          report={report}
-          basePath={`/attendance/reports/students/${classLevelId}`}
-          filters={{ month, q }}
-          error={result.ok ? undefined : result.message}
-        />
-      </div>
+      <MonthlyAttendanceReportView
+        variant="student"
+        report={report}
+        basePath={`/attendance/reports/students/${classLevelId}`}
+        filters={{ month, q }}
+        error={result.ok ? undefined : result.message}
+      />
+    </div>
   );
 }

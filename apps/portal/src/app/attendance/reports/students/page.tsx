@@ -39,13 +39,13 @@ export default async function StudentReportIndexPage() {
 
   return (
     <div className="space-y-6">
-        <AttendanceClassReportTable
-          overview={result.ok ? result.data.data : EMPTY}
-          hrefPrefix="/attendance/reports/students"
-          title="Student attendance report"
-          description="A month at a time, per class, with the percentage worked out against the days each child could actually have attended."
-          error={result.ok ? undefined : result.message}
-        />
-      </div>
+      <AttendanceClassReportTable
+        overview={result.ok ? result.data.data : EMPTY}
+        hrefPrefix="/attendance/reports/students"
+        title="Student attendance report"
+        description="A month at a time, per class, with the percentage worked out against the days each child could actually have attended."
+        error={result.ok ? undefined : result.message}
+      />
+    </div>
   );
 }

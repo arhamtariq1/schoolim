@@ -25,8 +25,9 @@ export default async function ClassesPage({
     apiFetch<{ data: UserProfile }>(ROUTES.me.profile),
   ]);
 
-  const enabledSchoolLevels =
-    profileResult.ok ? parseSchoolLevels(profileResult.data.data.school.schoolLevels) : [];
+  const enabledSchoolLevels = profileResult.ok
+    ? parseSchoolLevels(profileResult.data.data.school.schoolLevels)
+    : [];
 
   const sessions = sessionsResult.ok ? sessionsResult.data.data : [];
   const activeSessionId =

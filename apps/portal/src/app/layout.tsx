@@ -64,7 +64,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         Without it the body is as tall as whatever is actually in flow, so the
         document scrolls only when a page genuinely has more than fits.
       */}
-      <body suppressHydrationWarning className={`${sansFont.className} bg-background text-foreground antialiased`}>
+      <body
+        suppressHydrationWarning
+        className={`${sansFont.className} bg-background text-foreground antialiased`}
+      >
         {/* At the root, not per page: a toast fired while navigating away must
             outlive the page that fired it, or the confirmation of what someone
             just did disappears with the screen they did it on. */}

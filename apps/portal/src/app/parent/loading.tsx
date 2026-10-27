@@ -8,7 +8,11 @@ import { Card, Skeleton } from '@ilm/ui';
  */
 export default function ParentLoading() {
   return (
-    <div className="parent-portal w-full space-y-4" role="status" aria-label="Loading your children">
+    <div
+      className="parent-portal w-full space-y-4"
+      role="status"
+      aria-label="Loading your children"
+    >
       <header className="space-y-2" aria-hidden="true">
         <Skeleton className="h-8 w-44 md:h-9" />
         <Skeleton className="h-4 w-full max-w-xl" />

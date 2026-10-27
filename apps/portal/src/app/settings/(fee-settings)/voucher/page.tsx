@@ -29,13 +29,13 @@ import { getSession } from '@/lib/session';
 export default async function VoucherSettingsPage() {
   const [session, voucherResult, schoolResult, logoResult, bankLogoResult, numberResult] =
     await Promise.all([
-    getSession(),
-    apiFetch<{ data: VoucherSettings }>(ROUTES.school.voucherSettings),
-    apiFetch<{ data: SchoolSettings }>(ROUTES.school.settings),
-    apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info),
-    apiFetch<{ data: BankLogo[] }>(ROUTES.bankLogo.list),
-    apiFetch<{ data: VoucherNumberSettings }>(ROUTES.school.voucherNumber),
-  ]);
+      getSession(),
+      apiFetch<{ data: VoucherSettings }>(ROUTES.school.voucherSettings),
+      apiFetch<{ data: SchoolSettings }>(ROUTES.school.settings),
+      apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info),
+      apiFetch<{ data: BankLogo[] }>(ROUTES.bankLogo.list),
+      apiFetch<{ data: VoucherNumberSettings }>(ROUTES.school.voucherNumber),
+    ]);
 
   const permissions = session?.permissions ?? [];
   const canConfigure = permissions.includes('settings.school.configure');

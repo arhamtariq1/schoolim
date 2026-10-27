@@ -16,11 +16,7 @@ import type { Metadata } from 'next';
 
 import { VouchersView } from '@/components/vouchers-view';
 import { apiFetch } from '@/lib/api';
-import {
-  DEFAULT_LIST_PAGE_SIZE,
-  parseNewestFirstOrder,
-  parseSortField,
-} from '@/lib/list-page';
+import { DEFAULT_LIST_PAGE_SIZE, parseNewestFirstOrder, parseSortField } from '@/lib/list-page';
 import { clampInt, readParam } from '@/lib/search-params';
 import { getSession } from '@/lib/session';
 
@@ -114,38 +110,38 @@ export default async function VouchersPage({
 
   return (
     <VouchersView
-        rows={listResult.ok ? listResult.data.data : []}
-        sessions={sessionsResult.ok ? sessionsResult.data.data : []}
-        classes={academicsResult.ok ? academicsResult.data.data.classes : []}
-        heads={headsResult.ok ? headsResult.data.data : []}
-        totals={listResult.ok ? listResult.data.meta.totals : emptyTotals}
-        total={listResult.ok ? listResult.data.meta.page.total : 0}
-        limit={listResult.ok ? listResult.data.meta.page.limit : limit}
-        offset={listResult.ok ? listResult.data.meta.page.offset : offset}
-        filters={filters}
-        sort={sort}
-        order={order}
-        school={{
-          name: schoolResult.ok ? schoolResult.data.data.name : (session?.school.name ?? ''),
-          address: schoolResult.ok ? (schoolResult.data.data.address ?? undefined) : undefined,
-          phone: schoolResult.ok ? (schoolResult.data.data.phone ?? undefined) : undefined,
-          logoVersion:
-            logoResult.ok && logoResult.data.data.present
-              ? (logoResult.data.data.version ?? '')
-              : undefined,
-          bankLogos: bankLogoResult.ok ? bankLogoResult.data.data : [],
-          accentColor: schoolResult.ok
-            ? (schoolResult.data.data.primaryColor ?? undefined)
-            : (session?.school.primaryColor ?? undefined),
-        }}
-        voucherSettings={
-          voucherSettingsResult.ok ? voucherSettingsResult.data.data : DEFAULT_VOUCHER_SETTINGS
-        }
-        error={listResult.ok ? undefined : listResult.message}
-        canCollect={session?.permissions.includes('fees.payment.create') ?? false}
-        canCancel={session?.permissions.includes('fees.voucher.cancel') ?? false}
-        canEdit={session?.permissions.includes('fees.voucher.generate') ?? false}
-        canConfigureChallan={session?.permissions.includes('settings.school.configure') ?? false}
-      />
+      rows={listResult.ok ? listResult.data.data : []}
+      sessions={sessionsResult.ok ? sessionsResult.data.data : []}
+      classes={academicsResult.ok ? academicsResult.data.data.classes : []}
+      heads={headsResult.ok ? headsResult.data.data : []}
+      totals={listResult.ok ? listResult.data.meta.totals : emptyTotals}
+      total={listResult.ok ? listResult.data.meta.page.total : 0}
+      limit={listResult.ok ? listResult.data.meta.page.limit : limit}
+      offset={listResult.ok ? listResult.data.meta.page.offset : offset}
+      filters={filters}
+      sort={sort}
+      order={order}
+      school={{
+        name: schoolResult.ok ? schoolResult.data.data.name : (session?.school.name ?? ''),
+        address: schoolResult.ok ? (schoolResult.data.data.address ?? undefined) : undefined,
+        phone: schoolResult.ok ? (schoolResult.data.data.phone ?? undefined) : undefined,
+        logoVersion:
+          logoResult.ok && logoResult.data.data.present
+            ? (logoResult.data.data.version ?? '')
+            : undefined,
+        bankLogos: bankLogoResult.ok ? bankLogoResult.data.data : [],
+        accentColor: schoolResult.ok
+          ? (schoolResult.data.data.primaryColor ?? undefined)
+          : (session?.school.primaryColor ?? undefined),
+      }}
+      voucherSettings={
+        voucherSettingsResult.ok ? voucherSettingsResult.data.data : DEFAULT_VOUCHER_SETTINGS
+      }
+      error={listResult.ok ? undefined : listResult.message}
+      canCollect={session?.permissions.includes('fees.payment.create') ?? false}
+      canCancel={session?.permissions.includes('fees.voucher.cancel') ?? false}
+      canEdit={session?.permissions.includes('fees.voucher.generate') ?? false}
+      canConfigureChallan={session?.permissions.includes('settings.school.configure') ?? false}
+    />
   );
 }

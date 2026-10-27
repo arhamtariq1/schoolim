@@ -29,13 +29,13 @@ export default async function GenerateFeePage() {
 
   return (
     <GenerateFee
-        sessions={sessions.ok ? sessions.data.data : []}
-        classes={setup.classes}
-        heads={heads.ok ? heads.data.data : []}
-        currentSessionId={setup.session?.id}
-        canGenerate={session?.permissions.includes('fees.voucher.generate') ?? false}
-        schoolName={session?.school.name}
-        error={failure === undefined || failure.ok ? undefined : failure.message}
-      />
+      sessions={sessions.ok ? sessions.data.data : []}
+      classes={setup.classes}
+      heads={heads.ok ? heads.data.data : []}
+      currentSessionId={setup.session?.id}
+      canGenerate={session?.permissions.includes('fees.voucher.generate') ?? false}
+      schoolName={session?.school.name}
+      error={failure === undefined || failure.ok ? undefined : failure.message}
+    />
   );
 }

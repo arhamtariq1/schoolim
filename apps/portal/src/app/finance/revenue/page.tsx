@@ -91,7 +91,12 @@ export default async function RevenuePage({
     apiFetch<{ data: ClassLevel[] }>(ROUTES.academics.classes),
   ]);
 
-  const emptyTotals: RevenueTotals = { count: 0, receivedMinor: 0, depositMinor: 0, revenueMinor: 0 };
+  const emptyTotals: RevenueTotals = {
+    count: 0,
+    receivedMinor: 0,
+    depositMinor: 0,
+    revenueMinor: 0,
+  };
 
   return (
     <RevenueView

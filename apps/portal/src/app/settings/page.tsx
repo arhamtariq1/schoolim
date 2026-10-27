@@ -30,7 +30,8 @@ const SECTIONS = [
   {
     href: '/settings/access',
     label: 'Users & Access',
-    description: 'Which screens each role, or one person, can open. Start from the role defaults and add or take away.',
+    description:
+      'Which screens each role, or one person, can open. Start from the role defaults and add or take away.',
     icon: AccessIcon,
     permission: 'settings.user.manage',
   },
@@ -43,35 +44,35 @@ export default async function SettingsPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Settings</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            How this school is configured. More arrives with each module (docs/14).
-          </p>
-        </div>
-
-        <ul className="space-y-3">
-          {visible.map((entry) => (
-            <li key={entry.href}>
-              <Link
-                href={entry.href}
-                className="flex items-center gap-4 rounded-xl border border-border/70 bg-card shadow-raised p-4 hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-              >
-                <entry.icon className={`${ICON_SIZE.heading} shrink-0 text-primary`} aria-hidden />
-                <span className="min-w-0 flex-1">
-                  <span className="block font-medium text-foreground">{entry.label}</span>
-                  <span className="mt-0.5 block text-sm text-muted-foreground">
-                    {entry.description}
-                  </span>
-                </span>
-                <ChevronRightIcon
-                  className={`${ICON_SIZE.inline} shrink-0 text-muted-foreground`}
-                  aria-hidden
-                />
-              </Link>
-            </li>
-          ))}
-        </ul>
+      <div>
+        <h1 className="text-xl font-semibold text-foreground">Settings</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          How this school is configured. More arrives with each module (docs/14).
+        </p>
       </div>
+
+      <ul className="space-y-3">
+        {visible.map((entry) => (
+          <li key={entry.href}>
+            <Link
+              href={entry.href}
+              className="flex items-center gap-4 rounded-xl border border-border/70 bg-card p-4 shadow-raised hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <entry.icon className={`${ICON_SIZE.heading} shrink-0 text-primary`} aria-hidden />
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium text-foreground">{entry.label}</span>
+                <span className="mt-0.5 block text-sm text-muted-foreground">
+                  {entry.description}
+                </span>
+              </span>
+              <ChevronRightIcon
+                className={`${ICON_SIZE.inline} shrink-0 text-muted-foreground`}
+                aria-hidden
+              />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

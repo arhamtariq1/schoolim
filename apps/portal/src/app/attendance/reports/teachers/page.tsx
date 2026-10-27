@@ -37,13 +37,13 @@ export default async function StaffReportPage({
 
   return (
     <div className="space-y-6">
-        <MonthlyAttendanceReportView
-          variant="staff"
-          report={result.ok ? result.data.data : empty}
-          basePath="/attendance/reports/teachers"
-          filters={{ month, q }}
-          error={result.ok ? undefined : result.message}
-        />
-      </div>
+      <MonthlyAttendanceReportView
+        variant="staff"
+        report={result.ok ? result.data.data : empty}
+        basePath="/attendance/reports/teachers"
+        filters={{ month, q }}
+        error={result.ok ? undefined : result.message}
+      />
+    </div>
   );
 }
