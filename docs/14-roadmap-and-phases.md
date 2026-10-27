@@ -168,7 +168,7 @@ the same query and always agree.
 
 - [ ] `apps/admin` with a separate user table, cookie, guard and mandatory MFA
 - [ ] School CRUD; the onboarding wizard with seed defaults
-- [x] **Self-serve signup + 30-day trial start** (ADR-0010) — 2026-09-02
+- [x] **Self-serve signup + 7-day trial start** (ADR-0010; 30 days until 2026-10-27) — 2026-09-02
 - [ ] Plans, subscriptions, invoices, **trial expiry**, dunning, read-only grace mode
 - [x] **Verify the owner's email address at signup** (ADR-0012) — 2026-09-02. Sends and records;
       gating trial conversion on it is still this phase's work

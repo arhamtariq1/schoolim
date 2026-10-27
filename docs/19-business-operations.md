@@ -149,7 +149,7 @@ The flow the product must support. Steps marked ▸ are super-admin features alr
 SELF-SERVE (default)
 Landing page  →  Signup form  →  ToS + DPA accepted (versioned, recorded)
                                           ↓
-                              School created, 30-day trial starts, owner signed in
+                              School created, 7-day trial starts, owner signed in
                                           ↓
 SALES-LED (group deals, negotiated pricing)
 Demo  →  Quote  →  ToS + DPA accepted (versioned) ▸  →  School created, trial starts ▸

@@ -94,7 +94,7 @@ to ask which site it is on. See ADR-0009 and ADR-0010.
   email, password; terms acceptance recorded with its version. One screen, not a wizard — every
   field is independent. Logo, address and branding are deliberately **not** asked for here; they
   belong in Settings once the school is inside. Creates the tenant, the owner, the `OWNER` role, the
-  agreement record and a 30-day trial in one transaction, then signs the owner in via the same
+  agreement record and a 7-day trial in one transaction, then signs the owner in via the same
   handoff. ADR-0010.
 - **Invite / reset** — single-use, expiring, hashed token · password strength meter · argon2id on
   the server · invalidates all existing sessions of that user on completion.

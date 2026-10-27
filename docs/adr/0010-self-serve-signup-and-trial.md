@@ -1,6 +1,6 @@
-# ADR-0010 — Self-serve signup with a 30-day trial
+# ADR-0010 — Self-serve signup with a 7-day trial
 
-**Status:** Accepted · **Date:** 2026-09-02
+**Status:** Accepted, amended 2026-10-27 (trial shortened from 30 days to 7) · **Date:** 2026-09-02
 
 ## Context
 
@@ -37,7 +37,7 @@ record. Not billing.**
 
 School, owner user, `OWNER` role, terms acceptance and the audit row are one transaction or none of
 it. A school created without an owner is a tenant nobody can sign into, and the only way to find out
-is a support ticket. The school is `status = TRIAL` with `trial_ends_at = now + 30 days`;
+is a support ticket. The school is `status = TRIAL` with `trial_ends_at = now + TRIAL_DAYS` (7 days since the 2026-10-27 amendment; 30 at first);
 `TRIAL_DAYS` is one constant in `@ilm/contracts`, so the trial length is not a number written in
 three places.
 

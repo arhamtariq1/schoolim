@@ -26,12 +26,17 @@ export const SECONDARY =
 export const GHOST_ON_DARK =
   'inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-foreground/25 px-6 text-base font-semibold text-foreground transition-colors duration-150 hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
 
-export function Logo({ className }: { className?: string }) {
+/**
+ * `original` keeps the wordmark's own colours on a white pill, wherever it
+ * sits; otherwise a dark band recolours it white (see `[data-logo]` in
+ * globals.css).
+ */
+export function Logo({ className, original = false }: { className?: string; original?: boolean }) {
   return (
     <Image
       src={lemmaLogo}
       alt={BRAND.name}
-      data-logo
+      data-logo={original ? 'original' : ''}
       className={cn('h-8 w-auto object-contain object-left', className)}
       priority
     />
@@ -63,7 +68,7 @@ export function SectionHeading({
   align = 'start',
   className,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: ReactNode;
   titleId: string;
   lead?: string;
@@ -73,8 +78,13 @@ export function SectionHeading({
   const centre = align === 'center';
   return (
     <Reveal className={cn(centre && 'mx-auto max-w-3xl text-center', className)}>
-      <Eyebrow className={cn(centre && 'justify-center')}>{eyebrow}</Eyebrow>
-      <h2 id={titleId} className="font-display text-display-md mt-4 font-bold text-balance">
+      {eyebrow === undefined ? null : (
+        <Eyebrow className={cn('mb-4', centre && 'justify-center')}>{eyebrow}</Eyebrow>
+      )}
+      <h2
+        id={titleId}
+        className="font-display text-display-md text-heading font-medium text-balance"
+      >
         {title}
       </h2>
       {lead === undefined ? null : (

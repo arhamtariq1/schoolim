@@ -136,6 +136,8 @@ export {
   Eye as ViewIcon,
   TrendingUp as TrendUpIcon,
   TrendingDown as TrendDownIcon,
+  /** The option most people pick — a recommended plan. */
+  Star as PopularIcon,
 
   // --- Modules --------------------------------------------------------------
   /** An exam's outcome: marks, grades, the printed result card. */

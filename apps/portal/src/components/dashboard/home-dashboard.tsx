@@ -30,6 +30,12 @@ type HomeDashboardProps = {
   snapshot: DashboardSnapshot;
   tenantSlug: string | undefined;
   verifyBanner?: ReactNode;
+  /**
+   * Leaves out the attendance-and-calendar row. Only the landing page's
+   * preview sets it, so its frame shows the finance cards instead; a school's
+   * own dashboard always has the row.
+   */
+  omitAttendanceRow?: boolean;
 };
 
 function href(path: Route, tenantSlug: string | undefined): string {
@@ -75,10 +81,7 @@ function showRevenueExpensesRow(
   return showRevenue(snapshot, permissions) || snapshot.monthlyExpenses.length > 0;
 }
 
-function showFeesCardsColumn(
-  snapshot: DashboardSnapshot,
-  permissions: readonly string[],
-): boolean {
+function showFeesCardsColumn(snapshot: DashboardSnapshot, permissions: readonly string[]): boolean {
   return (
     (can(permissions, 'fees.voucher.read') && snapshot.voucherSummary !== undefined) ||
     (can(permissions, 'fees.defaulter.read') && snapshot.defaulters !== undefined)
@@ -90,6 +93,7 @@ export function HomeDashboard({
   snapshot,
   tenantSlug,
   verifyBanner,
+  omitAttendanceRow = false,
 }: HomeDashboardProps) {
   const permissions = session.permissions;
   const firstName = session.name.trim().split(/\s+/)[0] ?? '';
@@ -135,40 +139,42 @@ export function HomeDashboard({
           }`}
         >
           {showRevenue(snapshot, permissions) ? (
-            <div className="flex h-full min-h-0 min-w-0 w-full">
+            <div className="flex h-full min-h-0 w-full min-w-0">
               <DashboardRevenueChart trend={snapshot.revenueTrend} />
             </div>
           ) : null}
           {snapshot.monthlyExpenses.length > 0 ? (
-            <div className="flex h-full min-h-0 min-w-0 w-full">
+            <div className="flex h-full min-h-0 w-full min-w-0">
               <DashboardMonthlyExpensesChart monthly={snapshot.monthlyExpenses} />
             </div>
           ) : null}
         </section>
       ) : null}
 
-      <section
-        aria-label="Attendance and calendar"
-        className="grid w-full gap-3 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:items-stretch"
-      >
-        <div className="flex h-full min-w-0 w-full">
-          {snapshot.weeklyAttendance.length > 0 && snapshot.attendance !== undefined ? (
-            <DashboardAttendanceWeekChart weekly={snapshot.weeklyAttendance} />
-          ) : null}
-        </div>
-        <div className="flex h-full min-w-0 w-full">
-          <DashboardMonthCalendar
-            today={snapshot.todayDate}
-            holidays={snapshot.calendarHolidays}
-            events={snapshot.upcomingEvents}
-            calendarHref={
-              can(permissions, 'academics.structure.read')
-                ? href('/academics/holidays', tenantSlug)
-                : undefined
-            }
-          />
-        </div>
-      </section>
+      {omitAttendanceRow ? null : (
+        <section
+          aria-label="Attendance and calendar"
+          className="grid w-full gap-3 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:items-stretch"
+        >
+          <div className="flex h-full w-full min-w-0">
+            {snapshot.weeklyAttendance.length > 0 && snapshot.attendance !== undefined ? (
+              <DashboardAttendanceWeekChart weekly={snapshot.weeklyAttendance} />
+            ) : null}
+          </div>
+          <div className="flex h-full w-full min-w-0">
+            <DashboardMonthCalendar
+              today={snapshot.todayDate}
+              holidays={snapshot.calendarHolidays}
+              events={snapshot.upcomingEvents}
+              calendarHref={
+                can(permissions, 'academics.structure.read')
+                  ? href('/academics/holidays', tenantSlug)
+                  : undefined
+              }
+            />
+          </div>
+        </section>
+      )}
 
       {snapshot.feeCollection !== undefined ||
       showFeesCardsColumn(snapshot, permissions) ||
@@ -180,7 +186,7 @@ export function HomeDashboard({
           {showFeesCardsColumn(snapshot, permissions) ? (
             <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:col-span-2">
               {can(permissions, 'fees.voucher.read') && snapshot.voucherSummary !== undefined ? (
-                <div className="flex h-full min-w-0 w-full">
+                <div className="flex h-full w-full min-w-0">
                   <DashboardVouchersCard
                     summary={snapshot.voucherSummary}
                     detailsHref={href('/fees/vouchers', tenantSlug)}
@@ -188,7 +194,7 @@ export function HomeDashboard({
                 </div>
               ) : null}
               {can(permissions, 'fees.defaulter.read') && snapshot.defaulters !== undefined ? (
-                <div className="flex h-full min-w-0 w-full">
+                <div className="flex h-full w-full min-w-0">
                   <DashboardDefaulterCard
                     defaulters={snapshot.defaulters}
                     detailsHref={href('/fees/defaulters', tenantSlug)}
@@ -198,12 +204,12 @@ export function HomeDashboard({
             </div>
           ) : null}
           {snapshot.feeCollection !== undefined ? (
-            <div className="flex h-full min-w-0 w-full lg:col-span-1">
+            <div className="flex h-full w-full min-w-0 lg:col-span-1">
               <DashboardFeesCollectionCard collection={snapshot.feeCollection} />
             </div>
           ) : null}
           {can(permissions, 'finance.expense.read') && snapshot.expenseBreakdown.length > 0 ? (
-            <div className="flex h-full min-w-0 w-full lg:col-span-1">
+            <div className="flex h-full w-full min-w-0 lg:col-span-1">
               <DashboardExpenseBreakdownChart segments={snapshot.expenseBreakdown} />
             </div>
           ) : null}

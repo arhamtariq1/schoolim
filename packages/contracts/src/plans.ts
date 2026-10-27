@@ -11,6 +11,13 @@ import { idSchema, instantSchema, nonEmptyString } from './primitives';
  * the wire; the database column is `numeric(14,2)`.
  */
 
+/**
+ * Paying for a year at once takes 10% off twelve monthly payments (decision D2,
+ * 2026-10-27). In basis points, so the yearly price is computed with
+ * `percentageOfMoney` and its documented rounding rather than a float.
+ */
+export const ANNUAL_DISCOUNT_BPS = 1000;
+
 export const BILLING_CYCLES = ['MONTHLY', 'YEARLY'] as const;
 export const billingCycleSchema = z.enum(BILLING_CYCLES);
 export type BillingCycle = z.infer<typeof billingCycleSchema>;

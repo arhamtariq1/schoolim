@@ -102,15 +102,22 @@ export function Rule({ index = 0, className }: { index?: number; className?: str
 export function Reveal({
   children,
   index = 0,
+  from = 'below',
   className,
 }: {
   children: ReactNode;
   index?: number;
+  /**
+   * Where it arrives from. `below` is the page's default rise; `scale` grows a
+   * product window into place; `start` and `end` slide in from the reading
+   * edges (they swap in a right-to-left page), for two columns that meet.
+   */
+  from?: 'below' | 'scale' | 'start' | 'end';
   className?: string;
 }) {
   return (
     <div
-      data-reveal
+      data-reveal={from}
       suppressHydrationWarning
       style={indexStyle('--reveal-index', index)}
       className={className}

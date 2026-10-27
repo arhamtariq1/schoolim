@@ -16,7 +16,7 @@ future reader would reasonably ask "why on earth did they do it this way".
 | [0007](0007-money-as-integer-minor-units.md)         | Money as integer minor units                                     | Accepted                  |
 | [0008](0008-school-groups-and-multi-campus.md)       | School groups: campus is the tenant, group is a layer above      | Accepted                  |
 | [0009](0009-global-sign-in.md)                       | Sign in with email and password alone; school resolved after     | Accepted                  |
-| [0010](0010-self-serve-signup-and-trial.md)          | Self-serve signup with a 30-day trial                            | Accepted                  |
+| [0010](0010-self-serve-signup-and-trial.md)          | Self-serve signup with a 7-day trial                             | Accepted                  |
 | [0011](0011-mail-port-and-smtp-driver.md)            | `MailPort` with an SMTP driver, not Resend, for now              | Accepted                  |
 | [0012](0012-email-verification.md)                   | Verify the owner's email at signup; nag rather than block        | Accepted                  |
 | [0016](0016-requests-as-conversations.md)            | Requests are conversations with a status, not an approval engine | Accepted                  |

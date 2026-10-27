@@ -1,11 +1,8 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { AdminDashboardMock } from './marketing-admin-dashboard';
-import { SESSION } from './preview/fixtures';
 import { SCREENS } from './preview/screens';
-
-import { visibleNavItems, type NavItem } from '@/lib/navigation';
 
 // Vitest does not run Next's static-image loader, so an imported PNG has no
 // width and `next/image` throws. The logo is decoration here; a plain `<img>`
@@ -33,42 +30,41 @@ beforeAll(() => {
 afterEach(cleanup);
 
 /**
- * The hero's preview of the admin portal. Its own behaviour is the sidebar —
- * the screens are the product's, tested where they live — so that is what is
- * tested: the Admin's menu is shown, a choice marks itself current and is
- * announced, and groups open to their pages.
+ * The hero's preview of the admin portal. It is a picture of the product, not
+ * a second app: the dashboard renders from the fixtures, and nothing in the
+ * frame can be focused or clicked.
  */
 describe('AdminDashboardMock', () => {
-  const sidebar = () => within(screen.getAllByRole('navigation', { name: 'Preview pages' })[0]!);
+  it('is one labelled image that nothing inside can be reached through', () => {
+    const { container } = render(<AdminDashboardMock />);
 
-  it("shows the Admin's menu with the dashboard current", () => {
-    render(<AdminDashboardMock />);
+    expect(screen.getByRole('img', { name: /admin dashboard, with sample data/i })).toBeTruthy();
+    const stage = container.querySelector('.marketing-app-stage');
+    expect(stage?.hasAttribute('inert')).toBe(true);
+    expect(stage?.getAttribute('aria-hidden')).toBe('true');
+  });
 
-    for (const label of ['Dashboard', 'Add admission', 'Students', 'Staff', 'Salaries']) {
-      expect(sidebar().getByRole('button', { name: label })).toBeTruthy();
+  it("draws the Admin's menu with the dashboard current and no controls", () => {
+    const { container } = render(<AdminDashboardMock />);
+
+    for (const label of ['Dashboard', 'Add admission', 'Students', 'Staff']) {
+      expect(screen.getAllByText(label, { selector: 'aside span' }).length).toBeGreaterThan(0);
     }
-    expect(sidebar().getByRole('button', { name: 'Dashboard' }).getAttribute('aria-current')).toBe(
-      'page',
-    );
+    expect(container.querySelectorAll('aside button, aside a')).toHaveLength(0);
+    const current = screen.getByText('Dashboard', { selector: 'aside span' }).parentElement;
+    expect(current?.className).toContain('text-primary');
   });
 
-  it('marks a chosen page as current and announces it', () => {
-    render(<AdminDashboardMock />);
-
-    fireEvent.click(sidebar().getByRole('button', { name: 'Students' }));
-
-    expect(sidebar().getByRole('button', { name: 'Students' }).getAttribute('aria-current')).toBe(
-      'page',
-    );
-    expect(
-      sidebar().getByRole('button', { name: 'Dashboard' }).getAttribute('aria-current'),
-    ).toBeNull();
-    expect(screen.getByText('Showing Students')).toBeTruthy();
+  it('renders the real dashboard from the fixtures', async () => {
+    const { container } = render(<AdminDashboardMock />);
+    await waitFor(() => {
+      expect(container.textContent).toContain('Good afternoon');
+    });
   });
 
-  // Every destination in the menu has a screen, and every screen renders its
-  // sample data without throwing — the fixtures are typed, but a real screen
-  // can still trip over a value that is legal but unexpected.
+  // The other screens are no longer reachable from the hero, but `SCREENS`
+  // still maps each one to the product's real view; every one must render its
+  // sample data without throwing.
   it.each(Object.keys(SCREENS))('renders the real %s screen from the fixtures', async (href) => {
     const Screen = SCREENS[href]!;
     const { container } = render(<Screen />);
@@ -76,29 +72,5 @@ describe('AdminDashboardMock', () => {
       expect(container.querySelector('.animate-pulse')).toBeNull();
     });
     expect(container.textContent?.length ?? 0).toBeGreaterThan(50);
-  });
-
-  it('has a screen for every page in the menu', () => {
-    const leaves: string[] = [];
-    const walk = (items: readonly NavItem[]): void => {
-      for (const item of items) {
-        if ((item.children ?? []).length > 0) {
-          walk(item.children ?? []);
-        } else {
-          leaves.push(item.href);
-        }
-      }
-    };
-    walk(visibleNavItems(SESSION.permissions));
-    expect(leaves.filter((href) => SCREENS[href] === undefined)).toEqual([]);
-  });
-
-  it('opens a group onto its first page', () => {
-    render(<AdminDashboardMock />);
-
-    fireEvent.click(sidebar().getByRole('button', { name: 'Fees' }));
-
-    const vouchers = sidebar().getByRole('button', { name: 'Fee Vouchers' });
-    expect(vouchers.getAttribute('aria-current')).toBe('page');
   });
 });

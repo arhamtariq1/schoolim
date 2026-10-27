@@ -235,6 +235,16 @@
   --color-tint-butter: oklch(0.925 0.065 95);
   --color-tint-peach: oklch(0.918 0.042 55);
   --color-tint-lavender: oklch(0.924 0.038 295);
+  /* A neutral grey card ground, with no hue, for the feature cards. Muted
+     copy on it: 5.9:1. */
+  --color-tint-gray: oklch(0.96 0 0);
+
+  /* Section headings on the landing page: Tailwind's gray-800, softer than
+     the near-black body ink, at the owner's request. Named so components
+     write `text-heading`, never a palette colour (docs/16 §6). Re-declared
+     per ground below — paper, ink and dark — because an island of one inside
+     another must not inherit its parent's. On white: 13.6:1. */
+  --color-heading: oklch(0.278 0.033 256.848);
 
   /* A radius well past `--radius-card` (0.75rem). The application wants a
      restrained corner; this page wants a soft one, and the difference between
@@ -305,6 +315,7 @@
   --color-ring: var(--color-brand-600);
   --color-primary: var(--color-brand-600);
   --color-primary-foreground: oklch(1 0 0);
+  --color-heading: oklch(0.278 0.033 256.848);
 
   /* Shadows in the ink's hue, not grey, so they read as depth on paper. */
   --shadow-tile:
@@ -314,9 +325,11 @@
 .marketing {
   /* Resolved here rather than in `@theme`, on the same element that carries
      `next/font`'s variable class — see the note on `--font-display` above. */
-  --font-display: var(--font-lato), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-brand), var(--font-lato), ui-sans-serif, system-ui, sans-serif;
 
-  /* The whole surface, not just its headings — the product's own Lato. */
+  /* The whole surface, not just its headings — DM Sans, the owner's choice
+     (`brandFont` in lib/fonts.ts). `.marketing-app` puts the
+     product's Lato back inside the previews. */
   font-family: var(--font-display);
 }
 
@@ -342,7 +355,52 @@
   --color-primary: var(--color-brand-300);
   --color-primary-foreground: var(--color-brand-950);
   --color-ring: var(--color-brand-300);
+  --color-heading: var(--color-foreground);
   color: var(--color-foreground);
+}
+
+/* The navbar and hero on the brand's own teal rather than the near-black ink.
+   `brand-700`, one step past the primary, so the muted copy still clears
+   docs/16 §6: white 6.8:1, muted copy 5.1:1. The hero's aurora reads
+   `--color-background`, so its folds and glow follow onto the teal. */
+.marketing-ink.marketing-brand {
+  --color-background: var(--color-brand-700);
+  --color-card: var(--color-brand-800);
+  --color-muted: var(--color-brand-800);
+  --color-border: color-mix(in oklch, var(--color-brand-200) 35%, var(--color-brand-700));
+  --color-muted-foreground: oklch(0.95 0.015 200);
+}
+
+/* The aurora on the teal ground. The ink version's folds are light on near-
+   black; on teal the same folds vanish, so here dark bands (`brand-950`) sit
+   between lighter ones to put the depth back. The veil is held a little lower
+   than on ink, so the headline and copy still sit on flat, measurable teal. */
+.marketing-brand.marketing-aurora {
+  background-image:
+    linear-gradient(to bottom, var(--color-background) 0%, transparent 42%),
+    linear-gradient(to bottom, transparent 72%, var(--marketing-ground) 100%),
+    repeating-linear-gradient(
+      to right,
+      color-mix(in oklch, var(--color-brand-950) 40%, transparent) 0rem,
+      color-mix(in oklch, var(--color-brand-300) 24%, transparent) 2rem,
+      color-mix(in oklch, var(--color-brand-950) 40%, transparent) 4rem,
+      color-mix(in oklch, var(--color-brand-950) 40%, transparent) 7rem
+    ),
+    repeating-linear-gradient(
+      to right,
+      transparent 0rem,
+      color-mix(in oklch, var(--color-brand-200) 18%, transparent) 3rem,
+      transparent 6rem,
+      color-mix(in oklch, var(--color-brand-400) 22%, transparent) 8.5rem,
+      transparent 11rem
+    ),
+    radial-gradient(
+      ellipse 90% 55% at 50% 100%,
+      var(--marketing-ground) 0%,
+      color-mix(in oklch, var(--color-brand-200) 70%, transparent) 30%,
+      color-mix(in oklch, var(--color-brand-500) 40%, transparent) 60%,
+      transparent 100%
+    );
 }
 
 /* ADR-0024: the closing words of a headline, marked `*word*` in a
@@ -378,6 +436,7 @@
   --color-muted: oklch(0.29 0.03 200);
   --color-border: oklch(0.36 0.03 200);
   --color-foreground: oklch(0.97 0.01 200);
+  --color-heading: oklch(0.97 0.01 200);
   --color-muted-foreground: oklch(0.76 0.02 200);
 
   /* The tints invert rather than disappear. A pastel at 0.92 lightness on a
@@ -388,6 +447,7 @@
   --color-tint-butter: oklch(0.37 0.055 95);
   --color-tint-peach: oklch(0.37 0.05 55);
   --color-tint-lavender: oklch(0.37 0.05 295);
+  --color-tint-gray: oklch(0.27 0 0);
 
   /* The light theme's primary is a mid-teal chosen against cream; on this
      ground it is too dark to carry white. Back up the ramp. */
@@ -575,6 +635,37 @@
   }
 }
 
+@keyframes marketing-answer {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -0.25rem, 0);
+  }
+}
+
+@keyframes marketing-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -0.5rem, 0);
+  }
+}
+
+@keyframes marketing-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.04);
+    opacity: 0.7;
+  }
+}
+
 html[data-marketing-motion='on'] .marketing {
   /* Words wait for their heading to come into view, not for the page to load.
 
@@ -629,6 +720,53 @@ html[data-marketing-motion='on'] .marketing {
     will-change: auto;
   }
 
+  /* Where a reveal arrives from — `Reveal`'s `from`. `:not(.is-visible)` so
+     each only ever describes the hidden state, whatever order the rules land
+     in. A product window grows into place; two columns that meet slide in
+     from their own reading edge, which swaps in a right-to-left page. */
+  [data-reveal='scale']:not(.is-visible) {
+    transform: translate3d(0, 1rem, 0) scale(0.95);
+  }
+
+  [data-reveal='start']:not(.is-visible) {
+    transform: translate3d(-2rem, 0, 0);
+  }
+
+  [data-reveal='end']:not(.is-visible) {
+    transform: translate3d(2rem, 0, 0);
+  }
+
+  [dir='rtl'] [data-reveal='start']:not(.is-visible) {
+    transform: translate3d(2rem, 0, 0);
+  }
+
+  [dir='rtl'] [data-reveal='end']:not(.is-visible) {
+    transform: translate3d(-2rem, 0, 0);
+  }
+
+  /* A card rises a little under the pointer. Only where there is a pointer
+     that can hover — a tap on a phone would otherwise leave a card stuck
+     raised — and never on the element a `Reveal` animates, whose delayed
+     transition would make the lift lag behind the cursor. */
+  .marketing-lift {
+    transition:
+      transform 250ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @media (hover: hover) {
+    .marketing-lift:hover {
+      transform: translate3d(0, -0.25rem, 0);
+      box-shadow: var(--shadow-tile);
+    }
+  }
+
+  /* An answer eases in as its question opens. The chevron already turns;
+     without this the text snapped into place under it. */
+  details[open] > :not(summary) {
+    animation: marketing-answer 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
   /* A hairline that draws itself. The only motion on this page that is not a
      fade — a rule is a structural element, so it arrives structurally. */
   [data-rule] {
@@ -662,6 +800,18 @@ html[data-marketing-motion='on'] .marketing {
      blinks, and it earns it: it is reporting something that is actually live. */
   [data-pulse] {
     animation: marketing-pulse 2.4s ease-in-out infinite;
+  }
+
+  /* A small card drifting on its own, and the rings behind it breathing — the
+     closing band's only ambient motion, slow enough to read as stillness with
+     life in it. `--float-index` offsets siblings so they never move in step. */
+  [data-float] {
+    animation: marketing-float 6s ease-in-out infinite;
+    animation-delay: calc(var(--float-index, 0) * -2s);
+  }
+
+  [data-breathe] {
+    animation: marketing-breathe 9s ease-in-out infinite;
   }
 
   /* -------------------------------------------------------------------------
@@ -857,8 +1007,17 @@ html[data-marketing-motion='on'] .marketing {
   mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
 }
 
+/* The hero's foot: its teal dissolves into `--marketing-ground`, the page's
+   own white in either theme, so the band hands over to the page without a
+   seam. It sits behind the dashboard, which keeps its own `marketing-fade-
+   bottom` mask, so the two soften together. */
+.marketing-hero-fade {
+  background-image: linear-gradient(to bottom, transparent 0%, var(--marketing-ground) 100%);
+}
+
 /* The preview screen does not scroll: what lies below its fold stays readable
-   and only softens at the very foot, a light blur and a thin wash of canvas. */
+   and only softens at the very foot, under a thin wash of canvas. A gradient
+   only — the blur it once had cost a backdrop pass over the whole dashboard. */
 .marketing-screen-veil {
   background-image: linear-gradient(
     to bottom,
@@ -866,8 +1025,6 @@ html[data-marketing-motion='on'] .marketing {
     color-mix(in oklch, var(--canvas-to) 25%, transparent) 70%,
     color-mix(in oklch, var(--canvas-to) 60%, transparent) 100%
   );
-  backdrop-filter: blur(2px);
-  mask-image: linear-gradient(to bottom, transparent 0%, black 70%);
 }
 
 /* A gap card's product screen, drawn at a reduced scale so a whole screen
@@ -894,9 +1051,18 @@ html[data-marketing-motion='on'] .marketing {
 /* On the ink bar the logo is drawn white, as in the reference. The asset is a
    navy wordmark for light grounds, so it is recoloured rather than redrawn;
    the later rule also cancels the white chip dark mode gives it elsewhere. */
-.marketing-ink [data-logo],
-.dark .marketing .marketing-ink [data-logo] {
+.marketing-ink [data-logo]:not([data-logo='original']),
+.dark .marketing .marketing-ink [data-logo]:not([data-logo='original']) {
   filter: brightness(0) invert(1);
+  background-color: transparent;
+  padding: 0;
+}
+
+/* The header shows the logo exactly as drawn, at the owner's request: no
+   recolouring and no chip behind it — the second selector outweighs the white
+   chip dark mode gives the logo further down. */
+.marketing-ink [data-logo='original'],
+.dark .marketing .marketing-ink [data-logo='original'] {
   background-color: transparent;
   padding: 0;
 }

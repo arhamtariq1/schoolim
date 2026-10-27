@@ -57,3 +57,12 @@ export const SAMPLE_RESULTS = [
   { subject: 'Science', marks: 88, grade: 'A' },
   { subject: 'Urdu', marks: 79, grade: 'B+' },
 ] as const;
+
+/** One section's mid-term totals, as a percentage, for the class results preview. */
+export const SAMPLE_CLASS_RESULTS = [
+  { name: 'Muhammad Ali', marks: 91, grade: 'A+' },
+  { name: 'Hamza Siddiqui', marks: 88, grade: 'A' },
+  { name: 'Ayesha Khan', marks: 86, grade: 'A' },
+  { name: 'Fatima Noor', marks: 78, grade: 'B+' },
+  { name: 'Zainab Raza', marks: 72, grade: 'B' },
+] as const;

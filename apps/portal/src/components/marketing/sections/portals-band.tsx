@@ -68,13 +68,13 @@ export function PortalsBand() {
             <Eyebrow>Six portals</Eyebrow>
             <h2
               id="portals-title"
-              className="font-display text-display-md mt-4 font-bold text-balance"
+              className="font-display text-display-md text-heading mt-4 font-medium text-balance"
             >
               One record. <Accent>A portal for everyone.</Accent>
             </h2>
             <p className="mt-5 max-w-xl text-lg text-pretty text-muted-foreground">
-              Admin, principal, teachers, parents and office staff each get their own screen —
-              and nobody types the same thing twice.
+              Admin, principal, teachers, parents and office staff each get their own screen — and
+              nobody types the same thing twice.
             </p>
             <ul className="mt-8 space-y-3">
               {FACTS.map((fact) => (

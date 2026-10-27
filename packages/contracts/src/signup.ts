@@ -26,8 +26,8 @@ import { uploadSchoolLogoSchema } from './school-logo';
 /** The version of the terms the signup form displayed. Bump on every change. */
 export const CURRENT_TERMS_VERSION = '2026-09-01' as const;
 
-/** How long a self-serve trial runs. "One month", stated as days so it is exact. */
-export const TRIAL_DAYS = 30;
+/** How long a self-serve trial runs, in days (ADR-0010, as amended). */
+export const TRIAL_DAYS = 7;
 
 /** Six digits. Typed by a person reading their mail, not pasted from a URL. */
 export const signupOtpSchema = z
