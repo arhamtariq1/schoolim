@@ -154,6 +154,8 @@ export {
   Layers as PlatformIcon,
   /** Who can open what: roles, permissions, a person's access. */
   KeyRound as AccessIcon,
+  /** The in-app guide: what the product does and how to use it. */
+  BookOpen as GuidanceIcon,
 } from 'lucide-react';
 
 /** The only permitted icon sizes (docs/16 section 3). */

@@ -112,6 +112,7 @@ const APP_ROUTE_SEGMENTS: ReadonlySet<string> = new Set([
   'fees',
   'finance',
   'forgot-password',
+  'guidance',
   'invite',
   'login',
   'new-password',

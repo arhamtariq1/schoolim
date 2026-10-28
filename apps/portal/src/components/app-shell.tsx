@@ -22,6 +22,7 @@ import {
   ChevronRightIcon,
   CloseIcon,
   FinanceIcon,
+  GuidanceIcon,
   ICON_SIZE,
   MenuIcon,
   SearchIcon,
@@ -553,6 +554,12 @@ function ProfileMenu({
             <Link href={tenantHref('/profile')} className="cursor-pointer">
               <AccountIcon aria-hidden="true" className="text-muted-foreground" />
               Profile
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="rounded-md px-2.5 py-2">
+            <Link href={tenantHref('/guidance')} className="cursor-pointer">
+              <GuidanceIcon aria-hidden="true" className="text-muted-foreground" />
+              Guidance
             </Link>
           </DropdownMenuItem>
           {canManagePlan ? (
