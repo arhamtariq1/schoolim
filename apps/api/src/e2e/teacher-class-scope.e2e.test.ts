@@ -492,3 +492,169 @@ describe('the Classes page for a teacher', () => {
     expect(response.statusCode).toBe(403);
   });
 });
+
+/**
+ * A teacher the school has given "Add students".
+ *
+ * A teacher's class tree is their own classes — and for a new teacher, none —
+ * so the admission form, which read that tree, opened with empty Class and
+ * Section lists to somebody the school had explicitly allowed to admit. The
+ * form now reads `/academics/admission-setup`, authorised by the permission
+ * that decides who may admit, and showing every class.
+ */
+describe('a teacher who was given “Add students”', () => {
+  const SECTION_G1 = '99999999-9999-4999-8999-9999999999c1';
+  const SECTION_G2 = '99999999-9999-4999-8999-9999999999c2';
+  const NEWCOMER_EMAIL = 'newcomer@teacher-scope-e2e.test';
+  let newcomerJar = '';
+
+  async function userIdOf(email: string): Promise<string> {
+    const rows = await admin.$queryRawUnsafe<{ id: string }[]>(
+      `SELECT id FROM users WHERE school_id = $1::uuid AND email = $2`,
+      SCHOOL_A,
+      email,
+    );
+    return rows[0]?.id ?? '';
+  }
+
+  async function grantAddStudents(email: string): Promise<void> {
+    await admin.$executeRawUnsafe(
+      `INSERT INTO user_permission_overrides (id, school_id, user_id, permission, effect, created_at)
+       VALUES (gen_random_uuid(), $1::uuid, $2::uuid, 'students.student.create', 'GRANT', now())
+       ON CONFLICT (school_id, user_id, permission) DO NOTHING`,
+      SCHOOL_A,
+      await userIdOf(email),
+    );
+  }
+
+  async function revokeAddStudents(email: string): Promise<void> {
+    await admin.$executeRawUnsafe(
+      `DELETE FROM user_permission_overrides WHERE school_id = $1::uuid AND user_id = $2::uuid`,
+      SCHOOL_A,
+      await userIdOf(email),
+    );
+  }
+
+  interface AdmissionBody {
+    data: {
+      session: { id: string } | null;
+      sessions: { id: string }[];
+      classes: { id: string; sections: { id: string }[] }[];
+    };
+  }
+
+  beforeAll(async () => {
+    for (const [id, classLevel, name] of [
+      [SECTION_G1, GRADE_1, 'A'],
+      [SECTION_G2, GRADE_2, 'A'],
+    ] as const) {
+      await admin.$executeRawUnsafe(
+        `INSERT INTO sections (id, school_id, session_id, class_level_id, name, capacity, created_at, updated_at)
+         VALUES ($1::uuid, $2::uuid, $3::uuid, $4::uuid, $5, 30, now(), now())`,
+        id,
+        SCHOOL_A,
+        SESSION_A,
+        classLevel,
+        name,
+      );
+    }
+    await admin.$executeRawUnsafe(
+      `INSERT INTO number_sequences (id, school_id, kind, next_value, updated_at)
+       VALUES (gen_random_uuid(), $1::uuid, 'gr', 1, now())
+       ON CONFLICT (school_id, kind) DO NOTHING`,
+      SCHOOL_A,
+    );
+
+    // A teacher with no classes at all — the newest hire, the case that left
+    // both pickers empty even though their own tree is "correct".
+    const created = await asOwner('POST', ROUTES.staff.create, {
+      ...TEACHER_BODY,
+      name: 'Newcomer Teacher',
+      email: NEWCOMER_EMAIL,
+      phone: '+923009876543',
+      cnic: '35202-7654321-9',
+    });
+    expect(created.statusCode).toBe(201);
+    await admin.$executeRawUnsafe(
+      `UPDATE users SET password_hash = (SELECT password_hash FROM users WHERE school_id = $1::uuid AND email = $2), status = 'ACTIVE'
+        WHERE school_id = $1::uuid AND email = $3`,
+      SCHOOL_A,
+      TEACHER_EMAIL,
+      NEWCOMER_EMAIL,
+    );
+    newcomerJar = await signIn(NEWCOMER_EMAIL);
+  }, 60_000);
+
+  const admissionSetup = (jar: string, query = '') =>
+    call(jar, 'GET', `${ROUTES.academics.admissionSetup}${query}`);
+
+  it('is refused the admission read until they are given the permission', async () => {
+    expect((await admissionSetup(teacherJar)).statusCode).toBe(403);
+  });
+
+  it('then sees every class with its sections, not only the ones they take', async () => {
+    await grantAddStudents(TEACHER_EMAIL);
+
+    const response = await admissionSetup(teacherJar);
+    expect(response.statusCode).toBe(200);
+    const body = response.json<AdmissionBody>().data;
+
+    expect(body.classes.map((entry) => entry.id)).toEqual([GRADE_1, GRADE_2]);
+    expect(body.classes.map((entry) => entry.sections.map((section) => section.id))).toEqual([
+      [SECTION_G1],
+      [SECTION_G2],
+    ]);
+    expect(body.session?.id).toBe(SESSION_A);
+    expect(body.sessions.map((entry) => entry.id)).toEqual([SESSION_A]);
+  });
+
+  it('while the rest of the school’s screens stay narrowed to their own classes', async () => {
+    const response = await asTeacher('GET', ROUTES.academics.setup);
+    const ids = response
+      .json<{ data: { classes: { id: string }[] } }>()
+      .data.classes.map((entry) => entry.id);
+
+    expect(ids).toEqual([GRADE_1]);
+  });
+
+  it('also reaches every class when they have no classes of their own yet', async () => {
+    await grantAddStudents(NEWCOMER_EMAIL);
+
+    expect(
+      (await call(newcomerJar, 'GET', ROUTES.academics.setup))
+        .json<{ data: { classes: unknown[] } }>().data.classes,
+    ).toEqual([]);
+
+    const body = (await admissionSetup(newcomerJar)).json<AdmissionBody>().data;
+    expect(body.classes.map((entry) => entry.id)).toEqual([GRADE_1, GRADE_2]);
+  });
+
+  it('never offers another school’s class', async () => {
+    const body = (await admissionSetup(teacherJar)).json<AdmissionBody>().data;
+    expect(body.classes.map((entry) => entry.id)).not.toContain(GRADE_3_OTHER_SCHOOL);
+  });
+
+  it('can admit a child into a class they do not teach', async () => {
+    const response = await asTeacher('POST', ROUTES.students.create, {
+      firstName: 'Hira',
+      lastName: 'Butt',
+      gender: 'FEMALE',
+      admittedOn: '2026-05-04',
+      enrollment: { sessionId: SESSION_A, classLevelId: GRADE_2, sectionId: SECTION_G2 },
+      guardian: {
+        name: 'Imran Butt',
+        relation: 'FATHER',
+        phone: '+923001112233',
+        address: 'House 3, Street 7, Gulberg, Lahore',
+      },
+      fees: [],
+    });
+
+    expect(response.statusCode).toBe(201);
+  });
+
+  it('does not let a revoked permission linger: the read is refused again', async () => {
+    await revokeAddStudents(TEACHER_EMAIL);
+    expect((await admissionSetup(teacherJar)).statusCode).toBe(403);
+  });
+});

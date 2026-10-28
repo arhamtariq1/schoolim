@@ -73,7 +73,10 @@ export class AcademicsService {
    * sections, and a class list that is empty until then reads as "the setup is
    * broken" rather than "no sections yet".
    */
-  async classes(sessionId?: string): Promise<ClassLevelWithSections[]> {
+  async classes(
+    sessionId?: string,
+    options: { readonly everyClass?: boolean } = {},
+  ): Promise<ClassLevelWithSections[]> {
     return this.prisma.tenant(async (tx) => {
       const scopeTo =
         sessionId ??
@@ -86,7 +89,14 @@ export class AcademicsService {
 
       // A teacher's class tree holds the classes they take and no others — in
       // the query, so an unassigned class is never read at all.
-      const scope = await this.classScope.classLevelIds(tx, 'academics.structure.read');
+      //
+      // `everyClass` is the admission form's read, which is authorised by
+      // `students.student.create` and not by this permission: choosing where a
+      // new child goes is not limited to the classes the person teaches.
+      const scope =
+        options.everyClass === true
+          ? undefined
+          : await this.classScope.classLevelIds(tx, 'academics.structure.read');
 
       const levels = await tx.classLevel.findMany({
         ...(scope === undefined ? {} : { where: { id: { in: [...scope] } } }),

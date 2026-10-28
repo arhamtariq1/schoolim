@@ -8,11 +8,13 @@ import {
   runPromotionSchema,
   ROUTES,
   setupQuerySchema,
+  ENROLLABLE_SESSION_STATUSES,
   updateClassLevelSchema,
   updateHolidaySchema,
   updateSectionSchema,
   updateSessionSchema,
   type AcademicSession,
+  type AdmissionSetup,
   type ClassTeacher,
   type ClassLevel,
   type ClassLevelWithSections,
@@ -90,6 +92,52 @@ export class AcademicsController {
       // `null` rather than omitted: "there is no current session" is a real
       // answer the client must handle, and an absent key reads as a bug.
       data: { session: session ?? null, classes },
+      meta: { requestId: request.id },
+    };
+  }
+
+  /**
+   * What the admission form needs to place a child — every class, whoever asks.
+   *
+   * `/academics/setup` narrows the class tree to the caller's own classes, which
+   * is right for a register and wrong for admission: a teacher who has been
+   * given "Add students" would open the form to empty Class and Section lists,
+   * because a new teacher has no classes yet and an experienced one has only
+   * their own. Admission is authorised by `students.student.create`, and
+   * placing a child is not limited to the places the person teaches (the
+   * enrolment check only asks that the class exists), so the read follows the
+   * write it serves.
+   *
+   * Unscoped on purpose: the route has no per-row clause to narrow, and
+   * `students.student.create` is only ever granted school-wide.
+   */
+  @Get(ROUTES.academics.admissionSetup)
+  @RequireUnscopedPermission('students.student.create')
+  async admissionSetup(
+    @Req() request: FastifyRequest,
+    @Query('sessionId') sessionId?: string,
+  ): Promise<{ data: AdmissionSetup; meta: { requestId: string } }> {
+    const asked = setupQuerySchema.parse({ sessionId }).sessionId;
+
+    const session =
+      asked === undefined
+        ? await this.academics.currentSession()
+        : await this.academics.openSession(asked);
+
+    const [classes, sessions] = await Promise.all([
+      session === undefined
+        ? Promise.resolve([])
+        : this.academics.classes(session.id, { everyClass: true }),
+      this.structure.listSessions(),
+    ]);
+
+    return {
+      data: {
+        session: session ?? null,
+        // Only the years a child can be placed into.
+        sessions: sessions.filter((entry) => ENROLLABLE_SESSION_STATUSES.includes(entry.status)),
+        classes,
+      },
       meta: { requestId: request.id },
     };
   }

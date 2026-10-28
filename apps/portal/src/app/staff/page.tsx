@@ -52,17 +52,18 @@ export default async function StaffPage({
 
   return (
     <StaffTable
-      rows={result.ok ? result.data.data : []}
-      total={result.ok ? result.data.meta.page.total : 0}
-      limit={result.ok ? result.data.meta.page.limit : limit}
-      offset={result.ok ? result.data.meta.page.offset : offset}
-      error={result.ok ? undefined : result.message}
-      search={search}
-      role={role}
-      gender={gender}
-      sort={sort}
-      order={order}
-      canManage={session?.permissions.includes('staff.record.update') ?? false}
-    />
+        rows={result.ok ? result.data.data : []}
+        total={result.ok ? result.data.meta.page.total : 0}
+        limit={result.ok ? result.data.meta.page.limit : limit}
+        offset={result.ok ? result.data.meta.page.offset : offset}
+        error={result.ok ? undefined : result.message}
+        search={search}
+        role={role}
+        gender={gender}
+        sort={sort}
+        order={order}
+        canManage={session?.permissions.includes('staff.record.update') ?? false}
+        canManageAccess={session?.permissions.includes('settings.user.manage') ?? false}
+      />
   );
 }

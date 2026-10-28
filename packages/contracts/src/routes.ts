@@ -267,6 +267,8 @@ export const ROUTES = {
      * from the one for 2026-2027 even though the classes are the same.
      */
     setup: `${API_PREFIX}/academics/setup`,
+    /** The admission form's own read: every class, for whoever may admit a student. */
+    admissionSetup: `${API_PREFIX}/academics/admission-setup`,
     sessions: `${API_PREFIX}/academics/sessions`,
     session: (id: string) => `${API_PREFIX}/academics/sessions/${id}`,
     /** Making one session current necessarily un-currents the other. */
