@@ -388,6 +388,7 @@ export const SCREENS: Readonly<Record<string, ComponentType>> = {
       sort="name"
       order="asc"
       canManage={can('staff.record.manage')}
+      canManageAccess={false}
     />
   ),
 

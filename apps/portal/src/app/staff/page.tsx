@@ -67,6 +67,7 @@ export default async function StaffPage({
         sort={sort}
         order={order}
         canManage={session?.permissions.includes('staff.record.update') ?? false}
+        canManageAccess={session?.permissions.includes('settings.user.manage') ?? false}
       />
   );
 }

@@ -310,7 +310,7 @@ export function AdmissionForm({
     setLoadingClasses(true);
     try {
       const response = await fetch(
-        `${ROUTES.academics.setup}?sessionId=${encodeURIComponent(next)}`,
+        `${ROUTES.academics.admissionSetup}?sessionId=${encodeURIComponent(next)}`,
         { credentials: 'include' },
       );
       if (!response.ok) {
@@ -511,6 +511,19 @@ export function AdmissionForm({
           `${result.data.parentInvite.email} was linked, but the invitation email did not send.`,
         );
       }
+    }
+    // Admitting is not the same as being able to open the child afterwards. A
+    // teacher who was given "Add students" reads only their own classes'
+    // students, and may have placed this one in another class — the profile
+    // would answer "not found" straight after a success message. Ask the page's
+    // own read; when it is refused, stay on a clean form for the next child.
+    const profile = await fetch(ROUTES.students.profile(result.data.id), {
+      credentials: 'include',
+    }).catch(() => undefined);
+    if (profile?.ok === false) {
+      resetForm();
+      router.refresh();
+      return;
     }
     router.push(tenantHref(`/students/${result.data.id}`));
     router.refresh();
