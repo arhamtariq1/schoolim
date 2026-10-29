@@ -1,4 +1,5 @@
 import {
+  AccessIcon,
   AcademicsIcon,
   AccountIcon,
   AdmissionIcon,
@@ -52,6 +53,7 @@ export const NAV_ICONS: Record<string, ComponentType<{ className?: string }>> = 
   TrendUpIcon,
   DepositIcon,
   AttendanceIcon,
+  AccessIcon,
   AcademicsIcon,
   ClassIcon,
   SessionIcon,

@@ -426,6 +426,33 @@ export type EnumSchoolRoleFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumSchoolRoleFilter<$PrismaModel> | $Enums.SchoolRole
 }
 
+export type EnumPermissionEffectFilter<$PrismaModel = never> = {
+  equals?: $Enums.PermissionEffect | Prisma.EnumPermissionEffectFieldRefInput<$PrismaModel>
+  in?: $Enums.PermissionEffect[] | Prisma.ListEnumPermissionEffectFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PermissionEffect[] | Prisma.ListEnumPermissionEffectFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPermissionEffectFilter<$PrismaModel> | $Enums.PermissionEffect
+}
+
+export type EnumSchoolRoleWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.SchoolRole | Prisma.EnumSchoolRoleFieldRefInput<$PrismaModel>
+  in?: $Enums.SchoolRole[] | Prisma.ListEnumSchoolRoleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.SchoolRole[] | Prisma.ListEnumSchoolRoleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumSchoolRoleWithAggregatesFilter<$PrismaModel> | $Enums.SchoolRole
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumSchoolRoleFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumSchoolRoleFilter<$PrismaModel>
+}
+
+export type EnumPermissionEffectWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PermissionEffect | Prisma.EnumPermissionEffectFieldRefInput<$PrismaModel>
+  in?: $Enums.PermissionEffect[] | Prisma.ListEnumPermissionEffectFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PermissionEffect[] | Prisma.ListEnumPermissionEffectFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPermissionEffectWithAggregatesFilter<$PrismaModel> | $Enums.PermissionEffect
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPermissionEffectFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPermissionEffectFilter<$PrismaModel>
+}
+
 export type JsonFilter<$PrismaModel = never> =
 | Prisma.PatchUndefined<
     Prisma.Either<Required<JsonFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonFilterBase<$PrismaModel>>, 'path'>>,
@@ -448,16 +475,6 @@ export type JsonFilterBase<$PrismaModel = never> = {
   gt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   gte?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   not?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | Prisma.JsonNullValueFilter
-}
-
-export type EnumSchoolRoleWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.SchoolRole | Prisma.EnumSchoolRoleFieldRefInput<$PrismaModel>
-  in?: $Enums.SchoolRole[] | Prisma.ListEnumSchoolRoleFieldRefInput<$PrismaModel>
-  notIn?: $Enums.SchoolRole[] | Prisma.ListEnumSchoolRoleFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumSchoolRoleWithAggregatesFilter<$PrismaModel> | $Enums.SchoolRole
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumSchoolRoleFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumSchoolRoleFilter<$PrismaModel>
 }
 
 export type JsonWithAggregatesFilter<$PrismaModel = never> =
@@ -1401,6 +1418,13 @@ export type NestedEnumSchoolRoleFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumSchoolRoleFilter<$PrismaModel> | $Enums.SchoolRole
 }
 
+export type NestedEnumPermissionEffectFilter<$PrismaModel = never> = {
+  equals?: $Enums.PermissionEffect | Prisma.EnumPermissionEffectFieldRefInput<$PrismaModel>
+  in?: $Enums.PermissionEffect[] | Prisma.ListEnumPermissionEffectFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PermissionEffect[] | Prisma.ListEnumPermissionEffectFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPermissionEffectFilter<$PrismaModel> | $Enums.PermissionEffect
+}
+
 export type NestedEnumSchoolRoleWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.SchoolRole | Prisma.EnumSchoolRoleFieldRefInput<$PrismaModel>
   in?: $Enums.SchoolRole[] | Prisma.ListEnumSchoolRoleFieldRefInput<$PrismaModel>
@@ -1409,6 +1433,16 @@ export type NestedEnumSchoolRoleWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumSchoolRoleFilter<$PrismaModel>
   _max?: Prisma.NestedEnumSchoolRoleFilter<$PrismaModel>
+}
+
+export type NestedEnumPermissionEffectWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PermissionEffect | Prisma.EnumPermissionEffectFieldRefInput<$PrismaModel>
+  in?: $Enums.PermissionEffect[] | Prisma.ListEnumPermissionEffectFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PermissionEffect[] | Prisma.ListEnumPermissionEffectFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPermissionEffectWithAggregatesFilter<$PrismaModel> | $Enums.PermissionEffect
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPermissionEffectFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPermissionEffectFilter<$PrismaModel>
 }
 
 export type NestedJsonFilter<$PrismaModel = never> =

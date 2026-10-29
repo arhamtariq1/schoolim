@@ -84,6 +84,9 @@ export const TENANT_MODELS = [
   /** ADR-0017: class and assessment schedules. The calendar reads them. */
   'Timetable',
   'TimetableEntry',
+  /** ADR-0025: a school's changes to what a role, or one person, can open. */
+  'RolePermissionOverride',
+  'UserPermissionOverride',
 ] as const;
 
 export type TenantModel = (typeof TENANT_MODELS)[number];

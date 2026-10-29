@@ -1,8 +1,6 @@
 import {
-  ENROLLABLE_SESSION_STATUSES,
   ROUTES,
-  type AcademicSession,
-  type ClassLevelWithSections,
+  type AdmissionSetup,
   type FeeHead,
   type GrNumberSettings,
 } from '@ilm/contracts';
@@ -32,29 +30,29 @@ import { getSession } from '@/lib/session';
 export const metadata: Metadata = { title: 'New admission' };
 
 export default async function NewStudentPage() {
-  const [session, academics, sessions, fees, grNumber] = await Promise.all([
+  const [session, admission, fees, grNumber] = await Promise.all([
     getSession(),
-    apiFetch<{ data: { session: { id: string } | null; classes: ClassLevelWithSections[] } }>(
-      ROUTES.academics.setup,
-    ),
-    apiFetch<{ data: AcademicSession[] }>(ROUTES.academics.sessions),
+    // Its own read, not `/academics/setup`: that one narrows the classes to the
+    // ones the caller teaches, and somebody allowed to add students must be able
+    // to choose any class and section.
+    apiFetch<{ data: AdmissionSetup }>(ROUTES.academics.admissionSetup),
     apiFetch<{ data: FeeHead[] }>(ROUTES.fees.heads),
     apiFetch<{ data: GrNumberSettings }>(ROUTES.school.grNumber),
   ]);
 
-  const setup = academics.ok ? academics.data.data : { session: null, classes: [] };
+  const setup = admission.ok
+    ? admission.data.data
+    : { session: null, sessions: [], classes: [] };
 
-  // Only the years a child can actually be placed into. A closed session's
-  // register is finished, and offering it would enrol a student into a year the
-  // school has already reported on.
-  const enrollableSessions = (sessions.ok ? sessions.data.data : [])
-    .filter((entry) => ENROLLABLE_SESSION_STATUSES.includes(entry.status))
-    .map((entry) => ({
-      id: entry.id,
-      name: entry.name,
-      status: entry.status,
-      isCurrent: entry.isCurrent,
-    }));
+  // Only the years a child can actually be placed into — the API already leaves
+  // out a closed session, whose register is finished and where enrolling a
+  // student would add them to a year the school has already reported on.
+  const enrollableSessions = setup.sessions.map((entry) => ({
+    id: entry.id,
+    name: entry.name,
+    status: entry.status,
+    isCurrent: entry.isCurrent,
+  }));
   // Only what a school currently charges. A retired head must not reappear on
   // a new admission just because old students still carry it.
   const catalogue = fees.ok ? fees.data.data.filter((head) => head.isActive) : [];

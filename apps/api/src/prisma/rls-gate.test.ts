@@ -80,6 +80,8 @@ const MODEL_TO_TABLE: Readonly<Record<string, string>> = {
   DeviceToken: 'device_tokens',
   Timetable: 'timetables',
   TimetableEntry: 'timetable_entries',
+  RolePermissionOverride: 'role_permission_overrides',
+  UserPermissionOverride: 'user_permission_overrides',
 };
 
 const tenantTables = TENANT_MODELS.map((model) => {

@@ -15,10 +15,10 @@
 
 @theme {
   /* --- Typography: four sizes in app chrome. See docs/16 section 5. -------- */
-  --font-sans: var(--font-open-sans, 'Open Sans'), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-lato, 'Lato'), ui-sans-serif, system-ui, sans-serif;
   /* Numbers, IDs and codes use the app's own font — `font-mono` is kept as a class name so call sites
      don't change, but a second typeface for digits made every figure look out of place. */
-  --font-mono: var(--font-open-sans, 'Open Sans'), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-lato, 'Lato'), ui-sans-serif, system-ui, sans-serif;
   --font-urdu: 'Noto Nastaliq Urdu', serif;
 
   /* --- Radius ------------------------------------------------------------- */

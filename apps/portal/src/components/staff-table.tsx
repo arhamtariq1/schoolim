@@ -25,6 +25,7 @@ import {
   type CardTableColumn,
 } from '@ilm/ui';
 import {
+  AccessIcon,
   AccountIcon,
   CalendarIcon,
   CreateIcon,
@@ -83,6 +84,8 @@ export interface StaffTableProps {
   sort: 'name' | 'employeeNo' | 'role' | 'createdAt';
   order: 'asc' | 'desc';
   canManage: boolean;
+  /** `settings.user.manage`: may open Settings › Users & Access. */
+  canManageAccess: boolean;
 }
 
 export function StaffTable({
@@ -97,10 +100,12 @@ export function StaffTable({
   sort,
   order,
   canManage,
+  canManageAccess,
 }: StaffTableProps) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const tenantHref = useTenantHref();
   const toast = useToast();
   const [, startTransition] = useTransition();
 
@@ -324,6 +329,7 @@ export function StaffTable({
           <StaffRowActions
             row={row}
             canManage={canManage}
+            canManageAccess={canManageAccess}
             inviting={inviting === row.id}
             busy={inviting !== undefined}
             onInvite={() => {
@@ -352,7 +358,23 @@ export function StaffTable({
 
   return (
     <div className="w-full space-y-6">
-      <WorkspacePageHeader title="Staff" description={pageIntro('/staff')} />
+      <WorkspacePageHeader
+        title="Staff"
+        description={pageIntro('/staff')}
+        actions={
+          // Who may open which screens is set in Settings › Users & Access, not
+          // here. The page itself refuses anyone without `settings.user.manage`,
+          // so the door is only drawn for the people it opens for.
+          canManageAccess ? (
+            <Button asChild tone="outline">
+              <Link href={tenantHref('/settings/access')}>
+                <AccessIcon className={ICON_SIZE.inline} aria-hidden />
+                Users &amp; access
+              </Link>
+            </Button>
+          ) : null
+        }
+      />
 
       {error !== undefined ? (
         <div
@@ -557,6 +579,7 @@ function StaffStatusCell({ row }: { row: StaffListItem }) {
 function StaffRowActions({
   row,
   canManage,
+  canManageAccess,
   inviting,
   busy,
   onInvite,
@@ -565,6 +588,7 @@ function StaffRowActions({
 }: {
   row: StaffListItem;
   canManage: boolean;
+  canManageAccess: boolean;
   inviting: boolean;
   busy: boolean;
   onInvite: () => void;
@@ -573,6 +597,12 @@ function StaffRowActions({
 }) {
   const tenantHref = useTenantHref();
   const profileHref = tenantHref(`/staff/${row.id}` as Route);
+  // Opens the People tab already searched for this person. The access list is
+  // of accounts, so it only makes sense for somebody who can have one.
+  const canOpenAccess = staffRoleCanSignIn(row.role) && row.email !== null && row.email !== '';
+  const accessHref = tenantHref(
+    `/settings/access?tab=people&q=${encodeURIComponent(row.email ?? '')}` as Route,
+  );
   // Only while there is something to send: no account yet, or one still waiting
   // on its password. Once they have signed in the invitation has done its job.
   const canInvite =
@@ -613,6 +643,14 @@ function StaffRowActions({
             >
               <SendIcon className="size-4" aria-hidden="true" />
               {inviting ? 'Sending…' : row.invitePending ? 'Re-send invite' : 'Send invite'}
+            </DropdownMenuItem>
+          ) : null}
+          {canManageAccess && canOpenAccess ? (
+            <DropdownMenuItem asChild>
+              <Link href={accessHref}>
+                <AccessIcon className="size-4" aria-hidden="true" />
+                Manage access
+              </Link>
             </DropdownMenuItem>
           ) : null}
           {canManage ? (

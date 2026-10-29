@@ -14,7 +14,7 @@ import {
   type RequestPriority,
 } from '@ilm/contracts';
 import { Button, Field, Input, SimpleSelect, Textarea, useToast } from '@ilm/ui';
-import { SendIcon, ICON_SIZE } from '@ilm/ui/icons';
+import { SendIcon, StudentsIcon, ICON_SIZE } from '@ilm/ui/icons';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { PicturePicker, sendPictures, type PendingPicture } from '@/components/request-pictures';
@@ -24,9 +24,10 @@ import { mutate } from '@/lib/mutate';
 /**
  * Raise a request, complaint or concern.
  *
- * One form for everybody who may write to the school: the fields are the same
- * for a parent and a teacher, and the child they may choose from is whatever the
- * server says they may raise one about.
+ * One form for everybody who may write to the school. A parent also says which
+ * of their children it is about — required, so every request they send shows
+ * under that child's filter — starting from the child chosen in the header.
+ * The server still checks the child is theirs.
  *
  * The text is saved first, then the pictures are sent one at a time. A picture
  * that fails is named afterwards and the request still stands — nobody retypes
@@ -36,10 +37,16 @@ import { mutate } from '@/lib/mutate';
 export function RequestForm({
   onDone,
   onCancel,
+  kids,
+  defaultChildId,
 }: {
   /** Called with the request once it, and any pictures, have been sent. */
   readonly onDone: (created: RequestDetail) => void;
   readonly onCancel: () => void;
+  /** A parent's children; undefined for anybody else, and the field is not drawn. */
+  readonly kids?: readonly { id: string; name: string }[] | undefined;
+  /** The child to start from — the one chosen in the header, if any. */
+  readonly defaultChildId?: string | undefined;
 }) {
   const toast = useToast();
 
@@ -47,6 +54,15 @@ export function RequestForm({
   // connection, is the same request rather than a second one.
   const idempotencyKey = useRef(crypto.randomUUID());
 
+  const askChild = kids !== undefined && kids.length > 0;
+  const [studentId, setStudentId] = useState(
+    // One child needs no choosing; otherwise the header's choice, if it is one of theirs.
+    kids?.length === 1
+      ? (kids[0]?.id ?? '')
+      : kids?.some((kid) => kid.id === defaultChildId) === true
+        ? (defaultChildId ?? '')
+        : '',
+  );
   const [category, setCategory] = useState<RequestCategory | ''>('');
   const [priority, setPriority] = useState<RequestPriority>('NORMAL');
   const [subject, setSubject] = useState('');
@@ -74,7 +90,14 @@ export function RequestForm({
     setErrors({});
     setFormError(undefined);
 
+    if (askChild && studentId === '') {
+      setErrors({ studentId: 'Choose which child this is about.' });
+      showFormValidationToast(toast);
+      return;
+    }
+
     const parsed = createRequestSchema.safeParse({
+      studentId: studentId === '' ? undefined : studentId,
       category: category === '' ? undefined : category,
       priority,
       subject,
@@ -128,10 +151,25 @@ export function RequestForm({
         }}
       >
         {formError === undefined ? null : (
-          <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+          <p
+            role="alert"
+            className="rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger"
+          >
             {formError}
           </p>
         )}
+
+        {askChild ? (
+          <Field label="Child" required error={errors['studentId']}>
+            <SimpleSelect
+              value={studentId}
+              placeholder="Choose your child"
+              triggerIcon={StudentsIcon}
+              options={kids.map((kid) => ({ value: kid.id, label: kid.name }))}
+              onValueChange={setStudentId}
+            />
+          </Field>
+        ) : null}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Category" required error={errors['category']}>

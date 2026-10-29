@@ -60,6 +60,8 @@ export const ModelName = {
   School: 'School',
   SchoolDomain: 'SchoolDomain',
   User: 'User',
+  RolePermissionOverride: 'RolePermissionOverride',
+  UserPermissionOverride: 'UserPermissionOverride',
   UserRole: 'UserRole',
   Session: 'Session',
   Invitation: 'Invitation',
@@ -310,6 +312,30 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const RolePermissionOverrideScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  role: 'role',
+  permission: 'permission',
+  effect: 'effect',
+  createdAt: 'createdAt'
+} as const
+
+export type RolePermissionOverrideScalarFieldEnum = (typeof RolePermissionOverrideScalarFieldEnum)[keyof typeof RolePermissionOverrideScalarFieldEnum]
+
+
+export const UserPermissionOverrideScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  userId: 'userId',
+  permission: 'permission',
+  effect: 'effect',
+  createdAt: 'createdAt'
+} as const
+
+export type UserPermissionOverrideScalarFieldEnum = (typeof UserPermissionOverrideScalarFieldEnum)[keyof typeof UserPermissionOverrideScalarFieldEnum]
 
 
 export const UserRoleScalarFieldEnum = {

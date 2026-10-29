@@ -49,6 +49,113 @@ const SESSION_START = new Date('2026-04-01');
 /** The one platform-console account. Development only, same guard as above. */
 const PLATFORM_EMAIL = 'platform@platform.test';
 
+/**
+ * The demo school's roll: enough children that paging, sorting, filters and the
+ * finance totals are exercised with a real-sized school rather than eleven rows.
+ *
+ * Generated rather than typed out, and deterministic (no randomness), so every
+ * run produces the same students and diffs between seeds stay readable.
+ */
+const DEMO_STUDENT_TARGET = 330;
+
+/**
+ * Surnames the demo school must never use.
+ *
+ * Beacon and City keep their own small, hand-written families, and
+ * `verify-browser.mjs` fails if any of those surnames shows up on the demo
+ * school's students page — that is how a cross-tenant leak is made visible.
+ */
+const OTHER_SCHOOLS_SURNAMES: ReadonlySet<string> = new Set([
+  'Qureshi',
+  'Siddiqui',
+  'Ansari',
+  'Rizvi',
+  'Abbasi',
+  'Gilani',
+  'Kayani',
+]);
+
+const SURNAMES: readonly string[] = [
+  'Khan', 'Malik', 'Iqbal', 'Sheikh', 'Butt', 'Chaudhry', 'Raza', 'Hussain', 'Shah', 'Mirza',
+  'Baig', 'Bhatti', 'Cheema', 'Gill', 'Virk', 'Warraich', 'Randhawa', 'Tarar', 'Gondal', 'Sandhu',
+  'Dar', 'Lone', 'Mir', 'Wani', 'Bhutto', 'Jatoi', 'Soomro', 'Memon', 'Siyal', 'Abro',
+  'Chandio', 'Leghari', 'Mazari', 'Gabol', 'Talpur', 'Magsi', 'Rind', 'Marri', 'Bugti', 'Durrani',
+  'Yousafzai', 'Afridi', 'Orakzai', 'Mohmand', 'Wazir', 'Mehsud', 'Bangash', 'Khattak', 'Niazi',
+  'Lodhi', 'Kakar', 'Tareen', 'Achakzai', 'Popalzai', 'Bizenjo', 'Mengal', 'Jamali', 'Kalhoro',
+  'Farooqi', 'Usmani', 'Hashmi', 'Zaidi', 'Naqvi', 'Jafri', 'Bukhari', 'Gardezi', 'Kazmi',
+  'Rehmani', 'Hanif', 'Javed', 'Akram', 'Nawaz', 'Sharif', 'Anwar', 'Aslam', 'Bashir', 'Dogar',
+  'Ghauri', 'Hayat', 'Ilyas', 'Jamil', 'Kamal', 'Latif', 'Mahmood', 'Nadeem', 'Pasha', 'Qadir',
+  'Rashid', 'Saeed', 'Tariq', 'Waheed', 'Yaqoob', 'Zafar', 'Zahid', 'Zubair', 'Ashraf', 'Bajwa',
+  'Dilawar', 'Ejaz', 'Fazal', 'Ghani', 'Haider', 'Imtiaz', 'Junejo', 'Kiani', 'Lashari', 'Minhas',
+  'Nazir', 'Paracha', 'Qazi', 'Rajput', 'Sial', 'Toor', 'Uppal', 'Vohra', 'Wattoo', 'Yasin',
+  'Zia', 'Alvi', 'Burki', 'Chishti', 'Dehlvi', 'Ghumman', 'Janjua', 'Khokhar', 'Mughal', 'Noon',
+  'Pirzada', 'Rana', 'Sethi', 'Tiwana', 'Ujjan', 'Yazdani', 'Zardari', 'Arain', 'Bokhari', 'Dhillon',
+  'Gujjar', 'Kharal', 'Mayo', 'Nagra', 'Ranjha', 'Syed', 'Thaheem', 'Tahir', 'Alam', 'Babar',
+  'Cheema', 'Dawood', 'Elahi', 'Farid', 'Gul', 'Habib', 'Idrees', 'Jahangir', 'Kaleem', 'Liaqat',
+  'Munir', 'Najam', 'Obaid', 'Parvez', 'Rafiq', 'Shafiq', 'Tufail', 'Ubaid', 'Wasim', 'Younas',
+];
+
+const BOY_NAMES: readonly string[] = [
+  'Ahmed', 'Bilal', 'Usman', 'Hamza', 'Omar', 'Talha', 'Ali', 'Hassan', 'Hussain', 'Zain',
+  'Ayaan', 'Rayyan', 'Saad', 'Faizan', 'Haris', 'Ibrahim', 'Ismail', 'Yusuf', 'Zakariya', 'Abdullah',
+  'Abubakar', 'Umar', 'Salman', 'Shayan', 'Arham', 'Rehan', 'Daniyal', 'Fahad', 'Murtaza', 'Moiz',
+  'Mustafa', 'Nabeel', 'Owais', 'Qasim', 'Rafay', 'Sami', 'Taimoor', 'Uzair', 'Waqas', 'Yasir',
+  'Zeeshan', 'Affan', 'Arslan', 'Azan', 'Basit', 'Fawad', 'Hashir', 'Huzaifa', 'Ibad', 'Jawad',
+  'Kabir', 'Laith', 'Noman', 'Raheel', 'Sarmad', 'Tayyab', 'Wahab', 'Zohaib', 'Anas', 'Areeb',
+  'Dawood', 'Furqan', 'Ghazi', 'Ilyas', 'Jibran', 'Kamran', 'Luqman', 'Maaz', 'Naveed', 'Osama',
+];
+
+const GIRL_NAMES: readonly string[] = [
+  'Sara', 'Fatima', 'Zainab', 'Ayesha', 'Hira', 'Maryam', 'Hafsa', 'Khadija', 'Amna', 'Anaya',
+  'Areeba', 'Bushra', 'Dua', 'Eman', 'Fiza', 'Ghazal', 'Hania', 'Iqra', 'Jannat', 'Kinza',
+  'Laiba', 'Mahnoor', 'Minahil', 'Nimra', 'Omaima', 'Rida', 'Rumaisa', 'Sadia', 'Samina', 'Shiza',
+  'Tooba', 'Urooj', 'Warda', 'Yumna', 'Zara', 'Zoya', 'Alina', 'Amal', 'Aleena', 'Anum',
+  'Arisha', 'Asma', 'Aiza', 'Beenish', 'Dania', 'Esha', 'Farah', 'Hoorain', 'Inaya', 'Javeria',
+  'Komal', 'Lubna', 'Mehak', 'Palwasha', 'Saba', 'Sidra', 'Tehreem', 'Umaima', 'Wajiha', 'Zunaira',
+];
+
+/** Every first name that is a girl's, across all three schools' families. */
+const FEMALE_NAMES: ReadonlySet<string> = new Set([
+  ...GIRL_NAMES,
+  'Bilquis', 'Nida', 'Sana', 'Mehwish', 'Tehmina', 'Rabia', 'Noor',
+]);
+
+/** Brothers and sisters per family, cycled: one in five is an only child. */
+const FAMILY_SIZES = [2, 3, 2, 1, 3, 2, 2, 1, 3, 2] as const;
+
+/**
+ * Families for a school of roughly `target` children.
+ *
+ * Each family has a distinct surname (the guardian and student ids are derived
+ * from it) and distinct first names, boys and girls mixed.
+ */
+function generateFamilies(target: number): readonly (readonly [string, readonly string[]])[] {
+  const surnames = [...new Set(SURNAMES)].filter((name) => !OTHER_SCHOOLS_SURNAMES.has(name));
+  const families: (readonly [string, readonly string[]])[] = [];
+  let children = 0;
+  let boy = 0;
+  let girl = 0;
+
+  for (let index = 0; children < target; index += 1) {
+    const surname = surnames[index];
+    if (surname === undefined) {
+      throw new Error(`Add more surnames: ${String(index)} cover only ${String(children)} children.`);
+    }
+    const size = FAMILY_SIZES[index % FAMILY_SIZES.length] ?? 1;
+    const names: string[] = [];
+    for (let child = 0; child < size; child += 1) {
+      // Alternate by the running count, so classes end up near half and half.
+      const useGirl = (index + child) % 2 === 1;
+      names.push(
+        useGirl ? pick(GIRL_NAMES, girl++ + index) : pick(BOY_NAMES, boy++ + index * 3),
+      );
+    }
+    families.push([surname, [...new Set(names)]]);
+    children += names.length;
+  }
+  return families;
+}
+
 interface SchoolSpec {
   readonly id: string;
   readonly slug: string;
@@ -86,13 +193,10 @@ const SCHOOLS: readonly SchoolSpec[] = [
     ownerName: 'Demo Owner',
     ownerPhone: '+923001234567',
     ownerDesignation: 'Principal',
-    families: [
-      ['Khan', ['Ahmed', 'Sara', 'Bilal']],
-      ['Malik', ['Fatima', 'Usman']],
-      ['Iqbal', ['Zainab', 'Hamza', 'Ayesha']],
-      ['Sheikh', ['Omar']],
-      ['Butt', ['Hira', 'Talha']],
-    ],
+    // Hundreds of children, so every list, filter and total is tried at the size
+    // a real school actually is. Beacon and City stay small on purpose: they
+    // exist to prove isolation, and they are easy to read at a glance.
+    families: generateFamilies(DEMO_STUDENT_TARGET),
   },
   {
     id: '00000000-0000-4000-8000-000000000011',
@@ -277,7 +381,8 @@ async function seedSchool(
       select: { nextValue: true },
     }),
   ]);
-  const admittedIds: string[] = [];
+  const admitted: { id: string; isSibling: boolean }[] = [];
+  const levelOrderOf = new Map(levels.map((level) => [level.id, level.numericOrder]));
   let nextStudentCode = studentCodeSequence?.nextValue ?? 1;
   // The GR counter is read separately rather than assumed equal to the
   // admission one. They start in step and drift the moment a school issues a GR
@@ -304,24 +409,27 @@ async function seedSchool(
     data: { rollNo: null },
   });
 
-  for (const [surname, firstNames] of spec.families) {
+  for (const [familyIndex, [surname, firstNames]] of spec.families.entries()) {
     const guardian = await db.guardian.upsert({
       where: {
         // No natural key, so a deterministic id keeps the seed idempotent.
         id: deterministicId(spec.id, `guardian:${surname}`),
       },
-      update: { name: `${pick(['Muhammad', 'Ali', 'Imran'], surname.length)} ${surname}` },
+      update: { name: `${pick(FATHER_FIRST_NAMES, familyIndex)} ${surname}` },
       create: {
         id: deterministicId(spec.id, `guardian:${surname}`),
         schoolId: school.id,
-        name: `${pick(['Muhammad', 'Ali', 'Imran'], surname.length)} ${surname}`,
+        name: `${pick(FATHER_FIRST_NAMES, familyIndex)} ${surname}`,
         relation: 'FATHER',
-        phone: `+9230012${String(3400 + surname.length * 7).padStart(5, '0')}`,
-        occupation: pick(['Businessman', 'Doctor', 'Engineer', 'Teacher'], surname.length),
+        // One number per family, distinct across the school: two families on
+        // one phone would make the guardian search ambiguous in a way real
+        // data never is.
+        phone: `+9230${String(10_000_000 + familyIndex * 7919).padStart(8, '0')}`,
+        occupation: pick(OCCUPATIONS, familyIndex),
       },
     });
 
-    for (const firstName of firstNames) {
+    for (const [childIndex, firstName] of firstNames.entries()) {
       placed += 1;
 
       const studentId = deterministicId(spec.id, `student:${surname}:${firstName}`);
@@ -346,7 +454,8 @@ async function seedSchool(
       // Deferred until after the loop: every student gets the same catalogue,
       // and doing it per student inside the loop is N round trips for a value
       // that does not change.
-      admittedIds.push(studentId);
+      // From the second child of a family on: the sibling concession.
+      admitted.push({ id: studentId, isSibling: childIndex > 0 });
 
       const student = await db.student.upsert({
         where: { id: studentId },
@@ -358,10 +467,8 @@ async function seedSchool(
           studentCode,
           firstName,
           lastName: surname,
-          gender: pick(['MALE', 'FEMALE'] as const, firstName.length),
-          dateOfBirth: new Date(
-            `${String(2014 + (placed % 6))}-0${String((placed % 9) + 1)}-1${String(placed % 9)}`,
-          ),
+          gender: FEMALE_NAMES.has(firstName) ? 'FEMALE' : 'MALE',
+          dateOfBirth: dateOfBirthFor(levelOrderOf.get(section.classLevelId) ?? 0, placed),
           city: spec.city,
           status: 'ACTIVE',
           admittedOn: SESSION_START,
@@ -431,7 +538,8 @@ async function seedSchool(
     create: { schoolId: school.id, kind: 'gr', nextValue: nextGr },
   });
 
-  await seedFees(db, school.id, admittedIds);
+  await seedFees(db, school.id, admitted);
+  await seedVoucherNumbering(db, school.id);
   await seedExpenses(db, school.id, session.id);
 
   return created;
@@ -448,10 +556,48 @@ async function seedSchool(
  * the gross/payable split are visible without anyone having to create one by
  * hand before they can see it work.
  */
+/** Fathers' first names, cycled across families. */
+const FATHER_FIRST_NAMES = [
+  'Muhammad', 'Ali', 'Imran', 'Tariq', 'Nadeem', 'Kamran', 'Asif', 'Naveed', 'Shahid', 'Rashid',
+  'Farooq', 'Khalid', 'Waseem', 'Adeel', 'Rizwan', 'Sajid',
+] as const;
+
+const OCCUPATIONS = [
+  'Businessman', 'Doctor', 'Engineer', 'Teacher', 'Shopkeeper', 'Accountant', 'Banker', 'Lawyer',
+  'Government servant', 'Farmer', 'Contractor', 'Pharmacist',
+] as const;
+
+/**
+ * A birth date that fits the class: Nursery children are three, each class
+ * above is a year older. Day is capped at 28 so every month has it, and both
+ * month and day are derived from `placed` so the same child always gets the
+ * same date.
+ */
+function dateOfBirthFor(levelOrder: number, placed: number): Date {
+  const year = 2026 - (3 + levelOrder);
+  const month = 1 + ((placed * 5) % 12);
+  const day = 1 + ((placed * 7) % 28);
+  return new Date(`${String(year)}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+}
+
+/**
+ * Voucher numbering, which generation refuses to run without.
+ *
+ * `FV-` and six digits is what every existing school's counter already prints.
+ * Created only if absent, so a school that has configured its own keeps it.
+ */
+async function seedVoucherNumbering(db: PrismaClient, schoolId: string): Promise<void> {
+  await db.numberSequence.upsert({
+    where: { schoolId_kind: { schoolId, kind: 'voucher' } },
+    update: {},
+    create: { schoolId, kind: 'voucher', nextValue: 1, prefix: 'FV-', pad: 6 },
+  });
+}
+
 async function seedFees(
   db: PrismaClient,
   schoolId: string,
-  studentIds: readonly string[],
+  students: readonly { id: string; isSibling: boolean }[],
 ): Promise<void> {
   // Frequency is stated on every head, never left to the column default.
   //
@@ -534,15 +680,15 @@ async function seedFees(
     );
   }
 
-  for (const [index, studentId] of studentIds.entries()) {
+  for (const { id: studentId, isSibling } of students) {
     for (const head of heads) {
-      // Every third child pays a little less tuition, and every seventh gets a
-      // reduced admission fee — enough variation that the list is not a column
-      // of identical numbers.
+      // The second and later child of a family pay less tuition and a reduced
+      // admission fee. That is the concession the label says it is, and it gives
+      // the list real variation: about four in ten children are on a discount.
       const discounted =
-        head.type === 'TUITION' && index % 3 === 0
+        isSibling && head.type === 'TUITION'
           ? '4500.00'
-          : head.type === 'ADMISSION' && index % 7 === 0
+          : isSibling && head.type === 'ADMISSION'
             ? '10000.00'
             : null;
 

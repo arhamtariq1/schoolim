@@ -1,9 +1,7 @@
 import {
-  grantFor,
   PERMISSION_GRANT,
   type Permission,
   type PermissionGrant,
-  type SchoolRole,
 } from '@ilm/contracts';
 import {
   applyDecorators,
@@ -75,8 +73,8 @@ export class RbacGuard implements CanActivate {
       return true;
     }
 
-    const roles = this.context.roles as readonly SchoolRole[];
-    const grant: PermissionGrant | undefined = grantFor(roles, required);
+    // Resolved once by TenantGuard, school customisations included (ADR-0025).
+    const grant: PermissionGrant | undefined = this.context.grantFor(required);
 
     if (grant === undefined) {
       throw new PermissionDeniedError(required);

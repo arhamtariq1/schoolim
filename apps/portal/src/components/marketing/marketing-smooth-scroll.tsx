@@ -18,12 +18,14 @@ import { useEffect, useRef } from 'react';
  *
  * Three readouts, all written straight to the DOM in the scroll handler and
  * none of them through React state — a `setState` per animation frame would
- * re-render the page sixty times a second to move one hairline:
+ * re-render the page sixty times a second to change one number:
  *
- *   · the progress hairline across the top (`--scroll-progress`),
- *   · the numeric percentage in the corner,
- *   · and `--read` on each manifesto, which is the number its words' opacities
- *     are computed from. See `marketing-manifesto.tsx` for that arithmetic.
+ *   · the numeric percentage in the corner — the only position read-out on
+ *     this page, since the scrollbar is hidden (ADR-0022),
+ *   · `--read` on each manifesto, which is the number its words' opacities
+ *     are computed from. See `marketing-manifesto.tsx` for that arithmetic,
+ *   · and `--parallax` on each `[data-parallax]` wrapper (ADR-0020), from which
+ *     CSS derives the mockups' drift and the hero's tilt.
  *
  * The manifesto measurement is a `getBoundingClientRect` per frame, which is
  * a forced layout — acceptable here only because there are one or two such
@@ -50,7 +52,6 @@ const READ_START = 0.85;
 const READ_END = 0.3;
 
 export function MarketingSmoothScroll() {
-  const progressRef = useRef<HTMLDivElement | null>(null);
   const percentRef = useRef<HTMLSpanElement | null>(null);
 
   useEffect(() => {
@@ -75,9 +76,24 @@ export function MarketingSmoothScroll() {
       return Math.min(1, Math.max(0, travelled / total));
     }
 
-    function paint(progress: number): void {
-      progressRef.current?.style.setProperty('--scroll-progress', String(progress));
+    /**
+     * How far a parallax wrapper has travelled through the viewport: 0 as its
+     * top edge enters from below, 1 as its bottom edge leaves at the top.
+     *
+     * The wrapper is measured and its `[data-parallax-layer]` children are what
+     * move. Measuring the element being transformed would feed its own offset
+     * back into the next frame's measurement, and the picture would shudder.
+     */
+    function travelProgress(element: Element): number {
+      const rect = element.getBoundingClientRect();
+      const total = window.innerHeight + rect.height;
+      if (total <= 0) {
+        return 0.5;
+      }
+      return Math.min(1, Math.max(0, (window.innerHeight - rect.top) / total));
+    }
 
+    function paint(progress: number): void {
       // Only touched when the displayed value actually changes: this is text
       // in the document, so writing it every frame is a layout per frame for a
       // number that changes a hundred times in a whole page.
@@ -97,6 +113,12 @@ export function MarketingSmoothScroll() {
           element.style.setProperty('--read', readProgress(element).toFixed(3));
         }
       }
+
+      for (const element of document.querySelectorAll('[data-parallax]')) {
+        if (element instanceof HTMLElement) {
+          element.style.setProperty('--parallax', travelProgress(element).toFixed(3));
+        }
+      }
     }
 
     function stop(): void {
@@ -110,13 +132,18 @@ export function MarketingSmoothScroll() {
       }
       lenis.destroy();
       lenis = undefined;
-      progressRef.current?.style.removeProperty('--scroll-progress');
 
       // Back to the resting state, which is fully lit — not to wherever the
       // last frame happened to leave it.
       for (const element of document.querySelectorAll('[data-illuminate]')) {
         if (element instanceof HTMLElement) {
           element.style.removeProperty('--read');
+        }
+      }
+      // And parallax back to its centre, where the CSS computes no offset at all.
+      for (const element of document.querySelectorAll('[data-parallax]')) {
+        if (element instanceof HTMLElement) {
+          element.style.removeProperty('--parallax');
         }
       }
     }
@@ -224,13 +251,9 @@ export function MarketingSmoothScroll() {
 
   return (
     <>
-      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-50 h-px bg-border">
-        <div ref={progressRef} className="marketing-progress h-px bg-primary" />
-      </div>
-
       {/* The read-out. `aria-hidden` because a percentage that changes as you
-          scroll is noise to a screen reader, and it reports nothing the
-          scrollbar does not already convey. Hidden on small screens, where it
+          scroll is noise to a screen reader, and the page has no other
+          position indicator for it to duplicate. Hidden on small screens, where it
           would sit on top of the content rather than beside it. */}
       <div
         aria-hidden

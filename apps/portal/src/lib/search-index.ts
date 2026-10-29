@@ -207,6 +207,14 @@ export const TOPICS: readonly Topic[] = [
     permission: 'settings.school.configure',
   },
   {
+    id: 'settings-access',
+    title: 'Users & Access',
+    where: 'Settings › Users & Access',
+    href: '/settings/access',
+    keywords: ['permissions', 'roles', 'access', 'screens', 'modules', 'who can see', 'teacher access'],
+    permission: 'settings.user.manage',
+  },
+  {
     id: 'settings-password',
     title: 'Change your password',
     where: 'Settings › Password',

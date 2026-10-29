@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { academicSessionSchema } from './academics';
 import { feeTotalsSchema, studentFeeLineSchema, studentFeeSchema } from './fees';
 import { nationalIdSchema } from './national-id';
 import { listQuery } from './pagination';
@@ -323,6 +324,27 @@ export const currentSessionSchema = z.object({
 });
 
 export type CurrentSession = z.infer<typeof currentSessionSchema>;
+
+/**
+ * Everything the admission form needs to place a child: the session being
+ * admitted into, the sessions a child may be admitted into, and **every** class
+ * with its sections in that session.
+ *
+ * Every class, not the caller's: `students.student.create` is what decides who
+ * may admit a child, and admission places a child in any class (the enrolment
+ * check only asks that the class exists). A teacher given "Add students" holds
+ * the class tree only as `scoped` — their own classes, possibly none — so
+ * reading it from `/academics/setup` left them with empty Class and Section
+ * pickers on a form whose whole job is choosing them.
+ */
+export const admissionSetupSchema = z.object({
+  session: currentSessionSchema.nullable(),
+  /** Only the years a child can be placed into (`ENROLLABLE_SESSION_STATUSES`). */
+  sessions: z.array(academicSessionSchema),
+  classes: z.array(classLevelWithSectionsSchema),
+});
+
+export type AdmissionSetup = z.infer<typeof admissionSetupSchema>;
 
 /** A guardian attached to a student, as the 360 page shows them. */
 export const studentGuardianSchema = z.object({

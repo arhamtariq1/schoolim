@@ -213,10 +213,18 @@ export function SimpleSelect({
       disabled={disabled}
     >
       <SelectTrigger className={className} aria-label={ariaLabel} {...props}>
-        {TriggerIcon === undefined ? null : (
-          <TriggerIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        {TriggerIcon === undefined ? (
+          <SelectValue placeholder={placeholder} />
+        ) : (
+          // Icon and value travel together at the start: left loose, the trigger's
+          // justify-between would push the value to the middle of a wide field.
+          <span className="flex min-w-0 flex-1 items-center gap-2 text-start">
+            <TriggerIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <span className="truncate">
+              <SelectValue placeholder={placeholder} />
+            </span>
+          </span>
         )}
-        <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
         {emptyOption === undefined ? null : (

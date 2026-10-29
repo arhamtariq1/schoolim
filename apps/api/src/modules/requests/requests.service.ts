@@ -1,6 +1,5 @@
 import {
   allowedNextStatuses,
-  grantFor,
   hasPermission,
   REQUEST_ATTACHMENTS_PER_EVENT,
   REQUEST_CATEGORY_LABELS,
@@ -21,6 +20,7 @@ import {
   type RequestStatus,
   type RequestStudentOption,
   type RequestSummary,
+  type RequestSummaryQuery,
   type SchoolRole,
   type UploadRequestAttachment,
 } from '@ilm/contracts';
@@ -109,11 +109,14 @@ export class RequestsService {
     });
   }
 
-  async summary(): Promise<RequestSummary> {
+  async summary(query: RequestSummaryQuery = {}): Promise<RequestSummary> {
     return this.prisma.tenant(async (tx) => {
       const groups = await tx.request.groupBy({
         by: ['status'],
-        where: this.visible(),
+        where:
+          query.studentId === undefined
+            ? this.visible()
+            : { AND: [this.visible(), { studentId: query.studentId }] },
         _count: { _all: true },
       });
       const count = (status: RequestStatus): number =>
@@ -552,7 +555,7 @@ export class RequestsService {
   }
 
   private isManager(): boolean {
-    return hasPermission(this.context.roles as readonly SchoolRole[], 'workflow.request.manage');
+    return this.context.can('workflow.request.manage');
   }
 
   /**
@@ -599,7 +602,7 @@ export class RequestsService {
     const userId = this.context.userId;
     const none: Prisma.StudentWhereInput = { id: { in: [] } };
 
-    if (grantFor(roles, 'students.student.read') === 'all') {
+    if (this.context.grantFor('students.student.read') === 'all') {
       return {};
     }
     if (userId === undefined) {
@@ -665,6 +668,9 @@ export class RequestsService {
     }
     if (query.priority !== undefined) {
       filters.push({ priority: query.priority });
+    }
+    if (query.studentId !== undefined) {
+      filters.push({ studentId: query.studentId });
     }
     if (query.assignee === 'unassigned') {
       filters.push({ assignedTo: null });

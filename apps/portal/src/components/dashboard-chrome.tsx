@@ -7,6 +7,7 @@ import { ROUTES, type SchoolLogoInfo } from '@ilm/contracts';
 import { AppShell } from '@/components/app-shell';
 import { apiFetch } from '@/lib/api';
 import { appShellPropsFromSession } from '@/lib/app-shell-props';
+import { loadParentChildren } from '@/lib/parent-children';
 import { ABSENT_SCHOOL_LOGO } from '@/lib/school-logo-shell';
 import { pathUsesDashboardShell } from '@/lib/dashboard-shell-paths';
 import { getSession } from '@/lib/session';
@@ -40,11 +41,28 @@ export async function DashboardChrome({ children }: { children: ReactNode }) {
     redirect('/profile/create');
   }
 
-  const logoResult = await apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info);
+  // A parent's children and the chosen one, for the header's child filter — on
+  // every page, since the choice holds everywhere until the parent changes it.
+  const [logoResult, family] = await Promise.all([
+    apiFetch<{ data: SchoolLogoInfo }>(ROUTES.schoolLogo.info),
+    session.permissions.includes('parent.child.read')
+      ? loadParentChildren()
+      : Promise.resolve(undefined),
+  ]);
   const schoolLogo: SchoolLogoInfo = logoResult.ok ? logoResult.data.data : ABSENT_SCHOOL_LOGO;
+  const parentChildren =
+    family === undefined || family.error !== undefined
+      ? undefined
+      : {
+          kids: family.kids.map((child) => ({ id: child.id, name: child.name })),
+          selectedId: family.selected?.id,
+        };
 
   return (
-    <AppShell {...appShellPropsFromSession(session, { schoolLogo })}>
+    <AppShell
+      {...appShellPropsFromSession(session, { schoolLogo })}
+      parentChildren={parentChildren}
+    >
       {children}
     </AppShell>
   );

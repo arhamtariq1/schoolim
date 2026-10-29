@@ -1,4 +1,4 @@
-import { FeesIcon, ChevronRightIcon, ICON_SIZE, PrintIcon } from '@ilm/ui/icons';
+import { AccessIcon, FeesIcon, ChevronRightIcon, ICON_SIZE, PrintIcon } from '@ilm/ui/icons';
 import Link from 'next/link';
 
 import { getSession } from '@/lib/session';
@@ -26,6 +26,13 @@ const SECTIONS = [
       'Where voucher numbering starts, how the printed voucher is laid out, and the Kuickpay or 1LINK ID a parent pays with.',
     icon: PrintIcon,
     permission: 'fees.voucher.read',
+  },
+  {
+    href: '/settings/access',
+    label: 'Users & Access',
+    description: 'Which screens each role, or one person, can open. Start from the role defaults and add or take away.',
+    icon: AccessIcon,
+    permission: 'settings.user.manage',
   },
 ] as const;
 

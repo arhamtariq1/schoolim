@@ -90,6 +90,17 @@ export type SchoolDomain = Prisma.SchoolDomainModel
  */
 export type User = Prisma.UserModel
 /**
+ * Model RolePermissionOverride
+ * A school's change to what a role can do, on top of the defaults in
+ * `@ilm/contracts` roles.ts (ADR-0025). Configuration: no personal data.
+ */
+export type RolePermissionOverride = Prisma.RolePermissionOverrideModel
+/**
+ * Model UserPermissionOverride
+ * One person given more, or less, than their roles (ADR-0025). Applied last.
+ */
+export type UserPermissionOverride = Prisma.UserPermissionOverrideModel
+/**
  * Model UserRole
  * Roles are additive. `scope` carries the data a scoped grant is limited to,
  * for example `{ "sectionIds": [...] }` for a teacher — scope is data compiled

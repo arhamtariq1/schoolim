@@ -4,23 +4,24 @@ import { ClsModule } from 'nestjs-cls';
 
 import { ENV, type Env } from './config/env';
 import { AcademicsModule } from './modules/academics/academics.module';
+import { AccessModule } from './modules/access/access.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { FeesModule } from './modules/fees/fees.module';
 import { HealthModule } from './modules/health/health.module';
-import { PlatformModule } from './modules/platform/platform.module';
-import { ProfileModule } from './modules/profile/profile.module';
-import { PublicModule } from './modules/public/public.module';
-import { SchoolsModule } from './modules/schools/schools.module';
 import { MarksModule } from './modules/marks/marks.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ParentModule } from './modules/parent/parent.module';
+import { PlatformModule } from './modules/platform/platform.module';
+import { ProfileModule } from './modules/profile/profile.module';
+import { PublicModule } from './modules/public/public.module';
 import { RequestsModule } from './modules/requests/requests.module';
-import { TimetablesModule } from './modules/timetables/timetables.module';
+import { SchoolsModule } from './modules/schools/schools.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { StudentsModule } from './modules/students/students.module';
+import { TimetablesModule } from './modules/timetables/timetables.module';
 import { VouchersModule } from './modules/vouchers/vouchers.module';
 import { AuditInterceptor } from './shared/audit/audit.interceptor';
 import { AuthGuard } from './shared/auth/auth.guard';
@@ -70,6 +71,7 @@ import { TenantGuard } from './shared/tenancy/tenant.guard';
     ProfileModule,
     PublicModule,
     StaffModule,
+    AccessModule,
     StudentsModule,
     MarksModule,
     ParentModule,

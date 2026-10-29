@@ -158,20 +158,27 @@ export function VoucherSettingsSkeleton() {
   );
 }
 
-/** Settings › Fee Settings › Other — a pair of link cards. */
-export function OtherFeeSettingsSkeleton() {
+/** Settings › Users & Access — tabs, the role picker, then the permission cards. */
+export function AccessSettingsSkeleton() {
   return (
-    <div className="space-y-8" role="status" aria-label="Loading other fee settings">
+    <div className="space-y-6" role="status" aria-label="Loading access settings">
       <WorkspacePageHeaderSkeleton />
-      <div className="grid gap-4 md:grid-cols-2">
-        {Array.from({ length: 2 }, (_, index) => (
-          <div key={index} className={cn(cardSurfaceClassName, 'flex items-start gap-4 p-5')}>
-            <Skeleton className="size-10 shrink-0 rounded-lg" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <Skeleton className="h-4 w-36" />
-              <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-2/3" />
-            </div>
+      <Skeleton className="h-10 w-48 rounded-lg" />
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+        {Array.from({ length: 6 }, (_, index) => (
+          <Skeleton key={index} className="h-16 rounded-xl" />
+        ))}
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+        {Array.from({ length: 6 }, (_, index) => (
+          <div key={index} className={cn(cardSurfaceClassName, 'space-y-3 p-4')}>
+            <Skeleton className="h-4 w-40" />
+            {Array.from({ length: 4 }, (_, row) => (
+              <div key={row} className="flex items-center gap-3">
+                <Skeleton className="size-4 shrink-0 rounded" />
+                <Skeleton className="h-3 w-48 max-w-full" />
+              </div>
+            ))}
           </div>
         ))}
       </div>

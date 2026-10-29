@@ -405,6 +405,8 @@ export type SchoolWhereInput = {
   domains?: Prisma.SchoolDomainListRelationFilter
   users?: Prisma.UserListRelationFilter
   userRoles?: Prisma.UserRoleListRelationFilter
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideListRelationFilter
+  userPermissionOverrides?: Prisma.UserPermissionOverrideListRelationFilter
   sessions?: Prisma.SessionListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
   passwordResets?: Prisma.PasswordResetListRelationFilter
@@ -491,6 +493,8 @@ export type SchoolOrderByWithRelationInput = {
   domains?: Prisma.SchoolDomainOrderByRelationAggregateInput
   users?: Prisma.UserOrderByRelationAggregateInput
   userRoles?: Prisma.UserRoleOrderByRelationAggregateInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideOrderByRelationAggregateInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideOrderByRelationAggregateInput
   sessions?: Prisma.SessionOrderByRelationAggregateInput
   invitations?: Prisma.InvitationOrderByRelationAggregateInput
   passwordResets?: Prisma.PasswordResetOrderByRelationAggregateInput
@@ -580,6 +584,8 @@ export type SchoolWhereUniqueInput = Prisma.AtLeast<{
   domains?: Prisma.SchoolDomainListRelationFilter
   users?: Prisma.UserListRelationFilter
   userRoles?: Prisma.UserRoleListRelationFilter
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideListRelationFilter
+  userPermissionOverrides?: Prisma.UserPermissionOverrideListRelationFilter
   sessions?: Prisma.SessionListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
   passwordResets?: Prisma.PasswordResetListRelationFilter
@@ -735,6 +741,8 @@ export type SchoolCreateInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -820,6 +828,8 @@ export type SchoolUncheckedCreateInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -905,6 +915,8 @@ export type SchoolUpdateInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -990,6 +1002,8 @@ export type SchoolUncheckedUpdateInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -1363,6 +1377,34 @@ export type SchoolUpdateOneRequiredWithoutUsersNestedInput = {
   upsert?: Prisma.SchoolUpsertWithoutUsersInput
   connect?: Prisma.SchoolWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.SchoolUpdateToOneWithWhereWithoutUsersInput, Prisma.SchoolUpdateWithoutUsersInput>, Prisma.SchoolUncheckedUpdateWithoutUsersInput>
+}
+
+export type SchoolCreateNestedOneWithoutRolePermissionOverridesInput = {
+  create?: Prisma.XOR<Prisma.SchoolCreateWithoutRolePermissionOverridesInput, Prisma.SchoolUncheckedCreateWithoutRolePermissionOverridesInput>
+  connectOrCreate?: Prisma.SchoolCreateOrConnectWithoutRolePermissionOverridesInput
+  connect?: Prisma.SchoolWhereUniqueInput
+}
+
+export type SchoolUpdateOneRequiredWithoutRolePermissionOverridesNestedInput = {
+  create?: Prisma.XOR<Prisma.SchoolCreateWithoutRolePermissionOverridesInput, Prisma.SchoolUncheckedCreateWithoutRolePermissionOverridesInput>
+  connectOrCreate?: Prisma.SchoolCreateOrConnectWithoutRolePermissionOverridesInput
+  upsert?: Prisma.SchoolUpsertWithoutRolePermissionOverridesInput
+  connect?: Prisma.SchoolWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.SchoolUpdateToOneWithWhereWithoutRolePermissionOverridesInput, Prisma.SchoolUpdateWithoutRolePermissionOverridesInput>, Prisma.SchoolUncheckedUpdateWithoutRolePermissionOverridesInput>
+}
+
+export type SchoolCreateNestedOneWithoutUserPermissionOverridesInput = {
+  create?: Prisma.XOR<Prisma.SchoolCreateWithoutUserPermissionOverridesInput, Prisma.SchoolUncheckedCreateWithoutUserPermissionOverridesInput>
+  connectOrCreate?: Prisma.SchoolCreateOrConnectWithoutUserPermissionOverridesInput
+  connect?: Prisma.SchoolWhereUniqueInput
+}
+
+export type SchoolUpdateOneRequiredWithoutUserPermissionOverridesNestedInput = {
+  create?: Prisma.XOR<Prisma.SchoolCreateWithoutUserPermissionOverridesInput, Prisma.SchoolUncheckedCreateWithoutUserPermissionOverridesInput>
+  connectOrCreate?: Prisma.SchoolCreateOrConnectWithoutUserPermissionOverridesInput
+  upsert?: Prisma.SchoolUpsertWithoutUserPermissionOverridesInput
+  connect?: Prisma.SchoolWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.SchoolUpdateToOneWithWhereWithoutUserPermissionOverridesInput, Prisma.SchoolUpdateWithoutUserPermissionOverridesInput>, Prisma.SchoolUncheckedUpdateWithoutUserPermissionOverridesInput>
 }
 
 export type SchoolCreateNestedOneWithoutUserRolesInput = {
@@ -2124,6 +2166,8 @@ export type SchoolCreateWithoutSchoolGroupInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -2208,6 +2252,8 @@ export type SchoolUncheckedCreateWithoutSchoolGroupInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -2352,6 +2398,8 @@ export type SchoolCreateWithoutDomainsInput = {
   schoolGroup?: Prisma.SchoolGroupCreateNestedOneWithoutSchoolsInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -2436,6 +2484,8 @@ export type SchoolUncheckedCreateWithoutDomainsInput = {
   updatedAt?: Date | string
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -2536,6 +2586,8 @@ export type SchoolUpdateWithoutDomainsInput = {
   schoolGroup?: Prisma.SchoolGroupUpdateOneWithoutSchoolsNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -2620,6 +2672,8 @@ export type SchoolUncheckedUpdateWithoutDomainsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -2704,6 +2758,8 @@ export type SchoolCreateWithoutUsersInput = {
   schoolGroup?: Prisma.SchoolGroupCreateNestedOneWithoutSchoolsInput
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -2788,6 +2844,8 @@ export type SchoolUncheckedCreateWithoutUsersInput = {
   updatedAt?: Date | string
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -2888,6 +2946,8 @@ export type SchoolUpdateWithoutUsersInput = {
   schoolGroup?: Prisma.SchoolGroupUpdateOneWithoutSchoolsNestedInput
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -2972,6 +3032,728 @@ export type SchoolUncheckedUpdateWithoutUsersInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
+  passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutSchoolNestedInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutSchoolNestedInput
+  agreements?: Prisma.SchoolAgreementUncheckedUpdateManyWithoutSchoolNestedInput
+  academicSessions?: Prisma.AcademicSessionUncheckedUpdateManyWithoutSchoolNestedInput
+  classLevels?: Prisma.ClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
+  schoolSections?: Prisma.SectionUncheckedUpdateManyWithoutSchoolNestedInput
+  students?: Prisma.StudentUncheckedUpdateManyWithoutSchoolNestedInput
+  guardians?: Prisma.GuardianUncheckedUpdateManyWithoutSchoolNestedInput
+  studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
+  enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
+  staffClassAssignments?: Prisma.StaffClassAssignmentUncheckedUpdateManyWithoutSchoolNestedInput
+  subjects?: Prisma.SubjectUncheckedUpdateManyWithoutSchoolNestedInput
+  assessmentTypes?: Prisma.AssessmentTypeUncheckedUpdateManyWithoutSchoolNestedInput
+  classSubjects?: Prisma.ClassSubjectUncheckedUpdateManyWithoutSchoolNestedInput
+  classAssessmentTypes?: Prisma.ClassAssessmentTypeUncheckedUpdateManyWithoutSchoolNestedInput
+  staffSalaryPayments?: Prisma.StaffSalaryPaymentUncheckedUpdateManyWithoutSchoolNestedInput
+  staffSalaryPeriods?: Prisma.StaffSalaryPeriodUncheckedUpdateManyWithoutSchoolNestedInput
+  staffSalaryAdjustments?: Prisma.StaffSalaryAdjustmentUncheckedUpdateManyWithoutSchoolNestedInput
+  assessments?: Prisma.AssessmentUncheckedUpdateManyWithoutSchoolNestedInput
+  markEntries?: Prisma.MarkEntryUncheckedUpdateManyWithoutSchoolNestedInput
+  holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
+  staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
+  expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutSchoolNestedInput
+  jobRuns?: Prisma.JobRunUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVouchers?: Prisma.FeeVoucherUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSchoolNestedInput
+  feePayments?: Prisma.FeePaymentUncheckedUpdateManyWithoutSchoolNestedInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutSchoolNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutSchoolNestedInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUncheckedUpdateManyWithoutSchoolNestedInput
+  studentFees?: Prisma.StudentFeeUncheckedUpdateManyWithoutSchoolNestedInput
+  numberSequences?: Prisma.NumberSequenceUncheckedUpdateManyWithoutSchoolNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
+  images?: Prisma.SchoolLogoUncheckedUpdateManyWithoutSchoolNestedInput
+  requests?: Prisma.RequestUncheckedUpdateManyWithoutSchoolNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
+  timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
+  timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
+}
+
+export type SchoolCreateWithoutRolePermissionOverridesInput = {
+  id?: string
+  name: string
+  slug: string
+  legalName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  timezone?: string
+  locale?: string
+  currency?: string
+  country?: string
+  city?: string | null
+  address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolCreateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolCreateaLevelClassNamesInput | string[]
+  phone?: string | null
+  email?: string | null
+  status?: $Enums.SchoolStatus
+  lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
+  workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
+  attendanceBackdateDays?: number
+  onboardedAt?: Date | string | null
+  trialEndsAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  schoolGroup?: Prisma.SchoolGroupCreateNestedOneWithoutSchoolsInput
+  domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
+  users?: Prisma.UserCreateNestedManyWithoutSchoolInput
+  userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
+  passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
+  authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutSchoolInput
+  emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutSchoolInput
+  agreements?: Prisma.SchoolAgreementCreateNestedManyWithoutSchoolInput
+  academicSessions?: Prisma.AcademicSessionCreateNestedManyWithoutSchoolInput
+  classLevels?: Prisma.ClassLevelCreateNestedManyWithoutSchoolInput
+  schoolSections?: Prisma.SectionCreateNestedManyWithoutSchoolInput
+  students?: Prisma.StudentCreateNestedManyWithoutSchoolInput
+  guardians?: Prisma.GuardianCreateNestedManyWithoutSchoolInput
+  studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
+  enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
+  feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
+  staffClassAssignments?: Prisma.StaffClassAssignmentCreateNestedManyWithoutSchoolInput
+  subjects?: Prisma.SubjectCreateNestedManyWithoutSchoolInput
+  assessmentTypes?: Prisma.AssessmentTypeCreateNestedManyWithoutSchoolInput
+  classSubjects?: Prisma.ClassSubjectCreateNestedManyWithoutSchoolInput
+  classAssessmentTypes?: Prisma.ClassAssessmentTypeCreateNestedManyWithoutSchoolInput
+  staffSalaryPayments?: Prisma.StaffSalaryPaymentCreateNestedManyWithoutSchoolInput
+  staffSalaryPeriods?: Prisma.StaffSalaryPeriodCreateNestedManyWithoutSchoolInput
+  staffSalaryAdjustments?: Prisma.StaffSalaryAdjustmentCreateNestedManyWithoutSchoolInput
+  assessments?: Prisma.AssessmentCreateNestedManyWithoutSchoolInput
+  markEntries?: Prisma.MarkEntryCreateNestedManyWithoutSchoolInput
+  holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
+  staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
+  expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutSchoolInput
+  jobRuns?: Prisma.JobRunCreateNestedManyWithoutSchoolInput
+  feeVouchers?: Prisma.FeeVoucherCreateNestedManyWithoutSchoolInput
+  feeVoucherLines?: Prisma.FeeVoucherLineCreateNestedManyWithoutSchoolInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodCreateNestedManyWithoutSchoolInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSchoolInput
+  feePayments?: Prisma.FeePaymentCreateNestedManyWithoutSchoolInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutSchoolInput
+  attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutSchoolInput
+  staffAttendance?: Prisma.StaffAttendanceRecordCreateNestedManyWithoutSchoolInput
+  studentFees?: Prisma.StudentFeeCreateNestedManyWithoutSchoolInput
+  numberSequences?: Prisma.NumberSequenceCreateNestedManyWithoutSchoolInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
+  images?: Prisma.SchoolLogoCreateNestedManyWithoutSchoolInput
+  requests?: Prisma.RequestCreateNestedManyWithoutSchoolInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
+  timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
+  timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
+}
+
+export type SchoolUncheckedCreateWithoutRolePermissionOverridesInput = {
+  id?: string
+  schoolGroupId?: string | null
+  name: string
+  slug: string
+  legalName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  timezone?: string
+  locale?: string
+  currency?: string
+  country?: string
+  city?: string | null
+  address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolCreateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolCreateaLevelClassNamesInput | string[]
+  phone?: string | null
+  email?: string | null
+  status?: $Enums.SchoolStatus
+  lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
+  workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
+  attendanceBackdateDays?: number
+  onboardedAt?: Date | string | null
+  trialEndsAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
+  userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
+  passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutSchoolInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutSchoolInput
+  agreements?: Prisma.SchoolAgreementUncheckedCreateNestedManyWithoutSchoolInput
+  academicSessions?: Prisma.AcademicSessionUncheckedCreateNestedManyWithoutSchoolInput
+  classLevels?: Prisma.ClassLevelUncheckedCreateNestedManyWithoutSchoolInput
+  schoolSections?: Prisma.SectionUncheckedCreateNestedManyWithoutSchoolInput
+  students?: Prisma.StudentUncheckedCreateNestedManyWithoutSchoolInput
+  guardians?: Prisma.GuardianUncheckedCreateNestedManyWithoutSchoolInput
+  studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
+  enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
+  staffClassAssignments?: Prisma.StaffClassAssignmentUncheckedCreateNestedManyWithoutSchoolInput
+  subjects?: Prisma.SubjectUncheckedCreateNestedManyWithoutSchoolInput
+  assessmentTypes?: Prisma.AssessmentTypeUncheckedCreateNestedManyWithoutSchoolInput
+  classSubjects?: Prisma.ClassSubjectUncheckedCreateNestedManyWithoutSchoolInput
+  classAssessmentTypes?: Prisma.ClassAssessmentTypeUncheckedCreateNestedManyWithoutSchoolInput
+  staffSalaryPayments?: Prisma.StaffSalaryPaymentUncheckedCreateNestedManyWithoutSchoolInput
+  staffSalaryPeriods?: Prisma.StaffSalaryPeriodUncheckedCreateNestedManyWithoutSchoolInput
+  staffSalaryAdjustments?: Prisma.StaffSalaryAdjustmentUncheckedCreateNestedManyWithoutSchoolInput
+  assessments?: Prisma.AssessmentUncheckedCreateNestedManyWithoutSchoolInput
+  markEntries?: Prisma.MarkEntryUncheckedCreateNestedManyWithoutSchoolInput
+  holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
+  staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
+  expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutSchoolInput
+  jobRuns?: Prisma.JobRunUncheckedCreateNestedManyWithoutSchoolInput
+  feeVouchers?: Prisma.FeeVoucherUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSchoolInput
+  feePayments?: Prisma.FeePaymentUncheckedCreateNestedManyWithoutSchoolInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutSchoolInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutSchoolInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUncheckedCreateNestedManyWithoutSchoolInput
+  studentFees?: Prisma.StudentFeeUncheckedCreateNestedManyWithoutSchoolInput
+  numberSequences?: Prisma.NumberSequenceUncheckedCreateNestedManyWithoutSchoolInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
+  images?: Prisma.SchoolLogoUncheckedCreateNestedManyWithoutSchoolInput
+  requests?: Prisma.RequestUncheckedCreateNestedManyWithoutSchoolInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
+  timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
+  timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
+}
+
+export type SchoolCreateOrConnectWithoutRolePermissionOverridesInput = {
+  where: Prisma.SchoolWhereUniqueInput
+  create: Prisma.XOR<Prisma.SchoolCreateWithoutRolePermissionOverridesInput, Prisma.SchoolUncheckedCreateWithoutRolePermissionOverridesInput>
+}
+
+export type SchoolUpsertWithoutRolePermissionOverridesInput = {
+  update: Prisma.XOR<Prisma.SchoolUpdateWithoutRolePermissionOverridesInput, Prisma.SchoolUncheckedUpdateWithoutRolePermissionOverridesInput>
+  create: Prisma.XOR<Prisma.SchoolCreateWithoutRolePermissionOverridesInput, Prisma.SchoolUncheckedCreateWithoutRolePermissionOverridesInput>
+  where?: Prisma.SchoolWhereInput
+}
+
+export type SchoolUpdateToOneWithWhereWithoutRolePermissionOverridesInput = {
+  where?: Prisma.SchoolWhereInput
+  data: Prisma.XOR<Prisma.SchoolUpdateWithoutRolePermissionOverridesInput, Prisma.SchoolUncheckedUpdateWithoutRolePermissionOverridesInput>
+}
+
+export type SchoolUpdateWithoutRolePermissionOverridesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  legalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  country?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolUpdateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolUpdateaLevelClassNamesInput | string[]
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
+  lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
+  attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
+  onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  trialEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  schoolGroup?: Prisma.SchoolGroupUpdateOneWithoutSchoolsNestedInput
+  domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
+  users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
+  userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
+  passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
+  authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutSchoolNestedInput
+  emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutSchoolNestedInput
+  agreements?: Prisma.SchoolAgreementUpdateManyWithoutSchoolNestedInput
+  academicSessions?: Prisma.AcademicSessionUpdateManyWithoutSchoolNestedInput
+  classLevels?: Prisma.ClassLevelUpdateManyWithoutSchoolNestedInput
+  schoolSections?: Prisma.SectionUpdateManyWithoutSchoolNestedInput
+  students?: Prisma.StudentUpdateManyWithoutSchoolNestedInput
+  guardians?: Prisma.GuardianUpdateManyWithoutSchoolNestedInput
+  studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
+  enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
+  feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
+  staffClassAssignments?: Prisma.StaffClassAssignmentUpdateManyWithoutSchoolNestedInput
+  subjects?: Prisma.SubjectUpdateManyWithoutSchoolNestedInput
+  assessmentTypes?: Prisma.AssessmentTypeUpdateManyWithoutSchoolNestedInput
+  classSubjects?: Prisma.ClassSubjectUpdateManyWithoutSchoolNestedInput
+  classAssessmentTypes?: Prisma.ClassAssessmentTypeUpdateManyWithoutSchoolNestedInput
+  staffSalaryPayments?: Prisma.StaffSalaryPaymentUpdateManyWithoutSchoolNestedInput
+  staffSalaryPeriods?: Prisma.StaffSalaryPeriodUpdateManyWithoutSchoolNestedInput
+  staffSalaryAdjustments?: Prisma.StaffSalaryAdjustmentUpdateManyWithoutSchoolNestedInput
+  assessments?: Prisma.AssessmentUpdateManyWithoutSchoolNestedInput
+  markEntries?: Prisma.MarkEntryUpdateManyWithoutSchoolNestedInput
+  holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
+  staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
+  expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
+  expenses?: Prisma.ExpenseUpdateManyWithoutSchoolNestedInput
+  jobRuns?: Prisma.JobRunUpdateManyWithoutSchoolNestedInput
+  feeVouchers?: Prisma.FeeVoucherUpdateManyWithoutSchoolNestedInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUpdateManyWithoutSchoolNestedInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUpdateManyWithoutSchoolNestedInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUpdateManyWithoutSchoolNestedInput
+  feePayments?: Prisma.FeePaymentUpdateManyWithoutSchoolNestedInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUpdateManyWithoutSchoolNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutSchoolNestedInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUpdateManyWithoutSchoolNestedInput
+  studentFees?: Prisma.StudentFeeUpdateManyWithoutSchoolNestedInput
+  numberSequences?: Prisma.NumberSequenceUpdateManyWithoutSchoolNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
+  images?: Prisma.SchoolLogoUpdateManyWithoutSchoolNestedInput
+  requests?: Prisma.RequestUpdateManyWithoutSchoolNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
+  timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
+  timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
+}
+
+export type SchoolUncheckedUpdateWithoutRolePermissionOverridesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  legalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  country?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolUpdateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolUpdateaLevelClassNamesInput | string[]
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
+  lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
+  attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
+  onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  trialEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
+  userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
+  passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutSchoolNestedInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedUpdateManyWithoutSchoolNestedInput
+  agreements?: Prisma.SchoolAgreementUncheckedUpdateManyWithoutSchoolNestedInput
+  academicSessions?: Prisma.AcademicSessionUncheckedUpdateManyWithoutSchoolNestedInput
+  classLevels?: Prisma.ClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
+  schoolSections?: Prisma.SectionUncheckedUpdateManyWithoutSchoolNestedInput
+  students?: Prisma.StudentUncheckedUpdateManyWithoutSchoolNestedInput
+  guardians?: Prisma.GuardianUncheckedUpdateManyWithoutSchoolNestedInput
+  studentGuardians?: Prisma.StudentGuardianUncheckedUpdateManyWithoutSchoolNestedInput
+  enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeads?: Prisma.FeeHeadUncheckedUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedUpdateManyWithoutSchoolNestedInput
+  staffClassAssignments?: Prisma.StaffClassAssignmentUncheckedUpdateManyWithoutSchoolNestedInput
+  subjects?: Prisma.SubjectUncheckedUpdateManyWithoutSchoolNestedInput
+  assessmentTypes?: Prisma.AssessmentTypeUncheckedUpdateManyWithoutSchoolNestedInput
+  classSubjects?: Prisma.ClassSubjectUncheckedUpdateManyWithoutSchoolNestedInput
+  classAssessmentTypes?: Prisma.ClassAssessmentTypeUncheckedUpdateManyWithoutSchoolNestedInput
+  staffSalaryPayments?: Prisma.StaffSalaryPaymentUncheckedUpdateManyWithoutSchoolNestedInput
+  staffSalaryPeriods?: Prisma.StaffSalaryPeriodUncheckedUpdateManyWithoutSchoolNestedInput
+  staffSalaryAdjustments?: Prisma.StaffSalaryAdjustmentUncheckedUpdateManyWithoutSchoolNestedInput
+  assessments?: Prisma.AssessmentUncheckedUpdateManyWithoutSchoolNestedInput
+  markEntries?: Prisma.MarkEntryUncheckedUpdateManyWithoutSchoolNestedInput
+  holidays?: Prisma.HolidayUncheckedUpdateManyWithoutSchoolNestedInput
+  staff?: Prisma.StaffUncheckedUpdateManyWithoutSchoolNestedInput
+  expenseCategories?: Prisma.ExpenseCategoryUncheckedUpdateManyWithoutSchoolNestedInput
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutSchoolNestedInput
+  jobRuns?: Prisma.JobRunUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVouchers?: Prisma.FeeVoucherUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUncheckedUpdateManyWithoutSchoolNestedInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUncheckedUpdateManyWithoutSchoolNestedInput
+  feePayments?: Prisma.FeePaymentUncheckedUpdateManyWithoutSchoolNestedInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUncheckedUpdateManyWithoutSchoolNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutSchoolNestedInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUncheckedUpdateManyWithoutSchoolNestedInput
+  studentFees?: Prisma.StudentFeeUncheckedUpdateManyWithoutSchoolNestedInput
+  numberSequences?: Prisma.NumberSequenceUncheckedUpdateManyWithoutSchoolNestedInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedUpdateManyWithoutSchoolNestedInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedUpdateManyWithoutSchoolNestedInput
+  images?: Prisma.SchoolLogoUncheckedUpdateManyWithoutSchoolNestedInput
+  requests?: Prisma.RequestUncheckedUpdateManyWithoutSchoolNestedInput
+  requestEvents?: Prisma.RequestEventUncheckedUpdateManyWithoutSchoolNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedUpdateManyWithoutSchoolNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedUpdateManyWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedUpdateOneWithoutSchoolNestedInput
+  timetables?: Prisma.TimetableUncheckedUpdateManyWithoutSchoolNestedInput
+  timetableEntries?: Prisma.TimetableEntryUncheckedUpdateManyWithoutSchoolNestedInput
+}
+
+export type SchoolCreateWithoutUserPermissionOverridesInput = {
+  id?: string
+  name: string
+  slug: string
+  legalName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  timezone?: string
+  locale?: string
+  currency?: string
+  country?: string
+  city?: string | null
+  address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolCreateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolCreateaLevelClassNamesInput | string[]
+  phone?: string | null
+  email?: string | null
+  status?: $Enums.SchoolStatus
+  lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
+  workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
+  attendanceBackdateDays?: number
+  onboardedAt?: Date | string | null
+  trialEndsAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  schoolGroup?: Prisma.SchoolGroupCreateNestedOneWithoutSchoolsInput
+  domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
+  users?: Prisma.UserCreateNestedManyWithoutSchoolInput
+  userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
+  passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
+  authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutSchoolInput
+  emailVerifications?: Prisma.EmailVerificationCreateNestedManyWithoutSchoolInput
+  agreements?: Prisma.SchoolAgreementCreateNestedManyWithoutSchoolInput
+  academicSessions?: Prisma.AcademicSessionCreateNestedManyWithoutSchoolInput
+  classLevels?: Prisma.ClassLevelCreateNestedManyWithoutSchoolInput
+  schoolSections?: Prisma.SectionCreateNestedManyWithoutSchoolInput
+  students?: Prisma.StudentCreateNestedManyWithoutSchoolInput
+  guardians?: Prisma.GuardianCreateNestedManyWithoutSchoolInput
+  studentGuardians?: Prisma.StudentGuardianCreateNestedManyWithoutSchoolInput
+  enrollments?: Prisma.EnrollmentCreateNestedManyWithoutSchoolInput
+  feeHeads?: Prisma.FeeHeadCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelCreateNestedManyWithoutSchoolInput
+  staffClassAssignments?: Prisma.StaffClassAssignmentCreateNestedManyWithoutSchoolInput
+  subjects?: Prisma.SubjectCreateNestedManyWithoutSchoolInput
+  assessmentTypes?: Prisma.AssessmentTypeCreateNestedManyWithoutSchoolInput
+  classSubjects?: Prisma.ClassSubjectCreateNestedManyWithoutSchoolInput
+  classAssessmentTypes?: Prisma.ClassAssessmentTypeCreateNestedManyWithoutSchoolInput
+  staffSalaryPayments?: Prisma.StaffSalaryPaymentCreateNestedManyWithoutSchoolInput
+  staffSalaryPeriods?: Prisma.StaffSalaryPeriodCreateNestedManyWithoutSchoolInput
+  staffSalaryAdjustments?: Prisma.StaffSalaryAdjustmentCreateNestedManyWithoutSchoolInput
+  assessments?: Prisma.AssessmentCreateNestedManyWithoutSchoolInput
+  markEntries?: Prisma.MarkEntryCreateNestedManyWithoutSchoolInput
+  holidays?: Prisma.HolidayCreateNestedManyWithoutSchoolInput
+  staff?: Prisma.StaffCreateNestedManyWithoutSchoolInput
+  expenseCategories?: Prisma.ExpenseCategoryCreateNestedManyWithoutSchoolInput
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutSchoolInput
+  jobRuns?: Prisma.JobRunCreateNestedManyWithoutSchoolInput
+  feeVouchers?: Prisma.FeeVoucherCreateNestedManyWithoutSchoolInput
+  feeVoucherLines?: Prisma.FeeVoucherLineCreateNestedManyWithoutSchoolInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodCreateNestedManyWithoutSchoolInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearCreateNestedManyWithoutSchoolInput
+  feePayments?: Prisma.FeePaymentCreateNestedManyWithoutSchoolInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationCreateNestedManyWithoutSchoolInput
+  attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutSchoolInput
+  staffAttendance?: Prisma.StaffAttendanceRecordCreateNestedManyWithoutSchoolInput
+  studentFees?: Prisma.StudentFeeCreateNestedManyWithoutSchoolInput
+  numberSequences?: Prisma.NumberSequenceCreateNestedManyWithoutSchoolInput
+  securityDeposits?: Prisma.SecurityDepositCreateNestedManyWithoutSchoolInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundCreateNestedManyWithoutSchoolInput
+  images?: Prisma.SchoolLogoCreateNestedManyWithoutSchoolInput
+  requests?: Prisma.RequestCreateNestedManyWithoutSchoolInput
+  requestEvents?: Prisma.RequestEventCreateNestedManyWithoutSchoolInput
+  requestAttachments?: Prisma.RequestAttachmentCreateNestedManyWithoutSchoolInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenCreateNestedManyWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsCreateNestedOneWithoutSchoolInput
+  timetables?: Prisma.TimetableCreateNestedManyWithoutSchoolInput
+  timetableEntries?: Prisma.TimetableEntryCreateNestedManyWithoutSchoolInput
+}
+
+export type SchoolUncheckedCreateWithoutUserPermissionOverridesInput = {
+  id?: string
+  schoolGroupId?: string | null
+  name: string
+  slug: string
+  legalName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  timezone?: string
+  locale?: string
+  currency?: string
+  country?: string
+  city?: string | null
+  address?: string | null
+  schoolLevels?: Prisma.SchoolCreateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolCreateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolCreateaLevelClassNamesInput | string[]
+  phone?: string | null
+  email?: string | null
+  status?: $Enums.SchoolStatus
+  lateFeePercent?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: number
+  workingDays?: Prisma.SchoolCreateworkingDaysInput | number[]
+  attendanceBackdateDays?: number
+  onboardedAt?: Date | string | null
+  trialEndsAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
+  userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
+  passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
+  authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutSchoolInput
+  emailVerifications?: Prisma.EmailVerificationUncheckedCreateNestedManyWithoutSchoolInput
+  agreements?: Prisma.SchoolAgreementUncheckedCreateNestedManyWithoutSchoolInput
+  academicSessions?: Prisma.AcademicSessionUncheckedCreateNestedManyWithoutSchoolInput
+  classLevels?: Prisma.ClassLevelUncheckedCreateNestedManyWithoutSchoolInput
+  schoolSections?: Prisma.SectionUncheckedCreateNestedManyWithoutSchoolInput
+  students?: Prisma.StudentUncheckedCreateNestedManyWithoutSchoolInput
+  guardians?: Prisma.GuardianUncheckedCreateNestedManyWithoutSchoolInput
+  studentGuardians?: Prisma.StudentGuardianUncheckedCreateNestedManyWithoutSchoolInput
+  enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeads?: Prisma.FeeHeadUncheckedCreateNestedManyWithoutSchoolInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUncheckedCreateNestedManyWithoutSchoolInput
+  staffClassAssignments?: Prisma.StaffClassAssignmentUncheckedCreateNestedManyWithoutSchoolInput
+  subjects?: Prisma.SubjectUncheckedCreateNestedManyWithoutSchoolInput
+  assessmentTypes?: Prisma.AssessmentTypeUncheckedCreateNestedManyWithoutSchoolInput
+  classSubjects?: Prisma.ClassSubjectUncheckedCreateNestedManyWithoutSchoolInput
+  classAssessmentTypes?: Prisma.ClassAssessmentTypeUncheckedCreateNestedManyWithoutSchoolInput
+  staffSalaryPayments?: Prisma.StaffSalaryPaymentUncheckedCreateNestedManyWithoutSchoolInput
+  staffSalaryPeriods?: Prisma.StaffSalaryPeriodUncheckedCreateNestedManyWithoutSchoolInput
+  staffSalaryAdjustments?: Prisma.StaffSalaryAdjustmentUncheckedCreateNestedManyWithoutSchoolInput
+  assessments?: Prisma.AssessmentUncheckedCreateNestedManyWithoutSchoolInput
+  markEntries?: Prisma.MarkEntryUncheckedCreateNestedManyWithoutSchoolInput
+  holidays?: Prisma.HolidayUncheckedCreateNestedManyWithoutSchoolInput
+  staff?: Prisma.StaffUncheckedCreateNestedManyWithoutSchoolInput
+  expenseCategories?: Prisma.ExpenseCategoryUncheckedCreateNestedManyWithoutSchoolInput
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutSchoolInput
+  jobRuns?: Prisma.JobRunUncheckedCreateNestedManyWithoutSchoolInput
+  feeVouchers?: Prisma.FeeVoucherUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUncheckedCreateNestedManyWithoutSchoolInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUncheckedCreateNestedManyWithoutSchoolInput
+  feePayments?: Prisma.FeePaymentUncheckedCreateNestedManyWithoutSchoolInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUncheckedCreateNestedManyWithoutSchoolInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutSchoolInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUncheckedCreateNestedManyWithoutSchoolInput
+  studentFees?: Prisma.StudentFeeUncheckedCreateNestedManyWithoutSchoolInput
+  numberSequences?: Prisma.NumberSequenceUncheckedCreateNestedManyWithoutSchoolInput
+  securityDeposits?: Prisma.SecurityDepositUncheckedCreateNestedManyWithoutSchoolInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUncheckedCreateNestedManyWithoutSchoolInput
+  images?: Prisma.SchoolLogoUncheckedCreateNestedManyWithoutSchoolInput
+  requests?: Prisma.RequestUncheckedCreateNestedManyWithoutSchoolInput
+  requestEvents?: Prisma.RequestEventUncheckedCreateNestedManyWithoutSchoolInput
+  requestAttachments?: Prisma.RequestAttachmentUncheckedCreateNestedManyWithoutSchoolInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSchoolInput
+  deviceTokens?: Prisma.DeviceTokenUncheckedCreateNestedManyWithoutSchoolInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUncheckedCreateNestedOneWithoutSchoolInput
+  timetables?: Prisma.TimetableUncheckedCreateNestedManyWithoutSchoolInput
+  timetableEntries?: Prisma.TimetableEntryUncheckedCreateNestedManyWithoutSchoolInput
+}
+
+export type SchoolCreateOrConnectWithoutUserPermissionOverridesInput = {
+  where: Prisma.SchoolWhereUniqueInput
+  create: Prisma.XOR<Prisma.SchoolCreateWithoutUserPermissionOverridesInput, Prisma.SchoolUncheckedCreateWithoutUserPermissionOverridesInput>
+}
+
+export type SchoolUpsertWithoutUserPermissionOverridesInput = {
+  update: Prisma.XOR<Prisma.SchoolUpdateWithoutUserPermissionOverridesInput, Prisma.SchoolUncheckedUpdateWithoutUserPermissionOverridesInput>
+  create: Prisma.XOR<Prisma.SchoolCreateWithoutUserPermissionOverridesInput, Prisma.SchoolUncheckedCreateWithoutUserPermissionOverridesInput>
+  where?: Prisma.SchoolWhereInput
+}
+
+export type SchoolUpdateToOneWithWhereWithoutUserPermissionOverridesInput = {
+  where?: Prisma.SchoolWhereInput
+  data: Prisma.XOR<Prisma.SchoolUpdateWithoutUserPermissionOverridesInput, Prisma.SchoolUncheckedUpdateWithoutUserPermissionOverridesInput>
+}
+
+export type SchoolUpdateWithoutUserPermissionOverridesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  legalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  country?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolUpdateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolUpdateaLevelClassNamesInput | string[]
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
+  lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
+  attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
+  onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  trialEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  schoolGroup?: Prisma.SchoolGroupUpdateOneWithoutSchoolsNestedInput
+  domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
+  users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
+  userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
+  passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
+  authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutSchoolNestedInput
+  emailVerifications?: Prisma.EmailVerificationUpdateManyWithoutSchoolNestedInput
+  agreements?: Prisma.SchoolAgreementUpdateManyWithoutSchoolNestedInput
+  academicSessions?: Prisma.AcademicSessionUpdateManyWithoutSchoolNestedInput
+  classLevels?: Prisma.ClassLevelUpdateManyWithoutSchoolNestedInput
+  schoolSections?: Prisma.SectionUpdateManyWithoutSchoolNestedInput
+  students?: Prisma.StudentUpdateManyWithoutSchoolNestedInput
+  guardians?: Prisma.GuardianUpdateManyWithoutSchoolNestedInput
+  studentGuardians?: Prisma.StudentGuardianUpdateManyWithoutSchoolNestedInput
+  enrollments?: Prisma.EnrollmentUpdateManyWithoutSchoolNestedInput
+  feeHeads?: Prisma.FeeHeadUpdateManyWithoutSchoolNestedInput
+  feeHeadClassLevels?: Prisma.FeeHeadClassLevelUpdateManyWithoutSchoolNestedInput
+  staffClassAssignments?: Prisma.StaffClassAssignmentUpdateManyWithoutSchoolNestedInput
+  subjects?: Prisma.SubjectUpdateManyWithoutSchoolNestedInput
+  assessmentTypes?: Prisma.AssessmentTypeUpdateManyWithoutSchoolNestedInput
+  classSubjects?: Prisma.ClassSubjectUpdateManyWithoutSchoolNestedInput
+  classAssessmentTypes?: Prisma.ClassAssessmentTypeUpdateManyWithoutSchoolNestedInput
+  staffSalaryPayments?: Prisma.StaffSalaryPaymentUpdateManyWithoutSchoolNestedInput
+  staffSalaryPeriods?: Prisma.StaffSalaryPeriodUpdateManyWithoutSchoolNestedInput
+  staffSalaryAdjustments?: Prisma.StaffSalaryAdjustmentUpdateManyWithoutSchoolNestedInput
+  assessments?: Prisma.AssessmentUpdateManyWithoutSchoolNestedInput
+  markEntries?: Prisma.MarkEntryUpdateManyWithoutSchoolNestedInput
+  holidays?: Prisma.HolidayUpdateManyWithoutSchoolNestedInput
+  staff?: Prisma.StaffUpdateManyWithoutSchoolNestedInput
+  expenseCategories?: Prisma.ExpenseCategoryUpdateManyWithoutSchoolNestedInput
+  expenses?: Prisma.ExpenseUpdateManyWithoutSchoolNestedInput
+  jobRuns?: Prisma.JobRunUpdateManyWithoutSchoolNestedInput
+  feeVouchers?: Prisma.FeeVoucherUpdateManyWithoutSchoolNestedInput
+  feeVoucherLines?: Prisma.FeeVoucherLineUpdateManyWithoutSchoolNestedInput
+  feeVoucherPeriods?: Prisma.FeeVoucherPeriodUpdateManyWithoutSchoolNestedInput
+  feeVoucherArrears?: Prisma.FeeVoucherArrearUpdateManyWithoutSchoolNestedInput
+  feePayments?: Prisma.FeePaymentUpdateManyWithoutSchoolNestedInput
+  feePaymentAllocations?: Prisma.FeePaymentAllocationUpdateManyWithoutSchoolNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutSchoolNestedInput
+  staffAttendance?: Prisma.StaffAttendanceRecordUpdateManyWithoutSchoolNestedInput
+  studentFees?: Prisma.StudentFeeUpdateManyWithoutSchoolNestedInput
+  numberSequences?: Prisma.NumberSequenceUpdateManyWithoutSchoolNestedInput
+  securityDeposits?: Prisma.SecurityDepositUpdateManyWithoutSchoolNestedInput
+  securityDepositRefunds?: Prisma.SecurityDepositRefundUpdateManyWithoutSchoolNestedInput
+  images?: Prisma.SchoolLogoUpdateManyWithoutSchoolNestedInput
+  requests?: Prisma.RequestUpdateManyWithoutSchoolNestedInput
+  requestEvents?: Prisma.RequestEventUpdateManyWithoutSchoolNestedInput
+  requestAttachments?: Prisma.RequestAttachmentUpdateManyWithoutSchoolNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutSchoolNestedInput
+  deviceTokens?: Prisma.DeviceTokenUpdateManyWithoutSchoolNestedInput
+  voucherSettings?: Prisma.SchoolVoucherSettingsUpdateOneWithoutSchoolNestedInput
+  timetables?: Prisma.TimetableUpdateManyWithoutSchoolNestedInput
+  timetableEntries?: Prisma.TimetableEntryUpdateManyWithoutSchoolNestedInput
+}
+
+export type SchoolUncheckedUpdateWithoutUserPermissionOverridesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  legalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  country?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  schoolLevels?: Prisma.SchoolUpdateschoolLevelsInput | string[]
+  oLevelClassNames?: Prisma.SchoolUpdateoLevelClassNamesInput | string[]
+  aLevelClassNames?: Prisma.SchoolUpdateaLevelClassNamesInput | string[]
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumSchoolStatusFieldUpdateOperationsInput | $Enums.SchoolStatus
+  lateFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeFlat?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  lateFeeGraceDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workingDays?: Prisma.SchoolUpdateworkingDaysInput | number[]
+  attendanceBackdateDays?: Prisma.IntFieldUpdateOperationsInput | number
+  onboardedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  trialEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
+  userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -3056,6 +3838,8 @@ export type SchoolCreateWithoutUserRolesInput = {
   schoolGroup?: Prisma.SchoolGroupCreateNestedOneWithoutSchoolsInput
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -3140,6 +3924,8 @@ export type SchoolUncheckedCreateWithoutUserRolesInput = {
   updatedAt?: Date | string
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -3240,6 +4026,8 @@ export type SchoolUpdateWithoutUserRolesInput = {
   schoolGroup?: Prisma.SchoolGroupUpdateOneWithoutSchoolsNestedInput
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -3324,6 +4112,8 @@ export type SchoolUncheckedUpdateWithoutUserRolesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -3409,6 +4199,8 @@ export type SchoolCreateWithoutSessionsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
   authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutSchoolInput
@@ -3493,6 +4285,8 @@ export type SchoolUncheckedCreateWithoutSessionsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
   authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutSchoolInput
@@ -3593,6 +4387,8 @@ export type SchoolUpdateWithoutSessionsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
   authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutSchoolNestedInput
@@ -3677,6 +4473,8 @@ export type SchoolUncheckedUpdateWithoutSessionsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
   authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutSchoolNestedInput
@@ -3761,6 +4559,8 @@ export type SchoolCreateWithoutInvitationsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
   authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutSchoolInput
@@ -3845,6 +4645,8 @@ export type SchoolUncheckedCreateWithoutInvitationsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
   authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutSchoolInput
@@ -3945,6 +4747,8 @@ export type SchoolUpdateWithoutInvitationsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
   authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutSchoolNestedInput
@@ -4029,6 +4833,8 @@ export type SchoolUncheckedUpdateWithoutInvitationsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
   authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutSchoolNestedInput
@@ -4113,6 +4919,8 @@ export type SchoolCreateWithoutPasswordResetsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   authHandoffs?: Prisma.AuthHandoffCreateNestedManyWithoutSchoolInput
@@ -4197,6 +5005,8 @@ export type SchoolUncheckedCreateWithoutPasswordResetsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   authHandoffs?: Prisma.AuthHandoffUncheckedCreateNestedManyWithoutSchoolInput
@@ -4297,6 +5107,8 @@ export type SchoolUpdateWithoutPasswordResetsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   authHandoffs?: Prisma.AuthHandoffUpdateManyWithoutSchoolNestedInput
@@ -4381,6 +5193,8 @@ export type SchoolUncheckedUpdateWithoutPasswordResetsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   authHandoffs?: Prisma.AuthHandoffUncheckedUpdateManyWithoutSchoolNestedInput
@@ -4465,6 +5279,8 @@ export type SchoolCreateWithoutAuthHandoffsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -4549,6 +5365,8 @@ export type SchoolUncheckedCreateWithoutAuthHandoffsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -4649,6 +5467,8 @@ export type SchoolUpdateWithoutAuthHandoffsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -4733,6 +5553,8 @@ export type SchoolUncheckedUpdateWithoutAuthHandoffsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -4817,6 +5639,8 @@ export type SchoolCreateWithoutEmailVerificationsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -4901,6 +5725,8 @@ export type SchoolUncheckedCreateWithoutEmailVerificationsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -5001,6 +5827,8 @@ export type SchoolUpdateWithoutEmailVerificationsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -5085,6 +5913,8 @@ export type SchoolUncheckedUpdateWithoutEmailVerificationsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -5169,6 +5999,8 @@ export type SchoolCreateWithoutAgreementsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -5253,6 +6085,8 @@ export type SchoolUncheckedCreateWithoutAgreementsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -5353,6 +6187,8 @@ export type SchoolUpdateWithoutAgreementsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -5437,6 +6273,8 @@ export type SchoolUncheckedUpdateWithoutAgreementsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -5521,6 +6359,8 @@ export type SchoolCreateWithoutAcademicSessionsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -5605,6 +6445,8 @@ export type SchoolUncheckedCreateWithoutAcademicSessionsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -5705,6 +6547,8 @@ export type SchoolUpdateWithoutAcademicSessionsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -5789,6 +6633,8 @@ export type SchoolUncheckedUpdateWithoutAcademicSessionsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -5873,6 +6719,8 @@ export type SchoolCreateWithoutClassLevelsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -5957,6 +6805,8 @@ export type SchoolUncheckedCreateWithoutClassLevelsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -6057,6 +6907,8 @@ export type SchoolUpdateWithoutClassLevelsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -6141,6 +6993,8 @@ export type SchoolUncheckedUpdateWithoutClassLevelsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -6225,6 +7079,8 @@ export type SchoolCreateWithoutSchoolSectionsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -6309,6 +7165,8 @@ export type SchoolUncheckedCreateWithoutSchoolSectionsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -6409,6 +7267,8 @@ export type SchoolUpdateWithoutSchoolSectionsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -6493,6 +7353,8 @@ export type SchoolUncheckedUpdateWithoutSchoolSectionsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -6577,6 +7439,8 @@ export type SchoolCreateWithoutStudentsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -6661,6 +7525,8 @@ export type SchoolUncheckedCreateWithoutStudentsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -6761,6 +7627,8 @@ export type SchoolUpdateWithoutStudentsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -6845,6 +7713,8 @@ export type SchoolUncheckedUpdateWithoutStudentsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -6929,6 +7799,8 @@ export type SchoolCreateWithoutGuardiansInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -7013,6 +7885,8 @@ export type SchoolUncheckedCreateWithoutGuardiansInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -7113,6 +7987,8 @@ export type SchoolUpdateWithoutGuardiansInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -7197,6 +8073,8 @@ export type SchoolUncheckedUpdateWithoutGuardiansInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -7281,6 +8159,8 @@ export type SchoolCreateWithoutStudentGuardiansInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -7365,6 +8245,8 @@ export type SchoolUncheckedCreateWithoutStudentGuardiansInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -7465,6 +8347,8 @@ export type SchoolUpdateWithoutStudentGuardiansInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -7549,6 +8433,8 @@ export type SchoolUncheckedUpdateWithoutStudentGuardiansInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -7633,6 +8519,8 @@ export type SchoolCreateWithoutEnrollmentsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -7717,6 +8605,8 @@ export type SchoolUncheckedCreateWithoutEnrollmentsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -7817,6 +8707,8 @@ export type SchoolUpdateWithoutEnrollmentsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -7901,6 +8793,8 @@ export type SchoolUncheckedUpdateWithoutEnrollmentsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -7985,6 +8879,8 @@ export type SchoolCreateWithoutStaffInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -8069,6 +8965,8 @@ export type SchoolUncheckedCreateWithoutStaffInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -8169,6 +9067,8 @@ export type SchoolUpdateWithoutStaffInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -8253,6 +9153,8 @@ export type SchoolUncheckedUpdateWithoutStaffInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -8337,6 +9239,8 @@ export type SchoolCreateWithoutStaffClassAssignmentsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -8421,6 +9325,8 @@ export type SchoolUncheckedCreateWithoutStaffClassAssignmentsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -8521,6 +9427,8 @@ export type SchoolUpdateWithoutStaffClassAssignmentsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -8605,6 +9513,8 @@ export type SchoolUncheckedUpdateWithoutStaffClassAssignmentsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -8689,6 +9599,8 @@ export type SchoolCreateWithoutExpenseCategoriesInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -8773,6 +9685,8 @@ export type SchoolUncheckedCreateWithoutExpenseCategoriesInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -8873,6 +9787,8 @@ export type SchoolUpdateWithoutExpenseCategoriesInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -8957,6 +9873,8 @@ export type SchoolUncheckedUpdateWithoutExpenseCategoriesInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -9041,6 +9959,8 @@ export type SchoolCreateWithoutExpensesInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -9125,6 +10045,8 @@ export type SchoolUncheckedCreateWithoutExpensesInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -9225,6 +10147,8 @@ export type SchoolUpdateWithoutExpensesInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -9309,6 +10233,8 @@ export type SchoolUncheckedUpdateWithoutExpensesInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -9393,6 +10319,8 @@ export type SchoolCreateWithoutHolidaysInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -9477,6 +10405,8 @@ export type SchoolUncheckedCreateWithoutHolidaysInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -9577,6 +10507,8 @@ export type SchoolUpdateWithoutHolidaysInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -9661,6 +10593,8 @@ export type SchoolUncheckedUpdateWithoutHolidaysInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -9745,6 +10679,8 @@ export type SchoolCreateWithoutFeeHeadsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -9829,6 +10765,8 @@ export type SchoolUncheckedCreateWithoutFeeHeadsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -9929,6 +10867,8 @@ export type SchoolUpdateWithoutFeeHeadsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -10013,6 +10953,8 @@ export type SchoolUncheckedUpdateWithoutFeeHeadsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -10097,6 +11039,8 @@ export type SchoolCreateWithoutFeeHeadClassLevelsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -10181,6 +11125,8 @@ export type SchoolUncheckedCreateWithoutFeeHeadClassLevelsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -10281,6 +11227,8 @@ export type SchoolUpdateWithoutFeeHeadClassLevelsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -10365,6 +11313,8 @@ export type SchoolUncheckedUpdateWithoutFeeHeadClassLevelsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -10449,6 +11399,8 @@ export type SchoolCreateWithoutStudentFeesInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -10533,6 +11485,8 @@ export type SchoolUncheckedCreateWithoutStudentFeesInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -10633,6 +11587,8 @@ export type SchoolUpdateWithoutStudentFeesInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -10717,6 +11673,8 @@ export type SchoolUncheckedUpdateWithoutStudentFeesInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -10801,6 +11759,8 @@ export type SchoolCreateWithoutNumberSequencesInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -10885,6 +11845,8 @@ export type SchoolUncheckedCreateWithoutNumberSequencesInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -10985,6 +11947,8 @@ export type SchoolUpdateWithoutNumberSequencesInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -11069,6 +12033,8 @@ export type SchoolUncheckedUpdateWithoutNumberSequencesInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -11153,6 +12119,8 @@ export type SchoolCreateWithoutJobRunsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -11237,6 +12205,8 @@ export type SchoolUncheckedCreateWithoutJobRunsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -11337,6 +12307,8 @@ export type SchoolUpdateWithoutJobRunsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -11421,6 +12393,8 @@ export type SchoolUncheckedUpdateWithoutJobRunsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -11505,6 +12479,8 @@ export type SchoolCreateWithoutFeeVouchersInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -11589,6 +12565,8 @@ export type SchoolUncheckedCreateWithoutFeeVouchersInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -11689,6 +12667,8 @@ export type SchoolUpdateWithoutFeeVouchersInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -11773,6 +12753,8 @@ export type SchoolUncheckedUpdateWithoutFeeVouchersInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -11857,6 +12839,8 @@ export type SchoolCreateWithoutFeeVoucherLinesInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -11941,6 +12925,8 @@ export type SchoolUncheckedCreateWithoutFeeVoucherLinesInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -12041,6 +13027,8 @@ export type SchoolUpdateWithoutFeeVoucherLinesInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -12125,6 +13113,8 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherLinesInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -12209,6 +13199,8 @@ export type SchoolCreateWithoutFeeVoucherPeriodsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -12293,6 +13285,8 @@ export type SchoolUncheckedCreateWithoutFeeVoucherPeriodsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -12393,6 +13387,8 @@ export type SchoolUpdateWithoutFeeVoucherPeriodsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -12477,6 +13473,8 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherPeriodsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -12561,6 +13559,8 @@ export type SchoolCreateWithoutFeeVoucherArrearsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -12645,6 +13645,8 @@ export type SchoolUncheckedCreateWithoutFeeVoucherArrearsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -12745,6 +13747,8 @@ export type SchoolUpdateWithoutFeeVoucherArrearsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -12829,6 +13833,8 @@ export type SchoolUncheckedUpdateWithoutFeeVoucherArrearsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -12913,6 +13919,8 @@ export type SchoolCreateWithoutFeePaymentsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -12997,6 +14005,8 @@ export type SchoolUncheckedCreateWithoutFeePaymentsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -13097,6 +14107,8 @@ export type SchoolUpdateWithoutFeePaymentsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -13181,6 +14193,8 @@ export type SchoolUncheckedUpdateWithoutFeePaymentsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -13265,6 +14279,8 @@ export type SchoolCreateWithoutFeePaymentAllocationsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -13349,6 +14365,8 @@ export type SchoolUncheckedCreateWithoutFeePaymentAllocationsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -13449,6 +14467,8 @@ export type SchoolUpdateWithoutFeePaymentAllocationsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -13533,6 +14553,8 @@ export type SchoolUncheckedUpdateWithoutFeePaymentAllocationsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -13617,6 +14639,8 @@ export type SchoolCreateWithoutAttendanceRecordsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -13701,6 +14725,8 @@ export type SchoolUncheckedCreateWithoutAttendanceRecordsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -13801,6 +14827,8 @@ export type SchoolUpdateWithoutAttendanceRecordsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -13885,6 +14913,8 @@ export type SchoolUncheckedUpdateWithoutAttendanceRecordsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -13969,6 +14999,8 @@ export type SchoolCreateWithoutStaffAttendanceInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -14053,6 +15085,8 @@ export type SchoolUncheckedCreateWithoutStaffAttendanceInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -14153,6 +15187,8 @@ export type SchoolUpdateWithoutStaffAttendanceInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -14237,6 +15273,8 @@ export type SchoolUncheckedUpdateWithoutStaffAttendanceInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -14321,6 +15359,8 @@ export type SchoolCreateWithoutSecurityDepositsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -14405,6 +15445,8 @@ export type SchoolUncheckedCreateWithoutSecurityDepositsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -14505,6 +15547,8 @@ export type SchoolUpdateWithoutSecurityDepositsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -14589,6 +15633,8 @@ export type SchoolUncheckedUpdateWithoutSecurityDepositsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -14673,6 +15719,8 @@ export type SchoolCreateWithoutSecurityDepositRefundsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -14757,6 +15805,8 @@ export type SchoolUncheckedCreateWithoutSecurityDepositRefundsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -14857,6 +15907,8 @@ export type SchoolUpdateWithoutSecurityDepositRefundsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -14941,6 +15993,8 @@ export type SchoolUncheckedUpdateWithoutSecurityDepositRefundsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -15025,6 +16079,8 @@ export type SchoolCreateWithoutImagesInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -15109,6 +16165,8 @@ export type SchoolUncheckedCreateWithoutImagesInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -15209,6 +16267,8 @@ export type SchoolUpdateWithoutImagesInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -15293,6 +16353,8 @@ export type SchoolUncheckedUpdateWithoutImagesInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -15377,6 +16439,8 @@ export type SchoolCreateWithoutVoucherSettingsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -15461,6 +16525,8 @@ export type SchoolUncheckedCreateWithoutVoucherSettingsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -15561,6 +16627,8 @@ export type SchoolUpdateWithoutVoucherSettingsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -15645,6 +16713,8 @@ export type SchoolUncheckedUpdateWithoutVoucherSettingsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -15729,6 +16799,8 @@ export type SchoolCreateWithoutSubjectsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -15813,6 +16885,8 @@ export type SchoolUncheckedCreateWithoutSubjectsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -15913,6 +16987,8 @@ export type SchoolUpdateWithoutSubjectsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -15997,6 +17073,8 @@ export type SchoolUncheckedUpdateWithoutSubjectsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -16081,6 +17159,8 @@ export type SchoolCreateWithoutAssessmentTypesInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -16165,6 +17245,8 @@ export type SchoolUncheckedCreateWithoutAssessmentTypesInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -16265,6 +17347,8 @@ export type SchoolUpdateWithoutAssessmentTypesInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -16349,6 +17433,8 @@ export type SchoolUncheckedUpdateWithoutAssessmentTypesInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -16433,6 +17519,8 @@ export type SchoolCreateWithoutAssessmentsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -16517,6 +17605,8 @@ export type SchoolUncheckedCreateWithoutAssessmentsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -16617,6 +17707,8 @@ export type SchoolUpdateWithoutAssessmentsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -16701,6 +17793,8 @@ export type SchoolUncheckedUpdateWithoutAssessmentsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -16785,6 +17879,8 @@ export type SchoolCreateWithoutMarkEntriesInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -16869,6 +17965,8 @@ export type SchoolUncheckedCreateWithoutMarkEntriesInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -16969,6 +18067,8 @@ export type SchoolUpdateWithoutMarkEntriesInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -17053,6 +18153,8 @@ export type SchoolUncheckedUpdateWithoutMarkEntriesInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -17137,6 +18239,8 @@ export type SchoolCreateWithoutStaffSalaryPeriodsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -17221,6 +18325,8 @@ export type SchoolUncheckedCreateWithoutStaffSalaryPeriodsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -17321,6 +18427,8 @@ export type SchoolUpdateWithoutStaffSalaryPeriodsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -17405,6 +18513,8 @@ export type SchoolUncheckedUpdateWithoutStaffSalaryPeriodsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -17489,6 +18599,8 @@ export type SchoolCreateWithoutStaffSalaryAdjustmentsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -17573,6 +18685,8 @@ export type SchoolUncheckedCreateWithoutStaffSalaryAdjustmentsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -17673,6 +18787,8 @@ export type SchoolUpdateWithoutStaffSalaryAdjustmentsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -17757,6 +18873,8 @@ export type SchoolUncheckedUpdateWithoutStaffSalaryAdjustmentsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -17841,6 +18959,8 @@ export type SchoolCreateWithoutStaffSalaryPaymentsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -17925,6 +19045,8 @@ export type SchoolUncheckedCreateWithoutStaffSalaryPaymentsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -18025,6 +19147,8 @@ export type SchoolUpdateWithoutStaffSalaryPaymentsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -18109,6 +19233,8 @@ export type SchoolUncheckedUpdateWithoutStaffSalaryPaymentsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -18193,6 +19319,8 @@ export type SchoolCreateWithoutClassSubjectsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -18277,6 +19405,8 @@ export type SchoolUncheckedCreateWithoutClassSubjectsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -18377,6 +19507,8 @@ export type SchoolUpdateWithoutClassSubjectsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -18461,6 +19593,8 @@ export type SchoolUncheckedUpdateWithoutClassSubjectsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -18545,6 +19679,8 @@ export type SchoolCreateWithoutClassAssessmentTypesInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -18629,6 +19765,8 @@ export type SchoolUncheckedCreateWithoutClassAssessmentTypesInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -18729,6 +19867,8 @@ export type SchoolUpdateWithoutClassAssessmentTypesInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -18813,6 +19953,8 @@ export type SchoolUncheckedUpdateWithoutClassAssessmentTypesInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -18897,6 +20039,8 @@ export type SchoolCreateWithoutRequestsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -18981,6 +20125,8 @@ export type SchoolUncheckedCreateWithoutRequestsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -19081,6 +20227,8 @@ export type SchoolUpdateWithoutRequestsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -19165,6 +20313,8 @@ export type SchoolUncheckedUpdateWithoutRequestsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -19249,6 +20399,8 @@ export type SchoolCreateWithoutRequestEventsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -19333,6 +20485,8 @@ export type SchoolUncheckedCreateWithoutRequestEventsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -19433,6 +20587,8 @@ export type SchoolUpdateWithoutRequestEventsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -19517,6 +20673,8 @@ export type SchoolUncheckedUpdateWithoutRequestEventsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -19601,6 +20759,8 @@ export type SchoolCreateWithoutRequestAttachmentsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -19685,6 +20845,8 @@ export type SchoolUncheckedCreateWithoutRequestAttachmentsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -19785,6 +20947,8 @@ export type SchoolUpdateWithoutRequestAttachmentsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -19869,6 +21033,8 @@ export type SchoolUncheckedUpdateWithoutRequestAttachmentsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -19953,6 +21119,8 @@ export type SchoolCreateWithoutNotificationsInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -20037,6 +21205,8 @@ export type SchoolUncheckedCreateWithoutNotificationsInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -20137,6 +21307,8 @@ export type SchoolUpdateWithoutNotificationsInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -20221,6 +21393,8 @@ export type SchoolUncheckedUpdateWithoutNotificationsInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -20305,6 +21479,8 @@ export type SchoolCreateWithoutDeviceTokensInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -20389,6 +21565,8 @@ export type SchoolUncheckedCreateWithoutDeviceTokensInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -20489,6 +21667,8 @@ export type SchoolUpdateWithoutDeviceTokensInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -20573,6 +21753,8 @@ export type SchoolUncheckedUpdateWithoutDeviceTokensInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -20657,6 +21839,8 @@ export type SchoolCreateWithoutTimetablesInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -20741,6 +21925,8 @@ export type SchoolUncheckedCreateWithoutTimetablesInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -20841,6 +22027,8 @@ export type SchoolUpdateWithoutTimetablesInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -20925,6 +22113,8 @@ export type SchoolUncheckedUpdateWithoutTimetablesInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -21009,6 +22199,8 @@ export type SchoolCreateWithoutTimetableEntriesInput = {
   domains?: Prisma.SchoolDomainCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetCreateNestedManyWithoutSchoolInput
@@ -21093,6 +22285,8 @@ export type SchoolUncheckedCreateWithoutTimetableEntriesInput = {
   domains?: Prisma.SchoolDomainUncheckedCreateNestedManyWithoutSchoolInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutSchoolInput
   userRoles?: Prisma.UserRoleUncheckedCreateNestedManyWithoutSchoolInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedCreateNestedManyWithoutSchoolInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutSchoolInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutSchoolInput
   passwordResets?: Prisma.PasswordResetUncheckedCreateNestedManyWithoutSchoolInput
@@ -21193,6 +22387,8 @@ export type SchoolUpdateWithoutTimetableEntriesInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -21277,6 +22473,8 @@ export type SchoolUncheckedUpdateWithoutTimetableEntriesInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -21390,6 +22588,8 @@ export type SchoolUpdateWithoutSchoolGroupInput = {
   domains?: Prisma.SchoolDomainUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUpdateManyWithoutSchoolNestedInput
@@ -21474,6 +22674,8 @@ export type SchoolUncheckedUpdateWithoutSchoolGroupInput = {
   domains?: Prisma.SchoolDomainUncheckedUpdateManyWithoutSchoolNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutSchoolNestedInput
   userRoles?: Prisma.UserRoleUncheckedUpdateManyWithoutSchoolNestedInput
+  rolePermissionOverrides?: Prisma.RolePermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
+  userPermissionOverrides?: Prisma.UserPermissionOverrideUncheckedUpdateManyWithoutSchoolNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutSchoolNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutSchoolNestedInput
   passwordResets?: Prisma.PasswordResetUncheckedUpdateManyWithoutSchoolNestedInput
@@ -21566,6 +22768,8 @@ export type SchoolCountOutputType = {
   domains: number
   users: number
   userRoles: number
+  rolePermissionOverrides: number
+  userPermissionOverrides: number
   sessions: number
   invitations: number
   passwordResets: number
@@ -21622,6 +22826,8 @@ export type SchoolCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   domains?: boolean | SchoolCountOutputTypeCountDomainsArgs
   users?: boolean | SchoolCountOutputTypeCountUsersArgs
   userRoles?: boolean | SchoolCountOutputTypeCountUserRolesArgs
+  rolePermissionOverrides?: boolean | SchoolCountOutputTypeCountRolePermissionOverridesArgs
+  userPermissionOverrides?: boolean | SchoolCountOutputTypeCountUserPermissionOverridesArgs
   sessions?: boolean | SchoolCountOutputTypeCountSessionsArgs
   invitations?: boolean | SchoolCountOutputTypeCountInvitationsArgs
   passwordResets?: boolean | SchoolCountOutputTypeCountPasswordResetsArgs
@@ -21703,6 +22909,20 @@ export type SchoolCountOutputTypeCountUsersArgs<ExtArgs extends runtime.Types.Ex
  */
 export type SchoolCountOutputTypeCountUserRolesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.UserRoleWhereInput
+}
+
+/**
+ * SchoolCountOutputType without action
+ */
+export type SchoolCountOutputTypeCountRolePermissionOverridesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RolePermissionOverrideWhereInput
+}
+
+/**
+ * SchoolCountOutputType without action
+ */
+export type SchoolCountOutputTypeCountUserPermissionOverridesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserPermissionOverrideWhereInput
 }
 
 /**
@@ -22089,6 +23309,8 @@ export type SchoolSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   domains?: boolean | Prisma.School$domainsArgs<ExtArgs>
   users?: boolean | Prisma.School$usersArgs<ExtArgs>
   userRoles?: boolean | Prisma.School$userRolesArgs<ExtArgs>
+  rolePermissionOverrides?: boolean | Prisma.School$rolePermissionOverridesArgs<ExtArgs>
+  userPermissionOverrides?: boolean | Prisma.School$userPermissionOverridesArgs<ExtArgs>
   sessions?: boolean | Prisma.School$sessionsArgs<ExtArgs>
   invitations?: boolean | Prisma.School$invitationsArgs<ExtArgs>
   passwordResets?: boolean | Prisma.School$passwordResetsArgs<ExtArgs>
@@ -22244,6 +23466,8 @@ export type SchoolInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   domains?: boolean | Prisma.School$domainsArgs<ExtArgs>
   users?: boolean | Prisma.School$usersArgs<ExtArgs>
   userRoles?: boolean | Prisma.School$userRolesArgs<ExtArgs>
+  rolePermissionOverrides?: boolean | Prisma.School$rolePermissionOverridesArgs<ExtArgs>
+  userPermissionOverrides?: boolean | Prisma.School$userPermissionOverridesArgs<ExtArgs>
   sessions?: boolean | Prisma.School$sessionsArgs<ExtArgs>
   invitations?: boolean | Prisma.School$invitationsArgs<ExtArgs>
   passwordResets?: boolean | Prisma.School$passwordResetsArgs<ExtArgs>
@@ -22311,6 +23535,8 @@ export type $SchoolPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     domains: Prisma.$SchoolDomainPayload<ExtArgs>[]
     users: Prisma.$UserPayload<ExtArgs>[]
     userRoles: Prisma.$UserRolePayload<ExtArgs>[]
+    rolePermissionOverrides: Prisma.$RolePermissionOverridePayload<ExtArgs>[]
+    userPermissionOverrides: Prisma.$UserPermissionOverridePayload<ExtArgs>[]
     sessions: Prisma.$SessionPayload<ExtArgs>[]
     invitations: Prisma.$InvitationPayload<ExtArgs>[]
     passwordResets: Prisma.$PasswordResetPayload<ExtArgs>[]
@@ -22822,6 +24048,8 @@ export interface Prisma__SchoolClient<T, Null = never, ExtArgs extends runtime.T
   domains<T extends Prisma.School$domainsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$domainsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SchoolDomainPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   users<T extends Prisma.School$usersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$usersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   userRoles<T extends Prisma.School$userRolesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$userRolesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserRolePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  rolePermissionOverrides<T extends Prisma.School$rolePermissionOverridesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$rolePermissionOverridesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RolePermissionOverridePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  userPermissionOverrides<T extends Prisma.School$userPermissionOverridesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$userPermissionOverridesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPermissionOverridePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   sessions<T extends Prisma.School$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   invitations<T extends Prisma.School$invitationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$invitationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   passwordResets<T extends Prisma.School$passwordResetsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.School$passwordResetsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PasswordResetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -23419,6 +24647,54 @@ export type School$userRolesArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.UserRoleScalarFieldEnum | Prisma.UserRoleScalarFieldEnum[]
+}
+
+/**
+ * School.rolePermissionOverrides
+ */
+export type School$rolePermissionOverridesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RolePermissionOverride
+   */
+  select?: Prisma.RolePermissionOverrideSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RolePermissionOverride
+   */
+  omit?: Prisma.RolePermissionOverrideOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RolePermissionOverrideInclude<ExtArgs> | null
+  where?: Prisma.RolePermissionOverrideWhereInput
+  orderBy?: Prisma.RolePermissionOverrideOrderByWithRelationInput | Prisma.RolePermissionOverrideOrderByWithRelationInput[]
+  cursor?: Prisma.RolePermissionOverrideWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RolePermissionOverrideScalarFieldEnum | Prisma.RolePermissionOverrideScalarFieldEnum[]
+}
+
+/**
+ * School.userPermissionOverrides
+ */
+export type School$userPermissionOverridesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserPermissionOverride
+   */
+  select?: Prisma.UserPermissionOverrideSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserPermissionOverride
+   */
+  omit?: Prisma.UserPermissionOverrideOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserPermissionOverrideInclude<ExtArgs> | null
+  where?: Prisma.UserPermissionOverrideWhereInput
+  orderBy?: Prisma.UserPermissionOverrideOrderByWithRelationInput | Prisma.UserPermissionOverrideOrderByWithRelationInput[]
+  cursor?: Prisma.UserPermissionOverrideWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserPermissionOverrideScalarFieldEnum | Prisma.UserPermissionOverrideScalarFieldEnum[]
 }
 
 /**

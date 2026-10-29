@@ -1,4 +1,5 @@
 export * from './academics';
+export * from './access';
 export * from './assets';
 export * from './attendance';
 export * from './auth';

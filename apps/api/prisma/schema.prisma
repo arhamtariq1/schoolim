@@ -259,60 +259,62 @@ model School {
   createdAt              DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt              DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  schoolGroup            SchoolGroup?            @relation(fields: [schoolGroupId], references: [id], onDelete: Restrict)
-  domains                SchoolDomain[]
-  users                  User[]
-  userRoles              UserRole[]
-  sessions               Session[]
-  invitations            Invitation[]
-  passwordResets         PasswordReset[]
-  authHandoffs           AuthHandoff[]
-  emailVerifications     EmailVerification[]
-  agreements             SchoolAgreement[]
-  academicSessions       AcademicSession[]
-  classLevels            ClassLevel[]
-  schoolSections         Section[]
-  students               Student[]
-  guardians              Guardian[]
-  studentGuardians       StudentGuardian[]
-  enrollments            Enrollment[]
-  feeHeads               FeeHead[]
-  feeHeadClassLevels     FeeHeadClassLevel[]
-  staffClassAssignments  StaffClassAssignment[]
-  subjects               Subject[]
-  assessmentTypes        AssessmentType[]
-  classSubjects          ClassSubject[]
-  classAssessmentTypes   ClassAssessmentType[]
-  staffSalaryPayments    StaffSalaryPayment[]
-  staffSalaryPeriods     StaffSalaryPeriod[]
-  staffSalaryAdjustments StaffSalaryAdjustment[]
-  assessments            Assessment[]
-  markEntries            MarkEntry[]
-  holidays               Holiday[]
-  staff                  Staff[]
-  expenseCategories      ExpenseCategory[]
-  expenses               Expense[]
-  jobRuns                JobRun[]
-  feeVouchers            FeeVoucher[]
-  feeVoucherLines        FeeVoucherLine[]
-  feeVoucherPeriods      FeeVoucherPeriod[]
-  feeVoucherArrears      FeeVoucherArrear[]
-  feePayments            FeePayment[]
-  feePaymentAllocations  FeePaymentAllocation[]
-  attendanceRecords      AttendanceRecord[]
-  staffAttendance        StaffAttendanceRecord[]
-  studentFees            StudentFee[]
-  numberSequences        NumberSequence[]
-  securityDeposits       SecurityDeposit[]
-  securityDepositRefunds SecurityDepositRefund[]
+  schoolGroup             SchoolGroup?             @relation(fields: [schoolGroupId], references: [id], onDelete: Restrict)
+  domains                 SchoolDomain[]
+  users                   User[]
+  userRoles               UserRole[]
+  rolePermissionOverrides RolePermissionOverride[]
+  userPermissionOverrides UserPermissionOverride[]
+  sessions                Session[]
+  invitations             Invitation[]
+  passwordResets          PasswordReset[]
+  authHandoffs            AuthHandoff[]
+  emailVerifications      EmailVerification[]
+  agreements              SchoolAgreement[]
+  academicSessions        AcademicSession[]
+  classLevels             ClassLevel[]
+  schoolSections          Section[]
+  students                Student[]
+  guardians               Guardian[]
+  studentGuardians        StudentGuardian[]
+  enrollments             Enrollment[]
+  feeHeads                FeeHead[]
+  feeHeadClassLevels      FeeHeadClassLevel[]
+  staffClassAssignments   StaffClassAssignment[]
+  subjects                Subject[]
+  assessmentTypes         AssessmentType[]
+  classSubjects           ClassSubject[]
+  classAssessmentTypes    ClassAssessmentType[]
+  staffSalaryPayments     StaffSalaryPayment[]
+  staffSalaryPeriods      StaffSalaryPeriod[]
+  staffSalaryAdjustments  StaffSalaryAdjustment[]
+  assessments             Assessment[]
+  markEntries             MarkEntry[]
+  holidays                Holiday[]
+  staff                   Staff[]
+  expenseCategories       ExpenseCategory[]
+  expenses                Expense[]
+  jobRuns                 JobRun[]
+  feeVouchers             FeeVoucher[]
+  feeVoucherLines         FeeVoucherLine[]
+  feeVoucherPeriods       FeeVoucherPeriod[]
+  feeVoucherArrears       FeeVoucherArrear[]
+  feePayments             FeePayment[]
+  feePaymentAllocations   FeePaymentAllocation[]
+  attendanceRecords       AttendanceRecord[]
+  staffAttendance         StaffAttendanceRecord[]
+  studentFees             StudentFee[]
+  numberSequences         NumberSequence[]
+  securityDeposits        SecurityDeposit[]
+  securityDepositRefunds  SecurityDepositRefund[]
   /// The school's own mark and the bank's, one row each — see SchoolImageKind.
-  images                 SchoolLogo[]
-  requests               Request[]
-  requestEvents          RequestEvent[]
-  requestAttachments     RequestAttachment[]
-  notifications          Notification[]
-  deviceTokens           DeviceToken[]
-  voucherSettings        SchoolVoucherSettings?
+  images                  SchoolLogo[]
+  requests                Request[]
+  requestEvents           RequestEvent[]
+  requestAttachments      RequestAttachment[]
+  notifications           Notification[]
+  deviceTokens            DeviceToken[]
+  voucherSettings         SchoolVoucherSettings?
 
   timetables       Timetable[]
   timetableEntries TimetableEntry[]
@@ -409,22 +411,23 @@ model User {
   updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt          DateTime?  @map("deleted_at") @db.Timestamptz(6)
 
-  school                School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school                School                   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   roles                 UserRole[]
   sessions              Session[]
   passwordResets        PasswordReset[]
   authHandoffs          AuthHandoff[]
   emailVerifications    EmailVerification[]
-  invitesSent           Invitation[]        @relation("InvitedBy")
-  invitations           Invitation[]        @relation("Invited")
+  invitesSent           Invitation[]             @relation("InvitedBy")
+  invitations           Invitation[]             @relation("Invited")
   staffRecord           Staff?
-  requestsRaised        Request[]           @relation("RequestCreator")
-  requestsAssigned      Request[]           @relation("RequestAssignee")
-  requestEvents         RequestEvent[]      @relation("RequestEventActor")
-  requestEventsAssigned RequestEvent[]      @relation("RequestEventAssignee")
-  requestAttachments    RequestAttachment[] @relation("RequestAttachmentUploader")
+  requestsRaised        Request[]                @relation("RequestCreator")
+  requestsAssigned      Request[]                @relation("RequestAssignee")
+  requestEvents         RequestEvent[]           @relation("RequestEventActor")
+  requestEventsAssigned RequestEvent[]           @relation("RequestEventAssignee")
+  requestAttachments    RequestAttachment[]      @relation("RequestAttachmentUploader")
   notifications         Notification[]
   deviceTokens          DeviceToken[]
+  permissionOverrides   UserPermissionOverride[]
 
   /// Email is unique per school, not globally: the same person may hold an
   /// account at two schools with the same address. That is precisely why
@@ -441,6 +444,47 @@ model User {
   @@index([email])
   @@index([phone])
   @@map("users")
+}
+
+/// A school's change to what a role can do, on top of the defaults in
+/// `@ilm/contracts` roles.ts (ADR-0025). Configuration: no personal data.
+model RolePermissionOverride {
+  id         String           @id @default(uuid(7)) @db.Uuid
+  schoolId   String           @map("school_id") @db.Uuid
+  role       SchoolRole
+  /// A permission name from `PERMISSIONS`. Text, not an enum: the list lives in code,
+  /// and a name the code no longer knows is ignored on read rather than failing.
+  permission String
+  effect     PermissionEffect
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, role, permission])
+  @@map("role_permission_overrides")
+}
+
+/// One person given more, or less, than their roles (ADR-0025). Applied last.
+model UserPermissionOverride {
+  id         String           @id @default(uuid(7)) @db.Uuid
+  schoolId   String           @map("school_id") @db.Uuid
+  userId     String           @map("user_id") @db.Uuid
+  permission String
+  effect     PermissionEffect
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, userId, permission])
+  @@map("user_permission_overrides")
+}
+
+enum PermissionEffect {
+  GRANT
+  REVOKE
+
+  @@map("permission_effect")
 }
 
 /// Roles are additive. `scope` carries the data a scoped grant is limited to,

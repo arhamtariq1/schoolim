@@ -226,6 +226,10 @@ navigation tree**. Nobody sees a menu item they cannot use.
   highest-privilege role, with a switcher when a user holds several (e.g. a teacher who is also a
   parent).
 - Permission changes bump `users.token_version`, invalidating live tokens immediately.
+- **The matrix above is the default, not the ceiling.** A school can give a role, or one person, more
+  or less than it (Settings › Users & Access). Overrides are resolved once per request into CLS, so
+  the guard, the services and the navigation agree. Changes go downward by rank only, and nobody can
+  give what they do not hold. See ADR-0025.
 
 ## 8. Testing
 

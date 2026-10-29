@@ -267,6 +267,8 @@ export const ROUTES = {
      * from the one for 2026-2027 even though the classes are the same.
      */
     setup: `${API_PREFIX}/academics/setup`,
+    /** The admission form's own read: every class, for whoever may admit a student. */
+    admissionSetup: `${API_PREFIX}/academics/admission-setup`,
     sessions: `${API_PREFIX}/academics/sessions`,
     session: (id: string) => `${API_PREFIX}/academics/sessions/${id}`,
     /** Making one session current necessarily un-currents the other. */
@@ -308,6 +310,16 @@ export const ROUTES = {
     detail: (id: string) => `${API_PREFIX}/expenses/${id}`,
     categories: `${API_PREFIX}/expenses/categories`,
     category: (id: string) => `${API_PREFIX}/expenses/categories/${id}`,
+  },
+  /**
+   * Who can open what, beyond the role defaults (ADR-0025). GET and PUT the same
+   * path per role and per person: each is one set a person edits as a whole.
+   */
+  access: {
+    roles: `${API_PREFIX}/access/roles`,
+    role: (role: string) => `${API_PREFIX}/access/roles/${role}`,
+    users: `${API_PREFIX}/access/users`,
+    user: (id: string) => `${API_PREFIX}/access/users/${id}`,
   },
   staff: {
     list: `${API_PREFIX}/staff`,

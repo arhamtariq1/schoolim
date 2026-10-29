@@ -1,3 +1,10 @@
+import {
+  grantFor,
+  type EffectiveGrants,
+  type Permission,
+  type PermissionGrant,
+  type SchoolRole,
+} from '@ilm/contracts';
 import { Injectable } from '@nestjs/common';
 import { ClsService } from 'nestjs-cls';
 
@@ -14,6 +21,7 @@ const SCHOOL_ID = 'schoolId';
 const USER_ID = 'userId';
 const ROLES = 'roles';
 const ACTING_PLATFORM_USER_ID = 'actingPlatformUserId';
+const GRANTS = 'grants';
 
 /**
  * Layer 1 of the three isolation layers (docs/04 section 2).
@@ -53,6 +61,30 @@ export class TenantContextService {
 
   get roles(): readonly string[] {
     return this.cls.get<readonly string[] | undefined>(ROLES) ?? [];
+  }
+
+  /**
+   * What the person in context can do, the school's customisations included
+   * (ADR-0025). `TenantGuard` resolves it once per request.
+   *
+   * Outside an HTTP request nothing has resolved it, and the role defaults
+   * answer instead — which is what every check returned before customisation
+   * existed.
+   */
+  grantFor(permission: Permission): PermissionGrant | undefined {
+    const grants = this.cls.get<EffectiveGrants | undefined>(GRANTS);
+    return grants === undefined
+      ? grantFor(this.roles as readonly SchoolRole[], permission)
+      : grants.get(permission);
+  }
+
+  /** Whether the person in context holds the permission at all, scoped or not. */
+  can(permission: Permission): boolean {
+    return this.grantFor(permission) !== undefined;
+  }
+
+  setGrants(grants: EffectiveGrants): void {
+    this.cls.set(GRANTS, grants);
   }
 
   get actingPlatformUserId(): string | undefined {

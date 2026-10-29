@@ -1,5 +1,4 @@
 import {
-  grantFor,
   type DashboardClassAttendance,
   type DashboardExpenseSegment,
   type DashboardMonthlyExpense,
@@ -11,7 +10,6 @@ import {
   type DashboardWeeklyAttendance,
   type Holiday,
   type Permission,
-  type SchoolRole,
   type StaffDashboard,
   type TeacherDashboard,
 } from '@ilm/contracts';
@@ -83,7 +81,7 @@ export class DashboardService {
   }
 
   private can(permission: Permission): boolean {
-    return grantFor(this.context.roles as readonly SchoolRole[], permission) !== undefined;
+    return this.context.can(permission);
   }
 
   // ---- Admin, Principal, Office Staff ----------------------------------------

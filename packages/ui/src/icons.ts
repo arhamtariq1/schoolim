@@ -123,7 +123,6 @@ export {
   // --- Dates ----------------------------------------------------------------
   Calendar as CalendarIcon,
   CalendarDays as DateRangeIcon,
-
   Bell as NotificationsIcon,
   MessageSquare as MessagesIcon,
   // --- Chrome ---------------------------------------------------------------
@@ -137,6 +136,22 @@ export {
   Eye as ViewIcon,
   TrendingUp as TrendUpIcon,
   TrendingDown as TrendDownIcon,
+
+  // --- Modules --------------------------------------------------------------
+  /** An exam's outcome: marks, grades, the printed result card. */
+  Award as ResultIcon,
+  /** Work set by a teacher and handed in by a student. */
+  ClipboardList as AssignmentIcon,
+  /** Something the school owns and tracks — furniture, lab kit, a bus. */
+  Boxes as AssetIcon,
+  /** The weekly grid of periods, rooms and teachers. */
+  CalendarClock as TimetableIcon,
+  /** A member of staff as an employee, not as a job title. */
+  IdCard as StaffIcon,
+  /** The whole platform above any one school. */
+  Layers as PlatformIcon,
+  /** Who can open what: roles, permissions, a person's access. */
+  KeyRound as AccessIcon,
 } from 'lucide-react';
 
 /** The only permitted icon sizes (docs/16 section 3). */

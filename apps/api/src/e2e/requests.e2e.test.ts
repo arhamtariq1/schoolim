@@ -601,6 +601,34 @@ describe('the list', () => {
     }
   });
 
+  it('narrows to one child, list and counts alike, and never past what the caller may see', async () => {
+    const aboutZara = await raise('PARENT_ONE', { subject: 'About Zara', studentId: CHILD_OF_ONE });
+    await raise('PARENT_ONE', { subject: 'About nobody in particular' });
+    const aboutTheirs = await raise('PARENT_TWO', { subject: 'About their child', studentId: CHILD_OF_TWO });
+
+    const summaryFor = async (who: Who, studentId: string): Promise<RequestSummary> =>
+      (await call(who, 'GET', `${ROUTES.requests.summary}?studentId=${studentId}`)).json<{
+        data: RequestSummary;
+      }>().data;
+
+    expect((await list('PARENT_ONE', `?studentId=${CHILD_OF_ONE}`)).data.map((r) => r.id)).toEqual([
+      aboutZara.id,
+    ]);
+    expect(await summaryFor('PARENT_ONE', CHILD_OF_ONE)).toMatchObject({ total: 1, pending: 1 });
+
+    // Another family's child: an empty answer, not their requests.
+    expect((await list('PARENT_ONE', `?studentId=${CHILD_OF_TWO}`)).total).toBe(0);
+    expect(await summaryFor('PARENT_ONE', CHILD_OF_TWO)).toMatchObject({ total: 0 });
+
+    // The office sees every request, so for them it is a plain filter.
+    expect((await list('OWNER', `?studentId=${CHILD_OF_TWO}`)).data.map((r) => r.id)).toEqual([
+      aboutTheirs.id,
+    ]);
+
+    const malformed = await call('PARENT_ONE', 'GET', `${ROUTES.requests.summary}?studentId=nope`);
+    expect(malformed.statusCode).toBe(400);
+  });
+
   it('sorts by priority in the order a person means, not the alphabet', async () => {
     await raise('PARENT_ONE', { priority: 'LOW', subject: 'Low one' });
     await raise('PARENT_ONE', { priority: 'URGENT', subject: 'Urgent one' });

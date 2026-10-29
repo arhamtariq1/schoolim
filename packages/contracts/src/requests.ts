@@ -259,9 +259,18 @@ export const requestListQuerySchema = z
     priority: requestPrioritySchema.optional(),
     /** `me`, `unassigned`, or a user id. Meaningful to managers only. */
     assignee: z.union([z.enum(['me', 'unassigned']), idSchema]).optional(),
+    /**
+     * Only requests about this child — the parent portal's child filter. Applied
+     * inside what the caller may already see, so it can only ever narrow.
+     */
+    studentId: idSchema.optional(),
   })
   .strict();
 export type RequestListQuery = z.infer<typeof requestListQuerySchema>;
+
+/** The counts can be narrowed to one child the same way the list can. */
+export const requestSummaryQuerySchema = z.object({ studentId: idSchema.optional() }).strict();
+export type RequestSummaryQuery = z.infer<typeof requestSummaryQuerySchema>;
 
 /** Counts over what the caller may see — their own, or the whole school's. */
 export const requestSummarySchema = z.object({

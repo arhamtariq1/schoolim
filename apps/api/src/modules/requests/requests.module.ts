@@ -5,6 +5,7 @@ import {
   idSchema,
   requestListQuerySchema,
   requestStudentQuerySchema,
+  requestSummaryQuerySchema,
   ROUTES,
   uploadRequestAttachmentSchema,
   type RequestAssigneeOption,
@@ -61,8 +62,8 @@ export class RequestsController {
 
   @Get(ROUTES.requests.summary)
   @RequirePermission('workflow.request.create')
-  async summary(): Promise<{ data: RequestSummary }> {
-    return { data: await this.requests.summary() };
+  async summary(@Query() rawQuery: unknown): Promise<{ data: RequestSummary }> {
+    return { data: await this.requests.summary(requestSummaryQuerySchema.parse(rawQuery)) };
   }
 
   @Get(ROUTES.requests.students)

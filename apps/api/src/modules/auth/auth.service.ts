@@ -1,5 +1,4 @@
 import {
-  permissionsFor,
   type SchoolChoice,
   type SchoolRole,
   type SessionUser,
@@ -11,6 +10,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from '../../shared/auth/password.service';
 import { TokenService } from '../../shared/auth/token.service';
 import { BusinessRuleError } from '../../shared/errors/domain-error';
+import { ACCESS_OVERRIDE_SELECT, sessionPermissions } from '../../shared/rbac/access-grants.service';
 import { schoolOrigin } from '../../shared/tenancy/school-origin';
 
 import { HandoffService } from './handoff.service';
@@ -370,8 +370,17 @@ export class AuthService {
         emailVerifiedAt: true,
         profileCompletedAt: true,
         roles: { select: { role: true } },
+        permissionOverrides: ACCESS_OVERRIDE_SELECT.user,
         school: {
-          select: { id: true, name: true, slug: true, timezone: true, locale: true, primaryColor: true },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            timezone: true,
+            locale: true,
+            primaryColor: true,
+            rolePermissionOverrides: ACCESS_OVERRIDE_SELECT.role,
+          },
         },
       },
     });
@@ -401,11 +410,15 @@ export class AuthService {
         name: user.name,
         email: user.email,
         roles,
-        permissions: permissionsFor(roles),
+        permissions: sessionPermissions(
+          roles,
+          user.school.rolePermissionOverrides,
+          user.permissionOverrides,
+        ),
         mustChangePassword: user.mustChangePassword,
         emailVerified: user.emailVerifiedAt !== null,
         profileCompleted: user.profileCompletedAt !== null,
-        school: user.school,
+        school: publicSchool(user.school),
       },
     };
   }
@@ -430,8 +443,17 @@ export class AuthService {
         emailVerifiedAt: true,
         profileCompletedAt: true,
         roles: { select: { role: true } },
+        permissionOverrides: ACCESS_OVERRIDE_SELECT.user,
         school: {
-          select: { id: true, name: true, slug: true, timezone: true, locale: true, primaryColor: true },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            timezone: true,
+            locale: true,
+            primaryColor: true,
+            rolePermissionOverrides: ACCESS_OVERRIDE_SELECT.role,
+          },
         },
       },
     });
@@ -447,12 +469,16 @@ export class AuthService {
       name: user.name,
       email: user.email,
       roles,
-      permissions: permissionsFor(roles),
+      permissions: sessionPermissions(
+          roles,
+          user.school.rolePermissionOverrides,
+          user.permissionOverrides,
+        ),
       mustChangePassword: user.mustChangePassword,
       avatarUrl: user.avatarUrl,
       emailVerified: user.emailVerifiedAt !== null,
       profileCompleted: user.profileCompletedAt !== null,
-      school: user.school,
+      school: publicSchool(user.school),
     };
   }
 
@@ -486,6 +512,8 @@ export class AuthService {
         emailVerifiedAt: true,
         profileCompletedAt: true,
         roles: { select: { role: true } },
+        permissionOverrides: ACCESS_OVERRIDE_SELECT.user,
+        school: { select: { rolePermissionOverrides: ACCESS_OVERRIDE_SELECT.role } },
       },
     });
 
@@ -516,7 +544,11 @@ export class AuthService {
         name: user.name,
         email: user.email,
         roles,
-        permissions: permissionsFor(roles),
+        permissions: sessionPermissions(
+          roles,
+          user.school.rolePermissionOverrides,
+          user.permissionOverrides,
+        ),
         mustChangePassword: user.mustChangePassword,
         emailVerified: user.emailVerifiedAt !== null,
         profileCompleted: user.profileCompletedAt !== null,
@@ -647,3 +679,11 @@ const HANDOFF_FAILURE = 'That sign-in link has expired. Sign in again.';
  */
 const DUMMY_HASH =
   '$argon2id$v=19$m=19456,t=2,p=1$c29tZXNhbHR2YWx1ZQ$Zm9vYmFyYmF6cXV4Y29ycmVjdGhvcnNlYmF0dGVyeQ';
+
+/** The school as the session returns it, without the rows used to compute permissions. */
+function publicSchool<T extends { rolePermissionOverrides: unknown }>(
+  school: T,
+): Omit<T, 'rolePermissionOverrides'> {
+  const { rolePermissionOverrides: _omitted, ...rest } = school;
+  return rest;
+}

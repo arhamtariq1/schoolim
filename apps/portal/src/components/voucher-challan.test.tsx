@@ -413,14 +413,14 @@ describe('the logo', () => {
     // A blank header looks unfinished. The platform wordmark fills the gap —
     // the same fallback the sidebar uses before a school uploads its own.
     paint(DEFAULT_VOUCHER_SETTINGS);
-    const marks = screen.getAllByAltText('Ilm');
+    const marks = screen.getAllByAltText('Lemma');
     expect(marks).toHaveLength(3);
     expect(marks[0]?.getAttribute('src')).toContain('lemma-logo');
   });
 
   it('falls back to the platform mark when the school turned school-logo printing off', () => {
     paint({ ...DEFAULT_VOUCHER_SETTINGS, showLogo: false }, VOUCHER, { logoVersion: 'v7' });
-    const marks = screen.getAllByAltText('Ilm');
+    const marks = screen.getAllByAltText('Lemma');
     expect(marks).toHaveLength(3);
   });
 });

@@ -9,6 +9,14 @@ import { ListDataTable } from '@/components/list-data-table';
 import { ParentVoucherDownloadButton } from '@/components/parent-voucher-download-button';
 import { PARENT_VOUCHER_STATUS_TONES, voucherMonthsLabel } from '@/lib/parent-vouchers-ui';
 
+const STUDENT_COLUMN: CardTableColumn<ParentVoucherItem> = {
+  key: 'student',
+  label: 'Child',
+  ...FEE_LIST_TABLE_CELL,
+  headerCell: feeListTableHeader('Child'),
+  render: (row) => <span className="text-sm font-medium text-foreground">{row.studentName}</span>,
+};
+
 const COLUMNS: CardTableColumn<ParentVoucherItem>[] = [
   {
     key: 'voucherNo',
@@ -22,14 +30,22 @@ const COLUMNS: CardTableColumn<ParentVoucherItem>[] = [
     label: 'Fee month',
     ...FEE_LIST_TABLE_CELL,
     headerCell: feeListTableHeader('Fee month'),
-    render: (row) => <span className="text-sm">{voucherMonthsLabel(row.billMonths, row.issueDate)}</span>,
+    render: (row) => (
+      <span className="text-sm">{voucherMonthsLabel(row.billMonths, row.issueDate)}</span>
+    ),
   },
   {
     key: 'amount',
     label: 'Amount',
     ...FEE_LIST_TABLE_CELL,
     headerCell: feeListTableHeader('Amount'),
-    render: (row) => <Money valueMinor={minorUnits(row.totalPayableMinor)} withSymbol className="text-sm font-medium" />,
+    render: (row) => (
+      <Money
+        valueMinor={minorUnits(row.totalPayableMinor)}
+        withSymbol
+        className="text-sm font-medium"
+      />
+    ),
   },
   {
     key: 'due',
@@ -65,24 +81,41 @@ const COLUMNS: CardTableColumn<ParentVoucherItem>[] = [
  * layout are the same everywhere. Its columns hold functions, which is why it is a
  * client component and the server-drawn dashboard only hands it rows.
  */
-export function ParentRecentVouchersTable({ rows }: { readonly rows: readonly ParentVoucherItem[] }) {
+export function ParentRecentVouchersTable({
+  rows,
+  showStudent = false,
+}: {
+  readonly rows: readonly ParentVoucherItem[];
+  /** Several children's vouchers in one list: say whose each one is. */
+  readonly showStudent?: boolean;
+}) {
   return (
     <ListDataTable
       title="Recent fee vouchers"
       rows={rows}
-      columns={COLUMNS}
+      columns={showStudent ? [STUDENT_COLUMN, ...COLUMNS] : COLUMNS}
       rowKey={(row) => row.id}
       tableLayout="auto"
       minWidthClass="min-w-[34rem]"
       renderMobileRow={(row) => (
         <div className="flex items-center justify-between gap-3 p-4">
           <div className="min-w-0 space-y-1">
-            <p className="text-sm font-medium text-foreground">{row.voucherNo}</p>
+            <p className="text-sm font-medium text-foreground">
+              {row.voucherNo}
+              {showStudent ? (
+                <span className="font-normal text-muted-foreground"> · {row.studentName}</span>
+              ) : null}
+            </p>
             <p className="text-xs text-muted-foreground">
-              {voucherMonthsLabel(row.billMonths, row.issueDate)} · Due <DateDisplay value={row.dueDate} />
+              {voucherMonthsLabel(row.billMonths, row.issueDate)} · Due{' '}
+              <DateDisplay value={row.dueDate} />
             </p>
             <div className="flex items-center gap-2">
-              <Money valueMinor={minorUnits(row.totalPayableMinor)} withSymbol className="text-sm font-medium" />
+              <Money
+                valueMinor={minorUnits(row.totalPayableMinor)}
+                withSymbol
+                className="text-sm font-medium"
+              />
               <StatusBadge tone={PARENT_VOUCHER_STATUS_TONES[row.paymentStatus]}>
                 {PARENT_VOUCHER_STATUS_LABELS[row.paymentStatus]}
               </StatusBadge>
